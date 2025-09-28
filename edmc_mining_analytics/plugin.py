@@ -406,9 +406,7 @@ class MiningAnalyticsPlugin:
         third = " | ".join(x for x in [limpets, drones, abandoned] if x)
         if third:
             lines.append(third)
-        # Optionally: Materials summary
-        if self._materials_collected:
-            lines.append("Materials summary below")
+        # Optionally: Materials summary (removed as per user request)
         # Optionally: No cargo data
         if not (self._cargo_totals or self._cargo_additions):
             lines.append("No cargo data yet")
