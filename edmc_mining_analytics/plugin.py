@@ -91,14 +91,12 @@ class MiningAnalyticsPlugin:
         self._cargo_tooltip: Optional[TreeTooltip] = None
         self._total_tph_label: Optional[ttk.Label] = None
         self._total_tph_var: Optional[tk.StringVar] = None
-        self._clear_button: Optional[ttk.Button] = None
+        self._reset_button: Optional[ttk.Button] = None
         self._hist_windows: dict[str, tk.Toplevel] = {}
         self._cargo_item_to_commodity: dict[str, str] = {}
         self._range_link_labels: dict[str, tk.Label] = {}
         self._range_link_font: Optional[tkfont.Font] = None
-        self._expand_button: Optional[ttk.Button] = None
-        self._user_expanded = False
-        self._content_widgets: list[tk.Widget] = []
+        self._content_widgets = []
         self._content_collapsed = False
 
     # ------------------------------------------------------------------
@@ -119,8 +117,7 @@ class MiningAnalyticsPlugin:
         ttk.Label(frame, textvariable=self._status_var, justify="left", anchor="w").grid(
             row=0, column=0, sticky="w", padx=4, pady=2
         )
-        self._expand_button = ttk.Button(frame, text="Show Data", command=self._on_toggle_expand)
-        self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
+    # Removed: Show/Hide Data button
 
         self._cargo_label = ttk.Label(frame, text="Mined Commodities", font=(None, 9, "bold"), anchor="w")
         self._cargo_label.grid(row=1, column=0, sticky="w", padx=4)
@@ -170,8 +167,8 @@ class MiningAnalyticsPlugin:
         self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
         self._total_tph_label = ttk.Label(frame, textvariable=self._total_tph_var, anchor="w")
         self._total_tph_label.grid(row=3, column=0, columnspan=2, sticky="w", padx=4, pady=(0, 6))
-        self._clear_button = ttk.Button(frame, text="Clear Mining Data", command=self._clear_mining_data)
-        self._clear_button.grid(row=3, column=2, sticky="e", padx=4, pady=(0, 6))
+        self._reset_button = ttk.Button(frame, text="Reset", command=self._on_reset)
+        # Do not grid yet; will be shown only after mining starts
 
         self._materials_label = ttk.Label(frame, text="Materials Collected", font=(None, 9, "bold"), anchor="w")
         self._materials_label.grid(row=4, column=0, sticky="w", padx=4)
@@ -200,7 +197,7 @@ class MiningAnalyticsPlugin:
             self._cargo_label,
             self._total_tph_label,
             self._table_frame,
-            self._clear_button,
+            self._reset_button,
             self._materials_label,
             self._materials_frame,
         ]
@@ -499,9 +496,10 @@ class MiningAnalyticsPlugin:
         self._materials_collected[normalized] += quantity
         self._refresh_status_ui()
 
-    def _clear_mining_data(self) -> None:
-        if self._is_mining:
-            return
+
+    def _on_reset(self) -> None:
+        # Reset all mining data and set state to Not mining
+        self._is_mining = False
         self._reset_mining_metrics()
         self._refresh_status_ui()
 
@@ -1038,8 +1036,12 @@ class MiningAnalyticsPlugin:
         if self._status_var:
             self._status_var.set(status_text)
 
-        if self._clear_button and getattr(self._clear_button, "winfo_exists", lambda: False)():
-            self._clear_button.configure(state="disabled" if self._is_mining else "normal")
+        # Show or hide the Reset button based on mining state
+        if self._reset_button and getattr(self._reset_button, "winfo_exists", lambda: False)():
+            if self._is_mining:
+                self._reset_button.grid(row=3, column=2, sticky="e", padx=4, pady=(0, 6))
+            else:
+                self._reset_button.grid_remove()
 
         cargo_tree = self._cargo_tree
         if cargo_tree and getattr(cargo_tree, "winfo_exists", lambda: False)():
@@ -1129,6 +1131,7 @@ class MiningAnalyticsPlugin:
         )
 
     def _update_collapsed_state(self) -> None:
+        # With Show/Hide Data button removed, always show all data if present, otherwise just the header label
         if not self._content_widgets:
             return
 
@@ -1142,52 +1145,28 @@ class MiningAnalyticsPlugin:
                     break
 
         has_data = self._has_data()
-        # Hide or show the expand button based on data presence
-        if self._expand_button and self._expand_button.winfo_exists():
-            if has_data:
-                self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
-            else:
-                self._expand_button.grid_remove()
-
-        if self._user_expanded:
+        if has_data:
             for widget in self._content_widgets:
                 if widget and widget.winfo_exists():
                     widget.grid()
             self._content_collapsed = False
-            if self._expand_button and self._expand_button.winfo_exists() and has_data:
-                self._expand_button.config(text="Hide Data")
             if self._ui_frame:
                 self._ui_frame.after(0, self._render_range_links)
-            # Restore the status label to use textvariable for full multi-line status
             if status_label and self._status_var:
                 status_label.config(text="", textvariable=self._status_var)
                 status_label.grid(row=0, column=0, sticky="w", padx=4, pady=2)
         else:
-            # Hide all content widgets
             for widget in self._content_widgets:
                 if widget and widget.winfo_exists():
                     widget.grid_remove()
             self._content_collapsed = True
-            if self._expand_button and self._expand_button.winfo_exists() and has_data:
-                self._expand_button.config(text="Show Data")
-            self._clear_range_link_labels()
-            # Only show the first line of the status label ("You're mining!" or "Not mining")
             if status_label and self._status_var:
                 full_text = self._status_var.get()
                 first_line = full_text.splitlines()[0] if full_text else ""
                 status_label.config(text=first_line, textvariable="")
                 status_label.grid(row=0, column=0, sticky="w", padx=4, pady=2)
 
-    def _on_toggle_expand(self) -> None:
-        if not self._has_data():
-            return
-        self._user_expanded = not self._user_expanded
-        self._update_collapsed_state()
-        # Optionally, scroll to top when expanding
-        if self._user_expanded and self._ui_frame and hasattr(self._ui_frame, 'winfo_toplevel'):
-            top = self._ui_frame.winfo_toplevel()
-            if hasattr(top, 'tkraise'):
-                top.tkraise()
+    # Removed: Show/Hide Data button logic
 
     def _schedule_rate_update(self) -> None:
         self._cancel_rate_update()

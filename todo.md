@@ -7,6 +7,8 @@
 - Use Body from StartUp to show where mining is happening
 - Find total cargo size on ship swap (if possible) and keep it handy. ShipyardSwap: {"timestamp":"2025-09-28T17:04:22Z","event":"ShipyardSwap","ShipType":"corsair","ShipID":82,"StoreOldShip":"Python","StoreShipID":68,"MarketID":blah}
 - After mining, with data available, the App UI is hiding the header information (tables are still shown). This needs to be fixed.
+- Major mess over how the App UI is shown/hidden condiering various states.
+
 
 ## Should haves
 - compare multiple runs
