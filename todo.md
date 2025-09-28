@@ -10,6 +10,7 @@
 ## Should haves
 - % of asteroids where the commodity was present
 - compare multiple runs
+- break load.py into smaller files. Make sure EDMC expected methods remain in load.py
 
 ## Could haves
 - When entering a ring, check EDSM to see if you know anything about the hotspot/location
