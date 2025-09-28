@@ -141,6 +141,14 @@ class MiningAnalyticsPlugin:
         self._cargo_tree.heading("total", text="Total", anchor="center")
         self._cargo_tree.heading("range", text="%Range", anchor="center")
         self._cargo_tree.heading("tph", text="Tons/hr", anchor="center")
+
+        # Add tooltips for column headers
+        if self._cargo_tooltip:
+            self._cargo_tooltip.set_heading_tooltip("present", "Number of asteroids prospected where this commodity is present.")
+            self._cargo_tooltip.set_heading_tooltip("percent", "Percentage of asteroids prospected where this commodity is present.")
+            self._cargo_tooltip.set_heading_tooltip("total", "Total number of tons collected.")
+            self._cargo_tooltip.set_heading_tooltip("range", "Min/Max percentages of this commodity on an asteroid when found.")
+            self._cargo_tooltip.set_heading_tooltip("tph", "Projected tons collected per hour of mining.")
         for col in ("commodity", "present", "percent", "total", "range", "tph"):
             self._cargo_tree.column(col, anchor="center", stretch=True, width=60)
         self._cargo_tree.column("commodity", width=110)

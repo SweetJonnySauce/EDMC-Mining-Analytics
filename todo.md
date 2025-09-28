@@ -2,16 +2,14 @@
 ## Must haves
 - After-action analytics report
 - Send after-action mining report to discord webhook
-- Record where you are mining
 - Limpets adandoned is counting more than it should. I think it counts failed collector limpets too. Fix this. This can be definied as starting# - current# - launched# (all types) = abandoned#
 - Update the Limpets remaining and launched numbers if you also launch a propsector.
 - Use Body from StartUp to show where mining is happening
-- Find total cargo size on ship swap and keep it handy.
+- Find total cargo size on ship swap (if possible) and keep it handy. ShipyardSwap: {"timestamp":"2025-09-28T17:04:22Z","event":"ShipyardSwap","ShipType":"corsair","ShipID":82,"StoreOldShip":"Python","StoreShipID":68,"MarketID":blah}
+- After mining, with data available, the App UI is hiding the header information (tables are still shown). This needs to be fixed.
 
 ## Should haves
-- % of asteroids where the commodity was present
 - compare multiple runs
-- break load.py into smaller files. Make sure EDMC expected methods remain in load.py
 - Record each MiningRefined, LaunchDrone, and Cargo for more detailed analysis. We could use MiningRefined to estimate chunk collecting efficiency.
 - Wait some time before showing prospector lost. This wait time could be user configurable.
 - Hyperlink on Commodity name to do Inara search for nearest/best price (configurable)
