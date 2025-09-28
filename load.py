@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 import threading
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -77,12 +78,12 @@ class _TreeTooltip:
         if key == self._current_key:
             return
 
-        self._current_key = key
         self._hide_tip()
 
         if not item or key not in self._cell_texts:
             return
 
+        self._current_key = key
         x = event.x_root + 16
         y = event.y_root + 12
         self._show_tip(x, y, self._cell_texts[key])
@@ -107,6 +108,7 @@ class _TreeTooltip:
             self._tip.destroy()
             self._tip = None
         self._current_key = None
+
 class MiningAnalyticsPlugin:
     """Encapsulates plugin state and behaviour for EDMC."""
 
@@ -117,13 +119,13 @@ class MiningAnalyticsPlugin:
         self._ui_frame: Optional[tk.Widget] = None
         self._table_frame: Optional[tk.Widget] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
+        self._materials_frame: Optional[ttk.Frame] = None
         self._materials_tree: Optional[ttk.Treeview] = None
         self._mining_start: Optional[datetime] = None
         self._prospected_count = 0
         self._already_mined_count = 0
         self._latest_version: Optional[str] = None
         self._version_check_started = False
-        self._cargo_baseline: Optional[dict[str, int]] = None
         self._cargo_additions: dict[str, int] = {}
         self._cargo_totals: dict[str, int] = {}
         self._limpets_remaining: Optional[int] = None
@@ -135,20 +137,30 @@ class MiningAnalyticsPlugin:
         self._prospector_launched_count = 0
         self._prospect_content_counts: Counter[str] = Counter()
         self._materials_collected: Counter[str] = Counter()
+        self._last_cargo_counts: dict[str, int] = {}
         self._histogram_bin_size = 10
         self._prefs_bin_var: Optional[tk.IntVar] = None
         self._updating_bin_var = False
+        self._rate_interval_seconds = 30
+        self._prefs_rate_var: Optional[tk.IntVar] = None
+        self._updating_rate_var = False
+        self._rate_update_job: Optional[int] = None
         self._prospected_seen: set[Tuple[str, Tuple[Tuple[str, float], ...]]] = set()
         self._prospected_samples: dict[str, list[float]] = defaultdict(list)
         self._prospected_histogram: dict[str, Counter[int]] = defaultdict(Counter)
         self._duplicate_prospected = 0
         self._cargo_tooltip: Optional[_TreeTooltip] = None
+        self._total_tph_label: Optional[ttk.Label] = None
         self._total_tph_var: Optional[tk.StringVar] = None
         self._clear_button: Optional[ttk.Button] = None
         self._hist_windows: dict[str, tk.Toplevel] = {}
         self._cargo_item_to_commodity: dict[str, str] = {}
         self._range_link_labels: dict[str, tk.Label] = {}
         self._range_link_font: Optional[tkfont.Font] = None
+        self._expand_button: Optional[ttk.Button] = None
+        self._user_expanded = False
+        self._content_widgets: list[tk.Widget] = []
+        self._content_collapsed = False
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
@@ -166,8 +178,10 @@ class MiningAnalyticsPlugin:
         self._ui_frame = frame
         self._status_var = tk.StringVar(master=frame, value=self._idle_status_text)
         ttk.Label(frame, textvariable=self._status_var, justify="left", anchor="w").grid(
-            row=0, column=0, columnspan=3, sticky="w", padx=4, pady=2
+            row=0, column=0, columnspan=2, sticky="w", padx=4, pady=2
         )
+        self._expand_button = ttk.Button(frame, text="Show data", command=self._on_toggle_expand)
+        self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
 
         ttk.Label(frame, text="Cargo Changes", font=(None, 9, "bold"), anchor="w").grid(
             row=1, column=0, sticky="w", padx=4
@@ -204,9 +218,8 @@ class MiningAnalyticsPlugin:
         self._cargo_tree.bind("<ButtonRelease-5>", lambda _e: self._render_range_links(), add="+")
 
         self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
-        ttk.Label(frame, textvariable=self._total_tph_var, anchor="w").grid(
-            row=3, column=0, columnspan=2, sticky="w", padx=4, pady=(0, 6)
-        )
+        self._total_tph_label = ttk.Label(frame, textvariable=self._total_tph_var, anchor="w")
+        self._total_tph_label.grid(row=3, column=0, columnspan=2, sticky="w", padx=4, pady=(0, 6))
         self._clear_button = ttk.Button(frame, text="Clear Mining Data", command=self._clear_mining_data)
         self._clear_button.grid(row=3, column=2, sticky="e", padx=4, pady=(0, 6))
 
@@ -214,10 +227,10 @@ class MiningAnalyticsPlugin:
             row=4, column=0, sticky="w", padx=4
         )
 
-        materials_frame = ttk.Frame(frame)
-        materials_frame.grid(row=5, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
+        self._materials_frame = ttk.Frame(frame)
+        self._materials_frame.grid(row=5, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
         self._materials_tree = ttk.Treeview(
-            materials_frame,
+            self._materials_frame,
             columns=("material", "quantity"),
             show="headings",
             height=5,
@@ -234,7 +247,15 @@ class MiningAnalyticsPlugin:
         frame.columnconfigure(2, weight=0)
         frame.rowconfigure(5, weight=1)
 
+        self._content_widgets = [
+            self._total_tph_label,
+            self._table_frame,
+            self._clear_button,
+            self._materials_frame,
+        ]
+
         self._apply_ui_state(self._status_var.get())
+        self._schedule_rate_update()
 
         return frame
 
@@ -267,18 +288,41 @@ class MiningAnalyticsPlugin:
             textvariable=self._prefs_bin_var,
             width=6,
         ).grid(row=2, column=0, sticky="w", padx=10, pady=(0, 10))
+
+        ttk.Label(
+            frame,
+            text="Tons/hour auto-update interval (seconds)",
+            wraplength=400,
+            justify="left",
+        ).grid(row=3, column=0, sticky="w", padx=10, pady=(0, 4))
+
+        self._prefs_rate_var = tk.IntVar(master=frame, value=self._rate_interval_seconds)
+        self._prefs_rate_var.trace_add("write", self._on_rate_var_change)
+        ttk.Spinbox(
+            frame,
+            from_=5,
+            to=3600,
+            increment=5,
+            textvariable=self._prefs_rate_var,
+            width=6,
+        ).grid(row=4, column=0, sticky="w", padx=10, pady=(0, 10))
         return frame
 
     def plugin_stop(self) -> None:
         _log.info("Stopping %s", PLUGIN_NAME)
+        self._cancel_rate_update()
         self._is_mining = False
         self._ui_frame = None
         self._table_frame = None
         self._cargo_tree = None
+        self._materials_frame = None
         self._materials_tree = None
         self._cargo_tooltip = None
+        self._total_tph_label = None
         self._total_tph_var = None
         self._clear_button = None
+        self._expand_button = None
+        self._content_widgets = []
         self._reset_mining_metrics()
         self._cargo_item_to_commodity = {}
         self._refresh_status_ui()
@@ -351,7 +395,6 @@ class MiningAnalyticsPlugin:
             self._mining_start = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
             self._prospected_count = 0
             self._already_mined_count = 0
-            self._cargo_baseline = None
             self._cargo_additions = {}
             self._cargo_totals = {}
             self._limpets_remaining = None
@@ -366,6 +409,10 @@ class MiningAnalyticsPlugin:
             self._commodity_start_times.clear()
             self._prospect_content_counts.clear()
             self._materials_collected.clear()
+            self._last_cargo_counts.clear()
+            self._user_expanded = True
+        else:
+            self._user_expanded = False
 
         state_text = "active" if active else "inactive"
         _log.info("Mining state changed to %s (%s)", state_text, reason)
@@ -509,7 +556,7 @@ class MiningAnalyticsPlugin:
 
     def _render_range_links(self) -> None:
         tree = self._cargo_tree
-        if not tree or not getattr(tree, "winfo_exists", lambda: False)():
+        if not tree or not getattr(tree, "winfo_exists", lambda: False)() or self._content_collapsed:
             return
 
         self._clear_range_link_labels()
@@ -560,7 +607,6 @@ class MiningAnalyticsPlugin:
         self._mining_start = None
         self._prospected_count = 0
         self._already_mined_count = 0
-        self._cargo_baseline = None
         self._cargo_additions = {}
         self._cargo_totals = {}
         self._limpets_remaining = None
@@ -576,6 +622,8 @@ class MiningAnalyticsPlugin:
         self._commodity_start_times.clear()
         self._prospect_content_counts.clear()
         self._materials_collected.clear()
+        self._last_cargo_counts.clear()
+        self._user_expanded = False
 
     @staticmethod
     def _parse_timestamp(value: Optional[str]) -> Optional[datetime]:
@@ -618,38 +666,35 @@ class MiningAnalyticsPlugin:
             if normalized == "drones":
                 limpets = count
 
-        if self._cargo_baseline is None:
-            self._cargo_baseline = dict(cargo_counts)
-            self._limpets_remaining = limpets
-            self._cargo_additions = {}
-            self._cargo_totals = {
-                name: count for name, count in cargo_counts.items() if name != "drones"
-            }
-            self._commodity_start_times = {}
-            self._refresh_status_ui()
-            return
-
         previous_limpets = self._limpets_remaining
         if limpets is not None:
             self._limpets_remaining = limpets
 
-        additions = {}
+        if not self._last_cargo_counts:
+            self._last_cargo_counts = dict(cargo_counts)
+            return
+
+        previous_counts = self._last_cargo_counts
+        additions_made = False
+
         for name, count in cargo_counts.items():
             if name == "drones":
                 continue
-            baseline = self._cargo_baseline.get(name, 0) if self._cargo_baseline else 0
-            delta = count - baseline
-            if delta > 0:
-                additions[name] = delta
+            prev = previous_counts.get(name, 0)
+            increment = count - prev
+            if increment > 0:
+                additions_made = True
+                new_total = self._cargo_additions.get(name, 0) + increment
+                self._cargo_additions[name] = new_total
+                self._cargo_totals[name] = new_total
                 self._harvested_commodities.add(name)
                 if name not in self._commodity_start_times:
                     timestamp = self._parse_timestamp(entry.get("timestamp"))
                     self._commodity_start_times[name] = timestamp or datetime.now(timezone.utc)
 
-        self._cargo_additions = additions
-        self._cargo_totals = {
-            name: count for name, count in cargo_counts.items() if name != "drones"
-        }
+        # Prune any zeroed entries
+        self._cargo_additions = {k: v for k, v in self._cargo_additions.items() if v > 0}
+        self._cargo_totals = dict(self._cargo_additions)
 
         if (
             limpets is not None
@@ -662,7 +707,16 @@ class MiningAnalyticsPlugin:
                 self._abandoned_limpets += abandoned
                 _log.info("Detected %s limpets abandoned", abandoned)
 
-        self._refresh_status_ui()
+        self._last_cargo_counts = dict(cargo_counts)
+
+        should_refresh = additions_made or (
+            limpets is not None
+            and previous_limpets is not None
+            and limpets != previous_limpets
+        )
+
+        if should_refresh:
+            self._refresh_status_ui()
 
     @staticmethod
     def _format_cargo_name(name: str) -> str:
@@ -993,6 +1047,7 @@ class MiningAnalyticsPlugin:
     def _load_configuration(self) -> None:
         if config is None:
             self._histogram_bin_size = 10
+            self._rate_interval_seconds = 30
             return
 
         try:
@@ -1001,12 +1056,25 @@ class MiningAnalyticsPlugin:
             value = 10
         self._histogram_bin_size = self._clamp_bin_size(value)
 
+        try:
+            rate_value = config.get_int(key="edmc_mining_rate_interval", default=30)
+        except Exception:
+            rate_value = 30
+        self._rate_interval_seconds = self._clamp_rate_interval(rate_value)
+
     def _clamp_bin_size(self, value: int) -> int:
         try:
             size = int(value)
         except (TypeError, ValueError):
             size = 10
         return max(1, min(100, size))
+
+    def _clamp_rate_interval(self, value: int) -> int:
+        try:
+            interval = int(value)
+        except (TypeError, ValueError):
+            interval = 30
+        return max(5, min(3600, interval))
 
     def _apply_ui_state(self, status_text: str) -> None:
         if self._status_var:
@@ -1085,6 +1153,109 @@ class MiningAnalyticsPlugin:
                     f"Total Tons/hr: {self._format_rate(total_rate)} ({total_amount}t over {duration_str})"
                 )
 
+        self._update_collapsed_state()
+
+    def _has_data(self) -> bool:
+        return bool(
+            self._cargo_additions
+            or self._materials_collected
+            or self._prospected_count
+            or self._prospector_launched_count
+            or self._prospect_content_counts
+        )
+
+    def _update_collapsed_state(self) -> None:
+        if not self._content_widgets:
+            return
+
+        has_data = self._has_data()
+
+        if self._is_mining:
+            self._user_expanded = True
+            desired_visible = True
+        else:
+            if not has_data:
+                self._user_expanded = False
+            desired_visible = has_data and self._user_expanded
+
+        if desired_visible and self._content_collapsed:
+            for widget in self._content_widgets:
+                if widget and widget.winfo_exists():
+                    widget.grid()
+            self._content_collapsed = False
+            self._ui_frame.after(0, self._render_range_links)
+        elif not desired_visible and not self._content_collapsed:
+            self._clear_range_link_labels()
+            for widget in self._content_widgets:
+                if widget and widget.winfo_exists():
+                    widget.grid_remove()
+            self._content_collapsed = True
+
+        if self._expand_button and self._expand_button.winfo_exists():
+            if self._is_mining or not has_data:
+                self._expand_button.grid_remove()
+            else:
+                self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
+                self._expand_button.configure(
+                    text="Hide data" if self._user_expanded else "Show data"
+                )
+
+        if self._content_collapsed:
+            self._clear_range_link_labels()
+
+    def _on_toggle_expand(self) -> None:
+        if self._is_mining:
+            return
+        if not self._has_data():
+            return
+        self._user_expanded = not self._user_expanded
+        self._update_collapsed_state()
+
+    def _schedule_rate_update(self) -> None:
+        self._cancel_rate_update()
+        if not self._ui_frame or not self._ui_frame.winfo_exists():
+            return
+        interval = self._clamp_rate_interval(self._rate_interval_seconds)
+        jitter = random.uniform(-0.2, 0.2) * interval
+        delay_ms = max(1000, int((interval + jitter) * 1000))
+        self._rate_update_job = self._ui_frame.after(delay_ms, self._rate_update_tick)
+
+    def _cancel_rate_update(self) -> None:
+        if self._rate_update_job and self._ui_frame and self._ui_frame.winfo_exists():
+            try:
+                self._ui_frame.after_cancel(self._rate_update_job)
+            except Exception:
+                pass
+        self._rate_update_job = None
+
+    def _rate_update_tick(self) -> None:
+        self._rate_update_job = None
+        if self._ui_frame and self._ui_frame.winfo_exists():
+            self._refresh_status_ui()
+        self._schedule_rate_update()
+
+    def _set_rate_interval(self, value: int) -> None:
+        interval = self._clamp_rate_interval(value)
+        if interval == self._rate_interval_seconds:
+            return
+        self._rate_interval_seconds = interval
+        if self._prefs_rate_var is not None:
+            current = self._prefs_rate_var.get()
+            if current != interval:
+                self._updating_rate_var = True
+                self._prefs_rate_var.set(interval)
+                self._updating_rate_var = False
+        self._schedule_rate_update()
+
+    def _on_rate_var_change(self, *_: object) -> None:
+        if self._prefs_rate_var is None or self._updating_rate_var:
+            return
+        try:
+            value = int(self._prefs_rate_var.get())
+        except (TypeError, ValueError, tk.TclError):
+            return
+        self._set_rate_interval(value)
+
     def prefs_changed(self, cmdr: Optional[str], is_beta: bool) -> None:
         if config is None:
             return
@@ -1092,6 +1263,10 @@ class MiningAnalyticsPlugin:
             config.set("edmc_mining_histogram_bin", self._histogram_bin_size)
         except Exception:  # pragma: no cover - configuration failures should not crash plugin
             _log.exception("Failed to persist histogram bin size preference")
+        try:
+            config.set("edmc_mining_rate_interval", self._rate_interval_seconds)
+        except Exception:
+            _log.exception("Failed to persist rate update interval")
 
     def _ensure_version_check(self) -> None:
         if self._version_check_started:
