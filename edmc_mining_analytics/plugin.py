@@ -117,9 +117,9 @@ class MiningAnalyticsPlugin:
         self._ui_frame = frame
         self._status_var = tk.StringVar(master=frame, value=self._idle_status_text)
         ttk.Label(frame, textvariable=self._status_var, justify="left", anchor="w").grid(
-            row=0, column=0, columnspan=2, sticky="w", padx=4, pady=2
+            row=0, column=0, sticky="w", padx=4, pady=2
         )
-        self._expand_button = ttk.Button(frame, text="Show data", command=self._on_toggle_expand)
+        self._expand_button = ttk.Button(frame, text="Show Data", command=self._on_toggle_expand)
         self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
 
         self._cargo_label = ttk.Label(frame, text="Mined Commodities", font=(None, 9, "bold"), anchor="w")
@@ -127,22 +127,28 @@ class MiningAnalyticsPlugin:
 
         self._table_frame = ttk.Frame(frame)
         self._table_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
+        header_font = tkfont.Font(family="TkDefaultFont", size=9, weight="normal")
         self._cargo_tree = ttk.Treeview(
             self._table_frame,
-            columns=("commodity", "total", "range", "tph"),
+            columns=("commodity", "present", "percent", "total", "range", "tph"),
             show="headings",
             height=5,
             selectmode="none",
         )
-        self._cargo_tree.heading("commodity", text="Commodity")
-        self._cargo_tree.heading("total", text="Total")
-        self._cargo_tree.heading("range", text="Range")
-        self._cargo_tree.heading("tph", text="Tons/hr")
-        self._cargo_tree.column("commodity", anchor="w", stretch=True, width=160)
-        self._cargo_tree.column("total", anchor="center", stretch=False, width=70)
-        self._cargo_tree.column("range", anchor="center", stretch=False, width=120)
-        self._cargo_tree.column("tph", anchor="center", stretch=False, width=80)
+        self._cargo_tree.heading("commodity", text="Commodity", anchor="center")
+        self._cargo_tree.heading("present", text="#", anchor="center")
+        self._cargo_tree.heading("percent", text="%", anchor="center")
+        self._cargo_tree.heading("total", text="Total", anchor="center")
+        self._cargo_tree.heading("range", text="%Range", anchor="center")
+        self._cargo_tree.heading("tph", text="Tons/hr", anchor="center")
+        for col in ("commodity", "present", "percent", "total", "range", "tph"):
+            self._cargo_tree.column(col, anchor="center", stretch=True, width=60)
+        self._cargo_tree.column("commodity", width=110)
+        self._cargo_tree.column("range", width=80)
         self._cargo_tree.pack(fill="both", expand=True)
+        # Set smaller font for headers
+        style = ttk.Style()
+        style.configure("Treeview.Heading", font=header_font)
         self._cargo_tooltip = TreeTooltip(self._cargo_tree)
         self._cargo_tree.bind("<ButtonRelease-1>", self._on_cargo_click, add="+")
         self._cargo_tree.bind("<Motion>", self._on_cargo_motion, add="+")
@@ -505,11 +511,12 @@ class MiningAnalyticsPlugin:
                 self._range_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
 
         pending = False
+        # Move the hyperlink to the %Range column (column #5)
         for item, commodity in self._cargo_item_to_commodity.items():
             range_label = self._format_range_label(commodity)
             if not range_label:
                 continue
-            bbox = tree.bbox(item, "#4")
+            bbox = tree.bbox(item, "#5")  # %Range column is #5
             if not bbox:
                 pending = True
                 continue
@@ -1028,18 +1035,25 @@ class MiningAnalyticsPlugin:
             )
             if not rows:
                 item = cargo_tree.insert(
-                    "", "end", values=("No mined commodities yet", "", "", "")
+                    "", "end", values=("No mined commodities yet", "", "", "", "", "")
                 )
                 if self._cargo_tooltip:
-                    self._cargo_tooltip.set_cell_text(item, "#4", None)
+                    self._cargo_tooltip.set_cell_text(item, "#6", None)
             else:
+                # Calculate present# and percent for each commodity
+                present_counts = {k: len(v) for k, v in self._prospected_samples.items()}
+                total_asteroids = self._prospected_count if self._prospected_count > 0 else 1
                 for name in rows:
                     range_label = self._format_range_label(name)
+                    present = present_counts.get(name, 0)
+                    percent = (present / total_asteroids) * 100 if total_asteroids else 0
                     item = cargo_tree.insert(
                         "",
                         "end",
                         values=(
                             self._format_cargo_name(name),
+                            present,
+                            f"{percent:.1f}",
                             self._cargo_totals.get(name, 0),
                             range_label,
                             self._format_tph(name),
@@ -1049,7 +1063,7 @@ class MiningAnalyticsPlugin:
                     if self._cargo_tooltip:
                         self._cargo_tooltip.set_cell_text(
                             item,
-                            "#4",
+                            "#6",
                             self._make_tph_tooltip(name),
                         )
                 cargo_tree.after(0, self._render_range_links)
@@ -1097,33 +1111,56 @@ class MiningAnalyticsPlugin:
         if not self._content_widgets:
             return
 
-        # Always collapse all content and header widgets when not mining
-        if not self._is_mining:
+        # Find the status label widget (row=0, column=0)
+        status_label = None
+        if self._ui_frame:
+            for child in self._ui_frame.winfo_children():
+                info = getattr(child, 'grid_info', lambda: {})()
+                if info.get('row') == 0 and info.get('column') == 0:
+                    status_label = child
+                    break
+
+        if self._user_expanded:
+            for widget in self._content_widgets:
+                if widget and widget.winfo_exists():
+                    widget.grid()
+            self._content_collapsed = False
+            if self._expand_button and self._expand_button.winfo_exists():
+                self._expand_button.config(text="Hide Data")
+                self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
+            if self._ui_frame:
+                self._ui_frame.after(0, self._render_range_links)
+            # Restore the status label to use textvariable for full multi-line status
+            if status_label and self._status_var:
+                status_label.config(text="", textvariable=self._status_var)
+                status_label.grid(row=0, column=0, sticky="w", padx=4, pady=2)
+        else:
+            # Hide all content widgets
             for widget in self._content_widgets:
                 if widget and widget.winfo_exists():
                     widget.grid_remove()
             self._content_collapsed = True
             if self._expand_button and self._expand_button.winfo_exists():
-                self._expand_button.grid_remove()
+                self._expand_button.config(text="Show Data")
+                self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
             self._clear_range_link_labels()
-            return
-
-        # If mining, show all content widgets
-        for widget in self._content_widgets:
-            if widget and widget.winfo_exists():
-                widget.grid()
-        self._content_collapsed = False
-        if self._expand_button and self._expand_button.winfo_exists():
-            self._expand_button.grid_remove()
-        self._ui_frame.after(0, self._render_range_links)
+            # Only show the first line of the status label ("You're mining!" or "Not mining")
+            if status_label and self._status_var:
+                full_text = self._status_var.get()
+                first_line = full_text.splitlines()[0] if full_text else ""
+                status_label.config(text=first_line, textvariable="")
+                status_label.grid(row=0, column=0, sticky="w", padx=4, pady=2)
 
     def _on_toggle_expand(self) -> None:
-        if self._is_mining:
-            return
         if not self._has_data():
             return
         self._user_expanded = not self._user_expanded
         self._update_collapsed_state()
+        # Optionally, scroll to top when expanding
+        if self._user_expanded and self._ui_frame and hasattr(self._ui_frame, 'winfo_toplevel'):
+            top = self._ui_frame.winfo_toplevel()
+            if hasattr(top, 'tkraise'):
+                top.tkraise()
 
     def _schedule_rate_update(self) -> None:
         self._cancel_rate_update()

@@ -2,10 +2,9 @@
 ## Must haves
 - After-action analytics report
 - Send after-action mining report to discord webhook
-- Only track total mined. Don't need both added and total now. 
 - Record where you are mining
-- minimize app when not mining now works, but only collapses the boxes. 
 - Limpets adandoned is counting more than it should. I think it counts failed collector limpets too. Fix this. This can be definied as starting# - current# - launched# (all types) = abandoned#
+- Update the Limpets remaining and launched numbers if you also launch a propsector.
 
 ## Should haves
 - % of asteroids where the commodity was present
