@@ -4,6 +4,9 @@ EDMC-Mining-Analytics is a plugin for Elite Dangerous Market Connector (EDMC) th
 
 This is at best an alpha script. Use at your own peril. Feedback welcome.
 
+<img width="965" height="489" alt="image" src="https://github.com/user-attachments/assets/0c4fdec7-5098-4274-947c-b4f50db8a769" />
+
+
 ## Features
 
 - Tracks mining sessions, prospecting, harvested commodities, and materials.
