@@ -51,14 +51,18 @@ class MiningAnalyticsPlugin:
         self.plugin_dir: Optional[Path] = None
         self._is_mining = False
         self._status_var: Optional[tk.StringVar] = None
+        self._summary_var: Optional[tk.StringVar] = None
         self._ui_frame: Optional[tk.Widget] = None
         self._table_frame: Optional[tk.Widget] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_frame: Optional[ttk.Frame] = None
         self._materials_tree: Optional[ttk.Treeview] = None
+        self._status_label: Optional[ttk.Label] = None
+        self._summary_label: Optional[ttk.Label] = None
         self._cargo_label: Optional[ttk.Label] = None
         self._materials_label: Optional[ttk.Label] = None
         self._mining_start: Optional[datetime] = None
+        self._mining_end: Optional[datetime] = None
         self._prospected_count = 0
         self._already_mined_count = 0
         self._latest_version: Optional[str] = None
@@ -96,8 +100,9 @@ class MiningAnalyticsPlugin:
         self._cargo_item_to_commodity: dict[str, str] = {}
         self._range_link_labels: dict[str, tk.Label] = {}
         self._range_link_font: Optional[tkfont.Font] = None
-        self._content_widgets = []
+        self._content_widgets: list[tk.Widget] = []
         self._content_collapsed = False
+        self._user_expanded = False
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
@@ -113,17 +118,19 @@ class MiningAnalyticsPlugin:
         frame = ttk.Frame(parent)
 
         self._ui_frame = frame
-        self._status_var = tk.StringVar(master=frame, value=self._idle_status_text)
-        ttk.Label(frame, textvariable=self._status_var, justify="left", anchor="w").grid(
-            row=0, column=0, sticky="w", padx=4, pady=2
-        )
-    # Removed: Show/Hide Data button
+        self._status_var = tk.StringVar(master=frame, value="Not mining")
+        self._status_label = ttk.Label(frame, textvariable=self._status_var, justify="left", anchor="w")
+        self._status_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=4, pady=(4, 2))
+
+        self._summary_var = tk.StringVar(master=frame, value="")
+        self._summary_label = ttk.Label(frame, textvariable=self._summary_var, justify="left", anchor="w")
+        self._summary_label.grid(row=1, column=0, columnspan=3, sticky="w", padx=4, pady=(0, 6))
 
         self._cargo_label = ttk.Label(frame, text="Mined Commodities", font=(None, 9, "bold"), anchor="w")
-        self._cargo_label.grid(row=1, column=0, sticky="w", padx=4)
+        self._cargo_label.grid(row=2, column=0, sticky="w", padx=4)
 
         self._table_frame = ttk.Frame(frame)
-        self._table_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
+        self._table_frame.grid(row=3, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
         header_font = tkfont.Font(family="TkDefaultFont", size=9, weight="normal")
         self._cargo_tree = ttk.Treeview(
             self._table_frame,
@@ -151,7 +158,6 @@ class MiningAnalyticsPlugin:
         self._cargo_tree.column("commodity", width=110)
         self._cargo_tree.column("range", width=80)
         self._cargo_tree.pack(fill="both", expand=True)
-        # Set smaller font for headers
         style = ttk.Style()
         style.configure("Treeview.Heading", font=header_font)
         self._cargo_tooltip = TreeTooltip(self._cargo_tree)
@@ -166,15 +172,15 @@ class MiningAnalyticsPlugin:
 
         self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
         self._total_tph_label = ttk.Label(frame, textvariable=self._total_tph_var, anchor="w")
-        self._total_tph_label.grid(row=3, column=0, columnspan=2, sticky="w", padx=4, pady=(0, 6))
+        self._total_tph_label.grid(row=4, column=0, columnspan=2, sticky="w", padx=4, pady=(0, 6))
         self._reset_button = ttk.Button(frame, text="Reset", command=self._on_reset)
-        # Do not grid yet; will be shown only after mining starts
+        self._reset_button.grid(row=4, column=2, sticky="e", padx=4, pady=(0, 6))
 
         self._materials_label = ttk.Label(frame, text="Materials Collected", font=(None, 9, "bold"), anchor="w")
-        self._materials_label.grid(row=4, column=0, sticky="w", padx=4)
+        self._materials_label.grid(row=5, column=0, sticky="w", padx=4)
 
         self._materials_frame = ttk.Frame(frame)
-        self._materials_frame.grid(row=5, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
+        self._materials_frame.grid(row=6, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
         self._materials_tree = ttk.Treeview(
             self._materials_frame,
             columns=("material", "quantity"),
@@ -191,7 +197,7 @@ class MiningAnalyticsPlugin:
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=0)
         frame.columnconfigure(2, weight=0)
-        frame.rowconfigure(5, weight=1)
+        frame.rowconfigure(6, weight=1)
 
         self._content_widgets = [
             self._cargo_label,
@@ -202,7 +208,7 @@ class MiningAnalyticsPlugin:
             self._materials_frame,
         ]
 
-        self._apply_ui_state(self._status_var.get())
+        self._refresh_status_ui()
         self._schedule_rate_update()
 
         return frame
@@ -340,10 +346,6 @@ class MiningAnalyticsPlugin:
         if self._is_mining == active:
             return
 
-        # Add mining end tracking
-        if not hasattr(self, '_mining_end'):
-            self._mining_end = None
-
         if active:
             self._is_mining = True
             self._mining_start = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
@@ -368,50 +370,29 @@ class MiningAnalyticsPlugin:
             self._user_expanded = True
         else:
             self._is_mining = False
-            # Set mining end time for elapsed calculation
             self._mining_end = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
             self._user_expanded = False
 
-        state_text = "active" if active else "inactive"
-        _log.info("Mining state changed to %s (%s)", state_text, reason)
+        _log.info("Mining state changed to %s (%s)", "active" if active else "inactive", reason)
         self._refresh_status_ui()
 
     def _refresh_status_ui(self) -> None:
-        if not self._status_var:
-            return
-
-        # Always display the status label and summary lines
-        status_label = "You're mining!" if self._is_mining else "Not Mining"
+        status_text = "You're mining!" if self._is_mining else "Not mining"
         summary_text = "\n".join(self._status_summary_lines())
-        text = f"{status_label}\n{summary_text}"
 
         if self._ui_frame and getattr(self._ui_frame, "winfo_exists", lambda: False)():
-            self._ui_frame.after(0, self._apply_ui_state, text)
+            self._ui_frame.after(0, self._apply_ui_state, status_text, summary_text)
         else:
-            self._apply_ui_state(text)
-
-    @property
-    def _active_status_text(self) -> str:
-        parts = ["You're mining!"]
-        # If mining is active, show Started; if not, show Total time
-        if self._mining_start:
-            if getattr(self, '_is_mining', False):
-                start_dt = self._ensure_aware(self._mining_start).astimezone(timezone.utc)
-                start_str = start_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
-                parts.append(f"Started: {start_str}")
-            elif hasattr(self, '_mining_end') and self._mining_end:
-                elapsed = (self._ensure_aware(self._mining_end) - self._ensure_aware(self._mining_start)).total_seconds()
-                parts.append(f"Total time: {self._format_duration(elapsed)}")
-        parts.extend(self._status_summary_lines())
-        return "\n".join(parts)
-
-    @property
-    def _idle_status_text(self) -> str:
-        return "Not mining"
+            self._apply_ui_state(status_text, summary_text)
 
     def _status_summary_lines(self) -> list[str]:
-        lines = []
-        # First line: Prospected, Already mined, Duplicates
+        lines: list[str] = []
+        if self._mining_start:
+            start_dt = self._ensure_aware(self._mining_start).astimezone(timezone.utc)
+            lines.append(f"Started: {start_dt.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        else:
+            lines.append("Started: --")
+
         lines.append(
             f"Prospected: {self._prospected_count} | Already mined: {self._already_mined_count} | Dupes: {self._duplicate_prospected}"
         )
@@ -425,10 +406,9 @@ class MiningAnalyticsPlugin:
         lines.append(
             f"Prospectors: Launched: {self._prospector_launched_count} | Lost: {lost}{content_line}"
         )
-        # Third line: Limpets, drones, abandoned
-        limpets = f"Limpets: Remaining: {self._limpets_remaining}" if self._limpets_remaining is not None else None
-        drones = f"Launched: {self._collection_drones_launched}"
-        abandoned = f"Abandoned: {self._abandoned_limpets}" if self._abandoned_limpets > 0 else None
+        limpets = f"Limpets remaining: {self._limpets_remaining}" if self._limpets_remaining is not None else None
+        drones = f"Collectors launched: {self._collection_drones_launched}"
+        abandoned = f"Limpets abandoned: {self._abandoned_limpets}" if self._abandoned_limpets > 0 else None
         third = " | ".join(x for x in [limpets, drones, abandoned] if x)
         if third:
             lines.append(third)
@@ -584,6 +564,7 @@ class MiningAnalyticsPlugin:
         self._materials_collected.clear()
         self._last_cargo_counts.clear()
         self._user_expanded = False
+        self._mining_end = None
 
     @staticmethod
     def _parse_timestamp(value: Optional[str]) -> Optional[datetime]:
@@ -1036,9 +1017,11 @@ class MiningAnalyticsPlugin:
             interval = 30
         return max(5, min(3600, interval))
 
-    def _apply_ui_state(self, status_text: str) -> None:
+    def _apply_ui_state(self, status_text: str, summary_text: str) -> None:
         if self._status_var:
             self._status_var.set(status_text)
+        if self._summary_var is not None:
+            self._summary_var.set(summary_text)
 
         cargo_tree = self._cargo_tree
         if cargo_tree and getattr(cargo_tree, "winfo_exists", lambda: False)():
