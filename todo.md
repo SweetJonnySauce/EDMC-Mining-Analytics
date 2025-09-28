@@ -2,11 +2,9 @@
 ## Must haves
 - After-action analytics report
 - Send after-action mining report to discord webhook
-- Fix the prospector lost logic.
-- Subtract baseline qty from total mined.
+- Only track total mined. Don't need both added and total now. 
 - Record where you are mining
-- update tons per hour on timer, not event
-- minimize app when not mining.
+- minimize app when not mining now works, but only collapses the boxes. 
 - Limpets adandoned is counting more than it should. I think it counts failed collector limpets too. Fix this.
 
 ## Should haves
