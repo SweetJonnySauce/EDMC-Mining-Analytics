@@ -335,9 +335,14 @@ class MiningAnalyticsPlugin:
         if self._is_mining == active:
             return
 
-        self._is_mining = active
+        # Add mining end tracking
+        if not hasattr(self, '_mining_end'):
+            self._mining_end = None
+
         if active:
+            self._is_mining = True
             self._mining_start = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
+            self._mining_end = None
             self._prospected_count = 0
             self._already_mined_count = 0
             self._cargo_additions = {}
@@ -357,6 +362,9 @@ class MiningAnalyticsPlugin:
             self._last_cargo_counts.clear()
             self._user_expanded = True
         else:
+            self._is_mining = False
+            # Set mining end time for elapsed calculation
+            self._mining_end = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
             self._user_expanded = False
 
         state_text = "active" if active else "inactive"
@@ -376,10 +384,15 @@ class MiningAnalyticsPlugin:
     @property
     def _active_status_text(self) -> str:
         parts = ["You're mining!"]
+        # If mining is active, show Started; if not, show Total time
         if self._mining_start:
-            start_dt = self._ensure_aware(self._mining_start).astimezone(timezone.utc)
-            start_str = start_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
-            parts.append(f"Started: {start_str}")
+            if getattr(self, '_is_mining', False):
+                start_dt = self._ensure_aware(self._mining_start).astimezone(timezone.utc)
+                start_str = start_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+                parts.append(f"Started: {start_str}")
+            elif hasattr(self, '_mining_end') and self._mining_end:
+                elapsed = (self._ensure_aware(self._mining_end) - self._ensure_aware(self._mining_start)).total_seconds()
+                parts.append(f"Total time: {self._format_duration(elapsed)}")
         parts.extend(self._status_summary_lines())
         return "\n".join(parts)
 
@@ -697,7 +710,7 @@ class MiningAnalyticsPlugin:
         if not self._cargo_tree:
             return
         column = self._cargo_tree.identify_column(event.x)
-        if column != "#4":
+        if column != "#5":  # %Range column
             return
         item = self._cargo_tree.identify_row(event.y)
         commodity = self._cargo_item_to_commodity.get(item)
@@ -713,7 +726,7 @@ class MiningAnalyticsPlugin:
         column = self._cargo_tree.identify_column(event.x)
         item = self._cargo_tree.identify_row(event.y)
         commodity = self._cargo_item_to_commodity.get(item)
-        if column == "#4" and commodity and self._format_range_label(commodity):
+        if column == "#5" and commodity and self._format_range_label(commodity):  # %Range column
             self._cargo_tree.configure(cursor="hand2")
         else:
             self._cargo_tree.configure(cursor="")
@@ -1120,14 +1133,21 @@ class MiningAnalyticsPlugin:
                     status_label = child
                     break
 
+        has_data = self._has_data()
+        # Hide or show the expand button based on data presence
+        if self._expand_button and self._expand_button.winfo_exists():
+            if has_data:
+                self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
+            else:
+                self._expand_button.grid_remove()
+
         if self._user_expanded:
             for widget in self._content_widgets:
                 if widget and widget.winfo_exists():
                     widget.grid()
             self._content_collapsed = False
-            if self._expand_button and self._expand_button.winfo_exists():
+            if self._expand_button and self._expand_button.winfo_exists() and has_data:
                 self._expand_button.config(text="Hide Data")
-                self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
             if self._ui_frame:
                 self._ui_frame.after(0, self._render_range_links)
             # Restore the status label to use textvariable for full multi-line status
@@ -1140,9 +1160,8 @@ class MiningAnalyticsPlugin:
                 if widget and widget.winfo_exists():
                     widget.grid_remove()
             self._content_collapsed = True
-            if self._expand_button and self._expand_button.winfo_exists():
+            if self._expand_button and self._expand_button.winfo_exists() and has_data:
                 self._expand_button.config(text="Show Data")
-                self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
             self._clear_range_link_labels()
             # Only show the first line of the status label ("You're mining!" or "Not mining")
             if status_label and self._status_var:
