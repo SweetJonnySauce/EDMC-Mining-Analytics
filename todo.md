@@ -3,6 +3,9 @@
 - After-action analytics report
 - Send after-action mining report to discord webhook
 
+## Should haves
+- % of asteroids where the commodity was present
+
 ## Could haves
 - When entering a ring, check EDSM to see if you know anything about the hotspot/location
 
