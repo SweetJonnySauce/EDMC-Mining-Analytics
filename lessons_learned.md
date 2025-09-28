@@ -1,0 +1,1 @@
+- Managing state change, especially of the UI elements, is extremely difficult if you build the script organically.

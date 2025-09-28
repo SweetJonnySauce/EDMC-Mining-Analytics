@@ -1036,13 +1036,6 @@ class MiningAnalyticsPlugin:
         if self._status_var:
             self._status_var.set(status_text)
 
-        # Show or hide the Reset button based on mining state
-        if self._reset_button and getattr(self._reset_button, "winfo_exists", lambda: False)():
-            if self._is_mining:
-                self._reset_button.grid(row=3, column=2, sticky="e", padx=4, pady=(0, 6))
-            else:
-                self._reset_button.grid_remove()
-
         cargo_tree = self._cargo_tree
         if cargo_tree and getattr(cargo_tree, "winfo_exists", lambda: False)():
             cargo_tree.delete(*cargo_tree.get_children())
@@ -1058,7 +1051,9 @@ class MiningAnalyticsPlugin:
             )
             if not rows:
                 item = cargo_tree.insert(
-                    "", "end", values=("No mined commodities yet", "", "", "", "", "")
+                    "",
+                    "end",
+                    values=("No mined commodities yet", "", "", "", "", "")
                 )
                 if self._cargo_tooltip:
                     self._cargo_tooltip.set_cell_text(item, "#6", None)
@@ -1119,8 +1114,6 @@ class MiningAnalyticsPlugin:
                     f"Total Tons/hr: {self._format_rate(total_rate)} ({total_amount}t over {duration_str})"
                 )
 
-        self._update_collapsed_state()
-
     def _has_data(self) -> bool:
         return bool(
             self._cargo_additions
@@ -1129,42 +1122,6 @@ class MiningAnalyticsPlugin:
             or self._prospector_launched_count
             or self._prospect_content_counts
         )
-
-    def _update_collapsed_state(self) -> None:
-        # With Show/Hide Data button removed, always show all data if present, otherwise just the header label
-        if not self._content_widgets:
-            return
-
-        # Find the status label widget (row=0, column=0)
-        status_label = None
-        if self._ui_frame:
-            for child in self._ui_frame.winfo_children():
-                info = getattr(child, 'grid_info', lambda: {})()
-                if info.get('row') == 0 and info.get('column') == 0:
-                    status_label = child
-                    break
-
-        has_data = self._has_data()
-        if has_data:
-            for widget in self._content_widgets:
-                if widget and widget.winfo_exists():
-                    widget.grid()
-            self._content_collapsed = False
-            if self._ui_frame:
-                self._ui_frame.after(0, self._render_range_links)
-            if status_label and self._status_var:
-                status_label.config(text="", textvariable=self._status_var)
-                status_label.grid(row=0, column=0, sticky="w", padx=4, pady=2)
-        else:
-            for widget in self._content_widgets:
-                if widget and widget.winfo_exists():
-                    widget.grid_remove()
-            self._content_collapsed = True
-            if status_label and self._status_var:
-                full_text = self._status_var.get()
-                first_line = full_text.splitlines()[0] if full_text else ""
-                status_label.config(text=first_line, textvariable="")
-                status_label.grid(row=0, column=0, sticky="w", padx=4, pady=2)
 
     # Removed: Show/Hide Data button logic
 
