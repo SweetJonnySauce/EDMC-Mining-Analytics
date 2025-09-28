@@ -19,6 +19,7 @@ from urllib import error, request
 try:
     import tkinter as tk
     from tkinter import ttk
+    import tkinter.font as tkfont
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
@@ -47,40 +48,44 @@ class _TreeTooltip:
     def __init__(self, tree: ttk.Treeview) -> None:
         self._tree = tree
         self._tip: Optional[tk.Toplevel] = None
-        self._texts: dict[str, str] = {}
-        self._current_item: Optional[str] = None
+        self._cell_texts: dict[tuple[str, str], str] = {}
+        self._current_key: Optional[tuple[str, str]] = None
 
         tree.bind("<Motion>", self._on_motion, add="+")
         tree.bind("<Leave>", self._hide_tip, add="+")
         tree.bind("<ButtonPress>", self._hide_tip, add="+")
 
     def clear(self) -> None:
-        self._texts.clear()
-        self._current_item = None
+        self._cell_texts.clear()
+        self._current_key = None
         self._hide_tip()
 
-    def set_item_text(self, item: str, text: Optional[str]) -> None:
+    def set_cell_text(self, item: str, column: str, text: Optional[str]) -> None:
+        key = (item, column)
         if text:
-            self._texts[item] = text
-        elif item in self._texts:
-            del self._texts[item]
-        if self._current_item == item and not text:
+            self._cell_texts[key] = text
+        elif key in self._cell_texts:
+            del self._cell_texts[key]
+        if self._current_key == key and not text:
             self._hide_tip()
 
     def _on_motion(self, event: tk.Event) -> None:  # type: ignore[override]
         item = self._tree.identify_row(event.y)
-        if item == self._current_item:
+        column = self._tree.identify_column(event.x)
+        key = (item or "", column or "")
+
+        if key == self._current_key:
             return
 
-        self._current_item = item
+        self._current_key = key
         self._hide_tip()
 
-        if not item or item not in self._texts:
+        if not item or key not in self._cell_texts:
             return
 
         x = event.x_root + 16
         y = event.y_root + 12
-        self._show_tip(x, y, self._texts[item])
+        self._show_tip(x, y, self._cell_texts[key])
 
     def _show_tip(self, x: int, y: int, text: str) -> None:
         tip = tk.Toplevel(self._tree)
@@ -101,6 +106,7 @@ class _TreeTooltip:
         if self._tip is not None:
             self._tip.destroy()
             self._tip = None
+        self._current_key = None
 class MiningAnalyticsPlugin:
     """Encapsulates plugin state and behaviour for EDMC."""
 
@@ -141,6 +147,8 @@ class MiningAnalyticsPlugin:
         self._clear_button: Optional[ttk.Button] = None
         self._hist_windows: dict[str, tk.Toplevel] = {}
         self._cargo_item_to_commodity: dict[str, str] = {}
+        self._range_link_labels: dict[str, tk.Label] = {}
+        self._range_link_font: Optional[tkfont.Font] = None
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
@@ -188,6 +196,12 @@ class MiningAnalyticsPlugin:
         self._cargo_tooltip = _TreeTooltip(self._cargo_tree)
         self._cargo_tree.bind("<ButtonRelease-1>", self._on_cargo_click, add="+")
         self._cargo_tree.bind("<Motion>", self._on_cargo_motion, add="+")
+        self._cargo_tree.bind("<Configure>", lambda _e: self._render_range_links(), add="+")
+        self._cargo_tree.bind("<ButtonRelease-3>", lambda _e: self._render_range_links(), add="+")
+        self._cargo_tree.bind("<KeyRelease>", lambda _e: self._render_range_links(), add="+")
+        self._cargo_tree.bind("<MouseWheel>", lambda _e: self._render_range_links(), add="+")
+        self._cargo_tree.bind("<ButtonRelease-4>", lambda _e: self._render_range_links(), add="+")
+        self._cargo_tree.bind("<ButtonRelease-5>", lambda _e: self._render_range_links(), add="+")
 
         self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
         ttk.Label(frame, textvariable=self._total_tph_var, anchor="w").grid(
@@ -487,8 +501,61 @@ class MiningAnalyticsPlugin:
         self._reset_mining_metrics()
         self._refresh_status_ui()
 
+    def _clear_range_link_labels(self) -> None:
+        for label in self._range_link_labels.values():
+            if label.winfo_exists():
+                label.destroy()
+        self._range_link_labels.clear()
+
+    def _render_range_links(self) -> None:
+        tree = self._cargo_tree
+        if not tree or not getattr(tree, "winfo_exists", lambda: False)():
+            return
+
+        self._clear_range_link_labels()
+
+        style = ttk.Style(tree)
+        background = style.lookup("Treeview", "background") or tree.cget("background") or "SystemWindow"
+        if not background or background in {"", "SystemWindow"}:
+            background = style.lookup("Treeview", "fieldbackground") or tree.cget("background") or "SystemWindow"
+        base_font = tree.cget("font")
+        if not self._range_link_font:
+            try:
+                font = tkfont.nametofont(base_font)
+                self._range_link_font = tkfont.Font(font=font)
+                self._range_link_font.configure(underline=True)
+            except tk.TclError:
+                self._range_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
+
+        pending = False
+        for item, commodity in self._cargo_item_to_commodity.items():
+            range_label = self._format_range_label(commodity)
+            if not range_label:
+                continue
+            bbox = tree.bbox(item, "#4")
+            if not bbox:
+                pending = True
+                continue
+            x, y, width, height = bbox
+            label = tk.Label(
+                tree,
+                text=range_label,
+                fg="#1a4bf6",
+                bg=background,
+                cursor="hand2",
+                font=self._range_link_font,
+                anchor="center",
+            )
+            label.place(x=x + 2, y=y + 1, width=width - 4, height=height - 2)
+            label.bind("<Button-1>", lambda _event, commodity=commodity: self._open_histogram_window(commodity))
+            self._range_link_labels[item] = label
+
+        if pending:
+            tree.after(16, self._render_range_links)
+
     def _reset_mining_metrics(self) -> None:
         self._close_histogram_windows()
+        self._clear_range_link_labels()
         self._cargo_item_to_commodity.clear()
         self._mining_start = None
         self._prospected_count = 0
@@ -954,6 +1021,7 @@ class MiningAnalyticsPlugin:
             if self._cargo_tooltip:
                 self._cargo_tooltip.clear()
             self._cargo_item_to_commodity = {}
+            self._clear_range_link_labels()
 
             rows = sorted(
                 name
@@ -965,7 +1033,7 @@ class MiningAnalyticsPlugin:
                     "", "end", values=("No cargo changes yet", "", "", "", "")
                 )
                 if self._cargo_tooltip:
-                    self._cargo_tooltip.set_item_text(item, None)
+                    self._cargo_tooltip.set_cell_text(item, "#5", None)
             else:
                 for name in rows:
                     range_label = self._format_range_label(name)
@@ -982,12 +1050,12 @@ class MiningAnalyticsPlugin:
                     )
                     self._cargo_item_to_commodity[item] = name
                     if self._cargo_tooltip:
-                        self._cargo_tooltip.set_item_text(
-                            item, self._make_tph_tooltip(name)
+                        self._cargo_tooltip.set_cell_text(
+                            item,
+                            "#5",
+                            self._make_tph_tooltip(name),
                         )
-                    if range_label:
-                        cargo_tree.item(item, tags=("range_link",))
-                cargo_tree.tag_configure("range_link", foreground="#1a4bf6")
+                cargo_tree.after(0, self._render_range_links)
 
         materials_tree = self._materials_tree
         if materials_tree and getattr(materials_tree, "winfo_exists", lambda: False)():
