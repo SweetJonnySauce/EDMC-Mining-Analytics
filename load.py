@@ -110,10 +110,8 @@ class MiningAnalyticsPlugin:
         self._status_var: Optional[tk.StringVar] = None
         self._ui_frame: Optional[tk.Widget] = None
         self._table_frame: Optional[tk.Widget] = None
-        self._hist_frame: Optional[tk.Widget] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_tree: Optional[ttk.Treeview] = None
-        self._hist_tree: Optional[ttk.Treeview] = None
         self._mining_start: Optional[datetime] = None
         self._prospected_count = 0
         self._already_mined_count = 0
@@ -141,6 +139,8 @@ class MiningAnalyticsPlugin:
         self._cargo_tooltip: Optional[_TreeTooltip] = None
         self._total_tph_var: Optional[tk.StringVar] = None
         self._clear_button: Optional[ttk.Button] = None
+        self._hist_windows: dict[str, tk.Toplevel] = {}
+        self._cargo_item_to_commodity: dict[str, str] = {}
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
@@ -169,7 +169,7 @@ class MiningAnalyticsPlugin:
         self._table_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
         self._cargo_tree = ttk.Treeview(
             self._table_frame,
-            columns=("commodity", "added", "total", "tph"),
+            columns=("commodity", "added", "total", "range", "tph"),
             show="headings",
             height=5,
             selectmode="none",
@@ -177,13 +177,17 @@ class MiningAnalyticsPlugin:
         self._cargo_tree.heading("commodity", text="Commodity")
         self._cargo_tree.heading("added", text="Added")
         self._cargo_tree.heading("total", text="Total")
+        self._cargo_tree.heading("range", text="Range")
         self._cargo_tree.heading("tph", text="Tons/hr")
         self._cargo_tree.column("commodity", anchor="w", stretch=True, width=160)
         self._cargo_tree.column("added", anchor="center", stretch=False, width=70)
         self._cargo_tree.column("total", anchor="center", stretch=False, width=70)
+        self._cargo_tree.column("range", anchor="center", stretch=False, width=120)
         self._cargo_tree.column("tph", anchor="center", stretch=False, width=80)
         self._cargo_tree.pack(fill="both", expand=True)
         self._cargo_tooltip = _TreeTooltip(self._cargo_tree)
+        self._cargo_tree.bind("<ButtonRelease-1>", self._on_cargo_click, add="+")
+        self._cargo_tree.bind("<Motion>", self._on_cargo_motion, add="+")
 
         self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
         ttk.Label(frame, textvariable=self._total_tph_var, anchor="w").grid(
@@ -211,30 +215,10 @@ class MiningAnalyticsPlugin:
         self._materials_tree.column("quantity", anchor="center", stretch=False, width=80)
         self._materials_tree.pack(fill="both", expand=True)
 
-        ttk.Label(frame, text="Prospecting Histogram", font=(None, 9, "bold"), anchor="w").grid(
-            row=6, column=0, sticky="w", padx=4
-        )
-        self._hist_frame = ttk.Frame(frame)
-        self._hist_frame.grid(row=7, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 4))
-        self._hist_tree = ttk.Treeview(
-            self._hist_frame,
-            columns=("material", "bin", "count"),
-            show="headings",
-            height=6,
-            selectmode="none",
-        )
-        self._hist_tree.heading("material", text="Material")
-        self._hist_tree.heading("bin", text="Bin")
-        self._hist_tree.heading("count", text="Count")
-        self._hist_tree.column("material", anchor="w", stretch=True, width=160)
-        self._hist_tree.column("bin", anchor="center", stretch=False, width=90)
-        self._hist_tree.column("count", anchor="center", stretch=False, width=70)
-        self._hist_tree.pack(fill="both", expand=True)
-
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=0)
         frame.columnconfigure(2, weight=0)
-        frame.rowconfigure(7, weight=1)
+        frame.rowconfigure(5, weight=1)
 
         self._apply_ui_state(self._status_var.get())
 
@@ -276,14 +260,13 @@ class MiningAnalyticsPlugin:
         self._is_mining = False
         self._ui_frame = None
         self._table_frame = None
-        self._hist_frame = None
         self._cargo_tree = None
         self._materials_tree = None
-        self._hist_tree = None
         self._cargo_tooltip = None
         self._total_tph_var = None
         self._clear_button = None
         self._reset_mining_metrics()
+        self._cargo_item_to_commodity = {}
         self._refresh_status_ui()
 
     # ------------------------------------------------------------------
@@ -369,8 +352,6 @@ class MiningAnalyticsPlugin:
             self._commodity_start_times.clear()
             self._prospect_content_counts.clear()
             self._materials_collected.clear()
-        else:
-            self._reset_mining_metrics()
 
         state_text = "active" if active else "inactive"
         _log.info("Mining state changed to %s (%s)", state_text, reason)
@@ -507,6 +488,8 @@ class MiningAnalyticsPlugin:
         self._refresh_status_ui()
 
     def _reset_mining_metrics(self) -> None:
+        self._close_histogram_windows()
+        self._cargo_item_to_commodity.clear()
         self._mining_start = None
         self._prospected_count = 0
         self._already_mined_count = 0
@@ -652,6 +635,46 @@ class MiningAnalyticsPlugin:
         duration = (datetime.now(timezone.utc) - self._ensure_aware(start)).total_seconds()
         return f"{amount}t over {self._format_duration(duration)}"
 
+    def _on_cargo_click(self, event: tk.Event) -> None:  # type: ignore[override]
+        if not self._cargo_tree:
+            return
+        column = self._cargo_tree.identify_column(event.x)
+        if column != "#4":
+            return
+        item = self._cargo_tree.identify_row(event.y)
+        commodity = self._cargo_item_to_commodity.get(item)
+        if not commodity:
+            return
+        if not self._format_range_label(commodity):
+            return
+        self._open_histogram_window(commodity)
+
+    def _on_cargo_motion(self, event: tk.Event) -> None:  # type: ignore[override]
+        if not self._cargo_tree:
+            return
+        column = self._cargo_tree.identify_column(event.x)
+        item = self._cargo_tree.identify_row(event.y)
+        commodity = self._cargo_item_to_commodity.get(item)
+        if column == "#4" and commodity and self._format_range_label(commodity):
+            self._cargo_tree.configure(cursor="hand2")
+        else:
+            self._cargo_tree.configure(cursor="")
+
+    def _format_range_label(self, commodity: str) -> str:
+        if commodity not in self._harvested_commodities:
+            return ""
+        samples = self._prospected_samples.get(commodity)
+        if not samples:
+            return ""
+        cleaned = [value for value in samples if isinstance(value, (int, float))]
+        if not cleaned:
+            return ""
+        min_val = min(cleaned)
+        max_val = max(cleaned)
+        if abs(max_val - min_val) < 1e-6:
+            return f"{min_val:.1f}%"
+        return f"{min_val:.1f}%-{max_val:.1f}%"
+
     def _compute_total_tph(self) -> Optional[float]:
         if not self._mining_start:
             return None
@@ -795,6 +818,84 @@ class MiningAnalyticsPlugin:
             data[self._format_cargo_name(commodity)] = round(rate, 3)
         return data
 
+    def _open_histogram_window(self, commodity: str) -> None:
+        counter = self._prospected_histogram.get(commodity)
+        if not counter:
+            return
+
+        window = self._hist_windows.get(commodity)
+        if window and window.winfo_exists():
+            window.lift()
+            window.focus_set()
+            return
+
+        parent = self._ui_frame or self._cargo_tree
+        window = tk.Toplevel(parent)
+        window.title(f"{self._format_cargo_name(commodity)} Yield Distribution")
+        window.geometry("420x300")
+        window.resizable(False, False)
+
+        canvas = tk.Canvas(window, background="white", width=420, height=300)
+        canvas.pack(fill="both", expand=True)
+        canvas.bind(
+            "<Configure>",
+            lambda event, c=commodity, cv=canvas: self._draw_histogram(cv, c),
+        )
+        self._draw_histogram(canvas, commodity)
+
+        window.protocol("WM_DELETE_WINDOW", lambda c=commodity: self._close_histogram_window(c))
+        self._hist_windows[commodity] = window
+
+    def _draw_histogram(self, canvas: tk.Canvas, commodity: str, counter: Optional[Counter[int]] = None) -> None:
+        canvas.delete("all")
+        if counter is None:
+            counter = self._prospected_histogram.get(commodity, Counter())
+        items = [(bin_index, counter[bin_index]) for bin_index in sorted(counter) if counter[bin_index] > 0]
+        width = int(canvas.winfo_width()) or 420
+        height = int(canvas.winfo_height()) or 300
+        padding_x = 40
+        padding_y = 40
+
+        if not items:
+            canvas.create_text(
+                width // 2,
+                height // 2,
+                text="No prospecting data",
+                fill="#555555",
+                font=(None, 12),
+            )
+            return
+
+        bar_area_width = width - padding_x * 2
+        bar_area_height = height - padding_y * 2
+        max_count = max(count for _, count in items)
+        if max_count <= 0:
+            max_count = 1
+
+        bar_width = bar_area_width / max(1, len(items))
+        canvas.create_line(padding_x, height - padding_y, width - padding_x, height - padding_y)
+        canvas.create_line(padding_x, height - padding_y, padding_x, padding_y)
+
+        for index, (bin_index, count) in enumerate(items):
+            bar_height = (count / max_count) * (bar_area_height - 20)
+            x0 = padding_x + index * bar_width + 8
+            x1 = x0 + bar_width - 16
+            y1 = height - padding_y
+            y0 = y1 - bar_height
+            canvas.create_rectangle(x0, y0, x1, y1, fill="#4c8eda", outline="#224f84")
+            canvas.create_text((x0 + x1) / 2, y0 - 10, text=str(count), fill="#333333", font=(None, 10))
+            canvas.create_text((x0 + x1) / 2, y1 + 12, text=self._format_bin_label(bin_index), fill="#333333", font=(None, 9))
+
+    def _close_histogram_window(self, commodity: str) -> None:
+        window = self._hist_windows.pop(commodity, None)
+        if window and window.winfo_exists():
+            window.destroy()
+
+    def _close_histogram_windows(self) -> None:
+        for commodity in list(self._hist_windows):
+            self._close_histogram_window(commodity)
+        self._hist_windows.clear()
+
     def _make_prospect_key(self, entry: dict) -> Optional[Tuple[str, Tuple[Tuple[str, float], ...]]]:
         materials = entry.get("Materials")
         if not isinstance(materials, list):
@@ -852,16 +953,22 @@ class MiningAnalyticsPlugin:
             cargo_tree.delete(*cargo_tree.get_children())
             if self._cargo_tooltip:
                 self._cargo_tooltip.clear()
+            self._cargo_item_to_commodity = {}
 
-            rows = sorted(set(self._cargo_totals) | set(self._cargo_additions))
+            rows = sorted(
+                name
+                for name in set(self._cargo_totals) | set(self._cargo_additions)
+                if self._cargo_additions.get(name, 0) > 0
+            )
             if not rows:
                 item = cargo_tree.insert(
-                    "", "end", values=("No cargo changes yet", "", "", "")
+                    "", "end", values=("No cargo changes yet", "", "", "", "")
                 )
                 if self._cargo_tooltip:
                     self._cargo_tooltip.set_item_text(item, None)
             else:
                 for name in rows:
+                    range_label = self._format_range_label(name)
                     item = cargo_tree.insert(
                         "",
                         "end",
@@ -869,13 +976,18 @@ class MiningAnalyticsPlugin:
                             self._format_cargo_name(name),
                             self._cargo_additions.get(name, 0),
                             self._cargo_totals.get(name, 0),
+                            range_label,
                             self._format_tph(name),
                         ),
                     )
+                    self._cargo_item_to_commodity[item] = name
                     if self._cargo_tooltip:
                         self._cargo_tooltip.set_item_text(
                             item, self._make_tph_tooltip(name)
                         )
+                    if range_label:
+                        cargo_tree.item(item, tags=("range_link",))
+                cargo_tree.tag_configure("range_link", foreground="#1a4bf6")
 
         materials_tree = self._materials_tree
         if materials_tree and getattr(materials_tree, "winfo_exists", lambda: False)():
@@ -889,25 +1001,6 @@ class MiningAnalyticsPlugin:
                         "",
                         "end",
                         values=(self._format_cargo_name(name), self._materials_collected[name]),
-                    )
-
-        hist_tree = self._hist_tree
-        if hist_tree and getattr(hist_tree, "winfo_exists", lambda: False)():
-            hist_tree.delete(*hist_tree.get_children())
-
-            rows = list(self._get_histogram_rows())
-            if not rows:
-                hist_tree.insert(
-                    "",
-                    "end",
-                    values=("No prospecting data for mined cargo yet", "", ""),
-                )
-            else:
-                for material, bin_label, count in rows:
-                    hist_tree.insert(
-                        "",
-                        "end",
-                        values=(self._format_cargo_name(material), bin_label, count),
                     )
 
         if self._total_tph_var is not None:
