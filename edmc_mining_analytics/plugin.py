@@ -79,6 +79,7 @@ class MiningAnalyticsPlugin:
         self._cargo_totals: dict[str, int] = {}
         self._limpets_remaining: Optional[int] = None
         self._limpets_start: Optional[int] = None
+        self._limpets_start_initialized = False
         self._collection_drones_launched = 0
         self._prospector_launched_count = 0  # already present, but ensure it's here for clarity
         self._abandoned_limpets = 0
@@ -365,15 +366,12 @@ class MiningAnalyticsPlugin:
             self._already_mined_count = 0
             self._cargo_additions = {}
             self._cargo_totals = {}
-            self._limpets_remaining = None
-            self._collection_drones_launched = 0
-            self._abandoned_limpets = 0
+            self._reset_limpet_counters()
             self._prospected_seen.clear()
             self._prospected_samples.clear()
             self._prospected_histogram.clear()
             self._duplicate_prospected = 0
             self._harvested_commodities.clear()
-            self._prospector_launched_count = 0
             self._commodity_start_times.clear()
             self._prospect_content_counts.clear()
             self._materials_collected.clear()
@@ -653,22 +651,27 @@ class MiningAnalyticsPlugin:
         self._already_mined_count = 0
         self._cargo_additions = {}
         self._cargo_totals = {}
-        self._limpets_remaining = None
-        self._collection_drones_launched = 0
-        self._abandoned_limpets = 0
+        self._reset_limpet_counters()
         self._last_event_was_drone_launch = False
         self._prospected_seen.clear()
         self._prospected_samples.clear()
         self._prospected_histogram.clear()
         self._duplicate_prospected = 0
         self._harvested_commodities.clear()
-        self._prospector_launched_count = 0
         self._commodity_start_times.clear()
         self._prospect_content_counts.clear()
         self._materials_collected.clear()
         self._last_cargo_counts.clear()
         self._user_expanded = False
         self._mining_end = None
+
+    def _reset_limpet_counters(self) -> None:
+        self._limpets_remaining = None
+        self._limpets_start = 0
+        self._limpets_start_initialized = False
+        self._collection_drones_launched = 0
+        self._prospector_launched_count = 0
+        self._abandoned_limpets = 0
 
     @staticmethod
     def _parse_timestamp(value: Optional[str]) -> Optional[datetime]:
@@ -720,15 +723,13 @@ class MiningAnalyticsPlugin:
 
         previous_limpets = self._limpets_remaining
         if limpets is not None:
-            if self._limpets_start is None:
+            if not self._limpets_start_initialized:
                 self._limpets_start = limpets
+                self._limpets_start_initialized = True
             self._limpets_remaining = limpets
 
         if not self._last_cargo_counts:
             self._last_cargo_counts = dict(cargo_counts)
-            # On first cargo event, set starting limpets if not already set
-            if self._limpets_start is None and limpets is not None:
-                self._limpets_start = limpets
             return
 
         previous_counts = self._last_cargo_counts
@@ -755,9 +756,9 @@ class MiningAnalyticsPlugin:
 
         # Calculate abandoned limpets: starting - current - launched (prospector + collection)
         if self._limpets_start is not None and self._limpets_remaining is not None:
-            launched = self._prospector_launched_count + self._collection_drones_launched
-            # Treat launched limpets as contributing to abandonment: add launched to the delta
-            abandoned = self._limpets_start - self._limpets_remaining + launched
+            launched = self._prospector_launched_count + self._collection_drones_launched - 1 #factor in initial propsector that starts mining. 
+            # Treat launched limpets as contributing to abandonment: subtract launched from the delta
+            abandoned = self._limpets_start - self._limpets_remaining - launched
             # Debug log with component values
             _log.debug(
                 "Abandoned limpets calc: L_start=%s, L_current=%s, P=%s, C=%s, raw=%s",
