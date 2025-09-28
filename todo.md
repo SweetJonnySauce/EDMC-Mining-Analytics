@@ -5,6 +5,7 @@
 - Fix the prospector lost logic.
 - Subtract baseline qty from total mined.
 - Record where you are mining
+- update tons per hour on timer, not event
 
 ## Should haves
 - % of asteroids where the commodity was present
