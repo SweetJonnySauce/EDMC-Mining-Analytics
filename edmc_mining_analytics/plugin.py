@@ -103,6 +103,7 @@ class MiningAnalyticsPlugin:
         self._content_widgets: list[tk.Widget] = []
         self._content_collapsed = False
         self._user_expanded = False
+        self._mining_location: Optional[str] = None
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
@@ -298,7 +299,8 @@ class MiningAnalyticsPlugin:
                 dtype = drone_type.lower()
                 if dtype == "prospector":
                     if not self._is_mining:
-                        self._update_mining_state(True, "Prospector drone launched", entry.get("timestamp"))
+                        # Pass shared_state to allow detection of current Body/System
+                        self._update_mining_state(True, "Prospector drone launched", entry.get("timestamp"), state=shared_state)
                     self._prospector_launched_count += 1
                     self._refresh_status_ui()
                 elif dtype == "collection" and self._is_mining:
@@ -312,7 +314,7 @@ class MiningAnalyticsPlugin:
             elif event == "Cargo" and self._is_mining:
                 self._process_cargo(entry)
             elif event == "SupercruiseEntry" and self._is_mining:
-                self._update_mining_state(False, "Entered Supercruise", entry.get("timestamp"))
+                self._update_mining_state(False, "Entered Supercruise", entry.get("timestamp"), state=shared_state)
             elif event == "MaterialCollected" and self._is_mining:
                 self._register_material_collected(entry)
 
@@ -343,7 +345,7 @@ class MiningAnalyticsPlugin:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-    def _update_mining_state(self, active: bool, reason: str, timestamp: Optional[str]) -> None:
+    def _update_mining_state(self, active: bool, reason: str, timestamp: Optional[str], state: Optional[dict] = None) -> None:
         if self._is_mining == active:
             return
 
@@ -369,6 +371,12 @@ class MiningAnalyticsPlugin:
             self._materials_collected.clear()
             self._last_cargo_counts.clear()
             self._user_expanded = True
+            # Attempt to detect the body or system we're mining at the moment mining starts
+            try:
+                loc = self._detect_current_location(state)
+                self._mining_location = loc
+            except Exception:
+                self._mining_location = None
         else:
             self._is_mining = False
             self._mining_end = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
@@ -378,7 +386,13 @@ class MiningAnalyticsPlugin:
         self._refresh_status_ui()
 
     def _refresh_status_ui(self) -> None:
-        status_text = "You're mining!" if self._is_mining else "Not mining"
+        if self._is_mining:
+            if getattr(self, "_mining_location", None):
+                status_text = f"You're mining {self._mining_location}"
+            else:
+                status_text = "You're mining!"
+        else:
+            status_text = "Not mining"
         summary_text = "\n".join(self._status_summary_lines())
 
         if self._ui_frame and getattr(self._ui_frame, "winfo_exists", lambda: False)():
@@ -418,6 +432,30 @@ class MiningAnalyticsPlugin:
         if not (self._cargo_totals or self._cargo_additions):
             lines.append("No cargo data yet")
         return lines
+
+    def _detect_current_location(self, state: Optional[dict]) -> Optional[str]:
+        """Return a string describing the current mining location.
+
+        Priority: Body name -> System name -> None
+        Accepts the `state` dict provided by EDMC (may be None).
+        """
+        if state:
+            # Prefer explicit Body name
+            try:
+                body = state.get("Body")
+                if body:
+                    return str(body)
+            except Exception:
+                pass
+            try:
+                system = state.get("System") or state.get("SystemName") or state.get("StarSystem")
+                if system:
+                    return str(system)
+            except Exception:
+                pass
+
+        # Last resort: None
+        return None
 
     def _register_prospected_asteroid(self, entry: dict) -> None:
         key = self._make_prospect_key(entry)
