@@ -18,6 +18,8 @@ class TreeTooltip:
         self._tree = tree
         self._tip: Optional[tk.Toplevel] = None
         self._cell_texts: dict[Tuple[str, str], str] = {}
+        # heading_texts maps column id (eg '#2') to tooltip text
+        self._heading_texts: dict[str, str] = {}
         self._current_key: Optional[Tuple[str, str]] = None
 
         tree.bind("<Motion>", self._on_motion, add="+")
@@ -29,6 +31,22 @@ class TreeTooltip:
         self._current_key = None
         self._hide_tip()
 
+    def set_heading_tooltip(self, column_name: str, text: Optional[str]) -> None:
+        """Register a tooltip for a heading by column name (the name used in tree['columns']).
+
+        If text is None, remove any existing tooltip for that heading.
+        """
+        columns = tuple(self._tree.cget("columns"))
+        try:
+            idx = columns.index(column_name)
+        except ValueError:
+            return
+        col_id = f"#{idx+1}"
+        if text:
+            self._heading_texts[col_id] = text
+        else:
+            self._heading_texts.pop(col_id, None)
+
     def set_cell_text(self, item: str, column: str, text: Optional[str]) -> None:
         key = (item, column)
         if text:
@@ -39,18 +57,31 @@ class TreeTooltip:
             self._hide_tip()
 
     def _on_motion(self, event: tk.Event) -> None:  # type: ignore[override]
-        item = self._tree.identify_row(event.y)
+        region = self._tree.identify_region(event.x, event.y)
         column = self._tree.identify_column(event.x)
-        key = (item or "", column or "")
 
+        # If over a heading, handle heading tooltips
+        if region == "heading":
+            key = ("", column or "")
+            if key == self._current_key:
+                return
+            self._hide_tip()
+            heading_text = self._heading_texts.get(column)
+            if heading_text:
+                self._current_key = key
+                x = event.x_root + 16
+                y = event.y_root + 12
+                self._show_tip(x, y, heading_text)
+            return
+
+        # Otherwise handle cell tooltips
+        item = self._tree.identify_row(event.y)
+        key = (item or "", column or "")
         if key == self._current_key:
             return
-
         self._hide_tip()
-
         if not item or key not in self._cell_texts:
             return
-
         self._current_key = key
         x = event.x_root + 16
         y = event.y_root + 12
@@ -60,10 +91,15 @@ class TreeTooltip:
         tip = tk.Toplevel(self._tree)
         tip.wm_overrideredirect(True)
         tip.wm_geometry(f"+{x}+{y}")
-        label = ttk.Label(
+        # Theme-aware colors: prefer ttk style lookups and fall back to sensible defaults
+        style = ttk.Style(self._tree)
+        bg = style.lookup("TLabel", "background") or style.lookup("TFrame", "background") or self._tree.cget("background") or "#ffffe0"
+        fg = style.lookup("TLabel", "foreground") or "#000000"
+        label = tk.Label(
             tip,
             text=text,
-            background="#ffffe0",
+            background=bg,
+            foreground=fg,
             relief="solid",
             borderwidth=1,
             justify="left",

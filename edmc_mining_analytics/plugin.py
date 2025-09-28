@@ -146,13 +146,7 @@ class MiningAnalyticsPlugin:
         self._cargo_tree.heading("range", text="%Range", anchor="center")
         self._cargo_tree.heading("tph", text="Tons/hr", anchor="center")
 
-        # Add tooltips for column headers
-        if self._cargo_tooltip:
-            self._cargo_tooltip.set_heading_tooltip("present", "Number of asteroids prospected where this commodity is present.")
-            self._cargo_tooltip.set_heading_tooltip("percent", "Percentage of asteroids prospected where this commodity is present.")
-            self._cargo_tooltip.set_heading_tooltip("total", "Total number of tons collected.")
-            self._cargo_tooltip.set_heading_tooltip("range", "Min/Max percentages of this commodity on an asteroid when found.")
-            self._cargo_tooltip.set_heading_tooltip("tph", "Projected tons collected per hour of mining.")
+        # Header tooltips will be registered after the TreeTooltip instance is created
         for col in ("commodity", "present", "percent", "total", "range", "tph"):
             self._cargo_tree.column(col, anchor="center", stretch=True, width=60)
         self._cargo_tree.column("commodity", width=110)
@@ -161,6 +155,13 @@ class MiningAnalyticsPlugin:
         style = ttk.Style()
         style.configure("Treeview.Heading", font=header_font)
         self._cargo_tooltip = TreeTooltip(self._cargo_tree)
+        # Add tooltips for column headers
+        if self._cargo_tooltip:
+            self._cargo_tooltip.set_heading_tooltip("present", "Number of asteroids prospected where this commodity is present.")
+            self._cargo_tooltip.set_heading_tooltip("percent", "Percentage of asteroids prospected where this commodity is present.")
+            self._cargo_tooltip.set_heading_tooltip("total", "Total number of tons collected.")
+            self._cargo_tooltip.set_heading_tooltip("range", "Min/Max percentages of this commodity on an asteroid when found.")
+            self._cargo_tooltip.set_heading_tooltip("tph", "Projected tons collected per hour of mining.")
         self._cargo_tree.bind("<ButtonRelease-1>", self._on_cargo_click, add="+")
         self._cargo_tree.bind("<Motion>", self._on_cargo_motion, add="+")
         self._cargo_tree.bind("<Configure>", lambda _e: self._render_range_links(), add="+")
@@ -493,6 +494,41 @@ class MiningAnalyticsPlugin:
                 label.destroy()
         self._range_link_labels.clear()
 
+    # Theme helpers: prefer theme lookups where possible so widgets follow EDMC's theme
+    def _theme_bg_for(self, widget: tk.Widget) -> Optional[str]:
+        """Return a theme-appropriate background color for the given widget.
+
+        This uses ttk.Style lookups and falls back to the widget's current bg.
+        """
+        style = ttk.Style(widget)
+        # Prefer treeview fieldbackground (used by tree cells), then frame background
+        for style_name, option in (("Treeview", "fieldbackground"), ("TFrame", "background"), ("TLabel", "background")):
+            try:
+                val = style.lookup(style_name, option)
+            except Exception:
+                val = None
+            if val:
+                return val
+        try:
+            return widget.cget("background")
+        except Exception:
+            return None
+
+    def _theme_fg_for(self, widget: tk.Widget) -> Optional[str]:
+        """Return a theme-appropriate foreground/text color for the given widget.
+
+        Uses ttk style lookups and falls back to None if not found so callers can choose a safe default.
+        """
+        style = ttk.Style(widget)
+        for style_name, option in (("Treeview", "foreground"), ("TLabel", "foreground"), ("TButton", "foreground")):
+            try:
+                val = style.lookup(style_name, option)
+            except Exception:
+                val = None
+            if val:
+                return val
+        return None
+
     def _render_range_links(self) -> None:
         tree = self._cargo_tree
         if not tree or not getattr(tree, "winfo_exists", lambda: False)() or self._content_collapsed:
@@ -501,9 +537,8 @@ class MiningAnalyticsPlugin:
         self._clear_range_link_labels()
 
         style = ttk.Style(tree)
-        background = style.lookup("Treeview", "background") or tree.cget("background") or "SystemWindow"
-        if not background or background in {"", "SystemWindow"}:
-            background = style.lookup("Treeview", "fieldbackground") or tree.cget("background") or "SystemWindow"
+        # Use theme-aware background/foreground helpers to avoid hard-coded light colors
+        background = self._theme_bg_for(tree) or tree.cget("background")
         base_font = tree.cget("font")
         if not self._range_link_font:
             try:
@@ -524,15 +559,32 @@ class MiningAnalyticsPlugin:
                 pending = True
                 continue
             x, y, width, height = bbox
-            label = tk.Label(
+            # Use a themed ttk.Label so it follows EDMC/ttk themes. Configure a small style
+            link_fg = self._theme_fg_for(tree) or "#1a4bf6"
+            style = ttk.Style(tree)
+            style_name = "EDMC.RangeLink.TLabel"
+            # Configure style with theme-aware foreground/background where possible
+            try:
+                style.configure(style_name, foreground=link_fg)
+                # Some themes won't honor background on labels; configure if available
+                if background:
+                    style.configure(style_name, background=background)
+            except Exception:
+                pass
+
+            label = ttk.Label(
                 tree,
                 text=range_label,
-                fg="#1a4bf6",
-                bg=background,
+                style=style_name,
                 cursor="hand2",
-                font=self._range_link_font,
                 anchor="center",
             )
+            # Ensure font/underline matches previous behavior
+            try:
+                label.configure(font=self._range_link_font)
+            except Exception:
+                # Some ttk themes may ignore font on style; ignore failures
+                pass
             label.place(x=x + 2, y=y + 1, width=width - 4, height=height - 2)
             label.bind("<Button-1>", lambda _event, commodity=commodity: self._open_histogram_window(commodity))
             self._range_link_labels[item] = label
@@ -896,8 +948,12 @@ class MiningAnalyticsPlugin:
         window.title(f"{self._format_cargo_name(commodity)} Yield Distribution")
         window.geometry("420x300")
         window.resizable(False, False)
-
-        canvas = tk.Canvas(window, background="white", width=420, height=300)
+        # Use a themed frame as the container so the background follows the theme
+        container = ttk.Frame(window)
+        container.pack(fill="both", expand=True)
+        # Canvas will inherit the frame's background where possible; avoid forcing white
+        canvas_bg = self._theme_bg_for(container) or container.cget("background")
+        canvas = tk.Canvas(container, background=canvas_bg, width=420, height=300)
         canvas.pack(fill="both", expand=True)
         canvas.bind(
             "<Configure>",
@@ -918,12 +974,17 @@ class MiningAnalyticsPlugin:
         padding_x = 40
         padding_y = 40
 
+        style = ttk.Style(canvas)
+        text_fg = self._theme_fg_for(canvas) or "#555555"
+        bar_fill = style.lookup("TButton", "background") or "#4c8eda"
+        bar_outline = style.lookup("TButton", "foreground") or "#224f84"
+
         if not items:
             canvas.create_text(
                 width // 2,
                 height // 2,
                 text="No prospecting data",
-                fill="#555555",
+                fill=text_fg,
                 font=(None, 12),
             )
             return
@@ -944,9 +1005,9 @@ class MiningAnalyticsPlugin:
             x1 = x0 + bar_width - 16
             y1 = height - padding_y
             y0 = y1 - bar_height
-            canvas.create_rectangle(x0, y0, x1, y1, fill="#4c8eda", outline="#224f84")
-            canvas.create_text((x0 + x1) / 2, y0 - 10, text=str(count), fill="#333333", font=(None, 10))
-            canvas.create_text((x0 + x1) / 2, y1 + 12, text=self._format_bin_label(bin_index), fill="#333333", font=(None, 9))
+            canvas.create_rectangle(x0, y0, x1, y1, fill=bar_fill, outline=bar_outline)
+            canvas.create_text((x0 + x1) / 2, y0 - 10, text=str(count), fill=text_fg, font=(None, 10))
+            canvas.create_text((x0 + x1) / 2, y1 + 12, text=self._format_bin_label(bin_index), fill=text_fg, font=(None, 9))
 
     def _close_histogram_window(self, commodity: str) -> None:
         window = self._hist_windows.pop(commodity, None)
