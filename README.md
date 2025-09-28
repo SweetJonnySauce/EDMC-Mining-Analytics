@@ -2,6 +2,8 @@
 
 EDMC-Mining-Analytics is a plugin for Elite Dangerous Market Connector (EDMC) that tracks and analyzes your mining activities. It provides an in-game UI for monitoring mining statistics, including commodities collected, prospecting yields, limpets usage, and more. The plugin offers visualizations such as histograms for asteroid prospecting data and tons-per-hour rates, and allows you to customize data binning and update intervals.
 
+This is at best an alpha script. Use at your own peril.
+
 ## Features
 
 - Tracks mining sessions, prospecting, harvested commodities and materials.
