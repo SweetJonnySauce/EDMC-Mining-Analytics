@@ -381,9 +381,7 @@ class MiningAnalyticsPlugin:
 
     @property
     def _idle_status_text(self) -> str:
-        parts = ["Not mining"]
-        parts.extend(self._status_summary_lines())
-        return "\n".join(parts)
+        return "Not mining"
 
     def _status_summary_lines(self) -> list[str]:
         lines = []
@@ -1104,40 +1102,25 @@ class MiningAnalyticsPlugin:
         if not self._content_widgets:
             return
 
-        has_data = self._has_data()
-
-        if self._is_mining:
-            self._user_expanded = True
-            desired_visible = True
-        else:
-            if not has_data:
-                self._user_expanded = False
-            desired_visible = has_data and self._user_expanded
-
-        if desired_visible and self._content_collapsed:
-            for widget in self._content_widgets:
-                if widget and widget.winfo_exists():
-                    widget.grid()
-            self._content_collapsed = False
-            self._ui_frame.after(0, self._render_range_links)
-        elif not desired_visible and not self._content_collapsed:
-            self._clear_range_link_labels()
+        # Always collapse all content and header widgets when not mining
+        if not self._is_mining:
             for widget in self._content_widgets:
                 if widget and widget.winfo_exists():
                     widget.grid_remove()
             self._content_collapsed = True
-
-        if self._expand_button and self._expand_button.winfo_exists():
-            if self._is_mining or not has_data:
+            if self._expand_button and self._expand_button.winfo_exists():
                 self._expand_button.grid_remove()
-            else:
-                self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
-                self._expand_button.configure(
-                    text="Hide data" if self._user_expanded else "Show data"
-                )
-
-        if self._content_collapsed:
             self._clear_range_link_labels()
+            return
+
+        # If mining, show all content widgets
+        for widget in self._content_widgets:
+            if widget and widget.winfo_exists():
+                widget.grid()
+        self._content_collapsed = False
+        if self._expand_button and self._expand_button.winfo_exists():
+            self._expand_button.grid_remove()
+        self._ui_frame.after(0, self._render_range_links)
 
     def _on_toggle_expand(self) -> None:
         if self._is_mining:
