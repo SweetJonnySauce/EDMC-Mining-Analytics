@@ -1,6 +1,6 @@
 # EDMC-Mining-Analytics
 
-EDMC-Mining-Analytics is a plugin for Elite Dangerous Market Connector (EDMC) that tracks and analyzes your mining activities. It provides an in-game UI for monitoring mining statistics, including commodities collected, prospecting yields, limpets usage, and more. The plugin offers visualizations such as histograms for asteroid prospecting data and tons-per-hour rates, and allows you to customize data binning and update intervals.
+EDMC-Mining-Analytics is a plugin for Elite Dangerous Market Connector (EDMC) that tracks and analyzes your mining activities. It provides an in-game UI for monitoring mining statistics, including com[...]
 
 This is at best an alpha script. Use at your own peril.
 
@@ -21,7 +21,8 @@ This is at best an alpha script. Use at your own peril.
    - Python 3.7+ (EDMC includes its own Python environment).
    
 2. **Download the Plugin**:  
-   - Download `load.py` from the [repository](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics) or from a release.
+   - Download **all files** from the [repository](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics) or from a release.  
+     _Note: Do **not** just download `load.py`. The plugin now requires all files in the repository to function properly._
 
 3. **Install the Plugin**:  
    - Create a folder named `EDMC-Mining-Analytics` in EDMC's `plugins` directory:
@@ -29,7 +30,7 @@ This is at best an alpha script. Use at your own peril.
        Usually found at `%LOCALAPPDATA%\EDMarketConnector\plugins`
      - On Mac:  
        `~/Library/Application Support/EDMarketConnector/plugins`
-   - Place the downloaded `load.py` file into the `EDMC-Mining-Analytics` folder.
+   - Place **all the downloaded files** into the `EDMC-Mining-Analytics` folder.
 
 4. **Restart EDMC**  
    - The plugin will appear in EDMC's Plugins menu.
