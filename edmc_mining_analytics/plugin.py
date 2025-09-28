@@ -66,7 +66,9 @@ class MiningAnalyticsPlugin:
         self._cargo_additions: dict[str, int] = {}
         self._cargo_totals: dict[str, int] = {}
         self._limpets_remaining: Optional[int] = None
+        self._limpets_start: Optional[int] = None
         self._collection_drones_launched = 0
+        self._prospector_launched_count = 0  # already present, but ensure it's here for clarity
         self._abandoned_limpets = 0
         self._last_event_was_drone_launch = False
         self._harvested_commodities: set[str] = set()
@@ -602,10 +604,15 @@ class MiningAnalyticsPlugin:
 
         previous_limpets = self._limpets_remaining
         if limpets is not None:
+            if self._limpets_start is None:
+                self._limpets_start = limpets
             self._limpets_remaining = limpets
 
         if not self._last_cargo_counts:
             self._last_cargo_counts = dict(cargo_counts)
+            # On first cargo event, set starting limpets if not already set
+            if self._limpets_start is None and limpets is not None:
+                self._limpets_start = limpets
             return
 
         previous_counts = self._last_cargo_counts
@@ -630,16 +637,11 @@ class MiningAnalyticsPlugin:
         self._cargo_additions = {k: v for k, v in self._cargo_additions.items() if v > 0}
         self._cargo_totals = dict(self._cargo_additions)
 
-        if (
-            limpets is not None
-            and previous_limpets is not None
-            and limpets < previous_limpets
-            and not self._last_event_was_drone_launch
-        ):
-            abandoned = previous_limpets - limpets
-            if abandoned > 0:
-                self._abandoned_limpets += abandoned
-                _log.info("Detected %s limpets abandoned", abandoned)
+        # Calculate abandoned limpets: starting - current - launched (prospector + collection)
+        if self._limpets_start is not None and self._limpets_remaining is not None:
+            launched = self._prospector_launched_count + self._collection_drones_launched
+            abandoned = self._limpets_start - self._limpets_remaining - launched
+            self._abandoned_limpets = max(0, abandoned)
 
         self._last_cargo_counts = dict(cargo_counts)
 
