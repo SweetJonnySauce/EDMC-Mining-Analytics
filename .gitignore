@@ -1,2 +1,4 @@
 EDMC-Mining-Analytics.code-workspace
 __pycache__/
+edmc_mining_analytics/__pycache__/
+edmc_mining_analytics/util/__pycache__/
