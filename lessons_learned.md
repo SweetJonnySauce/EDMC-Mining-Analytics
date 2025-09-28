@@ -1,3 +1,4 @@
 - Managing state change, especially of the UI elements, is extremely difficult if you build the script organically.
 - I have had a lot of indentation problems with copilot and none with Codex. This may be an id10t problem, but I'm not sure.
 - I asked copilot to make a change in N number of ways and more than once, all it did was change a comment.
+- I should have made sure themes from EDMC worked in the plugin scaffolding before adding a ton of UI elements.
