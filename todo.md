@@ -5,8 +5,8 @@
 - Record where you are mining
 - Limpets adandoned is counting more than it should. I think it counts failed collector limpets too. Fix this. This can be definied as starting# - current# - launched# (all types) = abandoned#
 - Update the Limpets remaining and launched numbers if you also launch a propsector.
-[ ] Use Body from StartUp to show where mining is happening
-[ ] Find total cargo size on ship swap and keep it handy.
+- Use Body from StartUp to show where mining is happening
+- Find total cargo size on ship swap and keep it handy.
 
 ## Should haves
 - % of asteroids where the commodity was present
