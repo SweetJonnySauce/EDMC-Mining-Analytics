@@ -3,6 +3,7 @@
 - After-action analytics report
 - Send after-action mining report to discord webhook
 - Fix the prospector lost logic.
+- Subtract baseline qty from total mined.
 
 ## Should haves
 - % of asteroids where the commodity was present
