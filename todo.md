@@ -8,6 +8,7 @@
 
 ## Should haves
 - % of asteroids where the commodity was present
+- compare multiple runs
 
 ## Could haves
 - When entering a ring, check EDSM to see if you know anything about the hotspot/location
