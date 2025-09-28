@@ -122,25 +122,23 @@ class MiningAnalyticsPlugin:
         self._expand_button = ttk.Button(frame, text="Show data", command=self._on_toggle_expand)
         self._expand_button.grid(row=0, column=2, sticky="e", padx=4, pady=2)
 
-        self._cargo_label = ttk.Label(frame, text="Cargo Changes", font=(None, 9, "bold"), anchor="w")
+        self._cargo_label = ttk.Label(frame, text="Mined Commodities", font=(None, 9, "bold"), anchor="w")
         self._cargo_label.grid(row=1, column=0, sticky="w", padx=4)
 
         self._table_frame = ttk.Frame(frame)
         self._table_frame.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
         self._cargo_tree = ttk.Treeview(
             self._table_frame,
-            columns=("commodity", "added", "total", "range", "tph"),
+            columns=("commodity", "total", "range", "tph"),
             show="headings",
             height=5,
             selectmode="none",
         )
         self._cargo_tree.heading("commodity", text="Commodity")
-        self._cargo_tree.heading("added", text="Added")
         self._cargo_tree.heading("total", text="Total")
         self._cargo_tree.heading("range", text="Range")
         self._cargo_tree.heading("tph", text="Tons/hr")
         self._cargo_tree.column("commodity", anchor="w", stretch=True, width=160)
-        self._cargo_tree.column("added", anchor="center", stretch=False, width=70)
         self._cargo_tree.column("total", anchor="center", stretch=False, width=70)
         self._cargo_tree.column("range", anchor="center", stretch=False, width=120)
         self._cargo_tree.column("tph", anchor="center", stretch=False, width=80)
@@ -1030,10 +1028,10 @@ class MiningAnalyticsPlugin:
             )
             if not rows:
                 item = cargo_tree.insert(
-                    "", "end", values=("No cargo changes yet", "", "", "", "")
+                    "", "end", values=("No mined commodities yet", "", "", "")
                 )
                 if self._cargo_tooltip:
-                    self._cargo_tooltip.set_cell_text(item, "#5", None)
+                    self._cargo_tooltip.set_cell_text(item, "#4", None)
             else:
                 for name in rows:
                     range_label = self._format_range_label(name)
@@ -1042,7 +1040,6 @@ class MiningAnalyticsPlugin:
                         "end",
                         values=(
                             self._format_cargo_name(name),
-                            self._cargo_additions.get(name, 0),
                             self._cargo_totals.get(name, 0),
                             range_label,
                             self._format_tph(name),
@@ -1052,7 +1049,7 @@ class MiningAnalyticsPlugin:
                     if self._cargo_tooltip:
                         self._cargo_tooltip.set_cell_text(
                             item,
-                            "#5",
+                            "#4",
                             self._make_tph_tooltip(name),
                         )
                 cargo_tree.after(0, self._render_range_links)

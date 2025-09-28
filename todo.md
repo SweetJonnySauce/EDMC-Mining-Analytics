@@ -13,6 +13,7 @@
 - break load.py into smaller files. Make sure EDMC expected methods remain in load.py
 - Record each MiningRefined, LaunchDrone, and Cargo for more detailed analysis. We could use MiningRefined to estimate chunk collecting efficiency.
 - Wait some time before showing prospector lost. This wait time could be user configurable.
+- Hyperlink on Commodity name to do Inara search for nearest/best price (configurable)
 
 ## Could haves
 - When entering a ring, check EDSM to see if you know anything about the hotspot/location
