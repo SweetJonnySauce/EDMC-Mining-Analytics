@@ -29,9 +29,16 @@ try:
 except ImportError:  # pragma: no cover - only available inside EDMC
     nb = None  # type: ignore[assignment]
 
+_PLUGIN_FILE = Path(__file__).resolve()
 try:
-    from config import config  # type: ignore[import]
+    _PLUGIN_ROOT_NAME = _PLUGIN_FILE.parents[1].name
+except IndexError:  # pragma: no cover - only triggered in non-standard layouts
+    _PLUGIN_ROOT_NAME = _PLUGIN_FILE.parent.name
+
+try:
+    from config import appname, config  # type: ignore[import]
 except ImportError:  # pragma: no cover - only available inside EDMC
+    appname = "EDMarketConnector"  # type: ignore[assignment]
     config = None  # type: ignore[assignment]
 
 from .util.tooltip import TreeTooltip
@@ -42,7 +49,8 @@ GITHUB_RELEASES_API = (
     "https://api.github.com/repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest"
 )
 
-_log = logging.getLogger("EDMC." + PLUGIN_NAME.replace(" ", ""))
+_LOGGER_NAMESPACE = f"{appname}.{_PLUGIN_ROOT_NAME}" if appname else _PLUGIN_ROOT_NAME
+_log = logging.getLogger(_LOGGER_NAMESPACE)
 
 class MiningAnalyticsPlugin:
     """Encapsulates plugin state and behaviour for EDMC."""
@@ -377,6 +385,12 @@ class MiningAnalyticsPlugin:
                 self._mining_location = loc
             except Exception:
                 self._mining_location = None
+            # Log an informational message so EDMC logs record mining start
+            try:
+                _log.info("Mining started at %s (location=%s) - reason: %s", self._mining_start.isoformat(), self._mining_location, reason)
+            except Exception:
+                # Logging must not interfere with plugin operation
+                pass
         else:
             self._is_mining = False
             self._mining_end = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
@@ -683,6 +697,13 @@ class MiningAnalyticsPlugin:
         if not isinstance(inventory, list):
             return
 
+        # Debug: log that a Cargo entry is being processed and current limpets state
+        try:
+            _log.debug("Processing Cargo entry: previous_limpets=%s, limpets_in_entry=%s", self._limpets_remaining, next((i.get('Count') for i in inventory if isinstance(i, dict) and i.get('Name', '').lower() == 'drones'), None))
+        except Exception:
+            # Don't let logging interfere with processing
+            pass
+
         cargo_counts: dict[str, int] = {}
         limpets = None
         for item in inventory:
@@ -735,7 +756,17 @@ class MiningAnalyticsPlugin:
         # Calculate abandoned limpets: starting - current - launched (prospector + collection)
         if self._limpets_start is not None and self._limpets_remaining is not None:
             launched = self._prospector_launched_count + self._collection_drones_launched
-            abandoned = self._limpets_start - self._limpets_remaining - launched
+            # Treat launched limpets as contributing to abandonment: add launched to the delta
+            abandoned = self._limpets_start - self._limpets_remaining + launched
+            # Debug log with component values
+            _log.debug(
+                "Abandoned limpets calc: L_start=%s, L_current=%s, P=%s, C=%s, raw=%s",
+                self._limpets_start,
+                self._limpets_remaining,
+                self._prospector_launched_count,
+                self._collection_drones_launched,
+                abandoned,
+            )
             self._abandoned_limpets = max(0, abandoned)
 
         self._last_cargo_counts = dict(cargo_counts)

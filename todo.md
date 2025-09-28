@@ -15,6 +15,7 @@
 - Record each MiningRefined, LaunchDrone, and Cargo for more detailed analysis. We could use MiningRefined to estimate chunk collecting efficiency.
 - Wait some time before showing prospector lost. This wait time could be user configurable.
 - Hyperlink on Commodity name to do Inara search for nearest/best price (configurable)
+- Add material to the total you have so you can see how full you are. 
 
 ## Could haves
 - When entering a ring, check EDSM to see if you know anything about the hotspot/location
