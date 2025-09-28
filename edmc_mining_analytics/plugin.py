@@ -384,39 +384,34 @@ class MiningAnalyticsPlugin:
         return "\n".join(parts)
 
     def _status_summary_lines(self) -> list[str]:
-        lines = [
-            f"Prospected: {self._prospected_count}",
-            f"Already mined: {self._already_mined_count}",
-            f"Duplicate prospects ignored: {self._duplicate_prospected}",
-            f"Prospectors launched: {self._prospector_launched_count}",
-        ]
+        lines = []
+        # First line: Prospected, Already mined, Duplicates
+        lines.append(
+            f"Prospected: {self._prospected_count} | Already mined: {self._already_mined_count} | Dupes: {self._duplicate_prospected}"
+        )
+        # Second line: Prospectors launched, lost, content
         lost = max(0, self._prospector_launched_count - self._prospected_count)
-        if lost:
-            lines.append(f"Prospectors lost: {lost}")
-
+        content_line = ""
         if self._prospect_content_counts:
-            content_line = ", ".join(
-                f"{level}: {self._prospect_content_counts.get(level, 0)}"
-                for level in ("High", "Medium", "Low")
+            content_line = " | Content: " + ", ".join(
+                f"{l[0]}:{self._prospect_content_counts.get(l, 0)}" for l in ("High", "Medium", "Low")
             )
-            lines.append(f"Prospect content: {content_line}")
-
-        if self._cargo_totals or self._cargo_additions:
-            lines.append("Cargo summary below")
-        else:
-            lines.append("No cargo data yet")
-
+        lines.append(
+            f"Prospectors: Launched: {self._prospector_launched_count} | Lost: {lost}{content_line}"
+        )
+        # Third line: Limpets, drones, abandoned
+        limpets = f"Limpets: Remaining: {self._limpets_remaining}" if self._limpets_remaining is not None else None
+        drones = f"Launched: {self._collection_drones_launched}"
+        abandoned = f"Abandoned: {self._abandoned_limpets}" if self._abandoned_limpets > 0 else None
+        third = " | ".join(x for x in [limpets, drones, abandoned] if x)
+        if third:
+            lines.append(third)
+        # Optionally: Materials summary
         if self._materials_collected:
             lines.append("Materials summary below")
-
-        if self._limpets_remaining is not None:
-            lines.append(f"Limpets remaining: {self._limpets_remaining}")
-
-        lines.append(f"Collection drones launched: {self._collection_drones_launched}")
-
-        if self._abandoned_limpets > 0:
-            lines.append(f"Limpets abandoned: {self._abandoned_limpets}")
-
+        # Optionally: No cargo data
+        if not (self._cargo_totals or self._cargo_additions):
+            lines.append("No cargo data yet")
         return lines
 
     def _register_prospected_asteroid(self, entry: dict) -> None:
