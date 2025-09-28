@@ -380,7 +380,11 @@ class MiningAnalyticsPlugin:
         if not self._status_var:
             return
 
-        text = self._active_status_text if self._is_mining else self._idle_status_text
+        # Always display the status label and summary lines
+        status_label = "You're mining!" if self._is_mining else "Not Mining"
+        summary_text = "\n".join(self._status_summary_lines())
+        text = f"{status_label}\n{summary_text}"
+
         if self._ui_frame and getattr(self._ui_frame, "winfo_exists", lambda: False)():
             self._ui_frame.after(0, self._apply_ui_state, text)
         else:

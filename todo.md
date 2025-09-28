@@ -4,7 +4,7 @@
 - Send after-action mining report to discord webhook
 - Limpets adandoned is counting more than it should. I think it counts failed collector limpets too. Fix this. This can be definied as starting# - current# - launched# (all types) = abandoned#
 - Update the Limpets remaining and launched numbers if you also launch a propsector.
-- Use Body from StartUp to show where mining is happening
+- Use Body from StartUp to show where mining is happening. StartUp may not be appropriate always. you could be jumping to a different system after start up. 
 - Find total cargo size on ship swap (if possible) and keep it handy. ShipyardSwap: {"timestamp":"2025-09-28T17:04:22Z","event":"ShipyardSwap","ShipType":"corsair","ShipID":82,"StoreOldShip":"Python","StoreShipID":68,"MarketID":blah}
 - After mining, with data available, the App UI is hiding the header information (tables are still shown). This needs to be fixed.
 - Major mess over how the App UI is shown/hidden condiering various states.
