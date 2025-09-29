@@ -48,6 +48,7 @@ PLUGIN_VERSION = "0.1.1"
 GITHUB_RELEASES_API = (
     "https://api.github.com/repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest"
 )
+GITHUB_TAGS_API = "https://api.github.com/repos/SweetJonnySauce/EDMC-Mining-Analytics/tags?per_page=1"
 
 _LOGGER_NAMESPACE = f"{appname}.{_PLUGIN_ROOT_NAME}" if appname else _PLUGIN_ROOT_NAME
 _log = logging.getLogger(_LOGGER_NAMESPACE)
@@ -1308,6 +1309,29 @@ class MiningAnalyticsPlugin:
         thread = threading.Thread(target=self._check_for_updates, name="EDMCMiningVersion", daemon=True)
         thread.start()
 
+    def _fetch_latest_tag(self) -> Optional[str]:
+        try:
+            req = request.Request(
+                GITHUB_TAGS_API,
+                headers={"User-Agent": f"{PLUGIN_NAME}/{PLUGIN_VERSION}"},
+            )
+            with request.urlopen(req, timeout=5) as response:
+                payload = json.load(response)
+        except error.URLError as exc:
+            _log.debug("Tag lookup failed: %s", exc)
+            return None
+        except Exception:
+            _log.exception("Unexpected error during tag lookup")
+            return None
+
+        if not isinstance(payload, list) or not payload:
+            return None
+        tag_payload = payload[0]
+        tag = tag_payload.get("name") or tag_payload.get("ref")
+        if isinstance(tag, str) and tag.startswith("refs/tags/"):
+            tag = tag.split("/", 2)[-1]
+        return tag
+
     def _check_for_updates(self) -> None:
         try:
             req = request.Request(
@@ -1316,6 +1340,26 @@ class MiningAnalyticsPlugin:
             )
             with request.urlopen(req, timeout=5) as response:
                 payload = json.load(response)
+        except error.HTTPError as exc:
+            if exc.code == 404:
+                _log.debug("GitHub releases endpoint returned 404; falling back to tags")
+                latest = self._fetch_latest_tag()
+                if latest:
+                    self._latest_version = latest
+                    if self._latest_version != PLUGIN_VERSION:
+                        _log.info(
+                            "A newer version of %s is available: %s (current %s)",
+                            PLUGIN_NAME,
+                            self._latest_version,
+                            PLUGIN_VERSION,
+                        )
+                    else:
+                        _log.debug("%s is up to date (version %s)", PLUGIN_NAME, PLUGIN_VERSION)
+                else:
+                    _log.debug("Version check fallback to tags did not return any versions")
+                return
+            _log.debug("Version check failed with HTTP status %s: %s", exc.code, exc)
+            return
         except error.URLError as exc:
             _log.debug("Version check failed: %s", exc)
             return
