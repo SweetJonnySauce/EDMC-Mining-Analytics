@@ -10,6 +10,7 @@
 - Versioning: Move versioning to its own file.
 - Metrics: once the mining session is over, freeze the tons/hr metric.
 - Metrics: Calculate collection efficiency based on timing of multiple MiningRefined events. 
+- Metrics: For the histogram, show the 0 qty bins between the min and max range.
 
 
 ## Should haves

@@ -51,7 +51,57 @@ GITHUB_RELEASES_API = (
 GITHUB_TAGS_API = "https://api.github.com/repos/SweetJonnySauce/EDMC-Mining-Analytics/tags?per_page=1"
 
 _LOGGER_NAMESPACE = f"{appname}.{_PLUGIN_ROOT_NAME}" if appname else _PLUGIN_ROOT_NAME
-_log = logging.getLogger(_LOGGER_NAMESPACE)
+
+
+def _coerce_log_level(value: object) -> Optional[int]:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        candidate = value.strip()
+        if not candidate:
+            return None
+        if candidate.isdigit():
+            try:
+                return int(candidate)
+            except ValueError:
+                return None
+        upper = candidate.upper()
+        return logging._nameToLevel.get(upper)  # type: ignore[attr-defined]
+    return None
+
+
+def _resolve_edmc_log_level() -> int:
+    base_logger = logging.getLogger(appname) if appname else logging.getLogger()
+    fallback = base_logger.getEffectiveLevel()
+    if config is None:
+        return fallback
+
+    candidates = ("loglevel", "log_level", "logging_level")
+    getters = ("getint", "get", "get_str")
+
+    for key in candidates:
+        for getter_name in getters:
+            getter = getattr(config, getter_name, None)
+            if getter is None:
+                continue
+            try:
+                raw_value = getter(key)
+            except Exception:
+                continue
+            level = _coerce_log_level(raw_value)
+            if level is not None:
+                return level
+    return fallback
+
+
+def _initialise_plugin_logger() -> logging.Logger:
+    logger = logging.getLogger(_LOGGER_NAMESPACE)
+    logger.setLevel(_resolve_edmc_log_level())
+    logger.propagate = True
+    return logger
+
+
+_log = _initialise_plugin_logger()
 
 class MiningAnalyticsPlugin:
     """Encapsulates plugin state and behaviour for EDMC."""
@@ -120,6 +170,7 @@ class MiningAnalyticsPlugin:
     # ------------------------------------------------------------------
     def plugin_start(self, plugin_dir: str) -> str:
         self.plugin_dir = Path(plugin_dir)
+        self._sync_logger_level()
         _log.info("Starting %s v%s", PLUGIN_NAME, PLUGIN_VERSION)
         self._load_configuration()
         self._ensure_version_check()
@@ -1290,6 +1341,7 @@ class MiningAnalyticsPlugin:
         self._set_rate_interval(value)
 
     def prefs_changed(self, cmdr: Optional[str], is_beta: bool) -> None:
+        self._sync_logger_level()
         if config is None:
             return
         try:
@@ -1300,6 +1352,13 @@ class MiningAnalyticsPlugin:
             config.set("edmc_mining_rate_interval", self._rate_interval_seconds)
         except Exception:
             _log.exception("Failed to persist rate update interval")
+
+    def _sync_logger_level(self) -> None:
+        try:
+            _log.setLevel(_resolve_edmc_log_level())
+        except Exception:
+            # Ensure logging issues never break the plugin lifecycle
+            pass
 
     def _ensure_version_check(self) -> None:
         if self._version_check_started:
