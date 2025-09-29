@@ -8,6 +8,8 @@
 - Implement show/hide functionality of main UI.
 - Prospectors: Provide a user configurable option for how long it should wait to count a prospector as lost.
 - Versioning: Move versioning to its own file.
+- Metrics: once the mining session is over, freeze the tons/hr metric.
+- Metrics: Calculate collection efficiency based on timing of multiple MiningRefined events. 
 
 
 ## Should haves
