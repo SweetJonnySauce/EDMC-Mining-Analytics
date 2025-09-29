@@ -7,6 +7,7 @@
 - After mining, with data available, the App UI is hiding the header information (tables are still shown). This needs to be fixed.
 - Implement show/hide functionality of main UI.
 - Prospectors: Provide a user configurable option for how long it should wait to count a prospector as lost.
+- Versioning: Move versioning to its own file.
 
 
 ## Should haves
