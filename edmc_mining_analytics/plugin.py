@@ -164,6 +164,7 @@ class MiningAnalyticsPlugin:
         self._content_collapsed = False
         self._user_expanded = False
         self._mining_location: Optional[str] = None
+        self._current_system: Optional[str] = None
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
@@ -344,6 +345,7 @@ class MiningAnalyticsPlugin:
         self._content_widgets = []
         self._reset_mining_metrics()
         self._cargo_item_to_commodity = {}
+        self._current_system = None
         self._refresh_status_ui()
 
     # ------------------------------------------------------------------
@@ -352,6 +354,13 @@ class MiningAnalyticsPlugin:
     def handle_journal_entry(self, entry: dict, shared_state: Optional[dict] = None) -> None:
         if not entry:
             return
+
+        try:
+            system_name = self._detect_current_system(entry)
+        except Exception:
+            system_name = None
+        if system_name:
+            self._current_system = system_name
 
         event = entry.get("event")
         if event == "LaunchDrone":
@@ -435,6 +444,13 @@ class MiningAnalyticsPlugin:
                 self._mining_location = loc
             except Exception:
                 self._mining_location = None
+            try:
+                system_name = self._detect_current_system(state)
+                if system_name:
+                    self._current_system = system_name
+            except Exception:
+                # Ignore failures retrieving system name
+                pass
             # Log an informational message so EDMC logs record mining start
             try:
                 _log.info("Mining started at %s (location=%s) - reason: %s", self._mining_start.isoformat(), self._mining_location, reason)
@@ -447,6 +463,12 @@ class MiningAnalyticsPlugin:
             self._mining_end = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
             self._user_expanded = False
             self._cancel_rate_update()
+            try:
+                system_name = self._detect_current_system(state)
+                if system_name:
+                    self._current_system = system_name
+            except Exception:
+                pass
 
         _log.info("Mining state changed to %s (%s)", "active" if active else "inactive", reason)
         self._refresh_status_ui()
@@ -521,6 +543,20 @@ class MiningAnalyticsPlugin:
                 pass
 
         # Last resort: None
+        return None
+
+    def _detect_current_system(self, state: Optional[dict]) -> Optional[str]:
+        """Return the name of the current star system, if available."""
+        if not state:
+            return None
+
+        for key in ("System", "SystemName", "StarSystem"):
+            try:
+                value = state.get(key)
+            except Exception:
+                value = None
+            if value:
+                return str(value)
         return None
 
     def _register_prospected_asteroid(self, entry: dict) -> None:
