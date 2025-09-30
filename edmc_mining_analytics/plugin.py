@@ -491,10 +491,17 @@ class MiningAnalyticsPlugin:
     def _status_summary_lines(self) -> list[str]:
         lines: list[str] = []
         if self._mining_start:
-            start_dt = self._ensure_aware(self._mining_start).astimezone(timezone.utc)
-            lines.append(f"Started: {start_dt.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+            if self._mining_end and not self._is_mining:
+                start_time = self._ensure_aware(self._mining_start)
+                end_time = self._ensure_aware(self._mining_end)
+                elapsed_seconds = max(0.0, (end_time - start_time).total_seconds())
+                lines.append(f"Elapsed: {self._format_duration(elapsed_seconds)}")
+            else:
+                start_dt = self._ensure_aware(self._mining_start).astimezone(timezone.utc)
+                lines.append(f"Started: {start_dt.strftime('%Y-%m-%d %H:%M:%S UTC')}")
         else:
-            lines.append("Started: --")
+            label = "Elapsed" if self._mining_end and not self._is_mining else "Started"
+            lines.append(f"{label}: --")
 
         lines.append(
             f"Prospected: {self._prospected_count} | Already mined: {self._already_mined_count} | Dupes: {self._duplicate_prospected}"
