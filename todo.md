@@ -2,10 +2,7 @@
 ## Must haves
 - After-action analytics report
 - Send after-action mining report to discord webhook
-- Use Body from StartUp to show where mining is happening. StartUp may not be appropriate always. you could be jumping to a different system after start up. 
 - Find total cargo size on ship swap (if possible) and keep it handy. ShipyardSwap: {"timestamp":"2025-09-28T17:04:22Z","event":"ShipyardSwap","ShipType":"corsair","ShipID":82,"StoreOldShip":"Python","StoreShipID":68,"MarketID":blah}
-- After mining, with data available, the App UI is hiding the header information (tables are still shown). This needs to be fixed.
-- Implement show/hide functionality of main UI.
 - Prospectors: Provide a user configurable option for how long it should wait to count a prospector as lost.
 - Versioning: Move versioning to its own file.
 - Metrics: once the mining session is over, freeze the tons/hr metric.
