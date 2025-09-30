@@ -441,10 +441,12 @@ class MiningAnalyticsPlugin:
             except Exception:
                 # Logging must not interfere with plugin operation
                 pass
+            self._schedule_rate_update()
         else:
             self._is_mining = False
             self._mining_end = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
             self._user_expanded = False
+            self._cancel_rate_update()
 
         _log.info("Mining state changed to %s (%s)", "active" if active else "inactive", reason)
         self._refresh_status_ui()
@@ -588,6 +590,7 @@ class MiningAnalyticsPlugin:
         # Reset all mining data and set state to Not mining
         self._is_mining = False
         self._reset_mining_metrics()
+        self._cancel_rate_update()
         self._refresh_status_ui()
 
     def _clear_range_link_labels(self) -> None:
@@ -843,8 +846,9 @@ class MiningAnalyticsPlugin:
             return None
 
         start = self._ensure_aware(start)
-        now = datetime.now(timezone.utc)
-        elapsed_hours = (now - start).total_seconds() / 3600.0
+        end_raw = self._mining_end or datetime.now(timezone.utc)
+        end_time = self._ensure_aware(end_raw)
+        elapsed_hours = (end_time - start).total_seconds() / 3600.0
         if elapsed_hours <= 0:
             return None
 
@@ -868,7 +872,9 @@ class MiningAnalyticsPlugin:
         if rate is None or start is None or amount <= 0:
             return None
 
-        duration = (datetime.now(timezone.utc) - self._ensure_aware(start)).total_seconds()
+        end_raw = self._mining_end or datetime.now(timezone.utc)
+        end_time = self._ensure_aware(end_raw)
+        duration = max(0.0, (end_time - self._ensure_aware(start)).total_seconds())
         return f"{amount}t over {self._format_duration(duration)}"
 
     def _on_cargo_click(self, event: tk.Event) -> None:  # type: ignore[override]
@@ -919,9 +925,10 @@ class MiningAnalyticsPlugin:
         if total_amount <= 0:
             return None
 
-        elapsed_hours = (
-            datetime.now(timezone.utc) - self._ensure_aware(self._mining_start)
-        ).total_seconds() / 3600.0
+        start_time = self._ensure_aware(self._mining_start)
+        end_raw = self._mining_end or datetime.now(timezone.utc)
+        end_time = self._ensure_aware(end_raw)
+        elapsed_hours = (end_time - start_time).total_seconds() / 3600.0
         if elapsed_hours <= 0:
             return None
 
@@ -1278,7 +1285,10 @@ class MiningAnalyticsPlugin:
             else:
                 duration = 0.0
                 if self._mining_start:
-                    duration = (datetime.now(timezone.utc) - self._ensure_aware(self._mining_start)).total_seconds()
+                    start_time = self._ensure_aware(self._mining_start)
+                    end_raw = self._mining_end or datetime.now(timezone.utc)
+                    end_time = self._ensure_aware(end_raw)
+                    duration = max(0.0, (end_time - start_time).total_seconds())
                 duration_str = self._format_duration(duration)
                 self._total_tph_var.set(
                     f"Total Tons/hr: {self._format_rate(total_rate)} ({total_amount}t over {duration_str})"
@@ -1297,6 +1307,8 @@ class MiningAnalyticsPlugin:
 
     def _schedule_rate_update(self) -> None:
         self._cancel_rate_update()
+        if not self._is_mining:
+            return
         if not self._ui_frame or not self._ui_frame.winfo_exists():
             return
         interval = self._clamp_rate_interval(self._rate_interval_seconds)
@@ -1316,7 +1328,8 @@ class MiningAnalyticsPlugin:
         self._rate_update_job = None
         if self._ui_frame and self._ui_frame.winfo_exists():
             self._refresh_status_ui()
-        self._schedule_rate_update()
+        if self._is_mining:
+            self._schedule_rate_update()
 
     def _set_rate_interval(self, value: int) -> None:
         interval = self._clamp_rate_interval(value)
