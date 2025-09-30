@@ -46,7 +46,7 @@ except ImportError:  # pragma: no cover - only available inside EDMC
 from .util.tooltip import TreeTooltip
 
 PLUGIN_NAME = "EDMC Mining Analytics"
-PLUGIN_VERSION = "0.1.1"
+PLUGIN_VERSION = "0.1.2"
 GITHUB_RELEASES_API = (
     "https://api.github.com/repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest"
 )
