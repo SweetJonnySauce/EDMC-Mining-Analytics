@@ -11,11 +11,13 @@ import json
 import logging
 import random
 import threading
+import webbrowser
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
 from urllib import error, request
+from urllib.parse import urlencode
 
 try:
     import tkinter as tk
@@ -160,11 +162,23 @@ class MiningAnalyticsPlugin:
         self._cargo_item_to_commodity: dict[str, str] = {}
         self._range_link_labels: dict[str, tk.Label] = {}
         self._range_link_font: Optional[tkfont.Font] = None
+        self._commodity_link_labels: dict[str, tk.Label] = {}
+        self._commodity_link_font: Optional[tkfont.Font] = None
         self._content_widgets: list[tk.Widget] = []
         self._content_collapsed = False
         self._user_expanded = False
         self._mining_location: Optional[str] = None
         self._current_system: Optional[str] = None
+        self._commodity_link_map: dict[str, int] = {}
+        self._inara_search_mode = 1
+        self._inara_include_carriers = True
+        self._inara_include_surface = True
+        self._prefs_inara_mode_var: Optional[tk.IntVar] = None
+        self._prefs_inara_carriers_var: Optional[tk.BooleanVar] = None
+        self._prefs_inara_surface_var: Optional[tk.BooleanVar] = None
+        self._updating_inara_mode_var = False
+        self._updating_inara_carriers_var = False
+        self._updating_inara_surface_var = False
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
@@ -174,6 +188,7 @@ class MiningAnalyticsPlugin:
         self._sync_logger_level()
         _log.info("Starting %s v%s", PLUGIN_NAME, PLUGIN_VERSION)
         self._load_configuration()
+        self._load_commodity_link_map()
         self._ensure_version_check()
         return PLUGIN_NAME
 
@@ -324,6 +339,51 @@ class MiningAnalyticsPlugin:
             textvariable=self._prefs_rate_var,
             width=6,
         ).grid(row=4, column=0, sticky="w", padx=10, pady=(0, 10))
+
+        inara_frame = ttk.LabelFrame(frame, text="Inara Links")
+        inara_frame.grid(row=5, column=0, sticky="ew", padx=10, pady=(0, 10))
+        inara_frame.columnconfigure(0, weight=1)
+
+        ttk.Label(
+            inara_frame,
+            text="Configure how commodity hyperlinks open Inara searches.",
+            wraplength=380,
+            justify="left",
+        ).grid(row=0, column=0, sticky="w", pady=(4, 6))
+
+        self._prefs_inara_mode_var = tk.IntVar(master=inara_frame, value=self._inara_search_mode)
+        self._prefs_inara_mode_var.trace_add("write", self._on_inara_mode_change)
+        mode_container = ttk.Frame(inara_frame)
+        mode_container.grid(row=1, column=0, sticky="w", pady=(0, 6))
+        ttk.Radiobutton(
+            mode_container,
+            text="Best price search",
+            value=1,
+            variable=self._prefs_inara_mode_var,
+        ).grid(row=0, column=0, sticky="w", padx=(0, 12))
+        ttk.Radiobutton(
+            mode_container,
+            text="Distance search",
+            value=3,
+            variable=self._prefs_inara_mode_var,
+        ).grid(row=0, column=1, sticky="w")
+
+        self._prefs_inara_carriers_var = tk.BooleanVar(master=inara_frame, value=self._inara_include_carriers)
+        self._prefs_inara_carriers_var.trace_add("write", self._on_inara_carriers_change)
+        ttk.Checkbutton(
+            inara_frame,
+            text="Include fleet carriers in results",
+            variable=self._prefs_inara_carriers_var,
+        ).grid(row=2, column=0, sticky="w", pady=(0, 4))
+
+        self._prefs_inara_surface_var = tk.BooleanVar(master=inara_frame, value=self._inara_include_surface)
+        self._prefs_inara_surface_var.trace_add("write", self._on_inara_surface_change)
+        ttk.Checkbutton(
+            inara_frame,
+            text="Include surface stations in results",
+            variable=self._prefs_inara_surface_var,
+        ).grid(row=3, column=0, sticky="w", pady=(0, 4))
+
         return frame
 
     def plugin_stop(self) -> None:
@@ -345,7 +405,7 @@ class MiningAnalyticsPlugin:
         self._content_widgets = []
         self._reset_mining_metrics()
         self._cargo_item_to_commodity = {}
-        self._current_system = None
+        self._set_current_system(None)
         self._refresh_status_ui()
 
     # ------------------------------------------------------------------
@@ -360,7 +420,7 @@ class MiningAnalyticsPlugin:
         except Exception:
             system_name = None
         if system_name:
-            self._current_system = system_name
+            self._set_current_system(system_name)
 
         event = entry.get("event")
         if event == "LaunchDrone":
@@ -447,7 +507,7 @@ class MiningAnalyticsPlugin:
             try:
                 system_name = self._detect_current_system(state)
                 if system_name:
-                    self._current_system = system_name
+                    self._set_current_system(system_name)
             except Exception:
                 # Ignore failures retrieving system name
                 pass
@@ -466,7 +526,7 @@ class MiningAnalyticsPlugin:
             try:
                 system_name = self._detect_current_system(state)
                 if system_name:
-                    self._current_system = system_name
+                    self._set_current_system(system_name)
             except Exception:
                 pass
 
@@ -642,6 +702,12 @@ class MiningAnalyticsPlugin:
                 label.destroy()
         self._range_link_labels.clear()
 
+    def _clear_commodity_link_labels(self) -> None:
+        for label in self._commodity_link_labels.values():
+            if label.winfo_exists():
+                label.destroy()
+        self._commodity_link_labels.clear()
+
     # Theme helpers: prefer theme lookups where possible so widgets follow EDMC's theme
     def _theme_bg_for(self, widget: tk.Widget) -> Optional[str]:
         """Return a theme-appropriate background color for the given widget.
@@ -680,6 +746,7 @@ class MiningAnalyticsPlugin:
     def _render_range_links(self) -> None:
         tree = self._cargo_tree
         if not tree or not getattr(tree, "winfo_exists", lambda: False)() or self._content_collapsed:
+            self._clear_commodity_link_labels()
             return
 
         self._clear_range_link_labels()
@@ -737,12 +804,91 @@ class MiningAnalyticsPlugin:
             label.bind("<Button-1>", lambda _event, commodity=commodity: self._open_histogram_window(commodity))
             self._range_link_labels[item] = label
 
-        if pending:
+        commodity_pending = self._render_commodity_links()
+        if pending or commodity_pending:
             tree.after(16, self._render_range_links)
+
+    def _render_commodity_links(self) -> bool:
+        tree = self._cargo_tree
+        if not tree or not getattr(tree, "winfo_exists", lambda: False)() or self._content_collapsed:
+            self._clear_commodity_link_labels()
+            return False
+
+        if self._get_system_for_links() is None or not self._commodity_link_map:
+            self._clear_commodity_link_labels()
+            return False
+
+        self._clear_commodity_link_labels()
+
+        background = self._theme_bg_for(tree) or tree.cget("background")
+        base_font = tree.cget("font")
+        if not self._commodity_link_font:
+            try:
+                font = tkfont.nametofont(base_font)
+                self._commodity_link_font = tkfont.Font(font=font)
+                self._commodity_link_font.configure(underline=True)
+            except tk.TclError:
+                self._commodity_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
+
+        style = ttk.Style(tree)
+        link_fg = "#1a4bf6"
+        try:
+            style.configure("EDMC.CommodityLink.TLabel", foreground=link_fg)
+            if background:
+                style.configure("EDMC.CommodityLink.TLabel", background=background)
+        except Exception:
+            pass
+
+        pending = False
+        for item, commodity in self._cargo_item_to_commodity.items():
+            commodity_id = self._commodity_link_map.get(commodity.lower())
+            if commodity_id is None:
+                continue
+
+            bbox = tree.bbox(item, "#1")
+            if not bbox:
+                pending = True
+                continue
+            x, y, width, height = bbox
+            if width <= 0 or height <= 0:
+                continue
+
+            label = ttk.Label(
+                tree,
+                text=self._format_cargo_name(commodity),
+                style="EDMC.CommodityLink.TLabel",
+                cursor="hand2",
+                anchor="w",
+            )
+            try:
+                label.configure(font=self._commodity_link_font)
+            except Exception:
+                pass
+
+            pad_x = 4
+            pad_y = 1
+            try:
+                label.place(
+                    x=x + pad_x,
+                    y=y + pad_y,
+                    width=max(0, width - (pad_x * 2)),
+                    height=max(0, height - (pad_y * 2)),
+                )
+            except Exception:
+                continue
+
+            label.bind(
+                "<Button-1>",
+                lambda _event, commodity=commodity: self._open_commodity_link(commodity),
+            )
+            self._commodity_link_labels[item] = label
+
+        return pending
 
     def _reset_mining_metrics(self) -> None:
         self._close_histogram_windows()
         self._clear_range_link_labels()
+        self._clear_commodity_link_labels()
         self._cargo_item_to_commodity.clear()
         self._mining_start = None
         self._prospected_count = 0
@@ -908,6 +1054,73 @@ class MiningAnalyticsPlugin:
 
         return self._format_rate(rate)
 
+    def _get_system_for_links(self) -> Optional[str]:
+        if self._current_system:
+            return self._current_system
+        return None
+
+    def _set_current_system(self, value: Optional[str]) -> None:
+        normalized = str(value).strip() if value else None
+        if normalized == "":
+            normalized = None
+        if normalized == self._current_system:
+            return
+        self._current_system = normalized
+        tree = self._cargo_tree
+        if tree and getattr(tree, "winfo_exists", lambda: False)():
+            try:
+                tree.after(0, self._render_range_links)
+            except Exception:
+                pass
+
+    def _build_inara_url(self, commodity: str) -> Optional[str]:
+        commodity_id = self._commodity_link_map.get(commodity.lower())
+        if commodity_id is None:
+            return None
+
+        system_name = self._get_system_for_links()
+        if not system_name:
+            _log.debug("Cannot build Inara link for %s: system unknown", commodity)
+            return None
+
+        include_carriers = "0" if self._inara_include_carriers else "1"
+        include_surface = "0" if self._inara_include_surface else "1"
+        search_mode = "3" if self._inara_search_mode == 3 else "1"
+
+        query: dict[str, object] = {
+            "formbrief": "1",
+            "pi1": "2",
+            "pa1[]": [str(commodity_id)],
+            "ps1": system_name,
+            "pi10": search_mode,
+            "pi11": "0",
+            "pi3": "3",
+            "pi9": "0",
+            "pi4": include_surface,
+            "pi8": include_carriers,
+            "pi13": "0",
+            "pi5": "720",
+            "pi12": "0",
+            "pi7": "500",
+            "pi14": "0",
+            "ps3": "",
+        }
+
+        try:
+            return "https://inara.cz/elite/commodities/?" + urlencode(query, doseq=True)
+        except Exception:
+            _log.exception("Failed to encode Inara URL for commodity %s", commodity)
+        return None
+
+    def _open_commodity_link(self, commodity: str) -> None:
+        url = self._build_inara_url(commodity)
+        if not url:
+            return
+        try:
+            webbrowser.open(url)
+        except Exception:
+            _log.exception("Failed to open browser for commodity %s", commodity)
+
     def _make_tph_tooltip(self, commodity: str) -> Optional[str]:
         rate = self._compute_tph(commodity)
         start = self._commodity_start_times.get(commodity)
@@ -924,15 +1137,16 @@ class MiningAnalyticsPlugin:
         if not self._cargo_tree:
             return
         column = self._cargo_tree.identify_column(event.x)
-        if column != "#5":  # %Range column
-            return
         item = self._cargo_tree.identify_row(event.y)
         commodity = self._cargo_item_to_commodity.get(item)
         if not commodity:
             return
-        if not self._format_range_label(commodity):
-            return
-        self._open_histogram_window(commodity)
+        if column == "#5":  # %Range column
+            if not self._format_range_label(commodity):
+                return
+            self._open_histogram_window(commodity)
+        elif column == "#1":  # Commodity hyperlink
+            self._open_commodity_link(commodity)
 
     def _on_cargo_motion(self, event: tk.Event) -> None:  # type: ignore[override]
         if not self._cargo_tree:
@@ -941,6 +1155,8 @@ class MiningAnalyticsPlugin:
         item = self._cargo_tree.identify_row(event.y)
         commodity = self._cargo_item_to_commodity.get(item)
         if column == "#5" and commodity and self._format_range_label(commodity):  # %Range column
+            self._cargo_tree.configure(cursor="hand2")
+        elif column == "#1" and commodity and self._commodity_link_map.get(commodity.lower()) and self._get_system_for_links():
             self._cargo_tree.configure(cursor="hand2")
         else:
             self._cargo_tree.configure(cursor="")
@@ -1222,6 +1438,9 @@ class MiningAnalyticsPlugin:
         if config is None:
             self._histogram_bin_size = 10
             self._rate_interval_seconds = 30
+            self._inara_search_mode = 1
+            self._inara_include_carriers = True
+            self._inara_include_surface = True
             return
 
         try:
@@ -1235,6 +1454,57 @@ class MiningAnalyticsPlugin:
         except Exception:
             rate_value = 30
         self._rate_interval_seconds = self._clamp_rate_interval(rate_value)
+
+        try:
+            search_mode_value = config.get_int(key="edmc_mining_inara_search_mode", default=1)
+        except Exception:
+            search_mode_value = 1
+        self._inara_search_mode = 3 if search_mode_value == 3 else 1
+
+        try:
+            include_carriers_value = config.get_int(key="edmc_mining_inara_include_carriers", default=1)
+        except Exception:
+            include_carriers_value = 1
+        self._inara_include_carriers = bool(include_carriers_value)
+
+        try:
+            include_surface_value = config.get_int(key="edmc_mining_inara_include_surface", default=1)
+        except Exception:
+            include_surface_value = 1
+        self._inara_include_surface = bool(include_surface_value)
+
+    def _load_commodity_link_map(self) -> None:
+        mapping_path = _PLUGIN_FILE.parent / "commodity_links.json"
+        if not mapping_path.exists():
+            _log.debug("Commodity link mapping file not found at %s", mapping_path)
+            self._commodity_link_map = {}
+            return
+
+        try:
+            with mapping_path.open("r", encoding="utf-8") as handle:
+                raw = json.load(handle)
+        except Exception:
+            _log.exception("Failed to load commodity link mapping from %s", mapping_path)
+            self._commodity_link_map = {}
+            return
+
+        if not isinstance(raw, dict):
+            _log.warning("Commodity link mapping file is not a JSON object: %s", mapping_path)
+            self._commodity_link_map = {}
+            return
+
+        processed: dict[str, int] = {}
+        for key, value in raw.items():
+            if not isinstance(key, str):
+                continue
+            try:
+                identifier = int(value)
+            except (TypeError, ValueError):
+                _log.debug("Skipping commodity link mapping with non-int value: %s=%r", key, value)
+                continue
+            processed[key.strip().lower()] = identifier
+
+        self._commodity_link_map = processed
 
     def _clamp_bin_size(self, value: int) -> int:
         try:
@@ -1396,6 +1666,69 @@ class MiningAnalyticsPlugin:
             return
         self._set_rate_interval(value)
 
+    def _set_inara_search_mode(self, value: int) -> None:
+        mode = 3 if value == 3 else 1
+        if mode == self._inara_search_mode:
+            return
+        self._inara_search_mode = mode
+        if self._prefs_inara_mode_var is not None:
+            current = self._prefs_inara_mode_var.get()
+            if current != mode:
+                self._updating_inara_mode_var = True
+                self._prefs_inara_mode_var.set(mode)
+                self._updating_inara_mode_var = False
+
+    def _on_inara_mode_change(self, *_: object) -> None:
+        if self._prefs_inara_mode_var is None or self._updating_inara_mode_var:
+            return
+        try:
+            value = int(self._prefs_inara_mode_var.get())
+        except (TypeError, ValueError, tk.TclError):
+            return
+        self._set_inara_search_mode(value)
+
+    def _set_inara_include_carriers(self, include: bool) -> None:
+        include = bool(include)
+        if include == self._inara_include_carriers:
+            return
+        self._inara_include_carriers = include
+        if self._prefs_inara_carriers_var is not None:
+            current = bool(self._prefs_inara_carriers_var.get())
+            if current != include:
+                self._updating_inara_carriers_var = True
+                self._prefs_inara_carriers_var.set(include)
+                self._updating_inara_carriers_var = False
+
+    def _on_inara_carriers_change(self, *_: object) -> None:
+        if self._prefs_inara_carriers_var is None or self._updating_inara_carriers_var:
+            return
+        try:
+            value = bool(self._prefs_inara_carriers_var.get())
+        except (tk.TclError, ValueError):
+            return
+        self._set_inara_include_carriers(value)
+
+    def _set_inara_include_surface(self, include: bool) -> None:
+        include = bool(include)
+        if include == self._inara_include_surface:
+            return
+        self._inara_include_surface = include
+        if self._prefs_inara_surface_var is not None:
+            current = bool(self._prefs_inara_surface_var.get())
+            if current != include:
+                self._updating_inara_surface_var = True
+                self._prefs_inara_surface_var.set(include)
+                self._updating_inara_surface_var = False
+
+    def _on_inara_surface_change(self, *_: object) -> None:
+        if self._prefs_inara_surface_var is None or self._updating_inara_surface_var:
+            return
+        try:
+            value = bool(self._prefs_inara_surface_var.get())
+        except (tk.TclError, ValueError):
+            return
+        self._set_inara_include_surface(value)
+
     def prefs_changed(self, cmdr: Optional[str], is_beta: bool) -> None:
         self._sync_logger_level()
         if config is None:
@@ -1408,6 +1741,18 @@ class MiningAnalyticsPlugin:
             config.set("edmc_mining_rate_interval", self._rate_interval_seconds)
         except Exception:
             _log.exception("Failed to persist rate update interval")
+        try:
+            config.set("edmc_mining_inara_search_mode", self._inara_search_mode)
+        except Exception:
+            _log.exception("Failed to persist Inara search mode preference")
+        try:
+            config.set("edmc_mining_inara_include_carriers", int(self._inara_include_carriers))
+        except Exception:
+            _log.exception("Failed to persist Inara carrier preference")
+        try:
+            config.set("edmc_mining_inara_include_surface", int(self._inara_include_surface))
+        except Exception:
+            _log.exception("Failed to persist Inara surface preference")
 
     def _sync_logger_level(self) -> None:
         try:
