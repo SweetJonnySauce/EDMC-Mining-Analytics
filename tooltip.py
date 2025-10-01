@@ -31,7 +31,10 @@ class TreeTooltip:
         self._hide_tip()
 
     def set_heading_tooltip(self, column_name: str, text: Optional[str]) -> None:
-        columns = tuple(self._tree.cget("columns"))
+        try:
+            columns = tuple(self._tree.cget("columns"))
+        except tk.TclError:
+            return
         try:
             idx = columns.index(column_name)
         except ValueError:
@@ -81,14 +84,25 @@ class TreeTooltip:
         self._show_tip(x, y, self._cell_texts[key])
 
     def _show_tip(self, x: int, y: int, text: str) -> None:
-        tip = tk.Toplevel(self._tree)
+        try:
+            tip = tk.Toplevel(self._tree)
+        except tk.TclError:
+            return
         tip.wm_overrideredirect(True)
         tip.wm_geometry(f"+{x}+{y}")
-        style = ttk.Style(self._tree)
+        try:
+            style = ttk.Style(self._tree)
+        except tk.TclError:
+            tip.destroy()
+            return
+        try:
+            tree_background = self._tree.cget("background")
+        except tk.TclError:
+            tree_background = None
         bg = (
             style.lookup("TLabel", "background")
             or style.lookup("TFrame", "background")
-            or self._tree.cget("background")
+            or tree_background
             or "#ffffe0"
         )
         fg = style.lookup("TLabel", "foreground") or "#000000"

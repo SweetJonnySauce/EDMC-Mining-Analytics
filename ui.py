@@ -974,7 +974,12 @@ class MiningUI:
         self._clear_range_link_labels()
 
         background = self._theme.table_background_color()
-        base_font = tree.cget("font")
+        try:
+            base_font = tree.cget("font")
+        except tk.TclError:
+            self._clear_commodity_link_labels()
+            return
+
         if not self._range_link_font:
             try:
                 font = tkfont.nametofont(base_font)
@@ -983,36 +988,57 @@ class MiningUI:
             except tk.TclError:
                 self._range_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
 
-        pending = False
-        for item, commodity in self._cargo_item_to_commodity.items():
-            range_label = self._format_range_label(commodity)
-            if not range_label:
-                continue
-            bbox = tree.bbox(item, "#5")
-            if not bbox:
-                pending = True
-                continue
-            x, y, width, height = bbox
-            label = ttk.Label(
-                tree,
-                text=range_label,
-                style="MiningAnalytics.RangeLink.TLabel",
-                cursor="hand2",
-                anchor="center",
-            )
-            try:
-                label.configure(font=self._range_link_font)
-            except Exception:
-                pass
+        try:
             style = ttk.Style(tree)
             style.configure(
                 "MiningAnalytics.RangeLink.TLabel",
                 foreground=self._theme.link_color(),
                 background=background,
             )
-            label.place(x=x + 2, y=y + 1, width=width - 4, height=height - 2)
-            label.bind("<Button-1>", lambda _evt, commodity=commodity: self.open_histogram_window(commodity))
-            self._range_link_labels[item] = label
+        except tk.TclError:
+            self._clear_range_link_labels()
+            self._clear_commodity_link_labels()
+            return
+
+        pending = False
+        for item, commodity in self._cargo_item_to_commodity.items():
+            range_label = self._format_range_label(commodity)
+            if not range_label:
+                continue
+            try:
+                bbox = tree.bbox(item, "#5")
+            except tk.TclError:
+                bbox = None
+            if not bbox:
+                pending = True
+                continue
+            x, y, width, height = bbox
+            try:
+                label = ttk.Label(
+                    tree,
+                    text=range_label,
+                    style="MiningAnalytics.RangeLink.TLabel",
+                    cursor="hand2",
+                    anchor="center",
+                )
+            except Exception:
+                pending = True
+                continue
+            try:
+                label.configure(font=self._range_link_font)
+            except Exception:
+                pass
+            try:
+                label.place(x=x + 2, y=y + 1, width=width - 4, height=height - 2)
+                label.bind("<Button-1>", lambda _evt, commodity=commodity: self.open_histogram_window(commodity))
+                self._range_link_labels[item] = label
+            except Exception:
+                try:
+                    label.destroy()
+                except Exception:
+                    pass
+                pending = True
+                continue
 
         commodity_pending = self._render_commodity_links()
         if pending or commodity_pending:
@@ -1031,7 +1057,11 @@ class MiningUI:
         self._clear_commodity_link_labels()
 
         background = self._theme.table_background_color()
-        base_font = tree.cget("font")
+        try:
+            base_font = tree.cget("font")
+        except tk.TclError:
+            return False
+
         if not self._commodity_link_font:
             try:
                 font = tkfont.nametofont(base_font)
@@ -1040,12 +1070,16 @@ class MiningUI:
             except tk.TclError:
                 self._commodity_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
 
-        style = ttk.Style(tree)
-        style.configure(
-            "MiningAnalytics.CommodityLink.TLabel",
-            foreground=self._theme.link_color(),
-            background=background,
-        )
+        try:
+            style = ttk.Style(tree)
+            style.configure(
+                "MiningAnalytics.CommodityLink.TLabel",
+                foreground=self._theme.link_color(),
+                background=background,
+            )
+        except tk.TclError:
+            self._clear_commodity_link_labels()
+            return False
 
         pending = False
         for item, commodity in self._cargo_item_to_commodity.items():
