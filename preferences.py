@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import logging
-from typing import Optional
+from typing import Dict, Optional
 
 try:
     from config import config  # type: ignore[import]
@@ -43,6 +44,7 @@ class PreferencesManager:
             state.inara_settings.search_mode = 1
             state.inara_settings.include_carriers = True
             state.inara_settings.include_surface = True
+            state.inferred_capacity_map = {}
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
@@ -56,6 +58,8 @@ class PreferencesManager:
 
         include_surface = self._get_int("edmc_mining_inara_include_surface", 1)
         state.inara_settings.include_surface = bool(include_surface)
+
+        state.inferred_capacity_map = self._load_inferred_capacities()
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -86,6 +90,8 @@ class PreferencesManager:
         except Exception:
             _log.exception("Failed to persist Inara surface preference")
 
+        self.save_inferred_capacities(state)
+
     @staticmethod
     def _get_int(key: str, default: int) -> int:
         if config is None:
@@ -94,3 +100,60 @@ class PreferencesManager:
             return int(config.get_int(key=key, default=default))  # type: ignore[arg-type]
         except Exception:
             return default
+
+    def _get_str(self, key: str, default: str) -> str:
+        if config is None:
+            return default
+        try:
+            raw = config.get_str(key)  # type: ignore[arg-type]
+        except Exception:
+            raw = None
+        if not raw:
+            return default
+        return str(raw)
+
+    def _load_inferred_capacities(self) -> Dict[str, int]:
+        payload = self._get_str("edmc_mining_inferred_cargo_map", "{}")
+        try:
+            data = json.loads(payload)
+        except Exception:
+            data = {}
+
+        inferred: Dict[str, int] = {}
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if not isinstance(key, str):
+                    key = str(key)
+                try:
+                    capacity = int(value)
+                except (TypeError, ValueError):
+                    continue
+                if capacity > 0:
+                    inferred[key] = capacity
+        return inferred
+
+    def save_inferred_capacities(self, state: MiningState) -> None:
+        if config is None:
+            return
+
+        sanitized: Dict[str, int] = {}
+        for key, value in state.inferred_capacity_map.items():
+            if not key or value is None:
+                continue
+            try:
+                capacity = int(value)
+            except (TypeError, ValueError):
+                continue
+            if capacity > 0:
+                sanitized[str(key)] = capacity
+
+        try:
+            payload = json.dumps(sanitized, separators=(",", ":"))
+        except Exception:
+            _log.exception("Failed to encode inferred cargo capacities for persistence")
+            return
+
+        try:
+            config.set("edmc_mining_inferred_cargo_map", payload)
+        except Exception:
+            _log.exception("Failed to persist inferred cargo capacities")

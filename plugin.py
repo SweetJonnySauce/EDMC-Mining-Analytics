@@ -104,6 +104,7 @@ class MiningAnalyticsPlugin:
             refresh_ui=self._refresh_ui_safe,
             on_session_start=self._on_session_start,
             on_session_end=self._on_session_end,
+            persist_inferred_capacities=self._persist_inferred_capacities,
         )
 
         self.plugin_dir: Optional[Path] = None
@@ -180,12 +181,19 @@ class MiningAnalyticsPlugin:
     def _on_session_end(self) -> None:
         self.ui.cancel_rate_update()
         self._refresh_ui_safe()
+        self._persist_inferred_capacities()
 
     def _sync_logger_level(self) -> None:
         try:
             set_log_level(_resolve_edmc_log_level())
         except Exception:
             pass
+
+    def _persist_inferred_capacities(self) -> None:
+        try:
+            self.preferences.save_inferred_capacities(self.state)
+        except Exception:
+            _log.exception("Failed to persist inferred cargo capacities")
 
     # ------------------------------------------------------------------
     # Version checking

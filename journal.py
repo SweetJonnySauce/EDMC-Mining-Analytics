@@ -49,11 +49,13 @@ class JournalProcessor:
         refresh_ui: Callable[[], None],
         on_session_start: Callable[[], None],
         on_session_end: Callable[[], None],
+        persist_inferred_capacities: Callable[[], None],
     ) -> None:
         self._state = state
         self._refresh_ui = refresh_ui
         self._on_session_start = on_session_start
         self._on_session_end = on_session_end
+        self._persist_inferred_capacities = persist_inferred_capacities
         self._initial_state_checked = False
         self._pending_ship_updates: dict[str, PendingShipUpdate] = {}
         self._pending_timeout_timer: Optional[threading.Timer] = None
@@ -286,6 +288,7 @@ class JournalProcessor:
                 ship_source,
                 None,
                 None,
+                ship_key=key,
                 context=context,
                 entry=entry,
                 shared_state=shared_state,
@@ -299,6 +302,7 @@ class JournalProcessor:
             )
 
             self._state.cargo_capacity = None
+            self._state.cargo_capacity_is_inferred = False
 
             self._pending_ship_updates[key] = PendingShipUpdate(
                 key=key,
@@ -338,6 +342,7 @@ class JournalProcessor:
                 ship_source,
                 capacity_value,
                 capacity_source,
+                ship_key=key,
                 context=context,
                 entry=entry,
                 shared_state=shared_state,
@@ -374,6 +379,7 @@ class JournalProcessor:
             ship_source,
             capacity_value,
             capacity_source,
+            ship_key=key,
             context=context,
             entry=entry,
             shared_state=shared_state,
@@ -445,7 +451,9 @@ class JournalProcessor:
                 )
                 ship_summary = pending.ship_display or "Unknown ship"
                 self._state.current_ship = pending.ship_display
+                self._state.current_ship_key = key
                 self._state.cargo_capacity = pending.capacity_value
+                self._state.cargo_capacity_is_inferred = False
                 _plugin_log.debug(
                     "Ship swap timeout: ship=%s, cargo_capacity=unknown (no loadout received)",
                     ship_summary,
@@ -455,6 +463,11 @@ class JournalProcessor:
                         "Ship swap timeout for %s (no loadout received)",
                         key,
                     )
+                self._activate_inferred_capacity(
+                    key,
+                    reason=f"timeout ({pending.context})",
+                    force=True,
+                )
                 expired.append(key)
         for key in expired:
             self._pending_ship_updates.pop(key, None)
@@ -467,6 +480,7 @@ class JournalProcessor:
         ship_source: Optional[str],
         capacity_value: Optional[int],
         capacity_source: Optional[str],
+        ship_key: Optional[str],
         *,
         context: str,
         entry: Optional[dict],
@@ -475,6 +489,8 @@ class JournalProcessor:
     ) -> Tuple[str, str]:
         ship_before = self._state.current_ship
         capacity_before = self._state.cargo_capacity
+        if ship_key is not None:
+            self._state.current_ship_key = ship_key
 
         normalized_before = ship_before.lower() if isinstance(ship_before, str) else None
         normalized_incoming = ship_display.lower() if isinstance(ship_display, str) else None
@@ -499,10 +515,19 @@ class JournalProcessor:
                 or self._state.cargo_capacity is None
                 or ship_changed
             )
+            inferred_reason = f"{context} ({capacity_source or 'unknown'})"
+            self._update_inferred_capacity(
+                self._state.current_ship_key,
+                capacity_value,
+                reason=inferred_reason,
+                activate=False,
+            )
             if should_apply_capacity:
                 self._state.cargo_capacity = capacity_value
+                self._state.cargo_capacity_is_inferred = False
         elif ship_changed:
             self._state.cargo_capacity = None
+            self._state.cargo_capacity_is_inferred = False
 
         ship_summary = self._state.current_ship or "Unknown ship (no data provided)"
         if capacity_value is not None and (
@@ -513,7 +538,10 @@ class JournalProcessor:
             capacity_origin = capacity_source or "unknown"
             capacity_summary = f"{self._state.cargo_capacity}t (source={capacity_origin})"
         elif self._state.cargo_capacity is not None:
-            capacity_summary = f"{self._state.cargo_capacity}t (existing)"
+            if self._state.cargo_capacity_is_inferred:
+                capacity_summary = f"({self._state.cargo_capacity}t inferred)"
+            else:
+                capacity_summary = f"{self._state.cargo_capacity}t (existing)"
         else:
             capacity_origin = capacity_source or ("cleared" if ship_changed else "not provided")
             capacity_summary = f"unknown (capacity {capacity_origin})"
@@ -640,23 +668,70 @@ class JournalProcessor:
         self._state.current_cargo_tonnage = total_cargo
 
         capacity_value: Optional[int] = None
+        capacity_source: Optional[str] = None
         if edmc_state:
             raw_capacity = edmc_state.get("CargoCapacity")
             if isinstance(raw_capacity, (int, float)) and raw_capacity >= 0:
                 capacity_value = int(raw_capacity)
+                capacity_source = "shared_state"
         if capacity_value is None:
             raw_capacity = entry.get("Capacity")
             if isinstance(raw_capacity, (int, float)) and raw_capacity >= 0:
                 capacity_value = int(raw_capacity)
-        if capacity_value is not None:
-            self._state.cargo_capacity = capacity_value
+                capacity_source = "journal"
+
+        ship_key = self._state.current_ship_key
+        if ship_key is None:
+            ship_key = self._make_ship_key(entry, edmc_state)
+            if ship_key is not None:
+                self._state.current_ship_key = ship_key
+        if capacity_value is not None and capacity_value > 0:
+            self._update_inferred_capacity(
+                ship_key,
+                capacity_value,
+                reason=f"Cargo event ({capacity_source or 'unknown'})",
+                activate=False,
+            )
+            should_apply = (
+                capacity_source != "shared_state"
+                or self._state.cargo_capacity is None
+                or self._state.cargo_capacity_is_inferred
+            )
+            if should_apply:
+                self._state.cargo_capacity = capacity_value
+                self._state.cargo_capacity_is_inferred = False
+        else:
+            limpets_onboard = (
+                limpets
+                if limpets is not None
+                else (self._state.limpets_remaining if self._state.limpets_remaining is not None else 0)
+            )
+            observed_total = max(0, total_cargo) + max(0, limpets_onboard)
+            if observed_total > 0:
+                self._update_inferred_capacity(
+                    ship_key,
+                    observed_total,
+                    reason=f"Cargo event observed cargo ({observed_total}t)",
+                    activate=True,
+                )
+            else:
+                self._activate_inferred_capacity(
+                    ship_key,
+                    reason="Cargo event (no capacity data)",
+                )
 
         if _log.isEnabledFor(logging.DEBUG):
             _log.debug(
                 "Cargo update: total=%st capacity=%s (source=%s)",
                 self._state.current_cargo_tonnage,
                 self._state.cargo_capacity,
-                "shared" if edmc_state and edmc_state.get("CargoCapacity") is not None else "journal",
+                "inferred"
+                if self._state.cargo_capacity_is_inferred
+                else (
+                    "shared"
+                    if edmc_state and edmc_state.get("CargoCapacity") is not None
+                    else capacity_source or "journal"
+                ),
             )
 
         if not is_mining:
@@ -699,6 +774,132 @@ class JournalProcessor:
         self._state.last_cargo_counts = dict(cargo_counts)
 
     # ------------------------------------------------------------------
+    # Inferred capacity helpers
+    # ------------------------------------------------------------------
+    def _update_inferred_capacity(
+        self,
+        ship_key: Optional[str],
+        candidate: Optional[int],
+        *,
+        reason: str,
+        activate: bool,
+    ) -> None:
+        if ship_key is None or candidate is None:
+            return
+        try:
+            capacity = int(candidate)
+        except (TypeError, ValueError):
+            return
+        if capacity <= 0:
+            return
+
+        prior = self._state.inferred_capacity_map.get(ship_key)
+        changed = prior is None or capacity > prior
+        if changed:
+            self._state.inferred_capacity_map[ship_key] = capacity
+            _plugin_log.debug(
+                "Inferred cargo capacity updated: ship_key=%s capacity=%st (reason=%s)",
+                ship_key,
+                capacity,
+                reason,
+            )
+            if _plugin_log is not _log:
+                _log.debug(
+                    "Inferred cargo capacity updated: ship_key=%s capacity=%s reason=%s prior=%s",
+                    ship_key,
+                    capacity,
+                    reason,
+                    prior,
+                )
+            try:
+                self._persist_inferred_capacities()
+            except Exception:
+                _log.exception("Unable to persist inferred cargo capacities")
+
+        if activate:
+            self._activate_inferred_capacity(ship_key, reason, force=changed)
+
+    def _activate_inferred_capacity(
+        self,
+        ship_key: Optional[str],
+        reason: str,
+        *,
+        force: bool = False,
+    ) -> None:
+        if ship_key is None:
+            return
+        _plugin_log.debug(
+            "Inference requested: ship_key=%s (reason=%s)",
+            ship_key,
+            reason,
+        )
+        if _plugin_log is not _log:
+            _log.debug(
+                "Inference requested: ship_key=%s reason=%s",
+                ship_key,
+                reason,
+            )
+        inferred = self._state.inferred_capacity_map.get(ship_key)
+        if inferred is None or inferred <= 0:
+            _plugin_log.debug(
+                "No stored inferred cargo capacity for ship_key=%s; skipping",
+                ship_key,
+            )
+            if _plugin_log is not _log:
+                _log.debug(
+                    "No stored inferred cargo capacity for ship_key=%s",
+                    ship_key,
+                )
+            return
+        if not self._state.cargo_capacity_is_inferred and self._state.cargo_capacity is not None:
+            _plugin_log.debug(
+                "Actual cargo capacity present; inference skipped for ship_key=%s",
+                ship_key,
+            )
+            if _plugin_log is not _log:
+                _log.debug(
+                    "Actual cargo capacity present; inference skipped for ship_key=%s",
+                    ship_key,
+                )
+            return
+
+        already_active = (
+            self._state.cargo_capacity_is_inferred
+            and self._state.cargo_capacity == inferred
+        )
+        if already_active and not force:
+            return
+
+        _plugin_log.debug(
+            "Inferring cargo capacity for ship_key=%s (reason=%s)",
+            ship_key,
+            reason,
+        )
+        if _plugin_log is not _log:
+            _log.debug(
+                "Inferring cargo capacity for ship_key=%s reason=%s",
+                ship_key,
+                reason,
+            )
+
+        self._state.cargo_capacity = inferred
+        self._state.cargo_capacity_is_inferred = True
+        _plugin_log.debug(
+            "Applied inferred cargo capacity: ship_key=%s capacity=%st (reason=%s)",
+            ship_key,
+            inferred,
+            reason,
+        )
+        if _plugin_log is not _log:
+            _log.debug(
+                "Applied inferred cargo capacity: ship_key=%s capacity=%s reason=%s",
+                ship_key,
+                inferred,
+                reason,
+            )
+        self._refresh_ui()
+
+    # ------------------------------------------------------------------
     # Mining session helpers
     # ------------------------------------------------------------------
     def _update_mining_state(
@@ -716,6 +917,9 @@ class JournalProcessor:
             ship_display, ship_source, capacity_value, capacity_source = self._extract_ship_and_capacity(entry, state)
             existing_ship = self._state.current_ship
             existing_capacity = self._state.cargo_capacity
+            existing_ship_key = self._state.current_ship_key
+            existing_capacity_inferred = self._state.cargo_capacity_is_inferred
+            ship_key = self._make_ship_key(entry, state)
 
             normalized_existing = existing_ship.lower() if isinstance(existing_ship, str) else None
             normalized_incoming = ship_display.lower() if isinstance(ship_display, str) else None
@@ -752,7 +956,28 @@ class JournalProcessor:
                 self._set_current_system(system_name)
 
             self._state.current_ship = ship_to_use
+            self._state.current_ship_key = ship_key or existing_ship_key
             self._state.cargo_capacity = capacity_to_use
+            if capacity_to_use is not None:
+                if capacity_value is not None and capacity_to_use > 0:
+                    self._state.cargo_capacity_is_inferred = False
+                    self._update_inferred_capacity(
+                        self._state.current_ship_key,
+                        capacity_to_use,
+                        reason="Mining start provided capacity",
+                        activate=False,
+                    )
+                else:
+                    self._state.cargo_capacity_is_inferred = bool(existing_capacity_inferred)
+                    if existing_capacity_inferred:
+                        self._update_inferred_capacity(
+                            self._state.current_ship_key,
+                            capacity_to_use,
+                            reason="Mining start inferred capacity",
+                            activate=False,
+                        )
+            else:
+                self._state.cargo_capacity_is_inferred = False
 
             _plugin_log.info("Mining start event triggered (reason=%s)", reason)
             if _plugin_log is not _log:

@@ -32,6 +32,7 @@ class MiningState:
     mining_location: Optional[str] = None
     current_system: Optional[str] = None
     current_ship: Optional[str] = None
+    current_ship_key: Optional[str] = None
 
     prospected_count: int = 0
     already_mined_count: int = 0
@@ -63,7 +64,9 @@ class MiningState:
 
     inara_settings: InaraSettings = field(default_factory=InaraSettings)
     cargo_capacity: Optional[int] = None
+    cargo_capacity_is_inferred: bool = False
     current_cargo_tonnage: int = 0
+    inferred_capacity_map: Dict[str, int] = field(default_factory=dict)
 
 
 def reset_mining_state(state: MiningState) -> None:
@@ -100,6 +103,8 @@ def reset_mining_state(state: MiningState) -> None:
     state.prospected_histogram.clear()
     state.current_cargo_tonnage = 0
     state.current_ship = None
+    state.current_ship_key = None
+    state.cargo_capacity_is_inferred = False
 
 
 def recompute_histograms(state: MiningState) -> None:

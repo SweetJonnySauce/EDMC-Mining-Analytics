@@ -38,7 +38,7 @@ _log = get_logger("ui")
 class ThemeAdapter:
     """Bridge EDMC's theme helper with plain Tk widgets."""
 
-    def __init__(self) -> None:
+def __init__(self) -> None:
         self._style = ttk.Style()
         self._theme = edmc_theme
         self._config = edmc_config
@@ -248,6 +248,76 @@ class ThemeAdapter:
         return self._fallback_panel_bg
 
 
+class _LabelTooltip:
+    """Simple tooltip helper for non-list widgets."""
+
+    def __init__(self, widget: tk.Widget, text: Optional[str] = None) -> None:
+        self._widget = widget
+        self._text: Optional[str] = text
+        self._tip: Optional[tk.Toplevel] = None
+        widget.bind("<Enter>", self._on_enter, add="+")
+        widget.bind("<Leave>", self._on_leave, add="+")
+        widget.bind("<Motion>", self._on_motion, add="+")
+
+    def update_text(self, text: Optional[str]) -> None:
+        self._text = text or None
+        if self._tip is not None and self._text is None:
+            self._hide()
+
+    def _on_enter(self, event: tk.Event) -> None:  # type: ignore[override]
+        if self._text:
+            self._show(event.x_root, event.y_root)
+
+    def _on_motion(self, event: tk.Event) -> None:  # type: ignore[override]
+        if self._tip is not None and self._text:
+            self._position(event.x_root, event.y_root)
+
+    def _on_leave(self, _event: tk.Event) -> None:  # type: ignore[override]
+        self._hide()
+
+    def _show(self, x_root: int, y_root: int) -> None:
+        text = self._text
+        if not text:
+            return
+        if self._tip is None:
+            tip = tk.Toplevel(self._widget)
+            tip.wm_overrideredirect(True)
+            try:
+                tip.wm_attributes("-topmost", True)
+            except Exception:
+                pass
+            label = tk.Label(
+                tip,
+                text=text,
+                justify="left",
+                background="#111111",
+                foreground="#f6e3c0",
+                relief=tk.SOLID,
+                borderwidth=1,
+                padx=6,
+                pady=4,
+                wraplength=320,
+            )
+            label.pack()
+            self._tip = tip
+        else:
+            try:
+                child = self._tip.winfo_children()[0]
+                child.configure(text=text)
+            except Exception:
+                pass
+        self._position(x_root, y_root)
+
+    def _position(self, x_root: int, y_root: int) -> None:
+        if self._tip is None:
+            return
+        self._tip.wm_geometry(f"+{x_root + 12}+{y_root + 12}")
+
+    def _hide(self) -> None:
+        if self._tip is not None:
+            self._tip.destroy()
+            self._tip = None
+
 class MiningUI:
     """Encapsulates widget construction and refresh logic."""
 
@@ -266,6 +336,7 @@ class MiningUI:
         self._status_var: Optional[tk.StringVar] = None
         self._summary_var: Optional[tk.StringVar] = None
         self._summary_label: Optional[tk.Label] = None
+        self._summary_tooltip: Optional[_LabelTooltip] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_tree: Optional[ttk.Treeview] = None
         self._materials_frame: Optional[ttk.Frame] = None
@@ -324,6 +395,7 @@ class MiningUI:
         summary_label.grid(row=1, column=0, columnspan=3, sticky="w", padx=4, pady=(0, 6))
         self._theme.register(summary_label)
         self._summary_label = summary_label
+        self._summary_tooltip = _LabelTooltip(summary_label)
 
         button_frame = tk.Frame(frame, highlightthickness=0, bd=0)
         button_frame.grid(row=0, column=2, sticky="e", padx=4, pady=(4, 2))
@@ -675,6 +747,7 @@ class MiningUI:
 
         status_var.set(status_text)
         summary_var.set("\n".join(summary_lines))
+        self._update_summary_tooltip()
 
         if self._last_is_mining is None or self._last_is_mining != self._state.is_mining:
             self._details_visible = bool(self._state.is_mining)
@@ -732,11 +805,15 @@ class MiningUI:
         total_cargo = mined_cargo + max(0, limpets_onboard)
         capacity = self._state.cargo_capacity
         if capacity is not None and capacity > 0:
+            capacity_text = f"{capacity}t"
+            if self._state.cargo_capacity_is_inferred:
+                capacity_text = f"{capacity_text} (Inferred)"
             remaining = max(0, capacity - total_cargo)
             percent_full = ((capacity - remaining) / capacity) * 100.0
-            lines.append(
-                f"Cargo: {total_cargo}t | Capacity: {capacity}t | Remaining: {remaining}t | {percent_full:.1f}% full"
+            summary = (
+                f"Cargo: {total_cargo}t | Capacity: {capacity_text} | Remaining: {remaining}t | {percent_full:.1f}% full"
             )
+            lines.append(summary)
         else:
             remaining_label = "unknown"
             lines.append(
@@ -744,6 +821,17 @@ class MiningUI:
             )
 
         return lines
+
+    def _update_summary_tooltip(self) -> None:
+        tooltip = self._summary_tooltip
+        if tooltip is None:
+            return
+        if self._state.cargo_capacity_is_inferred and self._state.cargo_capacity:
+            tooltip.update_text(
+                "The plugin can't yet determine the cargo capacity. Try swapping ships, or filling your hold completely full of limpets."
+            )
+        else:
+            tooltip.update_text(None)
 
     def _populate_tables(self) -> None:
         cargo_tree = self._cargo_tree
