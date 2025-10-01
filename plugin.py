@@ -106,6 +106,7 @@ class MiningAnalyticsPlugin:
             self.inara,
             self._handle_reset_request,
             on_pause_changed=self._handle_pause_change,
+            on_reset_inferred_capacities=self._handle_reset_inferred_capacities,
         )
         self.journal = JournalProcessor(
             self.state,
@@ -220,6 +221,14 @@ class MiningAnalyticsPlugin:
             self.session_recorder.record_pause(timestamp, paused=paused, source=source)
         except Exception:
             _log.exception("Failed to record pause state change")
+
+    def _handle_reset_inferred_capacities(self) -> None:
+        _log.info("Resetting inferred cargo capacities at user request")
+        self.preferences.reset_inferred_capacities(self.state)
+        if self.state.cargo_capacity_is_inferred:
+            self.state.cargo_capacity = None
+            self.state.cargo_capacity_is_inferred = False
+        self._refresh_ui_safe()
 
     # ------------------------------------------------------------------
     # Version checking

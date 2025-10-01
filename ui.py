@@ -274,11 +274,13 @@ class MiningUI:
         inara: InaraClient,
         on_reset: Callable[[], None],
         on_pause_changed: Optional[Callable[[bool, str, datetime], None]] = None,
+        on_reset_inferred_capacities: Optional[Callable[[], None]] = None,
     ) -> None:
         self._state = state
         self._inara = inara
         self._on_reset = on_reset
         self._pause_callback = on_pause_changed
+        self._reset_capacities_callback = on_reset_inferred_capacities
         self._theme = ThemeAdapter()
 
         self._frame: Optional[tk.Widget] = None
@@ -308,6 +310,7 @@ class MiningUI:
         self._prefs_auto_unpause_var: Optional[tk.BooleanVar] = None
         self._prefs_session_logging_var: Optional[tk.BooleanVar] = None
         self._prefs_session_retention_var: Optional[tk.IntVar] = None
+        self._reset_capacities_btn: Optional[ttk.Button] = None
 
         self._updating_bin_var = False
         self._updating_rate_var = False
@@ -581,6 +584,15 @@ class MiningUI:
             self._prefs_session_retention_var.set(limit)
             self._updating_session_retention_var = False
 
+    def _on_reset_inferred_capacities(self) -> None:
+        callback = self._reset_capacities_callback
+        if not callback:
+            return
+        try:
+            callback()
+        except Exception:
+            _log.exception("Failed to reset inferred cargo capacities")
+
     def schedule_rate_update(self) -> None:
         frame = self._frame
         if frame is None or not frame.winfo_exists():
@@ -693,6 +705,15 @@ class MiningUI:
         )
         auto_unpause_cb.grid(row=4, column=0, sticky="w", pady=(0, 6))
         self._theme.register(auto_unpause_cb)
+
+        reset_cap_btn = ttk.Button(
+            general_frame,
+            text="Reset inferred cargo capacities",
+            command=self._on_reset_inferred_capacities,
+        )
+        reset_cap_btn.grid(row=5, column=0, sticky="w", pady=(0, 8))
+        self._theme.register(reset_cap_btn)
+        self._reset_capacities_btn = reset_cap_btn
 
         logging_frame = tk.LabelFrame(frame, text="Session Data Recording")
         logging_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))

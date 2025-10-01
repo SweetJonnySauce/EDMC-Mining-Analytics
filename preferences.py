@@ -191,3 +191,12 @@ class PreferencesManager:
             config.set("edmc_mining_inferred_cargo_map", payload)
         except Exception:
             _log.exception("Failed to persist inferred cargo capacities")
+
+    def reset_inferred_capacities(self, state: MiningState) -> None:
+        state.inferred_capacity_map.clear()
+        if config is None:
+            return
+        try:
+            config.set("edmc_mining_inferred_cargo_map", "{}")
+        except Exception:
+            _log.exception("Failed to clear inferred cargo capacities from config")
