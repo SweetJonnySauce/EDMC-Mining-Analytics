@@ -84,6 +84,10 @@ class ThemeAdapter:
             self._fallback_button_border = "#ffc266"
             self._fallback_link_fg = "#f7931e"
 
+    @property
+    def is_dark_theme(self) -> bool:
+        return self._is_dark_theme
+
     def register(self, widget: tk.Widget) -> None:
         if self._theme is not None:
             try:
@@ -250,6 +254,7 @@ class MiningUI:
         self._frame: Optional[tk.Widget] = None
         self._status_var: Optional[tk.StringVar] = None
         self._summary_var: Optional[tk.StringVar] = None
+        self._summary_label: Optional[tk.Label] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_tree: Optional[ttk.Treeview] = None
         self._materials_frame: Optional[ttk.Frame] = None
@@ -277,6 +282,8 @@ class MiningUI:
         self._rate_update_job: Optional[str] = None
         self._content_collapsed = False
         self._hist_windows: Dict[str, tk.Toplevel] = {}
+        self._details_visible = False
+        self._last_is_mining: Optional[bool] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -305,6 +312,23 @@ class MiningUI:
         )
         summary_label.grid(row=1, column=0, columnspan=3, sticky="w", padx=4, pady=(0, 6))
         self._theme.register(summary_label)
+        self._summary_label = summary_label
+
+        button_frame = tk.Frame(frame, highlightthickness=0, bd=0)
+        button_frame.grid(row=0, column=2, sticky="e", padx=4, pady=(4, 2))
+        self._theme.register(button_frame)
+        self._details_toggle = tk.Button(
+            button_frame,
+            text="",
+            command=self._toggle_details,
+            cursor="hand2",
+            width=12,
+        )
+        if self._theme.is_dark_theme:
+            self._theme.style_button(self._details_toggle)
+        else:
+            self._theme.register(self._details_toggle)
+        self._details_toggle.grid(row=0, column=0)
 
         commodities_label = tk.Label(
             frame,
@@ -446,10 +470,16 @@ class MiningUI:
         frame.rowconfigure(6, weight=1)
 
         self._content_widgets = (
+            summary_label,
+            commodities_label,
             table_frame,
+            total_label,
             reset_btn,
+            materials_label,
             self._materials_frame,
         )
+
+        self._apply_initial_visibility()
 
         return frame
 
@@ -481,6 +511,29 @@ class MiningUI:
             except Exception:
                 pass
         self._rate_update_job = None
+
+    def _toggle_details(self) -> None:
+        self._details_visible = not self._details_visible
+        self._sync_details_visibility()
+
+    def _apply_initial_visibility(self) -> None:
+        self._details_visible = bool(self._state.is_mining)
+        self._last_is_mining = self._state.is_mining
+        self._sync_details_visibility()
+
+    def _sync_details_visibility(self) -> None:
+        visible = self._details_visible
+        for widget in self._content_widgets:
+            if visible:
+                widget.grid()
+            else:
+                widget.grid_remove()
+        if self._details_toggle:
+            label = "Hide Details" if visible else "Show Details"
+            try:
+                self._details_toggle.configure(text=label)
+            except Exception:
+                pass
 
     def build_preferences(self, parent: tk.Widget) -> tk.Widget:
         frame = tk.Frame(parent, highlightthickness=0, bd=0)
@@ -615,6 +668,11 @@ class MiningUI:
 
         status_var.set(status_text)
         summary_var.set("\n".join(summary_lines))
+
+        if self._last_is_mining is None or self._last_is_mining != self._state.is_mining:
+            self._details_visible = bool(self._state.is_mining)
+            self._sync_details_visibility()
+        self._last_is_mining = self._state.is_mining
 
     def _status_summary_lines(self) -> list[str]:
         lines: list[str] = []
