@@ -128,7 +128,7 @@ class MiningAnalyticsPlugin:
         self._ensure_version_check()
         return PLUGIN_NAME
 
-    def plugin_app(self, parent: tk.Widget) -> ttk.Frame:
+    def plugin_app(self, parent: tk.Widget) -> tk.Frame:
         frame = self.ui.build(parent)
         self._refresh_ui_safe()
         self.ui.schedule_rate_update()

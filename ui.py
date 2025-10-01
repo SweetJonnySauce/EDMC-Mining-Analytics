@@ -15,6 +15,16 @@ try:
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
+try:  # pragma: no cover - theme only exists inside EDMC runtime
+    from theme import theme as edmc_theme  # type: ignore[import]
+except ImportError:  # pragma: no cover
+    edmc_theme = None  # type: ignore[assignment]
+
+try:  # pragma: no cover - config only available inside EDMC
+    from config import config as edmc_config  # type: ignore[import]
+except ImportError:  # pragma: no cover
+    edmc_config = None  # type: ignore[assignment]
+
 from tooltip import TreeTooltip
 from state import MiningState
 from inara import InaraClient
@@ -22,6 +32,199 @@ from preferences import clamp_bin_size, clamp_rate_interval
 
 
 _log = logging.getLogger(__name__)
+
+
+class ThemeAdapter:
+    """Bridge EDMC's theme helper with plain Tk widgets."""
+
+    def __init__(self) -> None:
+        self._style = ttk.Style()
+        self._theme = edmc_theme
+        self._config = edmc_config
+        self._is_dark_theme = False
+        if self._config is not None:
+            try:
+                self._is_dark_theme = bool(self._config.get_int('theme') == 1)  # type: ignore[arg-type]
+            except Exception:
+                self._is_dark_theme = False
+
+        dark_text = None
+        if self._config is not None and self._is_dark_theme:
+            try:
+                dark_text = self._config.get_str('dark_text')  # type: ignore[arg-type]
+            except Exception:
+                dark_text = None
+        if not dark_text:
+            dark_text = "#f5f5f5"
+
+        if self._is_dark_theme:
+            self._fallback_panel_bg = "#000000"
+            self._fallback_text_fg = dark_text
+            self._fallback_table_bg = "#000000"
+            self._fallback_table_stripe = "#121212"
+            self._fallback_table_header_bg = "#000000"
+            self._fallback_table_header_fg = dark_text
+            self._fallback_table_header_hover = "#1a1a1a"
+            self._fallback_button_bg = "#f19a29"
+            self._fallback_button_fg = "#1a1005"
+            self._fallback_button_active = "#ffb84a"
+            self._fallback_button_border = "#ffc266"
+            self._fallback_link_fg = "#f8b542"
+        else:
+            self._fallback_panel_bg = "#0d0d0d"
+            self._fallback_text_fg = "#f4bb60"
+            self._fallback_table_bg = "#19100a"
+            self._fallback_table_stripe = "#23160d"
+            self._fallback_table_header_bg = "#3b2514"
+            self._fallback_table_header_fg = "#f6e3c0"
+            self._fallback_table_header_hover = "#4a2f19"
+            self._fallback_button_bg = "#f19a29"
+            self._fallback_button_fg = "#1a1005"
+            self._fallback_button_active = "#ffb84a"
+            self._fallback_button_border = "#ffc266"
+            self._fallback_link_fg = "#f7931e"
+
+    def register(self, widget: tk.Widget) -> None:
+        if self._theme is not None:
+            try:
+                self._theme.register(widget)
+                return
+            except Exception:
+                pass
+
+        background = self.get_background_color(widget)
+        try:
+            widget.configure(background=background)
+        except tk.TclError:
+            pass
+        for option in ("fg", "foreground"):
+            try:
+                widget.configure(**{option: self.default_text_color()})
+                break
+            except tk.TclError:
+                continue
+
+    def default_text_color(self) -> str:
+        return self._fallback_text_fg
+
+    def treeview_style(self) -> str:
+        background = self.table_background_color()
+        foreground = self.table_foreground_color()
+        header_bg = self.table_header_background_color()
+        header_fg = self.table_header_foreground_color()
+        header_hover = self.table_header_hover_color()
+        header_font = self._style.lookup("Treeview.Heading", "font") or ("TkDefaultFont", 9, "bold")
+
+        selected_bg = self.button_active_background_color()
+        selected_fg = self.button_foreground_color()
+
+        self._style.configure(
+            "Treeview",
+            background=background,
+            fieldbackground=background,
+            foreground=foreground,
+            bordercolor=header_bg,
+            borderwidth=0,
+            relief=tk.FLAT,
+            highlightthickness=0,
+            rowheight=22,
+        )
+        self._style.map(
+            "Treeview",
+            background=[("selected", selected_bg)],
+            foreground=[("selected", selected_fg)],
+        )
+        self._style.configure(
+            "Treeview.Heading",
+            background=header_bg,
+            foreground=header_fg,
+            relief="flat",
+            borderwidth=0,
+            font=header_font,
+        )
+        self._style.map(
+            "Treeview.Heading",
+            background=[("active", header_hover)],
+            foreground=[("active", header_fg)],
+        )
+        return "Treeview"
+
+    def table_background_color(self) -> str:
+        return (
+            self._style.lookup("Treeview", "background")
+            or self._style.lookup("TFrame", "background")
+            or self._fallback_table_bg
+        )
+
+    def table_foreground_color(self) -> str:
+        return (
+            self._style.lookup("Treeview", "foreground")
+            or self._style.lookup("TLabel", "foreground")
+            or self._fallback_table_header_fg
+        )
+
+    def table_stripe_color(self) -> str:
+        return self._fallback_table_stripe
+
+    def table_header_background_color(self) -> str:
+        return self._fallback_table_header_bg
+
+    def table_header_foreground_color(self) -> str:
+        return self._fallback_table_header_fg
+
+    def table_header_hover_color(self) -> str:
+        return self._fallback_table_header_hover
+
+    def button_background_color(self) -> str:
+        return self._fallback_button_bg
+
+    def button_foreground_color(self) -> str:
+        return self._fallback_button_fg
+
+    def button_active_background_color(self) -> str:
+        return self._fallback_button_active
+
+    def button_border_color(self) -> str:
+        return self._fallback_button_border
+
+    def link_color(self) -> str:
+        return self._fallback_link_fg
+
+    def style_button(self, button: tk.Button) -> None:
+        try:
+            button.configure(
+                background=self.button_background_color(),
+                foreground=self.button_foreground_color(),
+                activebackground=self.button_active_background_color(),
+                activeforeground=self.button_foreground_color(),
+                highlightthickness=1,
+                highlightbackground=self.button_border_color(),
+                highlightcolor=self.button_border_color(),
+                bd=0,
+                relief=tk.FLAT,
+                padx=12,
+                pady=4,
+            )
+        except tk.TclError:
+            pass
+        self.register(button)
+
+    def get_background_color(self, widget: tk.Widget) -> str:
+        style_name = widget.winfo_class()
+        for option in ("background", "fieldbackground"):
+            try:
+                color = self._style.lookup(style_name, option)
+            except tk.TclError:
+                color = None
+            if color:
+                return color
+        try:
+            color = widget.cget("background")  # type: ignore[call-overload]
+        except tk.TclError:
+            color = None
+        if color and color not in {"SystemButtonFace", "SystemWindowBodyColor", "SystemWindow", ""}:
+            return color
+        return self._fallback_panel_bg
 
 
 class MiningUI:
@@ -36,6 +239,7 @@ class MiningUI:
         self._state = state
         self._inara = inara
         self._on_reset = on_reset
+        self._theme = ThemeAdapter()
 
         self._frame: Optional[tk.Widget] = None
         self._status_var: Optional[tk.StringVar] = None
@@ -71,33 +275,55 @@ class MiningUI:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
-    def build(self, parent: tk.Widget) -> ttk.Frame:
-        frame = ttk.Frame(parent)
+    def build(self, parent: tk.Widget) -> tk.Frame:
+        frame = tk.Frame(parent, highlightthickness=0, bd=0)
         self._frame = frame
+        self._theme.register(frame)
 
         self._status_var = tk.StringVar(master=frame, value="Not mining")
-        ttk.Label(frame, textvariable=self._status_var, justify="left", anchor="w").grid(
-            row=0, column=0, columnspan=3, sticky="w", padx=4, pady=(4, 2)
+        status_label = tk.Label(
+            frame,
+            textvariable=self._status_var,
+            justify="left",
+            anchor="w",
         )
+        status_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=4, pady=(4, 2))
+        self._theme.register(status_label)
 
         self._summary_var = tk.StringVar(master=frame, value="")
-        ttk.Label(frame, textvariable=self._summary_var, justify="left", anchor="w").grid(
-            row=1, column=0, columnspan=3, sticky="w", padx=4, pady=(0, 6)
+        summary_label = tk.Label(
+            frame,
+            textvariable=self._summary_var,
+            justify="left",
+            anchor="w",
         )
+        summary_label.grid(row=1, column=0, columnspan=3, sticky="w", padx=4, pady=(0, 6))
+        self._theme.register(summary_label)
 
-        ttk.Label(frame, text="Mined Commodities", font=(None, 9, "bold"), anchor="w").grid(
-            row=2, column=0, sticky="w", padx=4
+        commodities_label = tk.Label(
+            frame,
+            text="Mined Commodities",
+            font=(None, 9, "bold"),
+            anchor="w",
         )
+        commodities_label.grid(row=2, column=0, sticky="w", padx=4)
+        self._theme.register(commodities_label)
 
-        table_frame = ttk.Frame(frame)
+        table_frame = tk.Frame(frame, highlightthickness=0, bd=0)
         table_frame.grid(row=3, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
+        self._theme.register(table_frame)
+
         header_font = tkfont.Font(family="TkDefaultFont", size=9, weight="normal")
+        ttk.Style().configure("Treeview.Heading", font=header_font)
+
+        tree_style = self._theme.treeview_style()
         self._cargo_tree = ttk.Treeview(
             table_frame,
             columns=("commodity", "present", "percent", "total", "range", "tph"),
             show="headings",
             height=5,
             selectmode="none",
+            style=tree_style,
         )
         self._cargo_tree.heading("commodity", text="Commodity", anchor="center")
         self._cargo_tree.heading("present", text="#", anchor="center")
@@ -112,8 +338,17 @@ class MiningUI:
         self._cargo_tree.column("range", anchor="center", width=120, stretch=False)
         self._cargo_tree.column("tph", anchor="center", width=80, stretch=False)
         self._cargo_tree.pack(fill="both", expand=True)
-
-        ttk.Style().configure("Treeview.Heading", font=header_font)
+        self._cargo_tree.tag_configure(
+            "even",
+            background=self._theme.table_background_color(),
+            foreground=self._theme.table_foreground_color(),
+        )
+        self._cargo_tree.tag_configure(
+            "odd",
+            background=self._theme.table_stripe_color(),
+            foreground=self._theme.table_foreground_color(),
+        )
+        self._theme.register(self._cargo_tree)
 
         self._cargo_tooltip = TreeTooltip(self._cargo_tree)
         if self._cargo_tooltip:
@@ -139,31 +374,55 @@ class MiningUI:
             )
 
         self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
-        ttk.Label(frame, textvariable=self._total_tph_var, anchor="w").grid(
-            row=4, column=0, sticky="w", padx=4, pady=(0, 6)
+        total_label = tk.Label(
+            frame,
+            textvariable=self._total_tph_var,
+            anchor="w",
         )
+        total_label.grid(row=4, column=0, sticky="w", padx=4, pady=(0, 6))
+        self._theme.register(total_label)
 
-        reset_btn = ttk.Button(frame, text="Reset", command=self._on_reset)
+        reset_btn = tk.Button(frame, text="Reset", command=self._on_reset, cursor="hand2")
+        self._theme.style_button(reset_btn)
         reset_btn.grid(row=4, column=2, sticky="e", padx=4, pady=(0, 6))
 
-        ttk.Label(frame, text="Materials Collected", font=(None, 9, "bold"), anchor="w").grid(
-            row=5, column=0, sticky="w", padx=4
+        materials_label = tk.Label(
+            frame,
+            text="Materials Collected",
+            font=(None, 9, "bold"),
+            anchor="w",
         )
+        materials_label.grid(row=5, column=0, sticky="w", padx=4)
+        self._theme.register(materials_label)
 
-        self._materials_frame = ttk.Frame(frame)
+        self._materials_frame = tk.Frame(frame, highlightthickness=0, bd=0)
         self._materials_frame.grid(row=6, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
+        self._theme.register(self._materials_frame)
+
         self._materials_tree = ttk.Treeview(
             self._materials_frame,
             columns=("material", "quantity"),
             show="headings",
             height=5,
             selectmode="none",
+            style=self._theme.treeview_style(),
         )
         self._materials_tree.heading("material", text="Material")
         self._materials_tree.heading("quantity", text="Count")
         self._materials_tree.column("material", anchor="w", stretch=True, width=160)
         self._materials_tree.column("quantity", anchor="center", stretch=False, width=80)
         self._materials_tree.pack(fill="both", expand=True)
+        self._materials_tree.tag_configure(
+            "even",
+            background=self._theme.table_background_color(),
+            foreground=self._theme.table_foreground_color(),
+        )
+        self._materials_tree.tag_configure(
+            "odd",
+            background=self._theme.table_stripe_color(),
+            foreground=self._theme.table_foreground_color(),
+        )
+        self._theme.register(self._materials_tree)
 
         self._cargo_tree.bind("<Configure>", lambda _e: self._render_range_links(), add="+")
         self._cargo_tree.bind("<ButtonRelease-3>", lambda _e: self._render_range_links(), add="+")
@@ -218,17 +477,22 @@ class MiningUI:
         self._rate_update_job = None
 
     def build_preferences(self, parent: tk.Widget) -> tk.Widget:
-        frame = ttk.Frame(parent)
+        frame = tk.Frame(parent, highlightthickness=0, bd=0)
+        self._theme.register(frame)
 
-        ttk.Label(frame, text="EDMC Mining Analytics").grid(
-            row=0, column=0, sticky="w", padx=10, pady=(10, 2)
-        )
-        ttk.Label(
+        title = tk.Label(frame, text="EDMC Mining Analytics", anchor="w")
+        title.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 2))
+        self._theme.register(title)
+
+        desc1 = tk.Label(
             frame,
             text="Prospecting histogram bin size (percentage range per bin)",
-            wraplength=400,
+            anchor="w",
             justify="left",
-        ).grid(row=1, column=0, sticky="w", padx=10, pady=(0, 4))
+            wraplength=400,
+        )
+        desc1.grid(row=1, column=0, sticky="w", padx=10, pady=(0, 4))
+        self._theme.register(desc1)
 
         self._prefs_bin_var = tk.IntVar(master=frame, value=self._state.histogram_bin_size)
         self._prefs_bin_var.trace_add("write", self._on_histogram_bin_change)
@@ -240,12 +504,15 @@ class MiningUI:
             width=6,
         ).grid(row=2, column=0, sticky="w", padx=10, pady=(0, 10))
 
-        ttk.Label(
+        desc2 = tk.Label(
             frame,
             text="Tons/hour auto-update interval (seconds)",
-            wraplength=400,
+            anchor="w",
             justify="left",
-        ).grid(row=3, column=0, sticky="w", padx=10, pady=(0, 4))
+            wraplength=400,
+        )
+        desc2.grid(row=3, column=0, sticky="w", padx=10, pady=(0, 4))
+        self._theme.register(desc2)
 
         self._prefs_rate_var = tk.IntVar(master=frame, value=self._state.rate_interval_seconds)
         self._prefs_rate_var.trace_add("write", self._on_rate_interval_change)
@@ -258,21 +525,26 @@ class MiningUI:
             width=6,
         ).grid(row=4, column=0, sticky="w", padx=10, pady=(0, 10))
 
-        inara_frame = ttk.LabelFrame(frame, text="Inara Links")
+        inara_frame = tk.LabelFrame(frame, text="Inara Links")
         inara_frame.grid(row=5, column=0, sticky="ew", padx=10, pady=(0, 10))
         inara_frame.columnconfigure(0, weight=1)
+        self._theme.register(inara_frame)
 
-        ttk.Label(
+        inara_desc = tk.Label(
             inara_frame,
             text="Configure how commodity hyperlinks open Inara searches.",
-            wraplength=380,
+            anchor="w",
             justify="left",
-        ).grid(row=0, column=0, sticky="w", pady=(4, 6))
+            wraplength=380,
+        )
+        inara_desc.grid(row=0, column=0, sticky="w", pady=(4, 6))
+        self._theme.register(inara_desc)
 
         self._prefs_inara_mode_var = tk.IntVar(master=inara_frame, value=self._state.inara_settings.search_mode)
         self._prefs_inara_mode_var.trace_add("write", self._on_inara_mode_change)
-        mode_container = ttk.Frame(inara_frame)
+        mode_container = tk.Frame(inara_frame, highlightthickness=0, bd=0)
         mode_container.grid(row=1, column=0, sticky="w", pady=(0, 6))
+        self._theme.register(mode_container)
         ttk.Radiobutton(
             mode_container,
             text="Best price search",
@@ -389,6 +661,16 @@ class MiningUI:
     def _populate_tables(self) -> None:
         cargo_tree = self._cargo_tree
         if cargo_tree and getattr(cargo_tree, "winfo_exists", lambda: False)():
+            cargo_tree.tag_configure(
+                "even",
+                background=self._theme.table_background_color(),
+                foreground=self._theme.table_foreground_color(),
+            )
+            cargo_tree.tag_configure(
+                "odd",
+                background=self._theme.table_stripe_color(),
+                foreground=self._theme.table_foreground_color(),
+            )
             cargo_tree.delete(*cargo_tree.get_children())
             if self._cargo_tooltip:
                 self._cargo_tooltip.clear()
@@ -405,13 +687,14 @@ class MiningUI:
                     "",
                     "end",
                     values=("No mined commodities yet", "", "", "", "", ""),
+                    tags=("even",),
                 )
                 if self._cargo_tooltip:
                     self._cargo_tooltip.set_cell_text(item, "#6", None)
             else:
                 present_counts = {k: len(v) for k, v in self._state.prospected_samples.items()}
                 total_asteroids = self._state.prospected_count if self._state.prospected_count > 0 else 1
-                for name in rows:
+                for idx, name in enumerate(rows):
                     range_label = self._format_range_label(name)
                     present = present_counts.get(name, 0)
                     percent = (present / total_asteroids) * 100 if total_asteroids else 0
@@ -426,6 +709,7 @@ class MiningUI:
                             range_label,
                             self._format_tph(name),
                         ),
+                        tags=("odd" if idx % 2 else "even",),
                     )
                     self._cargo_item_to_commodity[item] = name
                     if self._cargo_tooltip:
@@ -438,15 +722,28 @@ class MiningUI:
 
         materials_tree = self._materials_tree
         if materials_tree and getattr(materials_tree, "winfo_exists", lambda: False)():
+            materials_tree.tag_configure(
+                "even",
+                background=self._theme.table_background_color(),
+                foreground=self._theme.table_foreground_color(),
+            )
+            materials_tree.tag_configure(
+                "odd",
+                background=self._theme.table_stripe_color(),
+                foreground=self._theme.table_foreground_color(),
+            )
             materials_tree.delete(*materials_tree.get_children())
             if not self._state.materials_collected:
-                materials_tree.insert("", "end", values=("No materials collected yet", ""))
+                materials_tree.insert(
+                    "", "end", values=("No materials collected yet", ""), tags=("even",)
+                )
             else:
-                for name in sorted(self._state.materials_collected):
+                for idx, name in enumerate(sorted(self._state.materials_collected)):
                     materials_tree.insert(
                         "",
                         "end",
                         values=(self._format_cargo_name(name), self._state.materials_collected[name]),
+                        tags=("odd" if idx % 2 else "even",),
                     )
 
         if self._total_tph_var is not None:
@@ -605,7 +902,7 @@ class MiningUI:
 
         self._clear_range_link_labels()
 
-        background = self._theme_bg_for(tree) or tree.cget("background")
+        background = self._theme.table_background_color()
         base_font = tree.cget("font")
         if not self._range_link_font:
             try:
@@ -628,7 +925,7 @@ class MiningUI:
             label = ttk.Label(
                 tree,
                 text=range_label,
-                style="EDMC.RangeLink.TLabel",
+                style="MiningAnalytics.RangeLink.TLabel",
                 cursor="hand2",
                 anchor="center",
             )
@@ -636,14 +933,12 @@ class MiningUI:
                 label.configure(font=self._range_link_font)
             except Exception:
                 pass
-            link_fg = self._theme_fg_for(tree) or "#1a4bf6"
             style = ttk.Style(tree)
-            try:
-                style.configure("EDMC.RangeLink.TLabel", foreground=link_fg)
-                if background:
-                    style.configure("EDMC.RangeLink.TLabel", background=background)
-            except Exception:
-                pass
+            style.configure(
+                "MiningAnalytics.RangeLink.TLabel",
+                foreground=self._theme.link_color(),
+                background=background,
+            )
             label.place(x=x + 2, y=y + 1, width=width - 4, height=height - 2)
             label.bind("<Button-1>", lambda _evt, commodity=commodity: self.open_histogram_window(commodity))
             self._range_link_labels[item] = label
@@ -664,7 +959,7 @@ class MiningUI:
 
         self._clear_commodity_link_labels()
 
-        background = self._theme_bg_for(tree) or tree.cget("background")
+        background = self._theme.table_background_color()
         base_font = tree.cget("font")
         if not self._commodity_link_font:
             try:
@@ -675,12 +970,11 @@ class MiningUI:
                 self._commodity_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
 
         style = ttk.Style(tree)
-        try:
-            style.configure("EDMC.CommodityLink.TLabel", foreground="#1a4bf6")
-            if background:
-                style.configure("EDMC.CommodityLink.TLabel", background=background)
-        except Exception:
-            pass
+        style.configure(
+            "MiningAnalytics.CommodityLink.TLabel",
+            foreground=self._theme.link_color(),
+            background=background,
+        )
 
         pending = False
         for item, commodity in self._cargo_item_to_commodity.items():
@@ -696,7 +990,7 @@ class MiningUI:
             label = ttk.Label(
                 tree,
                 text=self._format_cargo_name(commodity),
-                style="EDMC.CommodityLink.TLabel",
+                style="MiningAnalytics.CommodityLink.TLabel",
                 cursor="hand2",
                 anchor="w",
             )
@@ -821,39 +1115,6 @@ class MiningUI:
         end = min(start + size, 100)
         return f"{int(start)}-{int(end)}%"
 
-    def _theme_bg_for(self, widget: tk.Widget) -> Optional[str]:
-        style = ttk.Style(widget)
-        for style_name, option in (
-            ("Treeview", "fieldbackground"),
-            ("TFrame", "background"),
-            ("TLabel", "background"),
-        ):
-            try:
-                val = style.lookup(style_name, option)
-            except Exception:
-                val = None
-            if val:
-                return val
-        try:
-            return widget.cget("background")
-        except Exception:
-            return None
-
-    def _theme_fg_for(self, widget: tk.Widget) -> Optional[str]:
-        style = ttk.Style(widget)
-        for style_name, option in (
-            ("Treeview", "foreground"),
-            ("TLabel", "foreground"),
-            ("TButton", "foreground"),
-        ):
-            try:
-                val = style.lookup(style_name, option)
-            except Exception:
-                val = None
-            if val:
-                return val
-        return None
-
     def _clear_range_link_labels(self) -> None:
         for label in self._range_link_labels.values():
             if label.winfo_exists():
@@ -881,9 +1142,17 @@ class MiningUI:
             return
 
         top = tk.Toplevel(parent)
+        self._theme.register(top)
         top.title(f"{self._format_cargo_name(commodity)} histogram")
-        canvas = tk.Canvas(top, width=360, height=200)
+        canvas = tk.Canvas(
+            top,
+            width=360,
+            height=200,
+            background=self._theme.table_background_color(),
+            highlightthickness=0,
+        )
         canvas.pack(fill="both", expand=True)
+        self._theme.register(canvas)
         top.bind(
             "<Configure>",
             lambda event, c=commodity, cv=canvas: self._draw_histogram(cv, c),
@@ -922,6 +1191,8 @@ class MiningUI:
         bin_width = (width - padding * 2) / max(1, len(bins))
         size = max(1, self._state.histogram_bin_size)
 
+        text_color = self._theme.table_foreground_color()
+
         for idx, bin_index in enumerate(bins):
             count = counter[bin_index]
             x0 = padding + idx * bin_width
@@ -931,8 +1202,8 @@ class MiningUI:
             y1 = height - padding
             canvas.create_rectangle(x0, y0, x1, y1, fill="#4a90e2")
             label = self._format_bin_label(bin_index, size)
-            canvas.create_text((x0 + x1) / 2, height - padding / 2, text=label, anchor="n")
-            canvas.create_text((x0 + x1) / 2, y0 - 4, text=str(count), anchor="s")
+            canvas.create_text((x0 + x1) / 2, height - padding / 2, text=label, anchor="n", fill=text_color)
+            canvas.create_text((x0 + x1) / 2, y0 - 4, text=str(count), anchor="s", fill=text_color)
 
     def _recompute_histograms(self) -> None:
         from state import recompute_histograms  # local import to avoid circular deps

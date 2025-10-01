@@ -23,7 +23,7 @@ def plugin_start3(plugin_dir: str) -> str:
     return _plugin.plugin_start(plugin_dir)
 
 
-def plugin_app(parent: tk.Widget) -> ttk.Frame:
+def plugin_app(parent: tk.Widget) -> tk.Frame:
     return _plugin.plugin_app(parent)
 
 
