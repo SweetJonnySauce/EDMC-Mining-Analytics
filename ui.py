@@ -28,7 +28,7 @@ except ImportError:  # pragma: no cover
 from tooltip import TreeTooltip, WidgetTooltip
 from state import MiningState
 from mining_inara import InaraClient
-from preferences import clamp_bin_size, clamp_rate_interval
+from preferences import clamp_bin_size, clamp_rate_interval, clamp_session_retention
 from logging_utils import get_logger
 
 
@@ -169,7 +169,9 @@ class ThemeAdapter:
         )
 
     def table_stripe_color(self) -> str:
-        return self._fallback_table_stripe
+        base = self.table_background_color()
+        adjusted = self._tint_color(base, 1.08 if self._is_dark_theme else 0.92)
+        return adjusted or self._fallback_table_stripe
 
     def table_header_background_color(self) -> str:
         return self._fallback_table_header_bg
@@ -194,6 +196,21 @@ class ThemeAdapter:
 
     def link_color(self) -> str:
         return self._fallback_link_fg
+
+    @staticmethod
+    def _tint_color(color: str, factor: float) -> Optional[str]:
+        if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
+            return None
+        try:
+            r = int(color[1:3], 16)
+            g = int(color[3:5], 16)
+            b = int(color[5:7], 16)
+        except ValueError:
+            return None
+        r = max(0, min(255, int(r * factor)))
+        g = max(0, min(255, int(g * factor)))
+        b = max(0, min(255, int(b * factor)))
+        return f"#{r:02x}{g:02x}{b:02x}"
 
     def style_button(self, button: tk.Button) -> None:
         self.register(button)
@@ -256,10 +273,12 @@ class MiningUI:
         state: MiningState,
         inara: InaraClient,
         on_reset: Callable[[], None],
+        on_pause_changed: Optional[Callable[[bool, str, datetime], None]] = None,
     ) -> None:
         self._state = state
         self._inara = inara
         self._on_reset = on_reset
+        self._pause_callback = on_pause_changed
         self._theme = ThemeAdapter()
 
         self._frame: Optional[tk.Widget] = None
@@ -287,12 +306,16 @@ class MiningUI:
         self._prefs_inara_carriers_var: Optional[tk.BooleanVar] = None
         self._prefs_inara_surface_var: Optional[tk.BooleanVar] = None
         self._prefs_auto_unpause_var: Optional[tk.BooleanVar] = None
+        self._prefs_session_logging_var: Optional[tk.BooleanVar] = None
+        self._prefs_session_retention_var: Optional[tk.IntVar] = None
 
         self._updating_bin_var = False
         self._updating_rate_var = False
         self._updating_inara_mode_var = False
         self._updating_inara_carriers_var = False
         self._updating_inara_surface_var = False
+        self._updating_session_logging_var = False
+        self._updating_session_retention_var = False
 
         self._rate_update_job: Optional[str] = None
         self._content_collapsed = False
@@ -525,6 +548,39 @@ class MiningUI:
             return
         self._state.auto_unpause_on_event = value
 
+    def _on_session_logging_change(self, *_: object) -> None:
+        if (
+            self._prefs_session_logging_var is None
+            or self._updating_session_logging_var
+        ):
+            return
+        try:
+            value = bool(self._prefs_session_logging_var.get())
+        except (tk.TclError, ValueError):
+            return
+        if value == self._state.session_logging_enabled:
+            return
+        self._state.session_logging_enabled = value
+
+    def _on_session_retention_change(self, *_: object) -> None:
+        if (
+            self._prefs_session_retention_var is None
+            or self._updating_session_retention_var
+        ):
+            return
+        try:
+            value = int(self._prefs_session_retention_var.get())
+        except (tk.TclError, ValueError, TypeError):
+            return
+        limit = clamp_session_retention(value)
+        if limit == self._state.session_log_retention:
+            return
+        self._state.session_log_retention = limit
+        if self._prefs_session_retention_var.get() != limit:
+            self._updating_session_retention_var = True
+            self._prefs_session_retention_var.set(limit)
+            self._updating_session_retention_var = False
+
     def schedule_rate_update(self) -> None:
         frame = self._frame
         if frame is None or not frame.winfo_exists():
@@ -626,7 +682,9 @@ class MiningUI:
             width=6,
         ).grid(row=3, column=0, sticky="w", pady=(0, 8))
 
-        self._prefs_auto_unpause_var = tk.BooleanVar(master=general_frame, value=self._state.auto_unpause_on_event)
+        self._prefs_auto_unpause_var = tk.BooleanVar(
+            master=general_frame, value=self._state.auto_unpause_on_event
+        )
         self._prefs_auto_unpause_var.trace_add("write", self._on_auto_unpause_change)
         auto_unpause_cb = ttk.Checkbutton(
             general_frame,
@@ -636,8 +694,64 @@ class MiningUI:
         auto_unpause_cb.grid(row=4, column=0, sticky="w", pady=(0, 6))
         self._theme.register(auto_unpause_cb)
 
+        logging_frame = tk.LabelFrame(frame, text="Session Data Recording")
+        logging_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
+        logging_frame.columnconfigure(0, weight=1)
+        self._theme.register(logging_frame)
+
+        logging_desc = tk.Label(
+            logging_frame,
+            text="Persist a JSON summary for each mining session when it ends.",
+            anchor="w",
+            justify="left",
+            wraplength=380,
+        )
+        logging_desc.grid(row=0, column=0, sticky="w", pady=(4, 6))
+        self._theme.register(logging_desc)
+
+        self._prefs_session_logging_var = tk.BooleanVar(
+            master=logging_frame,
+            value=self._state.session_logging_enabled,
+        )
+        self._prefs_session_logging_var.trace_add("write", self._on_session_logging_change)
+        session_logging_cb = ttk.Checkbutton(
+            logging_frame,
+            text="Record mining session data",
+            variable=self._prefs_session_logging_var,
+        )
+        session_logging_cb.grid(row=1, column=0, sticky="w", pady=(0, 6))
+        self._theme.register(session_logging_cb)
+
+        retention_container = tk.Frame(logging_frame, highlightthickness=0, bd=0)
+        retention_container.grid(row=2, column=0, sticky="w")
+        self._theme.register(retention_container)
+
+        retention_label = tk.Label(
+            retention_container,
+            text="Maximum session files to keep",
+            anchor="w",
+        )
+        retention_label.grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self._theme.register(retention_label)
+
+        self._prefs_session_retention_var = tk.IntVar(
+            master=retention_container,
+            value=self._state.session_log_retention,
+        )
+        self._prefs_session_retention_var.trace_add(
+            "write", self._on_session_retention_change
+        )
+        ttk.Spinbox(
+            retention_container,
+            from_=1,
+            to=500,
+            increment=1,
+            width=6,
+            textvariable=self._prefs_session_retention_var,
+        ).grid(row=0, column=1, sticky="w")
+
         inara_frame = tk.LabelFrame(frame, text="Inara Links")
-        inara_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
+        inara_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))
         inara_frame.columnconfigure(0, weight=1)
         self._theme.register(inara_frame)
 
@@ -1048,9 +1162,9 @@ class MiningUI:
         self._on_reset()
 
     def _toggle_pause(self) -> None:
-        self.set_paused(not self._state.is_paused)
+        self.set_paused(not self._state.is_paused, source="manual")
 
-    def set_paused(self, paused: bool) -> None:
+    def set_paused(self, paused: bool, *, source: str = "manual") -> None:
         target = bool(paused)
         if target == self._state.is_paused:
             self._update_pause_button()
@@ -1058,6 +1172,11 @@ class MiningUI:
             self._update_summary_tooltip()
             return
         self._state.is_paused = target
+        if self._pause_callback:
+            try:
+                self._pause_callback(target, source, datetime.now(timezone.utc))
+            except Exception:
+                _log.exception("Failed to notify pause state change")
         if target:
             self.cancel_rate_update()
         elif self._state.is_mining:
@@ -1135,7 +1254,6 @@ class MiningUI:
 
         self._clear_range_link_labels()
 
-        background = self._theme.table_background_color()
         try:
             base_font = tree.cget("font")
         except tk.TclError:
@@ -1150,18 +1268,6 @@ class MiningUI:
             except tk.TclError:
                 self._range_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
 
-        try:
-            style = ttk.Style(tree)
-            style.configure(
-                "MiningAnalytics.RangeLink.TLabel",
-                foreground=self._theme.link_color(),
-                background=background,
-            )
-        except tk.TclError:
-            self._clear_range_link_labels()
-            self._clear_commodity_link_labels()
-            return
-
         pending = False
         for item, commodity in self._cargo_item_to_commodity.items():
             range_label = self._format_range_label(commodity)
@@ -1175,21 +1281,25 @@ class MiningUI:
                 pending = True
                 continue
             x, y, width, height = bbox
-            try:
-                label = ttk.Label(
-                    tree,
-                    text=range_label,
-                    style="MiningAnalytics.RangeLink.TLabel",
-                    cursor="hand2",
-                    anchor="center",
-                )
-            except Exception:
-                pending = True
-                continue
+            tags = tree.item(item, "tags") or ()
+            bg_color = self._theme.table_background_color()
+            if "odd" in tags:
+                bg_color = self._theme.table_stripe_color()
+            label = tk.Label(
+                tree,
+                text=range_label,
+                cursor="hand2",
+                anchor="center",
+                background=bg_color,
+                foreground=self._theme.link_color(),
+                bd=0,
+                highlightthickness=0,
+            )
             try:
                 label.configure(font=self._range_link_font)
             except Exception:
                 pass
+            self._theme.register(label)
             try:
                 label.place(x=x + 2, y=y + 1, width=width - 4, height=height - 2)
                 label.bind("<Button-1>", lambda _evt, commodity=commodity: self.open_histogram_window(commodity))
@@ -1218,7 +1328,6 @@ class MiningUI:
 
         self._clear_commodity_link_labels()
 
-        background = self._theme.table_background_color()
         try:
             base_font = tree.cget("font")
         except tk.TclError:
@@ -1232,17 +1341,6 @@ class MiningUI:
             except tk.TclError:
                 self._commodity_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
 
-        try:
-            style = ttk.Style(tree)
-            style.configure(
-                "MiningAnalytics.CommodityLink.TLabel",
-                foreground=self._theme.link_color(),
-                background=background,
-            )
-        except tk.TclError:
-            self._clear_commodity_link_labels()
-            return False
-
         pending = False
         for item, commodity in self._cargo_item_to_commodity.items():
             if commodity.lower() not in self._inara.commodity_map:
@@ -1254,17 +1352,25 @@ class MiningUI:
             x, y, width, height = bbox
             if width <= 0 or height <= 0:
                 continue
-            label = ttk.Label(
+            tags = tree.item(item, "tags") or ()
+            bg_color = self._theme.table_background_color()
+            if "odd" in tags:
+                bg_color = self._theme.table_stripe_color()
+            label = tk.Label(
                 tree,
                 text=self._format_cargo_name(commodity),
-                style="MiningAnalytics.CommodityLink.TLabel",
                 cursor="hand2",
                 anchor="w",
+                background=bg_color,
+                foreground=self._theme.link_color(),
+                bd=0,
+                highlightthickness=0,
             )
             try:
                 label.configure(font=self._commodity_link_font)
             except Exception:
                 pass
+            self._theme.register(label)
             pad_x, pad_y = 4, 1
             try:
                 label.place(

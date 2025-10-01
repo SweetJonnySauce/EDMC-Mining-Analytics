@@ -10,6 +10,7 @@ from typing import Any, Callable, Optional, Tuple
 import threading
 
 from state import MiningState, reset_mining_state, recompute_histograms
+from session_recorder import SessionRecorder
 from logging_utils import get_logger
 
 try:  # pragma: no cover - only available inside EDMC
@@ -51,6 +52,7 @@ class JournalProcessor:
         on_session_end: Callable[[], None],
         persist_inferred_capacities: Callable[[], None],
         notify_mining_activity: Optional[Callable[[str], None]] = None,
+        session_recorder: Optional[SessionRecorder] = None,
     ) -> None:
         self._state = state
         self._refresh_ui = refresh_ui
@@ -61,6 +63,7 @@ class JournalProcessor:
         self._initial_state_checked = False
         self._pending_ship_updates: dict[str, PendingShipUpdate] = {}
         self._pending_timeout_timer: Optional[threading.Timer] = None
+        self._session_recorder = session_recorder
 
     # ------------------------------------------------------------------
     # Public API
@@ -94,13 +97,39 @@ class JournalProcessor:
 
         event = entry.get("event")
         if event == "LaunchDrone":
-            self._process_launch_drone(entry, edmc_state)
+            self._process_launch_drone(entry, edmc_state, event_time)
         elif event == "ProspectedAsteroid" and self._state.is_mining:
-            self._register_prospected_asteroid(entry)
+            self._register_prospected_asteroid(entry, event_time)
         elif event == "Cargo":
-            self._process_cargo(entry, edmc_state, is_mining=self._state.is_mining)
+            self._process_cargo(entry, edmc_state, is_mining=self._state.is_mining, event_time=event_time)
         elif event == "MiningRefined":
+            if self._session_recorder:
+                type_localised_raw = entry.get("Type_Localised")
+                localized = None
+                if isinstance(type_localised_raw, str):
+                    localized = type_localised_raw.strip() or None
+                raw_type = entry.get("Type")
+                type_name = None
+                if isinstance(raw_type, str):
+                    type_name = raw_type.strip() or None
+                if not localized:
+                    localized = type_name
+                self._session_recorder.record_mining_refined(
+                    event_time,
+                    commodity_localised=localized,
+                    commodity_type=type_name,
+                )
             self._emit_mining_activity("MiningRefined")
+        elif event == "BuyDrones":
+            if self._session_recorder:
+                count = entry.get("Count")
+                try:
+                    parsed_count = int(count) if count is not None else None
+                except (TypeError, ValueError):
+                    parsed_count = None
+                drone_type = entry.get("Type")
+                drone_name = drone_type if isinstance(drone_type, str) else None
+                self._session_recorder.record_buy_drones(event_time, count=parsed_count, drone_type=drone_name)
         elif event == "SupercruiseEntry" and self._state.is_mining:
             self._update_mining_state(
                 False,
@@ -177,7 +206,12 @@ class JournalProcessor:
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
-    def _process_launch_drone(self, entry: dict, edmc_state: Optional[dict]) -> None:
+    def _process_launch_drone(
+        self,
+        entry: dict,
+        edmc_state: Optional[dict],
+        event_time: datetime,
+    ) -> None:
         drone_type = entry.get("Type")
         if not isinstance(drone_type, str):
             self._state.last_event_was_drone_launch = False
@@ -200,14 +234,41 @@ class JournalProcessor:
         self._state.last_event_was_drone_launch = True
         self._refresh_ui()
         self._emit_mining_activity(f"LaunchDrone:{dtype}")
+        if self._session_recorder:
+            self._session_recorder.record_launch_drone(event_time, drone_type=drone_type)
 
-    def _register_prospected_asteroid(self, entry: dict) -> None:
+    def _register_prospected_asteroid(self, entry: dict, event_time: datetime) -> None:
         key = self._make_prospect_key(entry)
+        duplicate = key in self._state.prospected_seen if key is not None else False
+
+        content_level = self._extract_content_level(entry)
+        remaining = entry.get("Remaining")
+        try:
+            remaining_value = float(remaining)
+        except (TypeError, ValueError):
+            remaining_value = None
+        already_mined = remaining_value is not None and remaining_value < 100
+
+        if self._session_recorder:
+            materials_payload = entry.get("Materials")
+            materials_iter = materials_payload if isinstance(materials_payload, list) else []
+            body_value = entry.get("Body")
+            body_name = body_value if isinstance(body_value, str) and body_value.strip() else None
+            self._session_recorder.record_prospected_asteroid(
+                event_time,
+                materials=materials_iter,
+                content_level=content_level,
+                remaining=remaining_value,
+                already_mined=already_mined,
+                duplicate=duplicate,
+                body=body_name,
+            )
+
         if key is None:
             _log.debug("Prospected asteroid entry missing key data: %s", entry)
             return
 
-        if key in self._state.prospected_seen:
+        if duplicate:
             self._state.duplicate_prospected += 1
             _log.debug("Duplicate prospected asteroid detected; ignoring for stats")
             return
@@ -215,17 +276,10 @@ class JournalProcessor:
         self._state.prospected_seen.add(key)
         self._state.prospected_count += 1
 
-        content_level = self._extract_content_level(entry)
         if content_level:
             self._state.prospect_content_counts[content_level] += 1
 
-        remaining = entry.get("Remaining")
-        try:
-            remaining_value = float(remaining)
-        except (TypeError, ValueError):
-            remaining_value = None
-
-        if remaining_value is not None and remaining_value < 100:
+        if already_mined:
             self._state.already_mined_count += 1
 
         materials = entry.get("Materials")
@@ -644,10 +698,23 @@ class JournalProcessor:
 
         return ship_display, ship_source, capacity_value, capacity_source
 
-    def _process_cargo(self, entry: dict, edmc_state: Optional[dict], *, is_mining: bool) -> None:
+    def _process_cargo(
+        self,
+        entry: dict,
+        edmc_state: Optional[dict],
+        *,
+        is_mining: bool,
+        event_time: datetime,
+    ) -> None:
         inventory = entry.get("Inventory")
         if not isinstance(inventory, list):
             return
+
+        entry_count_raw = entry.get("Count")
+        try:
+            cargo_event_count = int(entry_count_raw) if entry_count_raw is not None else None
+        except (TypeError, ValueError):
+            cargo_event_count = None
 
         cargo_counts: dict[str, int] = {}
         limpets = None
@@ -778,6 +845,14 @@ class JournalProcessor:
             self._refresh_ui()
 
         self._state.last_cargo_counts = dict(cargo_counts)
+        if self._session_recorder:
+                self._session_recorder.record_cargo_event(
+                    event_time,
+                    total_cargo=total_cargo,
+                    inventory=dict(cargo_counts),
+                    limpets=limpets,
+                    event_count=cargo_event_count,
+                )
         self._emit_mining_activity("Cargo")
 
     # ------------------------------------------------------------------
@@ -1031,6 +1106,9 @@ class JournalProcessor:
                     capacity_summary,
                 )
 
+            if self._session_recorder and start_time is not None:
+                self._session_recorder.start_session(start_time, reason=reason)
+
             self._on_session_start()
             if self._state.mining_start:
                 _plugin_log.info(
@@ -1052,6 +1130,8 @@ class JournalProcessor:
             system_name = self._detect_current_system(state)
             if system_name:
                 self._set_current_system(system_name)
+            if self._session_recorder and self._state.mining_end is not None:
+                self._session_recorder.end_session(self._state.mining_end, reason=reason)
             self._on_session_end()
 
         _log.info("Mining state changed to %s (%s)", "active" if active else "inactive", reason)

@@ -34,6 +34,14 @@ def clamp_rate_interval(value: int) -> int:
     return max(5, min(3600, interval))
 
 
+def clamp_session_retention(value: int) -> int:
+    try:
+        limit = int(value)
+    except (TypeError, ValueError):
+        limit = 30
+    return max(1, min(500, limit))
+
+
 class PreferencesManager:
     """Loads and persists user preferences via EDMC's config object."""
 
@@ -46,6 +54,8 @@ class PreferencesManager:
             state.inara_settings.include_surface = True
             state.inferred_capacity_map = {}
             state.auto_unpause_on_event = True
+            state.session_logging_enabled = False
+            state.session_log_retention = 30
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
@@ -62,6 +72,10 @@ class PreferencesManager:
 
         state.inferred_capacity_map = self._load_inferred_capacities()
         state.auto_unpause_on_event = bool(self._get_int("edmc_mining_auto_unpause", 1))
+        state.session_logging_enabled = bool(self._get_int("edmc_mining_session_logging", 0))
+        state.session_log_retention = clamp_session_retention(
+            self._get_int("edmc_mining_session_retention", 30)
+        )
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -98,6 +112,19 @@ class PreferencesManager:
             config.set("edmc_mining_auto_unpause", int(state.auto_unpause_on_event))
         except Exception:
             _log.exception("Failed to persist auto-unpause preference")
+
+        try:
+            config.set("edmc_mining_session_logging", int(state.session_logging_enabled))
+        except Exception:
+            _log.exception("Failed to persist session logging preference")
+
+        try:
+            config.set(
+                "edmc_mining_session_retention",
+                clamp_session_retention(state.session_log_retention),
+            )
+        except Exception:
+            _log.exception("Failed to persist session log retention preference")
 
     @staticmethod
     def _get_int(key: str, default: int) -> int:

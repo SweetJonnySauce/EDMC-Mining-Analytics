@@ -57,6 +57,8 @@ class MiningState:
 
     histogram_bin_size: int = 10
     rate_interval_seconds: int = 30
+    session_logging_enabled: bool = False
+    session_log_retention: int = 30
 
     prospected_seen: Set[ProspectKey] = field(default_factory=set)
     prospected_samples: Dict[str, List[float]] = field(default_factory=lambda: defaultdict(list))

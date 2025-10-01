@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from urllib import error, request
@@ -28,6 +29,7 @@ except ImportError:  # pragma: no cover
 from mining_inara import InaraClient
 from journal import JournalProcessor
 from preferences import PreferencesManager
+from session_recorder import SessionRecorder
 from state import MiningState, reset_mining_state
 from ui import MiningUI
 from logging_utils import get_logger, set_log_level
@@ -98,7 +100,13 @@ class MiningAnalyticsPlugin:
         self.state = MiningState()
         self.preferences = PreferencesManager()
         self.inara = InaraClient(self.state)
-        self.ui = MiningUI(self.state, self.inara, self._handle_reset_request)
+        self.session_recorder = SessionRecorder(self.state)
+        self.ui = MiningUI(
+            self.state,
+            self.inara,
+            self._handle_reset_request,
+            on_pause_changed=self._handle_pause_change,
+        )
         self.journal = JournalProcessor(
             self.state,
             refresh_ui=self._refresh_ui_safe,
@@ -106,6 +114,7 @@ class MiningAnalyticsPlugin:
             on_session_end=self._on_session_end,
             persist_inferred_capacities=self._persist_inferred_capacities,
             notify_mining_activity=self._handle_mining_activity,
+            session_recorder=self.session_recorder,
         )
 
         self.plugin_dir: Optional[Path] = None
@@ -168,7 +177,7 @@ class MiningAnalyticsPlugin:
         reset_mining_state(self.state)
         self.ui.cancel_rate_update()
         self.ui.clear_transient_widgets()
-        self.ui.set_paused(False)
+        self.ui.set_paused(False, source="system")
         self._refresh_ui_safe()
 
     def _refresh_ui_safe(self) -> None:
@@ -202,9 +211,15 @@ class MiningAnalyticsPlugin:
             return
         _log.debug("Mining activity detected (%s); auto-resuming paused updates", reason)
         try:
-            self.ui.set_paused(False)
+            self.ui.set_paused(False, source="auto")
         except Exception:
             _log.exception("Failed to auto-resume after %s", reason)
+
+    def _handle_pause_change(self, paused: bool, source: str, timestamp: datetime) -> None:
+        try:
+            self.session_recorder.record_pause(timestamp, paused=paused, source=source)
+        except Exception:
+            _log.exception("Failed to record pause state change")
 
     # ------------------------------------------------------------------
     # Version checking
