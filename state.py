@@ -31,6 +31,7 @@ class MiningState:
     mining_end: Optional[datetime] = None
     mining_location: Optional[str] = None
     current_system: Optional[str] = None
+    current_ship: Optional[str] = None
 
     prospected_count: int = 0
     already_mined_count: int = 0
@@ -98,6 +99,7 @@ def reset_mining_state(state: MiningState) -> None:
     state.prospected_samples.clear()
     state.prospected_histogram.clear()
     state.current_cargo_tonnage = 0
+    state.current_ship = None
 
 
 def recompute_histograms(state: MiningState) -> None:
