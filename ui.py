@@ -6,7 +6,7 @@ import logging
 import random
 from collections import Counter
 from datetime import datetime, timezone
-from typing import Callable, Dict, Optional, Sequence
+from typing import Callable, Dict, Optional, Sequence, Tuple
 
 try:
     import tkinter as tk
@@ -267,6 +267,7 @@ class MiningUI:
         self._summary_var: Optional[tk.StringVar] = None
         self._summary_label: Optional[tk.Label] = None
         self._summary_tooltip: Optional[WidgetTooltip] = None
+        self._summary_inferred_bounds: Optional[Tuple[int, int, int, int]] = None
         self._pause_btn: Optional[tk.Button] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_tree: Optional[ttk.Treeview] = None
@@ -328,7 +329,10 @@ class MiningUI:
         summary_label.grid(row=1, column=0, columnspan=3, sticky="w", padx=4, pady=(0, 6))
         self._theme.register(summary_label)
         self._summary_label = summary_label
-        self._summary_tooltip = WidgetTooltip(summary_label)
+        self._summary_tooltip = WidgetTooltip(
+            summary_label,
+            hover_predicate=self._is_pointer_over_inferred,
+        )
 
         button_frame = tk.Frame(frame, highlightthickness=0, bd=0)
         button_frame.grid(row=0, column=2, sticky="e", padx=4, pady=(4, 2))
@@ -799,12 +803,57 @@ class MiningUI:
         tooltip = self._summary_tooltip
         if tooltip is None:
             return
+        bounds: Optional[Tuple[int, int, int, int]] = None
+        text: Optional[str] = None
         if self._state.cargo_capacity_is_inferred and self._state.cargo_capacity:
-            tooltip.set_text(
+            summary_label = self._summary_label
+            summary_text = self._summary_var.get() if self._summary_var is not None else None
+            if summary_label and summary_text:
+                bounds = self._compute_inferred_bounds(summary_label, summary_text)
+            text = (
                 "The plugin can't yet determine the cargo capacity. Try swapping ships, or filling your hold completely full of limpets."
             )
-        else:
-            tooltip.set_text(None)
+        tooltip.set_text(text)
+        self._summary_inferred_bounds = bounds
+
+    def _compute_inferred_bounds(self, label: tk.Label, text: str) -> Optional[Tuple[int, int, int, int]]:
+        target = "(Inferred)"
+        index = text.find(target)
+        if index == -1:
+            return None
+        prefix = text[:index]
+        lines = prefix.split("\n")
+        line_index = max(0, len(lines) - 1)
+        preceding = lines[-1] if lines else ""
+        font = tkfont.nametofont(label.cget("font"))
+        line_height = font.metrics("linespace")
+
+        def _to_int(value: str) -> int:
+            try:
+                return int(float(value))
+            except (TypeError, ValueError):
+                return 0
+
+        pad_x = _to_int(label.cget("padx"))
+        pad_y = _to_int(label.cget("pady"))
+        border = _to_int(label.cget("borderwidth"))
+        highlight = _to_int(label.cget("highlightthickness"))
+
+        x_base = pad_x + border + highlight
+        y_base = pad_y + border + highlight
+
+        x_start = x_base + font.measure(preceding)
+        x_end = x_start + font.measure(target)
+        y_start = y_base + line_index * line_height
+        y_end = y_start + line_height
+        return (int(x_start), int(y_start), int(x_end), int(y_end))
+
+    def _is_pointer_over_inferred(self, x: int, y: int) -> bool:
+        bounds = self._summary_inferred_bounds
+        if not bounds:
+            return False
+        x1, y1, x2, y2 = bounds
+        return x1 <= x <= x2 and y1 <= y <= y2
 
     def _populate_tables(self) -> None:
         cargo_tree = self._cargo_tree

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 try:
     import tkinter as tk
@@ -128,11 +128,12 @@ class TreeTooltip:
 class WidgetTooltip:
     """Tooltip helper for standard Tk widgets."""
 
-    def __init__(self, widget: tk.Widget, text: Optional[str] = None) -> None:
+    def __init__(self, widget: tk.Widget, text: Optional[str] = None, *, hover_predicate: Optional[Callable[[int, int], bool]] = None) -> None:
         self._widget = widget
         self._text: Optional[str] = text
         self._tip: Optional[tk.Toplevel] = None
         self._label: Optional[tk.Label] = None
+        self._hover_predicate = hover_predicate
 
         widget.bind("<Enter>", self._on_enter, add="+")
         widget.bind("<Leave>", self._on_leave, add="+")
@@ -149,12 +150,10 @@ class WidgetTooltip:
                 self._hide()
 
     def _on_enter(self, event: tk.Event) -> None:  # type: ignore[override]
-        if self._text:
-            self._show(event.x_root + 12, event.y_root + 12)
+        self._maybe_show(event)
 
     def _on_motion(self, event: tk.Event) -> None:  # type: ignore[override]
-        if self._tip is not None and self._text:
-            self._position(event.x_root + 12, event.y_root + 12)
+        self._maybe_show(event)
 
     def _on_leave(self, _event: tk.Event) -> None:  # type: ignore[override]
         self._hide()
@@ -197,6 +196,14 @@ class WidgetTooltip:
                 self._hide()
                 return
         self._position(x, y)
+
+    def _maybe_show(self, event: tk.Event) -> None:
+        if not self._text:
+            return
+        if self._hover_predicate and not self._hover_predicate(int(event.x), int(event.y)):
+            self._hide()
+            return
+        self._show(event.x_root + 12, event.y_root + 12)
 
     def _position(self, x: int, y: int) -> None:
         if self._tip is None:
