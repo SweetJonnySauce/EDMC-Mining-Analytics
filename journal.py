@@ -7,6 +7,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from typing import Any, Callable, Optional, Tuple
+import threading
 
 from state import MiningState, reset_mining_state, recompute_histograms
 from logging_utils import get_logger
@@ -53,7 +54,9 @@ class JournalProcessor:
         self._refresh_ui = refresh_ui
         self._on_session_start = on_session_start
         self._on_session_end = on_session_end
+        self._initial_state_checked = False
         self._pending_ship_updates: dict[str, PendingShipUpdate] = {}
+        self._pending_timeout_timer: Optional[threading.Timer] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -65,7 +68,25 @@ class JournalProcessor:
         edmc_state = shared_state if isinstance(shared_state, dict) else None
 
         event_time = self._parse_timestamp(entry.get("timestamp")) or datetime.now(timezone.utc)
-        self._flush_expired_ship_updates(event_time)
+        if (
+            not self._initial_state_checked
+            and edmc_state
+            and any(
+                key in edmc_state
+                for key in ("Ship", "ShipType", "ShipName", "ShipLocalised", "CargoCapacity", "ShipID")
+            )
+        ):
+            self._initial_state_checked = True
+            self._handle_ship_update(
+                entry=None,
+                shared_state=edmc_state,
+                context="Initial state detected",
+                event_type="InitialState",
+                event_time=event_time,
+            )
+            self._flush_expired_ship_updates(event_time)
+            self._schedule_pending_timeout()
+        self._schedule_pending_timeout()
 
         event = entry.get("event")
         if event == "LaunchDrone":
@@ -272,7 +293,7 @@ class JournalProcessor:
             )
 
             ship_summary = ship_display or "Unknown ship"
-            _plugin_log.info(
+            _plugin_log.debug(
                 "Ship swap initiated: ship=%s, cargo_capacity=unknown (awaiting loadout)",
                 ship_summary,
             )
@@ -295,6 +316,7 @@ class JournalProcessor:
                 key,
                 context,
             )
+            self._schedule_pending_timeout()
             return
 
         ship_display, ship_source, capacity_value, capacity_source = self._extract_ship_and_capacity(entry, shared_state)
@@ -321,7 +343,31 @@ class JournalProcessor:
                 shared_state=shared_state,
                 emit_log=True,
             )
+            if self._pending_ship_updates:
+                self._schedule_pending_timeout()
+            else:
+                self._cancel_pending_timeout()
             return
+
+        awaiting_initial_loadout = False
+        if event_type == "InitialState" and key:
+            if capacity_value is None:
+                self._pending_ship_updates[key] = PendingShipUpdate(
+                    key=key,
+                    context=context,
+                    ship_display=ship_display,
+                    ship_source=ship_source,
+                    capacity_value=None,
+                    capacity_source=None,
+                    initiated_at=event_time,
+                    entry=entry,
+                    shared_state=shared_state,
+                )
+                _log.debug("Initial state queued for %s; awaiting Loadout", key)
+                awaiting_initial_loadout = True
+            else:
+                self._pending_ship_updates.pop(key, None)
+                self._cancel_pending_timeout()
 
         self._apply_ship_state(
             ship_display,
@@ -333,6 +379,8 @@ class JournalProcessor:
             shared_state=shared_state,
             emit_log=True,
         )
+        if awaiting_initial_loadout:
+            self._schedule_pending_timeout()
 
     def _make_ship_key(self, entry: Optional[dict], shared_state: Optional[dict]) -> Optional[str]:
         ship_id: Optional[int] = None
@@ -358,6 +406,33 @@ class JournalProcessor:
             return None
         return f"type:{ship_type}"
 
+    def _schedule_pending_timeout(self) -> None:
+        if not self._pending_ship_updates:
+            self._cancel_pending_timeout()
+            return
+        duration = _PENDING_SHIP_UPDATE_TIMEOUT.total_seconds()
+        timer = self._pending_timeout_timer
+        if timer is not None:
+            timer.cancel()
+        timer = threading.Timer(duration, self._pending_timeout_tick)
+        timer.daemon = True
+        timer.start()
+        self._pending_timeout_timer = timer
+
+    def _cancel_pending_timeout(self) -> None:
+        timer = self._pending_timeout_timer
+        if timer is not None:
+            timer.cancel()
+            self._pending_timeout_timer = None
+
+    def _pending_timeout_tick(self) -> None:
+        current_time = datetime.now(timezone.utc)
+        self._flush_expired_ship_updates(current_time)
+        if self._pending_ship_updates:
+            self._schedule_pending_timeout()
+        else:
+            self._cancel_pending_timeout()
+
     def _flush_expired_ship_updates(self, current_time: datetime) -> None:
         expired: list[str] = []
         for key, pending in list(self._pending_ship_updates.items()):
@@ -371,13 +446,20 @@ class JournalProcessor:
                 ship_summary = pending.ship_display or "Unknown ship"
                 self._state.current_ship = pending.ship_display
                 self._state.cargo_capacity = pending.capacity_value
-                _plugin_log.info(
+                _plugin_log.debug(
                     "Ship swap timeout: ship=%s, cargo_capacity=unknown (no loadout received)",
                     ship_summary,
                 )
+                if _plugin_log is not _log:
+                    _log.debug(
+                        "Ship swap timeout for %s (no loadout received)",
+                        key,
+                    )
                 expired.append(key)
         for key in expired:
             self._pending_ship_updates.pop(key, None)
+        if not self._pending_ship_updates:
+            self._cancel_pending_timeout()
 
     def _apply_ship_state(
         self,

@@ -727,6 +727,22 @@ class MiningUI:
         if not (self._state.cargo_totals or self._state.cargo_additions):
             lines.append("No cargo data yet")
 
+        mined_cargo = max(0, self._state.current_cargo_tonnage)
+        limpets_onboard = self._state.limpets_remaining if self._state.limpets_remaining is not None else 0
+        total_cargo = mined_cargo + max(0, limpets_onboard)
+        capacity = self._state.cargo_capacity
+        if capacity is not None and capacity > 0:
+            remaining = max(0, capacity - total_cargo)
+            percent_full = ((capacity - remaining) / capacity) * 100.0
+            lines.append(
+                f"Cargo: {total_cargo}t | Capacity: {capacity}t | Remaining: {remaining}t | {percent_full:.1f}% full"
+            )
+        else:
+            remaining_label = "unknown"
+            lines.append(
+                f"Cargo: {total_cargo}t | Capacity: unknown | Remaining: {remaining_label} | % full: unknown"
+            )
+
         return lines
 
     def _populate_tables(self) -> None:
