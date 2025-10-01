@@ -18,7 +18,6 @@ class TreeTooltip:
         self._tree = tree
         self._tip: Optional[tk.Toplevel] = None
         self._cell_texts: dict[Tuple[str, str], str] = {}
-        # heading_texts maps column id (eg '#2') to tooltip text
         self._heading_texts: dict[str, str] = {}
         self._current_key: Optional[Tuple[str, str]] = None
 
@@ -32,16 +31,12 @@ class TreeTooltip:
         self._hide_tip()
 
     def set_heading_tooltip(self, column_name: str, text: Optional[str]) -> None:
-        """Register a tooltip for a heading by column name (the name used in tree['columns']).
-
-        If text is None, remove any existing tooltip for that heading.
-        """
         columns = tuple(self._tree.cget("columns"))
         try:
             idx = columns.index(column_name)
         except ValueError:
             return
-        col_id = f"#{idx+1}"
+        col_id = f"#{idx + 1}"
         if text:
             self._heading_texts[col_id] = text
         else:
@@ -60,7 +55,6 @@ class TreeTooltip:
         region = self._tree.identify_region(event.x, event.y)
         column = self._tree.identify_column(event.x)
 
-        # If over a heading, handle heading tooltips
         if region == "heading":
             key = ("", column or "")
             if key == self._current_key:
@@ -74,7 +68,6 @@ class TreeTooltip:
                 self._show_tip(x, y, heading_text)
             return
 
-        # Otherwise handle cell tooltips
         item = self._tree.identify_row(event.y)
         key = (item or "", column or "")
         if key == self._current_key:
@@ -91,9 +84,13 @@ class TreeTooltip:
         tip = tk.Toplevel(self._tree)
         tip.wm_overrideredirect(True)
         tip.wm_geometry(f"+{x}+{y}")
-        # Theme-aware colors: prefer ttk style lookups and fall back to sensible defaults
         style = ttk.Style(self._tree)
-        bg = style.lookup("TLabel", "background") or style.lookup("TFrame", "background") or self._tree.cget("background") or "#ffffe0"
+        bg = (
+            style.lookup("TLabel", "background")
+            or style.lookup("TFrame", "background")
+            or self._tree.cget("background")
+            or "#ffffe0"
+        )
         fg = style.lookup("TLabel", "foreground") or "#000000"
         label = tk.Label(
             tip,

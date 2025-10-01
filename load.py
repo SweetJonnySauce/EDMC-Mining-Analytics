@@ -1,7 +1,7 @@
 """EDMC Mining Analytics load shim.
 
 Keeps the EDMC-required functions in this module while delegating the
-implementation to the `edmc_mining_analytics` package.
+implementation to the top-level plugin orchestrator.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ try:
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
-from edmc_mining_analytics.plugin import MiningAnalyticsPlugin
+from plugin import MiningAnalyticsPlugin
 
 _plugin = MiningAnalyticsPlugin()
 
