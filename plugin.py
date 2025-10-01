@@ -30,6 +30,7 @@ from journal import JournalProcessor
 from preferences import PreferencesManager
 from state import MiningState, reset_mining_state
 from ui import MiningUI
+from logging_utils import get_logger, set_log_level
 
 
 PLUGIN_NAME = "EDMC Mining Analytics"
@@ -86,14 +87,8 @@ def _resolve_edmc_log_level() -> int:
     return fallback
 
 
-def _initialise_plugin_logger() -> logging.Logger:
-    logger = logging.getLogger(PLUGIN_NAME)
-    logger.setLevel(_resolve_edmc_log_level())
-    logger.propagate = True
-    return logger
-
-
-_log = _initialise_plugin_logger()
+set_log_level(_resolve_edmc_log_level())
+_log = get_logger()
 
 
 class MiningAnalyticsPlugin:
@@ -188,7 +183,7 @@ class MiningAnalyticsPlugin:
 
     def _sync_logger_level(self) -> None:
         try:
-            _log.setLevel(_resolve_edmc_log_level())
+            set_log_level(_resolve_edmc_log_level())
         except Exception:
             pass
 

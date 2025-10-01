@@ -29,9 +29,10 @@ from tooltip import TreeTooltip
 from state import MiningState
 from mining_inara import InaraClient
 from preferences import clamp_bin_size, clamp_rate_interval
+from logging_utils import get_logger
 
 
-_log = logging.getLogger(__name__)
+_log = get_logger("ui")
 
 
 class ThemeAdapter:

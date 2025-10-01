@@ -8,9 +8,15 @@ from datetime import datetime, timezone
 from typing import Callable, Optional, Tuple
 
 from state import MiningState, reset_mining_state, recompute_histograms
+from logging_utils import get_logger
+
+try:  # pragma: no cover - only available inside EDMC
+    from edmc_data import ship_name_map  # type: ignore[import]
+except ImportError:  # pragma: no cover - fallback when not running inside EDMC
+    ship_name_map = {}
 
 
-_log = logging.getLogger(__name__)
+_log = get_logger("journal")
 
 
 class JournalProcessor:
@@ -42,8 +48,8 @@ class JournalProcessor:
             self._process_launch_drone(entry, edmc_state)
         elif event == "ProspectedAsteroid" and self._state.is_mining:
             self._register_prospected_asteroid(entry)
-        elif event == "Cargo" and self._state.is_mining:
-            self._process_cargo(entry)
+        elif event == "Cargo":
+            self._process_cargo(entry, edmc_state, is_mining=self._state.is_mining)
         elif event == "SupercruiseEntry" and self._state.is_mining:
             self._update_mining_state(False, "Entered Supercruise", entry.get("timestamp"), state=edmc_state)
         elif event == "MaterialCollected" and self._state.is_mining:
@@ -156,7 +162,7 @@ class JournalProcessor:
         normalized = name.lower()
         self._state.materials_collected[normalized] += quantity
 
-    def _process_cargo(self, entry: dict) -> None:
+    def _process_cargo(self, entry: dict, edmc_state: Optional[dict], *, is_mining: bool) -> None:
         inventory = entry.get("Inventory")
         if not isinstance(inventory, list):
             return
@@ -182,6 +188,33 @@ class JournalProcessor:
                 self._state.limpets_start_initialized = True
             self._state.limpets_remaining = limpets
 
+        total_cargo = sum(count for commodity, count in cargo_counts.items() if commodity != "drones")
+        self._state.current_cargo_tonnage = total_cargo
+
+        capacity_value: Optional[int] = None
+        if edmc_state:
+            raw_capacity = edmc_state.get("CargoCapacity")
+            if isinstance(raw_capacity, (int, float)) and raw_capacity >= 0:
+                capacity_value = int(raw_capacity)
+        if capacity_value is None:
+            raw_capacity = entry.get("Capacity")
+            if isinstance(raw_capacity, (int, float)) and raw_capacity >= 0:
+                capacity_value = int(raw_capacity)
+        if capacity_value is not None:
+            self._state.cargo_capacity = capacity_value
+
+        if _log.isEnabledFor(logging.DEBUG):
+            _log.debug(
+                "Cargo update: total=%st capacity=%s (source=%s)",
+                self._state.current_cargo_tonnage,
+                self._state.cargo_capacity,
+                "shared" if edmc_state and edmc_state.get("CargoCapacity") is not None else "journal",
+            )
+
+        if not is_mining:
+            self._state.last_cargo_counts = dict(cargo_counts)
+            return
+
         if not self._state.last_cargo_counts:
             self._state.last_cargo_counts = dict(cargo_counts)
             return
@@ -204,7 +237,6 @@ class JournalProcessor:
 
         self._state.cargo_additions = {k: v for k, v in self._state.cargo_additions.items() if v > 0}
         self._state.cargo_totals = dict(self._state.cargo_additions)
-        self._state.last_cargo_counts = dict(cargo_counts)
 
         if self._state.limpets_start is not None and self._state.limpets_remaining is not None:
             launched = self._state.prospector_launched_count + self._state.collection_drones_launched - 1
@@ -215,6 +247,8 @@ class JournalProcessor:
             limpets is not None and previous_limpets is not None and limpets != previous_limpets
         ):
             self._refresh_ui()
+
+        self._state.last_cargo_counts = dict(cargo_counts)
 
     # ------------------------------------------------------------------
     # Mining session helpers
@@ -230,6 +264,21 @@ class JournalProcessor:
             return
 
         if active:
+            # Capture capacity and ship info before the reset wipes state
+            capacity = None
+            capacity_source = "unknown"
+            if state:
+                try:
+                    raw_capacity = state.get("CargoCapacity")
+                except Exception:
+                    raw_capacity = None
+                if isinstance(raw_capacity, (int, float)) and raw_capacity >= 0:
+                    capacity = int(raw_capacity)
+                    capacity_source = "shared_state"
+                    self._state.cargo_capacity = capacity
+            ship_display = self._resolve_ship_name(state)
+            if ship_display is None and _log.isEnabledFor(logging.DEBUG):
+                _log.debug("Mining start: unable to resolve ship name from state=%s", state)
             start_time = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
             reset_mining_state(self._state)
             self._state.is_mining = True
@@ -239,6 +288,15 @@ class JournalProcessor:
             system_name = self._detect_current_system(state)
             if system_name:
                 self._set_current_system(system_name)
+            _log.info("Mining started")
+            if _log.isEnabledFor(logging.INFO):
+                _log.info(
+                    "Mining started in %s (cargo capacity %s)",
+                    ship_display or "Unknown ship",
+                    f"{capacity}t ({capacity_source})" if capacity is not None else "unknown",
+                )
+            elif _log.isEnabledFor(logging.DEBUG):
+                _log.debug("Mining start: unable to determine cargo capacity (state=%s)", state)
             self._on_session_start()
             if self._state.mining_start:
                 _log.info(
@@ -295,6 +353,36 @@ class JournalProcessor:
             if value:
                 return str(value)
         return None
+
+    def _resolve_ship_name(self, state: Optional[dict]) -> Optional[str]:
+        if not state:
+            return None
+        try:
+            ship_name = state.get("ShipName")
+            if isinstance(ship_name, str) and ship_name.strip():
+                return ship_name.strip()
+        except Exception:
+            pass
+        try:
+            ship_localised = state.get("ShipLocalised")
+            if isinstance(ship_localised, str) and ship_localised.strip():
+                return ship_localised.strip()
+        except Exception:
+            pass
+        ship_type = None
+        for key in ("Ship", "ShipType"):
+            try:
+                value = state.get(key)
+            except Exception:
+                value = None
+            if isinstance(value, str) and value.strip():
+                ship_type = value.strip()
+                break
+        if not ship_type:
+            return None
+        lookup_key = ship_type.lower()
+        mapped = ship_name_map.get(lookup_key) or ship_name_map.get(ship_type)
+        return mapped or ship_type
 
     @staticmethod
     def _parse_timestamp(value: Optional[str]) -> Optional[datetime]:
