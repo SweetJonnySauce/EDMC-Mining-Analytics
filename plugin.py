@@ -25,7 +25,7 @@ try:
 except ImportError:  # pragma: no cover
     appname = "EDMarketConnector"  # type: ignore[assignment]
 
-from inara import InaraClient
+from mining_inara import InaraClient
 from journal import JournalProcessor
 from preferences import PreferencesManager
 from state import MiningState, reset_mining_state
