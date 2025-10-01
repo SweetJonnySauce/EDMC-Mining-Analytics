@@ -1399,24 +1399,44 @@ class MiningUI:
 
         width = max(1, canvas.winfo_width())
         height = max(1, canvas.winfo_height())
-        padding = 24
+        padding_x = 24
+        padding_top = 24
+        padding_bottom = 36
+        min_height = padding_top + padding_bottom + 1
+        if height < min_height:
+            height = float(min_height)
         bins = sorted(counter.keys())
-        max_count = max(counter.values()) or 1
-        bin_width = (width - padding * 2) / max(1, len(bins))
+        full_range = list(range(bins[0], bins[-1] + 1))
         size = max(1, self._state.histogram_bin_size)
+        labels = {bin_index: self._format_bin_label(bin_index, size) for bin_index in full_range}
 
+        label_font = tkfont.nametofont("TkDefaultFont")
+        max_label_width = max((label_font.measure(text) for text in labels.values()), default=0)
+        min_bin_width = max(48.0, max_label_width + 12.0)
+        bin_count = max(1, len(full_range))
+        bin_width = (width - padding_x * 2) / bin_count
+        if bin_width < min_bin_width:
+            bin_width = min_bin_width
+            requested_width = padding_x * 2 + bin_width * bin_count
+            canvas.config(width=int(requested_width))
+            width = requested_width
+
+        max_count = max((counter.get(bin_index, 0) for bin_index in full_range), default=0) or 1
         text_color = self._theme.table_foreground_color()
+        bar_area_height = max(1, height - padding_top - padding_bottom)
+        bar_base_y = height - padding_bottom
+        label_y = bar_base_y + 6
 
-        for idx, bin_index in enumerate(bins):
-            count = counter[bin_index]
-            x0 = padding + idx * bin_width
+        for idx, bin_index in enumerate(full_range):
+            count = counter.get(bin_index, 0)
+            x0 = padding_x + idx * bin_width
             x1 = x0 + bin_width * 0.8
-            bar_height = (height - padding * 2) * (count / max_count)
-            y0 = height - padding - bar_height
-            y1 = height - padding
+            bar_height = bar_area_height * (count / max_count)
+            y0 = bar_base_y - bar_height
+            y1 = bar_base_y
             canvas.create_rectangle(x0, y0, x1, y1, fill="#4a90e2")
-            label = self._format_bin_label(bin_index, size)
-            canvas.create_text((x0 + x1) / 2, height - padding / 2, text=label, anchor="n", fill=text_color)
+            label = labels[bin_index]
+            canvas.create_text((x0 + x1) / 2, label_y, text=label, anchor="n", fill=text_color)
             canvas.create_text((x0 + x1) / 2, y0 - 4, text=str(count), anchor="s", fill=text_color)
 
     def _recompute_histograms(self) -> None:
