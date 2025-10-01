@@ -123,3 +123,108 @@ class TreeTooltip:
             self._tip.destroy()
             self._tip = None
         self._current_key = None
+
+
+class WidgetTooltip:
+    """Tooltip helper for standard Tk widgets."""
+
+    def __init__(self, widget: tk.Widget, text: Optional[str] = None) -> None:
+        self._widget = widget
+        self._text: Optional[str] = text
+        self._tip: Optional[tk.Toplevel] = None
+        self._label: Optional[tk.Label] = None
+
+        widget.bind("<Enter>", self._on_enter, add="+")
+        widget.bind("<Leave>", self._on_leave, add="+")
+        widget.bind("<Motion>", self._on_motion, add="+")
+
+    def set_text(self, text: Optional[str]) -> None:
+        self._text = text or None
+        if not self._text:
+            self._hide()
+        elif self._label is not None:
+            try:
+                self._label.configure(text=self._text)
+            except tk.TclError:
+                self._hide()
+
+    def _on_enter(self, event: tk.Event) -> None:  # type: ignore[override]
+        if self._text:
+            self._show(event.x_root + 12, event.y_root + 12)
+
+    def _on_motion(self, event: tk.Event) -> None:  # type: ignore[override]
+        if self._tip is not None and self._text:
+            self._position(event.x_root + 12, event.y_root + 12)
+
+    def _on_leave(self, _event: tk.Event) -> None:  # type: ignore[override]
+        self._hide()
+
+    def _show(self, x: int, y: int) -> None:
+        text = self._text
+        if not text:
+            return
+        if self._tip is None:
+            try:
+                tip = tk.Toplevel(self._widget)
+            except tk.TclError:
+                return
+            tip.wm_overrideredirect(True)
+            try:
+                tip.wm_attributes("-topmost", True)
+            except Exception:
+                pass
+            fg, bg = self._resolve_colors()
+            label = tk.Label(
+                tip,
+                text=text,
+                justify="left",
+                background=bg,
+                foreground=fg,
+                relief=tk.SOLID,
+                borderwidth=1,
+                padx=6,
+                pady=4,
+                wraplength=320,
+            )
+            label.pack()
+            self._tip = tip
+            self._label = label
+        else:
+            try:
+                if self._label is not None:
+                    self._label.configure(text=text)
+            except tk.TclError:
+                self._hide()
+                return
+        self._position(x, y)
+
+    def _position(self, x: int, y: int) -> None:
+        if self._tip is None:
+            return
+        try:
+            self._tip.wm_geometry(f"+{x}+{y}")
+        except tk.TclError:
+            self._hide()
+
+    def _hide(self) -> None:
+        if self._tip is not None:
+            try:
+                self._tip.destroy()
+            except tk.TclError:
+                pass
+        self._tip = None
+        self._label = None
+
+    def _resolve_colors(self) -> Tuple[str, str]:
+        try:
+            style = ttk.Style(self._widget)
+        except tk.TclError:
+            style = ttk.Style()
+        bg = (
+            style.lookup("TLabel", "background")
+            or style.lookup("TFrame", "background")
+            or self._widget.cget("background")
+            or "#ffffe0"
+        )
+        fg = style.lookup("TLabel", "foreground") or "#000000"
+        return fg, bg
