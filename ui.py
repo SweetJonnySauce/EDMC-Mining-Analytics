@@ -191,22 +191,28 @@ class ThemeAdapter:
         return self._fallback_link_fg
 
     def style_button(self, button: tk.Button) -> None:
-        try:
-            button.configure(
-                background=self.button_background_color(),
-                foreground=self.button_foreground_color(),
-                activebackground=self.button_active_background_color(),
-                activeforeground=self.button_foreground_color(),
-                highlightthickness=1,
-                highlightbackground=self.button_border_color(),
-                highlightcolor=self.button_border_color(),
-                bd=0,
-                relief=tk.FLAT,
-                padx=12,
-                pady=4,
-            )
-        except tk.TclError:
-            pass
+        if self._is_dark_theme:
+            try:
+                button.configure(
+                    background=self.button_background_color(),
+                    foreground=self.button_foreground_color(),
+                    activebackground=self.button_active_background_color(),
+                    activeforeground=self.button_foreground_color(),
+                    highlightthickness=1,
+                    highlightbackground=self.button_border_color(),
+                    highlightcolor=self.button_border_color(),
+                    bd=0,
+                    relief=tk.FLAT,
+                    padx=12,
+                    pady=4,
+                )
+            except tk.TclError:
+                pass
+        else:
+            try:
+                button.configure(relief=tk.RAISED, bd=2)
+            except tk.TclError:
+                pass
         self.register(button)
 
     def get_background_color(self, widget: tk.Widget) -> str:
