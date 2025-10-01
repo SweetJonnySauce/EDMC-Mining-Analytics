@@ -5,9 +5,7 @@
 - Find total cargo size on ship swap (if possible) and keep it handy. ShipyardSwap: {"timestamp":"2025-09-28T17:04:22Z","event":"ShipyardSwap","ShipType":"corsair","ShipID":82,"StoreOldShip":"Python","StoreShipID":68,"MarketID":blah}
 - Prospectors: Provide a user configurable option for how long it should wait to count a prospector as lost.
 - Versioning: Move versioning to its own file.
-- Metrics: once the mining session is over, freeze the tons/hr metric.
 - Metrics: Calculate collection efficiency based on timing of multiple MiningRefined events. 
-- Metrics: For the histogram, show the 0 qty bins between the min and max range.
 
 
 ## Should haves
