@@ -61,6 +61,8 @@ class MiningState:
     prospected_histogram: Dict[str, Counter[int]] = field(default_factory=lambda: defaultdict(Counter))
 
     inara_settings: InaraSettings = field(default_factory=InaraSettings)
+    cargo_capacity: Optional[int] = None
+    current_cargo_tonnage: int = 0
 
 
 def reset_mining_state(state: MiningState) -> None:
@@ -95,6 +97,7 @@ def reset_mining_state(state: MiningState) -> None:
     state.prospected_seen.clear()
     state.prospected_samples.clear()
     state.prospected_histogram.clear()
+    state.current_cargo_tonnage = 0
 
 
 def recompute_histograms(state: MiningState) -> None:
