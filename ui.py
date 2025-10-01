@@ -197,6 +197,20 @@ class ThemeAdapter:
     def link_color(self) -> str:
         return self._fallback_link_fg
 
+    def highlight_text_color(self) -> str:
+        for style_name in ("Treeview", "TLabel", "Label"):
+            try:
+                value = self._style.lookup(style_name, "selectforeground")
+            except tk.TclError:
+                value = None
+            if value:
+                return value
+        try:
+            value = self._style.lookup("Treeview", "foreground")
+        except tk.TclError:
+            value = None
+        return value or self._fallback_text_fg
+
     @staticmethod
     def _tint_color(color: str, factor: float) -> Optional[str]:
         if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
@@ -1554,6 +1568,13 @@ class MiningUI:
             "<Configure>",
             lambda event, c=commodity, cv=canvas: self._draw_histogram(cv, c),
         )
+        if not hasattr(canvas, "_theme_change_bound"):
+            canvas.bind(
+                "<<ThemeChanged>>",
+                lambda _evt, c=commodity, cv=canvas: self._draw_histogram(cv, c),
+                add="+",
+            )
+            canvas._theme_change_bound = True
         self._draw_histogram(canvas, commodity, counter)
         top.protocol("WM_DELETE_WINDOW", lambda c=commodity: self._close_histogram_window(c))
         self._hist_windows[commodity] = top
@@ -1582,6 +1603,12 @@ class MiningUI:
         if not counter:
             canvas.create_text(180, 100, text="No data available")
             return
+
+        if self._theme.is_dark_theme:
+            bg_color = "#000000"
+        else:
+            bg_color = self._theme.table_background_color()
+        canvas.configure(background=bg_color)
 
         width = max(1, canvas.winfo_width())
         height = max(1, canvas.winfo_height())
@@ -1618,7 +1645,12 @@ class MiningUI:
             bin_width = max(min_bin_width, available_width / bin_count)
 
         max_count = max((counter.get(bin_index, 0) for bin_index in full_range), default=0) or 1
-        text_color = self._theme.table_foreground_color()
+        if self._theme.is_dark_theme:
+            text_color = self._theme.highlight_text_color()
+            bar_color = self._theme.default_text_color()
+        else:
+            text_color = self._theme.table_foreground_color()
+            bar_color = "#4a90e2"
         bar_area_height = max(1, height - padding_top - padding_bottom)
         bar_base_y = height - padding_bottom
         label_y = bar_base_y + 6
@@ -1630,7 +1662,7 @@ class MiningUI:
             bar_height = bar_area_height * (count / max_count)
             y0 = bar_base_y - bar_height
             y1 = bar_base_y
-            canvas.create_rectangle(x0, y0, x1, y1, fill="#4a90e2")
+            canvas.create_rectangle(x0, y0, x1, y1, fill=bar_color, outline=bar_color)
             label = labels[bin_index]
             canvas.create_text((x0 + x1) / 2, label_y, text=label, anchor="n", fill=text_color)
             canvas.create_text((x0 + x1) / 2, y0 - 4, text=str(count), anchor="s", fill=text_color)
