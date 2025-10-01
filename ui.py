@@ -195,6 +195,7 @@ class ThemeAdapter:
         return self._fallback_link_fg
 
     def style_button(self, button: tk.Button) -> None:
+        self.register(button)
         if self._is_dark_theme:
             try:
                 button.configure(
@@ -214,10 +215,19 @@ class ThemeAdapter:
                 pass
         else:
             try:
-                button.configure(relief=tk.RAISED, bd=2)
+                button.configure(
+                    background="SystemButtonFace",
+                    foreground="#000000",
+                    activebackground="SystemButtonFace",
+                    activeforeground="#000000",
+                    relief=tk.RAISED,
+                    bd=2,
+                    highlightthickness=0,
+                    padx=12,
+                    pady=4,
+                )
             except tk.TclError:
                 pass
-        self.register(button)
 
     def get_background_color(self, widget: tk.Widget) -> str:
         style_name = widget.winfo_class()
@@ -322,13 +332,9 @@ class MiningUI:
             text="",
             command=self._toggle_details,
             cursor="hand2",
-            width=12,
         )
-        if self._theme.is_dark_theme:
-            self._theme.style_button(self._details_toggle)
-        else:
-            self._theme.register(self._details_toggle)
-        self._details_toggle.grid(row=0, column=0)
+        self._theme.style_button(self._details_toggle)
+        self._details_toggle.grid(row=0, column=0, padx=0, pady=0)
 
         commodities_label = tk.Label(
             frame,
