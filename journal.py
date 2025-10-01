@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import datetime, timezone, timedelta
 from typing import Any, Callable, Optional, Tuple
 
 from state import MiningState, reset_mining_state, recompute_histograms
@@ -18,6 +19,24 @@ except ImportError:  # pragma: no cover - fallback when not running inside EDMC
 
 _log = get_logger("journal")
 _plugin_log = get_logger()
+
+
+@dataclass
+class PendingShipUpdate:
+    """Tracks ship-change events that expect a follow-up loadout."""
+
+    key: str
+    context: str
+    ship_display: Optional[str]
+    ship_source: Optional[str]
+    capacity_value: Optional[int]
+    capacity_source: Optional[str]
+    initiated_at: datetime
+    entry: Optional[dict]
+    shared_state: Optional[dict]
+
+
+_PENDING_SHIP_UPDATE_TIMEOUT = timedelta(seconds=10)
 
 
 class JournalProcessor:
@@ -34,6 +53,7 @@ class JournalProcessor:
         self._refresh_ui = refresh_ui
         self._on_session_start = on_session_start
         self._on_session_end = on_session_end
+        self._pending_ship_updates: dict[str, PendingShipUpdate] = {}
 
     # ------------------------------------------------------------------
     # Public API
@@ -44,6 +64,9 @@ class JournalProcessor:
 
         edmc_state = shared_state if isinstance(shared_state, dict) else None
 
+        event_time = self._parse_timestamp(entry.get("timestamp")) or datetime.now(timezone.utc)
+        self._flush_expired_ship_updates(event_time)
+
         event = entry.get("event")
         if event == "LaunchDrone":
             self._process_launch_drone(entry, edmc_state)
@@ -52,11 +75,47 @@ class JournalProcessor:
         elif event == "Cargo":
             self._process_cargo(entry, edmc_state, is_mining=self._state.is_mining)
         elif event == "SupercruiseEntry" and self._state.is_mining:
-            self._update_mining_state(False, "Entered Supercruise", entry.get("timestamp"), state=edmc_state)
+            self._update_mining_state(
+                False,
+                "Entered Supercruise",
+                entry.get("timestamp"),
+                state=edmc_state,
+                entry=entry,
+            )
         elif event == "MaterialCollected" and self._state.is_mining:
             self._register_material_collected(entry)
+        elif event == "LoadGame":
+            self._handle_ship_update(
+                entry,
+                edmc_state,
+                context="LoadGame detected",
+                event_type=event,
+                event_time=event_time,
+            )
+        elif event == "Loadout":
+            message = f"Journal Loadout received: {entry}"
+            _log.debug(message)
+            if _plugin_log is not _log:
+                _plugin_log.debug(message)
+            self._handle_ship_update(
+                entry,
+                edmc_state,
+                context="Loadout detected",
+                event_type=event,
+                event_time=event_time,
+            )
         elif event == "ShipyardSwap":
-            self._handle_shipyard_swap(entry, edmc_state)
+            message = f"Journal ShipyardSwap received: {entry}"
+            _log.debug(message)
+            if _plugin_log is not _log:
+                _plugin_log.debug(message)
+            self._handle_ship_update(
+                entry,
+                edmc_state,
+                context="Ship swap detected",
+                event_type=event,
+                event_time=event_time,
+            )
 
         system_name = self._detect_current_system(entry)
         if system_name:
@@ -100,7 +159,13 @@ class JournalProcessor:
         dtype = drone_type.lower()
         if dtype == "prospector":
             if not self._state.is_mining:
-                self._update_mining_state(True, "Prospector drone launched", entry.get("timestamp"), state=edmc_state)
+                self._update_mining_state(
+                    True,
+                    "Prospector drone launched",
+                    entry.get("timestamp"),
+                    state=edmc_state,
+                    entry=entry,
+                )
             self._state.prospector_launched_count += 1
         elif dtype == "collection" and self._state.is_mining:
             self._state.collection_drones_launched += 1
@@ -165,68 +230,303 @@ class JournalProcessor:
         normalized = name.lower()
         self._state.materials_collected[normalized] += quantity
 
-    def _handle_shipyard_swap(self, entry: dict, edmc_state: Optional[dict]) -> None:
+    def _handle_ship_update(
+        self,
+        entry: Optional[dict],
+        shared_state: Optional[dict],
+        *,
+        context: str,
+        event_type: Optional[str],
+        event_time: datetime,
+    ) -> None:
+        ship_display: Optional[str]
+        ship_source: Optional[str]
+        capacity_value: Optional[int]
+        capacity_source: Optional[str]
+
+        key = self._make_ship_key(entry, shared_state)
+
+        if event_type == "ShipyardSwap" and key:
+            ship_display, ship_source, _, _ = self._extract_ship_and_capacity(entry, None)
+
+            if not ship_display and isinstance(entry, dict):
+                raw_localised = entry.get("ShipType_Localised")
+                if isinstance(raw_localised, str) and raw_localised.strip():
+                    ship_display = raw_localised.strip()
+                    ship_source = "journal"
+                else:
+                    raw_type = entry.get("ShipType")
+                    if isinstance(raw_type, str) and raw_type.strip():
+                        ship_display = raw_type.strip()
+                        ship_source = "journal"
+
+            self._apply_ship_state(
+                ship_display,
+                ship_source,
+                None,
+                None,
+                context=context,
+                entry=entry,
+                shared_state=shared_state,
+                emit_log=False,
+            )
+
+            ship_summary = ship_display or "Unknown ship"
+            _plugin_log.info(
+                "Ship swap initiated: ship=%s, cargo_capacity=unknown (awaiting loadout)",
+                ship_summary,
+            )
+
+            self._state.cargo_capacity = None
+
+            self._pending_ship_updates[key] = PendingShipUpdate(
+                key=key,
+                context=context,
+                ship_display=ship_display,
+                ship_source=ship_source,
+                capacity_value=None,
+                capacity_source=None,
+                initiated_at=event_time,
+                entry=entry,
+                shared_state=shared_state,
+            )
+            _log.debug(
+                "Queued ship update for %s (%s); awaiting Loadout",
+                key,
+                context,
+            )
+            return
+
+        ship_display, ship_source, capacity_value, capacity_source = self._extract_ship_and_capacity(entry, shared_state)
+
+        if event_type == "Loadout" and key:
+            pending = self._pending_ship_updates.pop(key, None)
+            if pending:
+                elapsed = (event_time - pending.initiated_at).total_seconds()
+                _log.debug(
+                    "Loadout received for %s after %.2fs",
+                    key,
+                    max(0.0, elapsed),
+                )
+                if not ship_display:
+                    ship_display = pending.ship_display
+                    ship_source = pending.ship_source
+            self._apply_ship_state(
+                ship_display,
+                ship_source,
+                capacity_value,
+                capacity_source,
+                context=context,
+                entry=entry,
+                shared_state=shared_state,
+                emit_log=True,
+            )
+            return
+
+        self._apply_ship_state(
+            ship_display,
+            ship_source,
+            capacity_value,
+            capacity_source,
+            context=context,
+            entry=entry,
+            shared_state=shared_state,
+            emit_log=True,
+        )
+
+    def _make_ship_key(self, entry: Optional[dict], shared_state: Optional[dict]) -> Optional[str]:
+        ship_id: Optional[int] = None
+        if isinstance(entry, dict):
+            ship_id = entry.get("ShipID")
+        if ship_id is None and isinstance(shared_state, dict):
+            ship_id = shared_state.get("ShipID")
+        if isinstance(ship_id, int):
+            return f"id:{ship_id}"
+
+        ship_type: Optional[str] = None
+        if isinstance(entry, dict):
+            for key in ("Ship", "ShipType", "ShipType_Localised"):
+                value = entry.get(key)
+                if isinstance(value, str) and value.strip():
+                    ship_type = value.strip().lower()
+                    break
+        if ship_type is None and isinstance(shared_state, dict):
+            value = shared_state.get("Ship") or shared_state.get("ShipType")
+            if isinstance(value, str) and value.strip():
+                ship_type = value.strip().lower()
+        if ship_type is None:
+            return None
+        return f"type:{ship_type}"
+
+    def _flush_expired_ship_updates(self, current_time: datetime) -> None:
+        expired: list[str] = []
+        for key, pending in list(self._pending_ship_updates.items()):
+            if current_time - pending.initiated_at >= _PENDING_SHIP_UPDATE_TIMEOUT:
+                elapsed = (current_time - pending.initiated_at).total_seconds()
+                _log.debug(
+                    "Ship update for %s timed out after %.2fs; emitting pending data",
+                    key,
+                    max(0.0, elapsed),
+                )
+                ship_summary = pending.ship_display or "Unknown ship"
+                self._state.current_ship = pending.ship_display
+                self._state.cargo_capacity = pending.capacity_value
+                _plugin_log.info(
+                    "Ship swap timeout: ship=%s, cargo_capacity=unknown (no loadout received)",
+                    ship_summary,
+                )
+                expired.append(key)
+        for key in expired:
+            self._pending_ship_updates.pop(key, None)
+
+    def _apply_ship_state(
+        self,
+        ship_display: Optional[str],
+        ship_source: Optional[str],
+        capacity_value: Optional[int],
+        capacity_source: Optional[str],
+        *,
+        context: str,
+        entry: Optional[dict],
+        shared_state: Optional[dict],
+        emit_log: bool,
+    ) -> Tuple[str, str]:
+        ship_before = self._state.current_ship
+        capacity_before = self._state.cargo_capacity
+
+        normalized_before = ship_before.lower() if isinstance(ship_before, str) else None
+        normalized_incoming = ship_display.lower() if isinstance(ship_display, str) else None
+
+        ship_changed = False
+        if ship_display:
+            if (
+                ship_source != "shared_state"
+                or self._state.current_ship is None
+                or normalized_before != normalized_incoming
+            ):
+                ship_changed = normalized_before != normalized_incoming
+                self._state.current_ship = ship_display
+        else:
+            if self._state.current_ship is not None:
+                ship_changed = True
+                self._state.current_ship = None
+
+        if capacity_value is not None:
+            should_apply_capacity = (
+                capacity_source != "shared_state"
+                or self._state.cargo_capacity is None
+                or ship_changed
+            )
+            if should_apply_capacity:
+                self._state.cargo_capacity = capacity_value
+        elif ship_changed:
+            self._state.cargo_capacity = None
+
+        ship_summary = self._state.current_ship or "Unknown ship (no data provided)"
+        if capacity_value is not None and (
+            capacity_source != "shared_state"
+            or capacity_before is None
+            or ship_changed
+        ):
+            capacity_origin = capacity_source or "unknown"
+            capacity_summary = f"{self._state.cargo_capacity}t (source={capacity_origin})"
+        elif self._state.cargo_capacity is not None:
+            capacity_summary = f"{self._state.cargo_capacity}t (existing)"
+        else:
+            capacity_origin = capacity_source or ("cleared" if ship_changed else "not provided")
+            capacity_summary = f"unknown (capacity {capacity_origin})"
+
+        if emit_log:
+            _plugin_log.info(
+                "%s: ship=%s, cargo_capacity=%s",
+                context,
+                ship_summary,
+                capacity_summary,
+            )
+        if _plugin_log is not _log:
+            _log.debug(
+                "%s details: ship=%s ship_source=%s capacity=%s capacity_source=%s entry=%s shared_state=%s",
+                context,
+                ship_display,
+                ship_source,
+                capacity_value,
+                capacity_source,
+                entry,
+                shared_state,
+            )
+
+        return ship_summary, capacity_summary
+
+    def _extract_ship_and_capacity(
+        self,
+        entry: Optional[dict],
+        shared_state: Optional[dict],
+    ) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[str]]:
         capacity_value: Optional[int] = None
         capacity_source: Optional[str] = None
 
-        if edmc_state:
+        def coerce_capacity(source: Optional[dict], label: str) -> None:
+            nonlocal capacity_value, capacity_source
+            if capacity_value is not None or not isinstance(source, dict):
+                return
             try:
-                raw_capacity = edmc_state.get("CargoCapacity")
+                raw = source.get("CargoCapacity")
             except Exception:
-                raw_capacity = None
-            if isinstance(raw_capacity, (int, float)) and raw_capacity >= 0:
-                capacity_value = int(raw_capacity)
-                capacity_source = "shared_state"
+                raw = None
+            if isinstance(raw, (int, float)) and raw >= 0:
+                capacity_value = int(raw)
+                capacity_source = label
 
-        if capacity_value is None:
-            raw_capacity = entry.get("CargoCapacity")
-            if isinstance(raw_capacity, (int, float)) and raw_capacity >= 0:
-                capacity_value = int(raw_capacity)
-                capacity_source = "journal"
+        coerce_capacity(entry, "journal")
+        coerce_capacity(shared_state, "shared_state")
 
-        candidate_state: dict[str, Any] = {}
-        if isinstance(edmc_state, dict):
-            candidate_state.update(edmc_state)
-        for key in ("ShipName", "ShipLocalised", "Ship", "ShipType", "ShipType_Localised"):
-            value = entry.get(key)
-            if isinstance(value, str) and value.strip():
-                candidate_state[key] = value.strip()
+        entry_state: dict[str, Any] = {}
+        if isinstance(entry, dict):
+            for key in (
+                "ShipName",
+                "ShipLocalised",
+                "Ship_Localised",
+                "Ship",
+                "ShipType",
+                "ShipType_Localised",
+            ):
+                value = entry.get(key)
+                if isinstance(value, str) and value.strip():
+                    entry_state[key] = value.strip()
 
-        ship_display = self._resolve_ship_name(candidate_state) if candidate_state else None
-        if ship_display is None:
-            ship_display = self._resolve_ship_name(entry)
-        if ship_display is None:
+        shared_state_normalized: dict[str, Any] = {}
+        if isinstance(shared_state, dict):
+            for key in (
+                "ShipName",
+                "ShipLocalised",
+                "Ship_Localised",
+                "Ship",
+                "ShipType",
+                "ShipType_Localised",
+            ):
+                value = shared_state.get(key) if isinstance(shared_state, dict) else None
+                if isinstance(value, str) and value.strip():
+                    shared_state_normalized[key] = value.strip()
+
+        ship_display = None
+        ship_source = None
+        if entry_state:
+            ship_display = self._resolve_ship_name(entry_state)
+            if ship_display:
+                ship_source = "journal"
+        if ship_display is None and shared_state_normalized:
+            ship_display = self._resolve_ship_name(shared_state_normalized)
+            if ship_display:
+                ship_source = "shared_state"
+        if ship_display is None and isinstance(entry, dict):
             for key in ("ShipType_Localised", "ShipType", "Ship"):
                 value = entry.get(key)
                 if isinstance(value, str) and value.strip():
                     ship_display = value.strip()
+                    ship_source = "fallback"
                     break
 
-        if ship_display:
-            self._state.current_ship = ship_display
-        if capacity_value is not None:
-            self._state.cargo_capacity = capacity_value
-
-        ship_summary = ship_display or "Unknown ship (swap data unavailable)"
-        if capacity_value is not None:
-            capacity_summary = f"{capacity_value}t (source={capacity_source or 'unknown'})"
-        else:
-            capacity_summary = "unknown (capacity not provided)"
-
-        _plugin_log.info(
-            "Ship swap detected: ship=%s, cargo_capacity=%s",
-            ship_summary,
-            capacity_summary,
-        )
-        if _plugin_log is not _log:
-            _log.debug(
-                "Ship swap processed: ship=%s capacity=%s source=%s entry=%s shared_state=%s",
-                ship_display,
-                capacity_value,
-                capacity_source or "unknown",
-                entry,
-                edmc_state,
-            )
+        return ship_display, ship_source, capacity_value, capacity_source
 
     def _process_cargo(self, entry: dict, edmc_state: Optional[dict], *, is_mining: bool) -> None:
         inventory = entry.get("Inventory")
@@ -325,50 +625,76 @@ class JournalProcessor:
         reason: str,
         timestamp: Optional[str],
         state: Optional[dict] = None,
+        entry: Optional[dict] = None,
     ) -> None:
         if self._state.is_mining == active:
             return
 
         if active:
-            # Capture capacity and ship info before the reset wipes state
-            capacity_value: Optional[int] = None
-            capacity_source = "not provided"
-            if state:
-                try:
-                    raw_capacity = state.get("CargoCapacity")
-                except Exception:
-                    raw_capacity = None
-                if isinstance(raw_capacity, (int, float)) and raw_capacity >= 0:
-                    capacity_value = int(raw_capacity)
-                    capacity_source = "shared_state"
-            ship_display = self._resolve_ship_name(state)
-            if ship_display is None and _log.isEnabledFor(logging.DEBUG):
-                _log.debug("Mining start: unable to resolve ship name from state=%s", state)
+            ship_display, ship_source, capacity_value, capacity_source = self._extract_ship_and_capacity(entry, state)
+            existing_ship = self._state.current_ship
+            existing_capacity = self._state.cargo_capacity
+
+            normalized_existing = existing_ship.lower() if isinstance(existing_ship, str) else None
+            normalized_incoming = ship_display.lower() if isinstance(ship_display, str) else None
+            ship_changed = False
+
+            ship_to_use = existing_ship
+            if ship_display:
+                if (
+                    ship_source != "shared_state"
+                    or existing_ship is None
+                    or normalized_existing != normalized_incoming
+                ):
+                    ship_changed = normalized_existing != normalized_incoming
+                    ship_to_use = ship_display
+            capacity_to_use = existing_capacity
+            if capacity_value is not None:
+                if (
+                    capacity_source != "shared_state"
+                    or existing_capacity is None
+                    or ship_changed
+                ):
+                    capacity_to_use = capacity_value
+            elif ship_changed:
+                capacity_to_use = None
 
             start_time = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
             reset_mining_state(self._state)
             self._state.is_mining = True
             self._state.mining_start = start_time
             self._state.mining_end = None
-            self._state.mining_location = self._detect_current_location(state)
-            system_name = self._detect_current_system(state)
+            self._state.mining_location = self._detect_current_location(state or entry)
+            system_name = self._detect_current_system(state or entry)
             if system_name:
                 self._set_current_system(system_name)
 
-            self._state.current_ship = ship_display if ship_display else None
+            self._state.current_ship = ship_to_use
+            self._state.cargo_capacity = capacity_to_use
 
             _plugin_log.info("Mining start event triggered (reason=%s)", reason)
             if _plugin_log is not _log:
-                _log.debug("Mining start event logged via plugin logger (reason=%s)", reason)
+                _log.debug(
+                    "Mining start event logged via plugin logger (reason=%s, entry=%s, shared_state=%s)",
+                    reason,
+                    entry,
+                    state,
+                )
 
-            # Preserve any discovered capacity for the new session
-            self._state.cargo_capacity = capacity_value
-
-            ship_summary = ship_display or "Unknown ship (ship data unavailable)"
-            if capacity_value is not None:
-                capacity_summary = f"{capacity_value}t (source={capacity_source})"
+            ship_summary = ship_to_use or "Unknown ship (ship data unavailable)"
+            if capacity_to_use is not None:
+                if capacity_value is not None and (
+                    capacity_source != "shared_state" or existing_capacity is None or ship_changed
+                ):
+                    capacity_origin = capacity_source or "unknown"
+                elif existing_capacity is not None:
+                    capacity_origin = "previous"
+                else:
+                    capacity_origin = "unknown"
+                capacity_summary = f"{capacity_to_use}t (source={capacity_origin})"
             else:
-                capacity_summary = "unknown (capacity not provided)"
+                capacity_origin = capacity_source or ("cleared" if ship_changed else "not provided")
+                capacity_summary = f"unknown (capacity {capacity_origin})"
 
             _plugin_log.info(
                 "Mining started: ship=%s, cargo_capacity=%s",
