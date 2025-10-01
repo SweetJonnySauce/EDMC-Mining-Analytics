@@ -296,6 +296,7 @@ class MiningUI:
         self._rate_update_job: Optional[str] = None
         self._content_collapsed = False
         self._hist_windows: Dict[str, tk.Toplevel] = {}
+        self._hist_canvases: Dict[str, tk.Canvas] = {}
         self._details_visible = False
         self._last_is_mining: Optional[bool] = None
 
@@ -689,10 +690,11 @@ class MiningUI:
     def get_root(self) -> Optional[tk.Widget]:
         return self._frame
 
-    def clear_transient_widgets(self) -> None:
+    def clear_transient_widgets(self, *, close_histograms: bool = True) -> None:
         self._clear_range_link_labels()
         self._clear_commodity_link_labels()
-        self.close_histogram_windows()
+        if close_histograms:
+            self.close_histogram_windows()
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -821,7 +823,7 @@ class MiningUI:
             if self._cargo_tooltip:
                 self._cargo_tooltip.clear()
             self._cargo_item_to_commodity.clear()
-            self.clear_transient_widgets()
+            self.clear_transient_widgets(close_histograms=False)
 
             rows = sorted(
                 name
@@ -907,6 +909,8 @@ class MiningUI:
                 self._total_tph_var.set(
                     f"Total Tons/hr: {self._format_rate(total_rate)} ({total_amount}t over {duration_str})"
                 )
+
+        self._refresh_histogram_windows()
 
     # ------------------------------------------------------------------
     # Preference callbacks
@@ -1348,6 +1352,9 @@ class MiningUI:
 
         window = self._hist_windows.get(commodity)
         if window and window.winfo_exists():
+            canvas = self._hist_canvases.get(commodity)
+            if canvas and canvas.winfo_exists():
+                self._draw_histogram(canvas, commodity)
             window.lift()
             return
 
@@ -1374,14 +1381,17 @@ class MiningUI:
         self._draw_histogram(canvas, commodity, counter)
         top.protocol("WM_DELETE_WINDOW", lambda c=commodity: self._close_histogram_window(c))
         self._hist_windows[commodity] = top
+        self._hist_canvases[commodity] = canvas
 
     def close_histogram_windows(self) -> None:
         for commodity in list(self._hist_windows):
             self._close_histogram_window(commodity)
         self._hist_windows.clear()
+        self._hist_canvases.clear()
 
     def _close_histogram_window(self, commodity: str) -> None:
         window = self._hist_windows.pop(commodity, None)
+        self._hist_canvases.pop(commodity, None)
         if not window:
             return
         try:
@@ -1414,12 +1424,22 @@ class MiningUI:
         max_label_width = max((label_font.measure(text) for text in labels.values()), default=0)
         min_bin_width = max(48.0, max_label_width + 12.0)
         bin_count = max(1, len(full_range))
-        bin_width = (width - padding_x * 2) / bin_count
-        if bin_width < min_bin_width:
-            bin_width = min_bin_width
-            requested_width = padding_x * 2 + bin_width * bin_count
+        available_width = max(1.0, width - padding_x * 2)
+        bin_width = max(min_bin_width, available_width / bin_count)
+
+        heading_text = f"{self._format_cargo_name(commodity)} histogram"
+        try:
+            title_font = tkfont.nametofont("TkCaptionFont")
+        except (tk.TclError, RuntimeError):
+            title_font = tkfont.nametofont("TkDefaultFont")
+        heading_width = title_font.measure(heading_text) + padding_x * 2
+
+        requested_width = max(padding_x * 2 + bin_width * bin_count, heading_width, 360.0)
+        if requested_width > width:
             canvas.config(width=int(requested_width))
             width = requested_width
+            available_width = max(1.0, width - padding_x * 2)
+            bin_width = max(min_bin_width, available_width / bin_count)
 
         max_count = max((counter.get(bin_index, 0) for bin_index in full_range), default=0) or 1
         text_color = self._theme.table_foreground_color()
@@ -1438,6 +1458,15 @@ class MiningUI:
             label = labels[bin_index]
             canvas.create_text((x0 + x1) / 2, label_y, text=label, anchor="n", fill=text_color)
             canvas.create_text((x0 + x1) / 2, y0 - 4, text=str(count), anchor="s", fill=text_color)
+
+    def _refresh_histogram_windows(self) -> None:
+        for commodity, canvas in list(self._hist_canvases.items()):
+            window = self._hist_windows.get(commodity)
+            if not window or not window.winfo_exists() or not canvas.winfo_exists():
+                self._hist_canvases.pop(commodity, None)
+                self._hist_windows.pop(commodity, None)
+                continue
+            self._draw_histogram(canvas, commodity)
 
     def _recompute_histograms(self) -> None:
         from state import recompute_histograms  # local import to avoid circular deps
