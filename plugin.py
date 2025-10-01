@@ -105,6 +105,7 @@ class MiningAnalyticsPlugin:
             on_session_start=self._on_session_start,
             on_session_end=self._on_session_end,
             persist_inferred_capacities=self._persist_inferred_capacities,
+            notify_mining_activity=self._handle_mining_activity,
         )
 
         self.plugin_dir: Optional[Path] = None
@@ -167,6 +168,7 @@ class MiningAnalyticsPlugin:
         reset_mining_state(self.state)
         self.ui.cancel_rate_update()
         self.ui.clear_transient_widgets()
+        self.ui.set_paused(False)
         self._refresh_ui_safe()
 
     def _refresh_ui_safe(self) -> None:
@@ -194,6 +196,15 @@ class MiningAnalyticsPlugin:
             self.preferences.save_inferred_capacities(self.state)
         except Exception:
             _log.exception("Failed to persist inferred cargo capacities")
+
+    def _handle_mining_activity(self, reason: str) -> None:
+        if not self.state.auto_unpause_on_event or not self.state.is_paused:
+            return
+        _log.debug("Mining activity detected (%s); auto-resuming paused updates", reason)
+        try:
+            self.ui.set_paused(False)
+        except Exception:
+            _log.exception("Failed to auto-resume after %s", reason)
 
     # ------------------------------------------------------------------
     # Version checking

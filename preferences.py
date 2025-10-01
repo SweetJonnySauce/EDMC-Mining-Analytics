@@ -45,6 +45,7 @@ class PreferencesManager:
             state.inara_settings.include_carriers = True
             state.inara_settings.include_surface = True
             state.inferred_capacity_map = {}
+            state.auto_unpause_on_event = True
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
@@ -60,6 +61,7 @@ class PreferencesManager:
         state.inara_settings.include_surface = bool(include_surface)
 
         state.inferred_capacity_map = self._load_inferred_capacities()
+        state.auto_unpause_on_event = bool(self._get_int("edmc_mining_auto_unpause", 1))
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -91,6 +93,11 @@ class PreferencesManager:
             _log.exception("Failed to persist Inara surface preference")
 
         self.save_inferred_capacities(state)
+
+        try:
+            config.set("edmc_mining_auto_unpause", int(state.auto_unpause_on_event))
+        except Exception:
+            _log.exception("Failed to persist auto-unpause preference")
 
     @staticmethod
     def _get_int(key: str, default: int) -> int:

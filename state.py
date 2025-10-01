@@ -67,6 +67,8 @@ class MiningState:
     cargo_capacity_is_inferred: bool = False
     current_cargo_tonnage: int = 0
     inferred_capacity_map: Dict[str, int] = field(default_factory=dict)
+    is_paused: bool = False
+    auto_unpause_on_event: bool = True
 
 
 def reset_mining_state(state: MiningState) -> None:
@@ -105,6 +107,7 @@ def reset_mining_state(state: MiningState) -> None:
     state.current_ship = None
     state.current_ship_key = None
     state.cargo_capacity_is_inferred = False
+    state.is_paused = False
 
 
 def recompute_histograms(state: MiningState) -> None:

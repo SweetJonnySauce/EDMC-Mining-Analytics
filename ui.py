@@ -267,6 +267,7 @@ class MiningUI:
         self._summary_var: Optional[tk.StringVar] = None
         self._summary_label: Optional[tk.Label] = None
         self._summary_tooltip: Optional[WidgetTooltip] = None
+        self._pause_btn: Optional[tk.Button] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_tree: Optional[ttk.Treeview] = None
         self._materials_frame: Optional[ttk.Frame] = None
@@ -284,6 +285,7 @@ class MiningUI:
         self._prefs_inara_mode_var: Optional[tk.IntVar] = None
         self._prefs_inara_carriers_var: Optional[tk.BooleanVar] = None
         self._prefs_inara_surface_var: Optional[tk.BooleanVar] = None
+        self._prefs_auto_unpause_var: Optional[tk.BooleanVar] = None
 
         self._updating_bin_var = False
         self._updating_rate_var = False
@@ -421,9 +423,18 @@ class MiningUI:
         total_label.grid(row=4, column=0, sticky="w", padx=4, pady=(0, 6))
         self._theme.register(total_label)
 
-        reset_btn = tk.Button(frame, text="Reset", command=self._on_reset, cursor="hand2")
+        button_bar = tk.Frame(frame, highlightthickness=0, bd=0)
+        button_bar.grid(row=4, column=2, sticky="e", padx=4, pady=(0, 6))
+        self._theme.register(button_bar)
+
+        pause_btn = tk.Button(button_bar, text="Pause", command=self._toggle_pause, cursor="hand2")
+        self._theme.style_button(pause_btn)
+        pause_btn.grid(row=0, column=0, padx=(0, 4), pady=0)
+        self._pause_btn = pause_btn
+
+        reset_btn = tk.Button(button_bar, text="Reset", command=self._on_reset, cursor="hand2")
         self._theme.style_button(reset_btn)
-        reset_btn.grid(row=4, column=2, sticky="e", padx=4, pady=(0, 6))
+        reset_btn.grid(row=0, column=1, padx=0, pady=0)
 
         materials_label = tk.Label(
             frame,
@@ -483,26 +494,38 @@ class MiningUI:
             commodities_label,
             table_frame,
             total_label,
-            reset_btn,
+            button_bar,
             materials_label,
             self._materials_frame,
         )
+
+        self._update_pause_button()
 
         self._apply_initial_visibility()
 
         return frame
 
     def refresh(self) -> None:
+        self._update_pause_button()
         self._refresh_status_line()
         self._populate_tables()
         self._render_range_links()
+
+    def _on_auto_unpause_change(self, *_: object) -> None:
+        if self._prefs_auto_unpause_var is None:
+            return
+        try:
+            value = bool(self._prefs_auto_unpause_var.get())
+        except (tk.TclError, ValueError):
+            return
+        self._state.auto_unpause_on_event = value
 
     def schedule_rate_update(self) -> None:
         frame = self._frame
         if frame is None or not frame.winfo_exists():
             return
 
-        if not self._state.is_mining:
+        if not self._state.is_mining or self._state.is_paused:
             self.cancel_rate_update()
             return
 
@@ -552,49 +575,64 @@ class MiningUI:
         title.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 2))
         self._theme.register(title)
 
+        general_frame = tk.LabelFrame(frame, text="General")
+        general_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
+        general_frame.columnconfigure(0, weight=1)
+        self._theme.register(general_frame)
+
         desc1 = tk.Label(
-            frame,
+            general_frame,
             text="Prospecting histogram bin size (percentage range per bin)",
             anchor="w",
             justify="left",
             wraplength=400,
         )
-        desc1.grid(row=1, column=0, sticky="w", padx=10, pady=(0, 4))
+        desc1.grid(row=0, column=0, sticky="w", pady=(4, 4))
         self._theme.register(desc1)
 
-        self._prefs_bin_var = tk.IntVar(master=frame, value=self._state.histogram_bin_size)
+        self._prefs_bin_var = tk.IntVar(master=general_frame, value=self._state.histogram_bin_size)
         self._prefs_bin_var.trace_add("write", self._on_histogram_bin_change)
         ttk.Spinbox(
-            frame,
+            general_frame,
             from_=1,
             to=100,
             textvariable=self._prefs_bin_var,
             width=6,
-        ).grid(row=2, column=0, sticky="w", padx=10, pady=(0, 10))
+        ).grid(row=1, column=0, sticky="w", pady=(0, 8))
 
         desc2 = tk.Label(
-            frame,
+            general_frame,
             text="Tons/hour auto-update interval (seconds)",
             anchor="w",
             justify="left",
             wraplength=400,
         )
-        desc2.grid(row=3, column=0, sticky="w", padx=10, pady=(0, 4))
+        desc2.grid(row=2, column=0, sticky="w", pady=(0, 4))
         self._theme.register(desc2)
 
-        self._prefs_rate_var = tk.IntVar(master=frame, value=self._state.rate_interval_seconds)
+        self._prefs_rate_var = tk.IntVar(master=general_frame, value=self._state.rate_interval_seconds)
         self._prefs_rate_var.trace_add("write", self._on_rate_interval_change)
         ttk.Spinbox(
-            frame,
+            general_frame,
             from_=5,
             to=3600,
             increment=5,
             textvariable=self._prefs_rate_var,
             width=6,
-        ).grid(row=4, column=0, sticky="w", padx=10, pady=(0, 10))
+        ).grid(row=3, column=0, sticky="w", pady=(0, 8))
+
+        self._prefs_auto_unpause_var = tk.BooleanVar(master=general_frame, value=self._state.auto_unpause_on_event)
+        self._prefs_auto_unpause_var.trace_add("write", self._on_auto_unpause_change)
+        auto_unpause_cb = ttk.Checkbutton(
+            general_frame,
+            text="Mining event automatically un-pauses the plugin",
+            variable=self._prefs_auto_unpause_var,
+        )
+        auto_unpause_cb.grid(row=4, column=0, sticky="w", pady=(0, 6))
+        self._theme.register(auto_unpause_cb)
 
         inara_frame = tk.LabelFrame(frame, text="Inara Links")
-        inara_frame.grid(row=5, column=0, sticky="ew", padx=10, pady=(0, 10))
+        inara_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
         inara_frame.columnconfigure(0, weight=1)
         self._theme.register(inara_frame)
 
@@ -667,11 +705,14 @@ class MiningUI:
 
         if self._state.is_mining:
             if self._state.mining_location:
-                status_text = f"You're mining {self._state.mining_location}"
+                status_base = f"You're mining {self._state.mining_location}"
             else:
-                status_text = "You're mining!"
+                status_base = "You're mining!"
         else:
-            status_text = "Not mining"
+            status_base = "Not mining"
+
+        prefix = "[PAUSED] " if self._state.is_paused else ""
+        status_text = f"{prefix}{status_base}" if prefix else status_base
 
         summary_lines = self._status_summary_lines()
 
@@ -953,8 +994,42 @@ class MiningUI:
     def _on_reset(self) -> None:
         self._on_reset()
 
+    def _toggle_pause(self) -> None:
+        self.set_paused(not self._state.is_paused)
+
+    def set_paused(self, paused: bool) -> None:
+        target = bool(paused)
+        if target == self._state.is_paused:
+            self._update_pause_button()
+            self._refresh_status_line()
+            self._update_summary_tooltip()
+            return
+        self._state.is_paused = target
+        if target:
+            self.cancel_rate_update()
+        elif self._state.is_mining:
+            self.schedule_rate_update()
+        self._update_pause_button()
+        self._refresh_status_line()
+        self._update_summary_tooltip()
+
+    def is_paused(self) -> bool:
+        return self._state.is_paused
+
+    def _update_pause_button(self) -> None:
+        button = self._pause_btn
+        if not button:
+            return
+        label = "Resume" if self._state.is_paused else "Pause"
+        try:
+            button.configure(text=label)
+        except tk.TclError:
+            pass
+
     def _on_rate_update_tick(self) -> None:
         self._rate_update_job = None
+        if self._state.is_paused:
+            return
         frame = self._frame
         if frame and frame.winfo_exists():
             self.refresh()

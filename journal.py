@@ -50,12 +50,14 @@ class JournalProcessor:
         on_session_start: Callable[[], None],
         on_session_end: Callable[[], None],
         persist_inferred_capacities: Callable[[], None],
+        notify_mining_activity: Optional[Callable[[str], None]] = None,
     ) -> None:
         self._state = state
         self._refresh_ui = refresh_ui
         self._on_session_start = on_session_start
         self._on_session_end = on_session_end
         self._persist_inferred_capacities = persist_inferred_capacities
+        self._notify_mining_activity = notify_mining_activity
         self._initial_state_checked = False
         self._pending_ship_updates: dict[str, PendingShipUpdate] = {}
         self._pending_timeout_timer: Optional[threading.Timer] = None
@@ -97,6 +99,8 @@ class JournalProcessor:
             self._register_prospected_asteroid(entry)
         elif event == "Cargo":
             self._process_cargo(entry, edmc_state, is_mining=self._state.is_mining)
+        elif event == "MiningRefined":
+            self._emit_mining_activity("MiningRefined")
         elif event == "SupercruiseEntry" and self._state.is_mining:
             self._update_mining_state(
                 False,
@@ -195,6 +199,7 @@ class JournalProcessor:
 
         self._state.last_event_was_drone_launch = True
         self._refresh_ui()
+        self._emit_mining_activity(f"LaunchDrone:{dtype}")
 
     def _register_prospected_asteroid(self, entry: dict) -> None:
         key = self._make_prospect_key(entry)
@@ -240,6 +245,7 @@ class JournalProcessor:
                 self._state.prospected_samples.setdefault(normalized, []).append(proportion)
 
         recompute_histograms(self._state)
+        self._emit_mining_activity("ProspectedAsteroid")
 
     def _register_material_collected(self, entry: dict) -> None:
         name = entry.get("Name")
@@ -772,6 +778,7 @@ class JournalProcessor:
             self._refresh_ui()
 
         self._state.last_cargo_counts = dict(cargo_counts)
+        self._emit_mining_activity("Cargo")
 
     # ------------------------------------------------------------------
     # Inferred capacity helpers
@@ -898,6 +905,15 @@ class JournalProcessor:
                 reason,
             )
         self._refresh_ui()
+
+    def _emit_mining_activity(self, reason: str) -> None:
+        callback = getattr(self, "_notify_mining_activity", None)
+        if not callback:
+            return
+        try:
+            callback(reason)
+        except Exception:
+            _log.exception("Failed to notify mining activity (%s)", reason)
 
     # ------------------------------------------------------------------
     # Mining session helpers
