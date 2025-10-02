@@ -42,6 +42,14 @@ def clamp_session_retention(value: int) -> int:
     return max(1, min(500, limit))
 
 
+def clamp_positive_int(value: int, default: int, maximum: int = 10_000) -> int:
+    try:
+        result = int(value)
+    except (TypeError, ValueError):
+        result = default
+    return max(1, min(maximum, result))
+
+
 class PreferencesManager:
     """Loads and persists user preferences via EDMC's config object."""
 
@@ -59,6 +67,10 @@ class PreferencesManager:
             state.discord_webhook_url = ""
             state.send_summary_to_discord = False
             state.discord_image_url = ""
+            state.refinement_lookback_seconds = 10
+            state.rpm_threshold_red = 10
+            state.rpm_threshold_yellow = 20
+            state.rpm_threshold_green = 30
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
@@ -82,6 +94,26 @@ class PreferencesManager:
         state.discord_webhook_url = self._get_str("edmc_mining_discord_webhook", "").strip()
         state.send_summary_to_discord = bool(self._get_int("edmc_mining_discord_summary", 0))
         state.discord_image_url = self._get_str("edmc_mining_discord_image", "").strip()
+        state.refinement_lookback_seconds = clamp_positive_int(
+            self._get_int("edmc_mining_refinement_window", state.refinement_lookback_seconds),
+            state.refinement_lookback_seconds,
+            maximum=3600,
+        )
+        state.rpm_threshold_red = clamp_positive_int(
+            self._get_int("edmc_mining_rpm_red", state.rpm_threshold_red),
+            state.rpm_threshold_red,
+            maximum=10_000,
+        )
+        state.rpm_threshold_yellow = clamp_positive_int(
+            self._get_int("edmc_mining_rpm_yellow", state.rpm_threshold_yellow),
+            state.rpm_threshold_yellow,
+            maximum=10_000,
+        )
+        state.rpm_threshold_green = clamp_positive_int(
+            self._get_int("edmc_mining_rpm_green", state.rpm_threshold_green),
+            state.rpm_threshold_green,
+            maximum=10_000,
+        )
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -146,6 +178,38 @@ class PreferencesManager:
             config.set("edmc_mining_discord_image", state.discord_image_url or "")
         except Exception:
             _log.exception("Failed to persist Discord image URL")
+
+        try:
+            config.set(
+                "edmc_mining_refinement_window",
+                clamp_positive_int(state.refinement_lookback_seconds, 10, maximum=3600),
+            )
+        except Exception:
+            _log.exception("Failed to persist refinement lookback preference")
+
+        try:
+            config.set(
+                "edmc_mining_rpm_red",
+                clamp_positive_int(state.rpm_threshold_red, 10),
+            )
+        except Exception:
+            _log.exception("Failed to persist RPM red threshold")
+
+        try:
+            config.set(
+                "edmc_mining_rpm_yellow",
+                clamp_positive_int(state.rpm_threshold_yellow, 20),
+            )
+        except Exception:
+            _log.exception("Failed to persist RPM yellow threshold")
+
+        try:
+            config.set(
+                "edmc_mining_rpm_green",
+                clamp_positive_int(state.rpm_threshold_green, 30),
+            )
+        except Exception:
+            _log.exception("Failed to persist RPM green threshold")
 
     @staticmethod
     def _get_int(key: str, default: int) -> int:

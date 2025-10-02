@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Deque, Dict, List, Optional, Set, Tuple
 
 
 ProspectKey = Tuple[str, Tuple[Tuple[str, float], ...]]
@@ -78,6 +78,14 @@ class MiningState:
     last_session_summary: Optional[str] = None
     discord_image_url: str = ""
 
+    refinement_lookback_seconds: int = 10
+    rpm_threshold_red: int = 10
+    rpm_threshold_yellow: int = 20
+    rpm_threshold_green: int = 30
+    recent_refinements: Deque[datetime] = field(default_factory=deque)
+    current_rpm: float = 0.0
+    max_rpm: float = 0.0
+
 
 def reset_mining_state(state: MiningState) -> None:
     """Reset mutable mining metrics for a fresh session."""
@@ -117,6 +125,9 @@ def reset_mining_state(state: MiningState) -> None:
     state.current_ship_key = None
     state.cargo_capacity_is_inferred = False
     state.is_paused = False
+    state.recent_refinements.clear()
+    state.current_rpm = 0.0
+    state.max_rpm = 0.0
 
 
 def recompute_histograms(state: MiningState) -> None:
@@ -138,3 +149,39 @@ def recompute_histograms(state: MiningState) -> None:
             bin_index = int(clamped // size)
             counter[bin_index] += 1
     state.prospected_histogram = histogram
+
+
+def register_refinement(state: MiningState, timestamp: datetime) -> None:
+    """Record a mining refinement event and refresh RPM metrics."""
+
+    aware_time = _ensure_aware(timestamp)
+    state.recent_refinements.append(aware_time)
+    update_rpm(state, aware_time)
+
+
+def update_rpm(state: MiningState, now: Optional[datetime] = None) -> float:
+    """Recalculate current and max RPM based on recent refinements."""
+
+    if now is None:
+        now = datetime.now(timezone.utc)
+    aware_now = _ensure_aware(now)
+
+    window = max(1, int(state.refinement_lookback_seconds or 1))
+    cutoff = aware_now - timedelta(seconds=window)
+
+    refinements = state.recent_refinements
+    while refinements and refinements[0] < cutoff:
+        refinements.popleft()
+
+    count = len(refinements)
+    rpm = (count * 60.0) / window if window else 0.0
+    state.current_rpm = rpm
+    if rpm > state.max_rpm:
+        state.max_rpm = rpm
+    return rpm
+
+
+def _ensure_aware(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)

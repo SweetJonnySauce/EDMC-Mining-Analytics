@@ -27,14 +27,23 @@ except ImportError:  # pragma: no cover
     edmc_config = None  # type: ignore[assignment]
 
 from tooltip import TreeTooltip, WidgetTooltip
-from state import MiningState
+from state import MiningState, update_rpm
 from mining_inara import InaraClient
-from preferences import clamp_bin_size, clamp_rate_interval, clamp_session_retention
+from preferences import (
+    clamp_bin_size,
+    clamp_positive_int,
+    clamp_rate_interval,
+    clamp_session_retention,
+)
 from logging_utils import get_logger
 from version import PLUGIN_VERSION, PLUGIN_REPO_URL, display_version, is_newer_version
 
 
 _log = get_logger("ui")
+
+RPM_COLOR_RED = "#e74c3c"
+RPM_COLOR_YELLOW = "#f1c40f"
+RPM_COLOR_GREEN = "#2ecc71"
 
 
 class ThemeAdapter:
@@ -307,6 +316,12 @@ class MiningUI:
         self._summary_label: Optional[tk.Label] = None
         self._summary_tooltip: Optional[WidgetTooltip] = None
         self._summary_inferred_bounds: Optional[Tuple[int, int, int, int]] = None
+        self._rpm_var: Optional[tk.StringVar] = None
+        self._rpm_label: Optional[tk.Label] = None
+        self._rpm_title_label: Optional[tk.Label] = None
+        self._rpm_tooltip: Optional[WidgetTooltip] = None
+        self._rpm_font: Optional[tkfont.Font] = None
+        self._rpm_frame: Optional[tk.Frame] = None
         self._pause_btn: Optional[tk.Button] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_tree: Optional[ttk.Treeview] = None
@@ -330,6 +345,10 @@ class MiningUI:
         self._prefs_auto_unpause_var: Optional[tk.BooleanVar] = None
         self._prefs_session_logging_var: Optional[tk.BooleanVar] = None
         self._prefs_session_retention_var: Optional[tk.IntVar] = None
+        self._prefs_refinement_window_var: Optional[tk.IntVar] = None
+        self._prefs_rpm_red_var: Optional[tk.IntVar] = None
+        self._prefs_rpm_yellow_var: Optional[tk.IntVar] = None
+        self._prefs_rpm_green_var: Optional[tk.IntVar] = None
         self._prefs_webhook_var: Optional[tk.StringVar] = None
         self._prefs_send_summary_var: Optional[tk.BooleanVar] = None
         self._prefs_image_var: Optional[tk.StringVar] = None
@@ -344,6 +363,8 @@ class MiningUI:
         self._updating_inara_surface_var = False
         self._updating_session_logging_var = False
         self._updating_session_retention_var = False
+        self._updating_refinement_window_var = False
+        self._updating_rpm_vars = False
         self._updating_webhook_var = False
         self._updating_send_summary_var = False
         self._updating_image_var = False
@@ -394,13 +415,43 @@ class MiningUI:
             justify="left",
             anchor="w",
         )
-        summary_label.grid(row=1, column=0, columnspan=3, sticky="w", padx=4, pady=(0, 6))
+        summary_label.grid(row=1, column=0, columnspan=2, sticky="w", padx=4, pady=(0, 6))
         self._theme.register(summary_label)
         self._summary_label = summary_label
         self._summary_tooltip = WidgetTooltip(
             summary_label,
             hover_predicate=self._is_pointer_over_inferred,
         )
+
+        rpm_frame = tk.Frame(frame, highlightthickness=0, bd=0)
+        rpm_frame.grid(row=1, column=2, sticky="ne", padx=(0, 8), pady=(0, 6))
+        self._theme.register(rpm_frame)
+        rpm_frame.columnconfigure(0, weight=1)
+        self._rpm_frame = rpm_frame
+
+        self._rpm_var = tk.StringVar(master=rpm_frame, value="0.0")
+        rpm_value = tk.Label(
+            rpm_frame,
+            textvariable=self._rpm_var,
+            anchor="center",
+            justify="center",
+        )
+        try:
+            base_font = tkfont.nametofont(rpm_value.cget("font"))
+            self._rpm_font = tkfont.Font(font=base_font)
+            self._rpm_font.configure(size=max(18, int(base_font.cget("size")) + 8))
+            rpm_value.configure(font=self._rpm_font)
+        except tk.TclError:
+            self._rpm_font = None
+        rpm_value.grid(row=0, column=0, sticky="ew")
+        self._theme.register(rpm_value)
+        self._rpm_label = rpm_value
+
+        rpm_title = tk.Label(rpm_frame, text="RPM", anchor="center")
+        rpm_title.grid(row=1, column=0, sticky="ew", pady=(2, 0))
+        self._theme.register(rpm_title)
+        self._rpm_title_label = rpm_title
+        self._rpm_tooltip = WidgetTooltip(rpm_title)
 
         button_frame = tk.Frame(frame, highlightthickness=0, bd=0)
         button_frame.grid(row=0, column=2, sticky="e", padx=4, pady=(4, 2))
@@ -564,6 +615,7 @@ class MiningUI:
 
         self._content_widgets = (
             summary_label,
+            rpm_frame,
             commodities_label,
             table_frame,
             total_label,
@@ -575,6 +627,8 @@ class MiningUI:
         self._update_pause_button()
 
         self._apply_initial_visibility()
+
+        self._update_rpm_indicator()
 
         return frame
 
@@ -836,8 +890,116 @@ class MiningUI:
         self._theme.register(reset_cap_btn)
         self._reset_capacities_btn = reset_cap_btn
 
+        refinement_frame = tk.LabelFrame(frame, text="Refinement Metrics")
+        refinement_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
+        refinement_frame.columnconfigure(0, weight=1)
+        self._theme.register(refinement_frame)
+
+        refinement_desc = tk.Label(
+            refinement_frame,
+            text="Configure the RPM lookback window and color thresholds.",
+            anchor="w",
+            justify="left",
+            wraplength=400,
+        )
+        refinement_desc.grid(row=0, column=0, sticky="w", pady=(4, 4))
+        self._theme.register(refinement_desc)
+
+        window_container = tk.Frame(refinement_frame, highlightthickness=0, bd=0)
+        window_container.grid(row=1, column=0, sticky="w", pady=(0, 8))
+        self._theme.register(window_container)
+
+        window_label = tk.Label(
+            window_container,
+            text="Lookback window (seconds)",
+            anchor="w",
+        )
+        window_label.grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self._theme.register(window_label)
+
+        self._prefs_refinement_window_var = tk.IntVar(
+            master=window_container,
+            value=self._state.refinement_lookback_seconds,
+        )
+        self._prefs_refinement_window_var.trace_add("write", self._on_refinement_window_change)
+        ttk.Spinbox(
+            window_container,
+            from_=1,
+            to=3600,
+            increment=1,
+            textvariable=self._prefs_refinement_window_var,
+            width=6,
+        ).grid(row=0, column=1, sticky="w")
+
+        thresholds_desc = tk.Label(
+            refinement_frame,
+            text="Color thresholds (values represent minimum RPM for each color).",
+            anchor="w",
+            justify="left",
+            wraplength=400,
+        )
+        thresholds_desc.grid(row=2, column=0, sticky="w", pady=(0, 4))
+        self._theme.register(thresholds_desc)
+
+        thresholds_container = tk.Frame(refinement_frame, highlightthickness=0, bd=0)
+        thresholds_container.grid(row=3, column=0, sticky="w", pady=(0, 8))
+        self._theme.register(thresholds_container)
+
+        self._prefs_rpm_red_var = tk.IntVar(
+            master=thresholds_container,
+            value=self._state.rpm_threshold_red,
+        )
+        self._prefs_rpm_yellow_var = tk.IntVar(
+            master=thresholds_container,
+            value=self._state.rpm_threshold_yellow,
+        )
+        self._prefs_rpm_green_var = tk.IntVar(
+            master=thresholds_container,
+            value=self._state.rpm_threshold_green,
+        )
+
+        self._prefs_rpm_red_var.trace_add("write", self._on_rpm_threshold_change)
+        self._prefs_rpm_yellow_var.trace_add("write", self._on_rpm_threshold_change)
+        self._prefs_rpm_green_var.trace_add("write", self._on_rpm_threshold_change)
+
+        red_label = tk.Label(thresholds_container, text="Red ≥", anchor="w")
+        red_label.grid(row=0, column=0, sticky="w", padx=(0, 4))
+        self._theme.register(red_label)
+        ttk.Spinbox(
+            thresholds_container,
+            from_=1,
+            to=10000,
+            increment=1,
+            width=6,
+            textvariable=self._prefs_rpm_red_var,
+        ).grid(row=0, column=1, sticky="w", padx=(0, 8))
+
+        yellow_label = tk.Label(thresholds_container, text="Yellow ≥", anchor="w")
+        yellow_label.grid(row=0, column=2, sticky="w", padx=(0, 4))
+        self._theme.register(yellow_label)
+        ttk.Spinbox(
+            thresholds_container,
+            from_=1,
+            to=10000,
+            increment=1,
+            width=6,
+            textvariable=self._prefs_rpm_yellow_var,
+        ).grid(row=0, column=3, sticky="w", padx=(0, 8))
+
+        green_label = tk.Label(thresholds_container, text="Green ≥", anchor="w")
+        green_label.grid(row=0, column=4, sticky="w", padx=(0, 4))
+        self._theme.register(green_label)
+        ttk.Spinbox(
+            thresholds_container,
+            from_=1,
+            to=10000,
+            increment=1,
+            width=6,
+            textvariable=self._prefs_rpm_green_var,
+        ).grid(row=0, column=5, sticky="w")
+
         logging_frame = tk.LabelFrame(frame, text="Session Data Recording")
-        logging_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
+        logging_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))
         logging_frame.columnconfigure(0, weight=1)
         self._theme.register(logging_frame)
 
@@ -960,7 +1122,7 @@ class MiningUI:
         self._update_discord_controls()
 
         inara_frame = tk.LabelFrame(frame, text="Inara Links")
-        inara_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))
+        inara_frame.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
         inara_frame.columnconfigure(0, weight=1)
         self._theme.register(inara_frame)
 
@@ -1048,6 +1210,7 @@ class MiningUI:
         status_var.set(status_text)
         summary_var.set("\n".join(summary_lines))
         self._update_summary_tooltip()
+        self._update_rpm_indicator()
 
         if self._last_is_mining is None or self._last_is_mining != self._state.is_mining:
             self._details_visible = bool(self._state.is_mining)
@@ -1177,6 +1340,54 @@ class MiningUI:
             return False
         x1, y1, x2, y2 = bounds
         return x1 <= x <= x2 and y1 <= y <= y2
+
+    def _update_rpm_indicator(self) -> None:
+        rpm_label = self._rpm_label
+        rpm_var = self._rpm_var
+        if rpm_label is None or rpm_var is None:
+            return
+
+        now = datetime.now(timezone.utc)
+        rpm = update_rpm(self._state, now)
+
+        rpm_var.set(f"{rpm:.1f}")
+        color = self._determine_rpm_color(rpm)
+        for widget in (rpm_label, self._rpm_title_label):
+            if widget is None:
+                continue
+            try:
+                widget.configure(foreground=color)
+            except tk.TclError:
+                pass
+
+        tooltip = self._rpm_tooltip
+        if tooltip is not None:
+            lookback = max(1, int(self._state.refinement_lookback_seconds or 1))
+            tooltip.set_text(
+                (
+                    f"Refinements per minute over the last {lookback} seconds.\n"
+                    f"Session max RPM: {self._state.max_rpm:.1f}"
+                )
+            )
+
+    def _determine_rpm_color(self, rpm: float) -> str:
+        state = self._state
+        try:
+            green_threshold = int(state.rpm_threshold_green)
+            yellow_threshold = int(state.rpm_threshold_yellow)
+            red_threshold = int(state.rpm_threshold_red)
+        except (TypeError, ValueError):
+            green_threshold = state.rpm_threshold_green
+            yellow_threshold = state.rpm_threshold_yellow
+            red_threshold = state.rpm_threshold_red
+
+        if rpm >= max(1, green_threshold):
+            return RPM_COLOR_GREEN
+        if rpm >= max(1, yellow_threshold):
+            return RPM_COLOR_YELLOW
+        if rpm >= max(1, red_threshold):
+            return RPM_COLOR_RED
+        return self._theme.default_text_color()
 
     def _populate_tables(self) -> None:
         cargo_tree = self._cargo_tree
@@ -1321,6 +1532,70 @@ class MiningUI:
             self._prefs_rate_var.set(interval)
             self._updating_rate_var = False
         self.schedule_rate_update()
+
+    def _on_refinement_window_change(self, *_: object) -> None:
+        if (
+            self._prefs_refinement_window_var is None
+            or self._updating_refinement_window_var
+        ):
+            return
+        try:
+            value = int(self._prefs_refinement_window_var.get())
+        except (TypeError, ValueError, tk.TclError):
+            return
+        window = clamp_positive_int(value, self._state.refinement_lookback_seconds, maximum=3600)
+        if window == self._state.refinement_lookback_seconds:
+            return
+        self._state.refinement_lookback_seconds = window
+        if self._prefs_refinement_window_var.get() != window:
+            self._updating_refinement_window_var = True
+            self._prefs_refinement_window_var.set(window)
+            self._updating_refinement_window_var = False
+        update_rpm(self._state)
+        self._update_rpm_indicator()
+
+    def _on_rpm_threshold_change(self, *_: object) -> None:
+        if (
+            self._prefs_rpm_red_var is None
+            or self._prefs_rpm_yellow_var is None
+            or self._prefs_rpm_green_var is None
+            or self._updating_rpm_vars
+        ):
+            return
+        try:
+            red_value = int(self._prefs_rpm_red_var.get())
+            yellow_value = int(self._prefs_rpm_yellow_var.get())
+            green_value = int(self._prefs_rpm_green_var.get())
+        except (TypeError, ValueError, tk.TclError):
+            return
+
+        red = clamp_positive_int(red_value, self._state.rpm_threshold_red)
+        yellow = clamp_positive_int(yellow_value, self._state.rpm_threshold_yellow)
+        green = clamp_positive_int(green_value, self._state.rpm_threshold_green)
+
+        if red > yellow:
+            yellow = red
+        if yellow > green:
+            green = yellow
+
+        changed = (
+            red != self._state.rpm_threshold_red
+            or yellow != self._state.rpm_threshold_yellow
+            or green != self._state.rpm_threshold_green
+        )
+
+        self._state.rpm_threshold_red = red
+        self._state.rpm_threshold_yellow = yellow
+        self._state.rpm_threshold_green = green
+
+        self._updating_rpm_vars = True
+        self._prefs_rpm_red_var.set(red)
+        self._prefs_rpm_yellow_var.set(yellow)
+        self._prefs_rpm_green_var.set(green)
+        self._updating_rpm_vars = False
+
+        if changed:
+            self._update_rpm_indicator()
 
     def _on_inara_mode_change(self, *_: object) -> None:
         if self._prefs_inara_mode_var is None or self._updating_inara_mode_var:

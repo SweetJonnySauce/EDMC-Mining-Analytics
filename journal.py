@@ -9,7 +9,13 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Callable, Optional, Tuple
 import threading
 
-from state import MiningState, reset_mining_state, recompute_histograms
+from state import (
+    MiningState,
+    register_refinement,
+    recompute_histograms,
+    reset_mining_state,
+    update_rpm,
+)
 from session_recorder import SessionRecorder
 from logging_utils import get_logger
 
@@ -75,6 +81,7 @@ class JournalProcessor:
         edmc_state = shared_state if isinstance(shared_state, dict) else None
 
         event_time = self._parse_timestamp(entry.get("timestamp")) or datetime.now(timezone.utc)
+        update_rpm(self._state, event_time)
         if (
             not self._initial_state_checked
             and edmc_state
@@ -119,6 +126,7 @@ class JournalProcessor:
                     commodity_localised=localized,
                     commodity_type=type_name,
                 )
+            register_refinement(self._state, event_time)
             self._emit_mining_activity("MiningRefined")
         elif event == "BuyDrones":
             if self._session_recorder:

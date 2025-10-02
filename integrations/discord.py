@@ -79,6 +79,30 @@ def build_summary_message(
     content = meta.get("content_summary", {})
     lost = meta.get("prospectors_lost", max(0, state.prospector_launched_count - state.prospected_count))
 
+    refinement_meta = meta.get("refinement_activity", {})
+    raw_max_rpm = refinement_meta.get("max_rpm", state.max_rpm)
+    raw_current_rpm = refinement_meta.get("current_rpm", state.current_rpm)
+    raw_window = refinement_meta.get("lookback_seconds", state.refinement_lookback_seconds)
+
+    def _format_rpm(value: Any) -> str:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return "-"
+        return f"{numeric:.1f}"
+
+    if isinstance(raw_window, (int, float)):
+        rpm_field_value = (
+            f"Max {_format_rpm(raw_max_rpm)} RPM\n"
+            f"Current {_format_rpm(raw_current_rpm)} RPM\n"
+            f"Window {int(raw_window)}s"
+        )
+    else:
+        rpm_field_value = (
+            f"Max {_format_rpm(raw_max_rpm)} RPM\n"
+            f"Current {_format_rpm(raw_current_rpm)} RPM"
+        )
+
     fields: List[Dict[str, Any]] = [
         {
             "name": "Location",
@@ -93,6 +117,11 @@ def build_summary_message(
         {
             "name": "Output",
             "value": output_text,
+            "inline": True,
+        },
+        {
+            "name": "Refinements",
+            "value": rpm_field_value,
             "inline": True,
         },
         {
@@ -194,6 +223,12 @@ def build_test_message(state: MiningState) -> Dict[str, Any]:
         "materials": _materials_snapshot(state.materials_collected),
         "commander": state.cmdr_name,
         "ring": state.mining_ring,
+        "max_rpm": round(state.max_rpm, 2),
+        "refinement_activity": {
+            "lookback_seconds": state.refinement_lookback_seconds,
+            "current_rpm": round(state.current_rpm, 2),
+            "max_rpm": round(state.max_rpm, 2),
+        },
     }
 
     payload = {"meta": meta, "commodities": {}}

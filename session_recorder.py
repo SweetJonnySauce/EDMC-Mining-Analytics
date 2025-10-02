@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple
 
 from logging_utils import get_logger
-from state import MiningState
+from state import MiningState, update_rpm
 from integrations.discord import (
     build_summary_message,
     build_test_message,
@@ -201,6 +201,10 @@ class SessionRecorder:
         )
         duration_seconds = max(0.0, (end - start).total_seconds())
 
+        update_rpm(state, end)
+        current_rpm = round(state.current_rpm, 2)
+        max_rpm = round(state.max_rpm, 2)
+
         total_cargo = self._safe_sum(state.cargo_totals.values())
         tons_per_hour = self._compute_rate(total_cargo, duration_seconds)
         if tons_per_hour is not None:
@@ -237,6 +241,12 @@ class SessionRecorder:
             "inventory_tonnage": state.current_cargo_tonnage,
             "cargo_capacity": state.cargo_capacity,
             "materials": self._materials_snapshot(state.materials_collected),
+            "max_rpm": max_rpm,
+            "refinement_activity": {
+                "lookback_seconds": state.refinement_lookback_seconds,
+                "current_rpm": current_rpm,
+                "max_rpm": max_rpm,
+            },
         }
 
         meta["commander"] = (state.cmdr_name or "").strip() or "Unknown"
@@ -446,6 +456,23 @@ class SessionRecorder:
             ),
         ]
         lines.append(f"Collectors abandoned: {meta.get('collectors_abandoned', 0)}")
+
+        rpm_meta = meta.get("refinement_activity", {})
+
+        def _format_rpm(value: Any) -> str:
+            try:
+                return f"{float(value):.1f}"
+            except (TypeError, ValueError):
+                return "-"
+
+        rpm_parts = [
+            f"max {_format_rpm(rpm_meta.get('max_rpm', meta.get('max_rpm')))} RPM",
+            f"current {_format_rpm(rpm_meta.get('current_rpm', self._state.current_rpm))} RPM",
+        ]
+        window_value = rpm_meta.get("lookback_seconds", self._state.refinement_lookback_seconds)
+        if isinstance(window_value, (int, float)):
+            rpm_parts.append(f"window {int(window_value)}s")
+        lines.append("Refinements: " + " | ".join(rpm_parts))
 
         commodities = payload.get("commodities", {})
         if commodities:
