@@ -167,8 +167,13 @@ class MiningAnalyticsPlugin:
         reset_mining_state(self.state)
         self._refresh_ui_safe()
 
-    def handle_journal_entry(self, entry: dict, shared_state: Optional[dict] = None) -> None:
-        self._update_commander(entry, shared_state)
+    def handle_journal_entry(
+        self,
+        entry: dict,
+        shared_state: Optional[dict] = None,
+        cmdr: Optional[str] = None,
+    ) -> None:
+        self._update_commander(entry, shared_state, cmdr)
         self.journal.handle_entry(entry, shared_state)
 
     def prefs_changed(self, cmdr: Optional[str], is_beta: bool) -> None:
@@ -253,10 +258,15 @@ class MiningAnalyticsPlugin:
         except Exception:
             _log.exception("Failed to send Discord webhook test message")
 
-    def _update_commander(self, entry: Optional[dict], shared_state: Optional[dict]) -> None:
-        commander: Optional[str] = None
+    def _update_commander(
+        self,
+        entry: Optional[dict],
+        shared_state: Optional[dict],
+        cmdr: Optional[str],
+    ) -> None:
+        commander: Optional[str] = cmdr
         if isinstance(entry, dict):
-            commander = entry.get("Cmdr") or entry.get("Commander")
+            commander = commander or entry.get("Cmdr") or entry.get("Commander")
             if not commander:
                 user = entry.get("UserName")
                 if isinstance(user, str) and user.strip():

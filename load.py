@@ -51,4 +51,4 @@ def journal_entry(
     entry: dict,
     state: Optional[dict],
 ) -> None:
-    _plugin.handle_journal_entry(entry, state)
+    _plugin.handle_journal_entry(entry, state, cmdr)

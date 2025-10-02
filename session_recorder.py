@@ -239,7 +239,7 @@ class SessionRecorder:
             "materials": self._materials_snapshot(state.materials_collected),
         }
 
-        meta["commander"] = state.cmdr_name
+        meta["commander"] = (state.cmdr_name or "").strip() or "Unknown"
         meta["ring"] = self._derive_ring_name()
         meta["prospectors_lost"] = max(0, state.prospector_launched_count - state.prospected_count)
 
