@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import random
+import webbrowser
 from collections import Counter
 from datetime import datetime, timezone
 from typing import Callable, Dict, Optional, Sequence, Tuple
@@ -30,6 +31,7 @@ from state import MiningState
 from mining_inara import InaraClient
 from preferences import clamp_bin_size, clamp_rate_interval, clamp_session_retention
 from logging_utils import get_logger
+from version import PLUGIN_VERSION, PLUGIN_REPO_URL
 
 
 _log = get_logger("ui")
@@ -366,8 +368,26 @@ class MiningUI:
             justify="left",
             anchor="w",
         )
-        status_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=4, pady=(4, 2))
+        status_label.grid(row=0, column=0, sticky="w", padx=4, pady=(4, 2))
         self._theme.register(status_label)
+
+        version_text = (
+            PLUGIN_VERSION
+            if str(PLUGIN_VERSION).lower().startswith("v")
+            else f"v{PLUGIN_VERSION}"
+        )
+        version_label = tk.Label(frame, text=version_text, anchor="e", cursor="hand2")
+        try:
+            base_font = tkfont.nametofont(version_label.cget("font"))
+            self._version_font = tkfont.Font(font=base_font)
+            self._version_font.configure(underline=True)
+            version_label.configure(font=self._version_font)
+        except tk.TclError:
+            self._version_font = None
+        version_label.grid(row=0, column=1, sticky="e", padx=(4, 4), pady=(4, 2))
+        version_label.bind("<Button-1>", lambda _evt: webbrowser.open(PLUGIN_REPO_URL))
+        self._theme.register(version_label)
+        self._version_label = version_label
 
         self._summary_var = tk.StringVar(master=frame, value="")
         summary_label = tk.Label(
@@ -539,7 +559,7 @@ class MiningUI:
         self._cargo_tree.bind("<Motion>", self._on_cargo_motion, add="+")
 
         frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=0)
+        frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=0)
         frame.rowconfigure(3, weight=1)
         frame.rowconfigure(6, weight=1)

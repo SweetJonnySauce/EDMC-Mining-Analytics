@@ -33,10 +33,10 @@ from session_recorder import SessionRecorder
 from state import MiningState, reset_mining_state
 from ui import MiningUI
 from logging_utils import get_logger, set_log_level
+from version import PLUGIN_VERSION
 
 
 PLUGIN_NAME = "EDMC Mining Analytics"
-PLUGIN_VERSION = "0.1.5"
 GITHUB_RELEASES_API = (
     "https://api.github.com/repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest"
 )
