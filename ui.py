@@ -289,12 +289,14 @@ class MiningUI:
         on_reset: Callable[[], None],
         on_pause_changed: Optional[Callable[[bool, str, datetime], None]] = None,
         on_reset_inferred_capacities: Optional[Callable[[], None]] = None,
+        on_test_webhook: Optional[Callable[[], None]] = None,
     ) -> None:
         self._state = state
         self._inara = inara
         self._on_reset = on_reset
         self._pause_callback = on_pause_changed
         self._reset_capacities_callback = on_reset_inferred_capacities
+        self._test_webhook_callback = on_test_webhook
         self._theme = ThemeAdapter()
 
         self._frame: Optional[tk.Widget] = None
@@ -324,7 +326,11 @@ class MiningUI:
         self._prefs_auto_unpause_var: Optional[tk.BooleanVar] = None
         self._prefs_session_logging_var: Optional[tk.BooleanVar] = None
         self._prefs_session_retention_var: Optional[tk.IntVar] = None
+        self._prefs_webhook_var: Optional[tk.StringVar] = None
+        self._prefs_send_summary_var: Optional[tk.BooleanVar] = None
         self._reset_capacities_btn: Optional[ttk.Button] = None
+        self._send_summary_cb: Optional[ttk.Checkbutton] = None
+        self._test_webhook_btn: Optional[ttk.Button] = None
 
         self._updating_bin_var = False
         self._updating_rate_var = False
@@ -333,6 +339,8 @@ class MiningUI:
         self._updating_inara_surface_var = False
         self._updating_session_logging_var = False
         self._updating_session_retention_var = False
+        self._updating_webhook_var = False
+        self._updating_send_summary_var = False
 
         self._rate_update_job: Optional[str] = None
         self._content_collapsed = False
@@ -607,6 +615,70 @@ class MiningUI:
         except Exception:
             _log.exception("Failed to reset inferred cargo capacities")
 
+    def _on_webhook_change(self, *_: object) -> None:
+        if self._prefs_webhook_var is None or self._updating_webhook_var:
+            return
+        value = self._prefs_webhook_var.get()
+        trimmed = value.strip() if isinstance(value, str) else ""
+        self._state.discord_webhook_url = trimmed
+        if not trimmed and self._state.send_summary_to_discord:
+            self._state.send_summary_to_discord = False
+            if self._prefs_send_summary_var is not None:
+                self._updating_send_summary_var = True
+                self._prefs_send_summary_var.set(False)
+                self._updating_send_summary_var = False
+        self._update_discord_controls()
+
+    def _on_send_summary_change(self, *_: object) -> None:
+        if self._prefs_send_summary_var is None or self._updating_send_summary_var:
+            return
+        try:
+            value = bool(self._prefs_send_summary_var.get())
+        except (tk.TclError, ValueError):
+            return
+        if value and not self._state.discord_webhook_url:
+            self._updating_send_summary_var = True
+            self._prefs_send_summary_var.set(False)
+            self._updating_send_summary_var = False
+            self._state.send_summary_to_discord = False
+            return
+        self._state.send_summary_to_discord = value
+        self._update_discord_controls()
+
+    def _on_test_webhook(self) -> None:
+        callback = self._test_webhook_callback
+        if not callback:
+            return
+        try:
+            callback()
+        except ValueError as exc:
+            _log.warning("Test webhook failed: %s", exc)
+        except Exception:
+            _log.exception("Failed to invoke webhook test")
+
+    def _update_discord_controls(self) -> None:
+        has_url = bool(self._state.discord_webhook_url.strip())
+        if not has_url and self._state.send_summary_to_discord:
+            self._state.send_summary_to_discord = False
+            if self._prefs_send_summary_var is not None:
+                self._updating_send_summary_var = True
+                self._prefs_send_summary_var.set(False)
+                self._updating_send_summary_var = False
+        elif has_url and self._prefs_send_summary_var is not None:
+            self._updating_send_summary_var = True
+            self._prefs_send_summary_var.set(bool(self._state.send_summary_to_discord))
+            self._updating_send_summary_var = False
+        if self._send_summary_cb is not None:
+            try:
+                self._send_summary_cb.configure(state=tk.NORMAL if has_url else tk.DISABLED)
+            except tk.TclError:
+                pass
+        if self._test_webhook_btn is not None:
+            try:
+                self._test_webhook_btn.configure(state=tk.NORMAL if has_url else tk.DISABLED)
+            except tk.TclError:
+                pass
+
     def schedule_rate_update(self) -> None:
         frame = self._frame
         if frame is None or not frame.winfo_exists():
@@ -784,6 +856,52 @@ class MiningUI:
             width=6,
             textvariable=self._prefs_session_retention_var,
         ).grid(row=0, column=1, sticky="w")
+
+        webhook_label = tk.Label(
+            logging_frame,
+            text="Discord webhook URL",
+            anchor="w",
+        )
+        webhook_label.grid(row=3, column=0, sticky="w", pady=(6, 2))
+        self._theme.register(webhook_label)
+
+        self._prefs_webhook_var = tk.StringVar(master=logging_frame)
+        self._updating_webhook_var = True
+        self._prefs_webhook_var.set(self._state.discord_webhook_url)
+        self._updating_webhook_var = False
+        self._prefs_webhook_var.trace_add("write", self._on_webhook_change)
+        webhook_entry = ttk.Entry(
+            logging_frame,
+            textvariable=self._prefs_webhook_var,
+            width=60,
+        )
+        webhook_entry.grid(row=4, column=0, sticky="ew", pady=(0, 6))
+        self._theme.register(webhook_entry)
+
+        self._prefs_send_summary_var = tk.BooleanVar(
+            master=logging_frame,
+            value=self._state.send_summary_to_discord,
+        )
+        self._prefs_send_summary_var.trace_add("write", self._on_send_summary_change)
+        send_summary_cb = ttk.Checkbutton(
+            logging_frame,
+            text="Send session summary to Discord",
+            variable=self._prefs_send_summary_var,
+        )
+        send_summary_cb.grid(row=5, column=0, sticky="w", pady=(0, 4))
+        self._theme.register(send_summary_cb)
+        self._send_summary_cb = send_summary_cb
+
+        test_btn = ttk.Button(
+            logging_frame,
+            text="Test webhook",
+            command=self._on_test_webhook,
+        )
+        test_btn.grid(row=6, column=0, sticky="w", pady=(0, 6))
+        self._theme.register(test_btn)
+        self._test_webhook_btn = test_btn
+
+        self._update_discord_controls()
 
         inara_frame = tk.LabelFrame(frame, text="Inara Links")
         inara_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))

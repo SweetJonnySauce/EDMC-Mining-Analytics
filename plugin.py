@@ -107,6 +107,7 @@ class MiningAnalyticsPlugin:
             self._handle_reset_request,
             on_pause_changed=self._handle_pause_change,
             on_reset_inferred_capacities=self._handle_reset_inferred_capacities,
+            on_test_webhook=self._handle_test_webhook,
         )
         self.journal = JournalProcessor(
             self.state,
@@ -229,6 +230,23 @@ class MiningAnalyticsPlugin:
             self.state.cargo_capacity = None
             self.state.cargo_capacity_is_inferred = False
         self._refresh_ui_safe()
+
+    def _handle_test_webhook(self) -> None:
+        try:
+            _log.info("Dispatching Discord webhook test message")
+            success, message = self.session_recorder.send_test_message()
+            if success:
+                _log.info("Discord webhook test message sent successfully")
+            else:
+                detail = f": {message}" if message else ""
+                _log.warning(
+                    "Discord webhook test message failed%s (see prior logs for details)",
+                    detail,
+                )
+        except ValueError as exc:
+            _log.warning("Discord webhook test skipped: %s", exc)
+        except Exception:
+            _log.exception("Failed to send Discord webhook test message")
 
     # ------------------------------------------------------------------
     # Version checking

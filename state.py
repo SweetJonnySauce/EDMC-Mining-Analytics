@@ -71,6 +71,9 @@ class MiningState:
     inferred_capacity_map: Dict[str, int] = field(default_factory=dict)
     is_paused: bool = False
     auto_unpause_on_event: bool = True
+    discord_webhook_url: str = ""
+    send_summary_to_discord: bool = False
+    last_session_summary: Optional[str] = None
 
 
 def reset_mining_state(state: MiningState) -> None:
