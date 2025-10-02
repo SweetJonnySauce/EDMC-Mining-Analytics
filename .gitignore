@@ -2,3 +2,7 @@ EDMC-Mining-Analytics.code-workspace
 __pycache__/
 edmc_mining_analytics/__pycache__/
 edmc_mining_analytics/util/__pycache__/
+
+integrations/__pycache__/
+session_data/
+session_data_*.json
