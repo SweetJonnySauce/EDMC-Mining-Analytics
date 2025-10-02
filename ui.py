@@ -31,7 +31,7 @@ from state import MiningState
 from mining_inara import InaraClient
 from preferences import clamp_bin_size, clamp_rate_interval, clamp_session_retention
 from logging_utils import get_logger
-from version import PLUGIN_VERSION, PLUGIN_REPO_URL
+from version import PLUGIN_VERSION, PLUGIN_REPO_URL, display_version, is_newer_version
 
 
 _log = get_logger("ui")
@@ -319,6 +319,8 @@ class MiningUI:
         self._cargo_tooltip: Optional[TreeTooltip] = None
         self._cargo_item_to_commodity: Dict[str, str] = {}
         self._content_widgets: Sequence[tk.Widget] = ()
+        self._version_label: Optional[tk.Label] = None
+        self._version_font: Optional[tkfont.Font] = None
 
         self._prefs_bin_var: Optional[tk.IntVar] = None
         self._prefs_rate_var: Optional[tk.IntVar] = None
@@ -371,11 +373,7 @@ class MiningUI:
         status_label.grid(row=0, column=0, sticky="w", padx=4, pady=(4, 2))
         self._theme.register(status_label)
 
-        version_text = (
-            PLUGIN_VERSION
-            if str(PLUGIN_VERSION).lower().startswith("v")
-            else f"v{PLUGIN_VERSION}"
-        )
+        version_text = display_version(PLUGIN_VERSION)
         version_label = tk.Label(frame, text=version_text, anchor="e", cursor="hand2")
         try:
             base_font = tkfont.nametofont(version_label.cget("font"))
@@ -579,6 +577,15 @@ class MiningUI:
         self._apply_initial_visibility()
 
         return frame
+
+    def update_version_label(self, current_version: str, latest_version: Optional[str]) -> None:
+        label = self._version_label
+        if label is None or not getattr(label, "winfo_exists", lambda: False)():
+            return
+        text = display_version(current_version)
+        if latest_version and is_newer_version(latest_version, current_version):
+            text = f"{text} (a newer version exists)"
+        label.configure(text=text)
 
     def refresh(self) -> None:
         self._update_pause_button()

@@ -33,7 +33,7 @@ from session_recorder import SessionRecorder
 from state import MiningState, reset_mining_state
 from ui import MiningUI
 from logging_utils import get_logger, set_log_level
-from version import PLUGIN_VERSION
+from version import PLUGIN_VERSION, is_newer_version
 
 
 PLUGIN_NAME = "EDMC Mining Analytics"
@@ -324,8 +324,7 @@ class MiningAnalyticsPlugin:
                 _log.debug("GitHub releases endpoint returned 404; falling back to tags")
                 latest = self._fetch_latest_tag()
                 if latest:
-                    self._latest_version = latest
-                    self._log_version_status()
+                    self._handle_latest_version(latest)
                 else:
                     _log.debug("Version check fallback to tags did not return any versions")
                 return
@@ -343,13 +342,12 @@ class MiningAnalyticsPlugin:
             _log.debug("Version check succeeded but no tag information was found")
             return
 
-        self._latest_version = latest
-        self._log_version_status()
+        self._handle_latest_version(latest)
 
     def _log_version_status(self) -> None:
         if not self._latest_version:
             return
-        if self._latest_version != PLUGIN_VERSION:
+        if is_newer_version(self._latest_version, PLUGIN_VERSION):
             _log.info(
                 "A newer version of %s is available: %s (current %s)",
                 PLUGIN_NAME,
@@ -358,3 +356,18 @@ class MiningAnalyticsPlugin:
             )
         else:
             _log.debug("%s is up to date (version %s)", PLUGIN_NAME, PLUGIN_VERSION)
+        self._schedule_version_label_update()
+
+    def _schedule_version_label_update(self) -> None:
+        root = self.ui.get_root()
+        if root and getattr(root, "after", None):
+            root.after(
+                0,
+                lambda: self.ui.update_version_label(
+                    PLUGIN_VERSION, self._latest_version
+                ),
+            )
+
+    def _handle_latest_version(self, latest: str) -> None:
+        self._latest_version = latest
+        self._log_version_status()
