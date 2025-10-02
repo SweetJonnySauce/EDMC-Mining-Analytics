@@ -28,7 +28,7 @@ except ImportError:  # pragma: no cover
 
 from tooltip import TreeTooltip, WidgetTooltip
 from state import MiningState, update_rpm
-from mining_inara import InaraClient
+from integrations.mining_inara import InaraClient
 from preferences import (
     clamp_bin_size,
     clamp_positive_int,

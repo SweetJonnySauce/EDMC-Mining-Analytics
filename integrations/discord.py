@@ -81,7 +81,6 @@ def build_summary_message(
 
     refinement_meta = meta.get("refinement_activity", {})
     raw_max_rpm = refinement_meta.get("max_rpm", state.max_rpm)
-    raw_window = refinement_meta.get("lookback_seconds", state.refinement_lookback_seconds)
 
     def _format_rpm(value: Any) -> str:
         try:
@@ -90,10 +89,7 @@ def build_summary_message(
             return "-"
         return f"{numeric:.1f}"
 
-    rpm_field_lines = [f"Max {_format_rpm(raw_max_rpm)} RPM"]
-    if isinstance(raw_window, (int, float)):
-        rpm_field_lines.append(f"Window {int(raw_window)}s")
-    rpm_field_value = "\n".join(rpm_field_lines)
+    rpm_field_value = f"Max {_format_rpm(raw_max_rpm)} RPM"
 
     fields: List[Dict[str, Any]] = [
         {

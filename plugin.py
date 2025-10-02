@@ -26,7 +26,7 @@ try:
 except ImportError:  # pragma: no cover
     appname = "EDMarketConnector"  # type: ignore[assignment]
 
-from mining_inara import InaraClient
+from integrations.mining_inara import InaraClient
 from journal import JournalProcessor
 from preferences import PreferencesManager
 from session_recorder import SessionRecorder
