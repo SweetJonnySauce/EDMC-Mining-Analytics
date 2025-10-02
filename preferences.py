@@ -66,6 +66,7 @@ class PreferencesManager:
             state.session_log_retention = 30
             state.discord_webhook_url = ""
             state.send_summary_to_discord = False
+            state.send_reset_summary = False
             state.discord_image_url = ""
             state.refinement_lookback_seconds = 10
             state.rpm_threshold_red = 10
@@ -93,6 +94,7 @@ class PreferencesManager:
         )
         state.discord_webhook_url = self._get_str("edmc_mining_discord_webhook", "").strip()
         state.send_summary_to_discord = bool(self._get_int("edmc_mining_discord_summary", 0))
+        state.send_reset_summary = bool(self._get_int("edmc_mining_discord_reset_summary", 0))
         state.discord_image_url = self._get_str("edmc_mining_discord_image", "").strip()
         state.refinement_lookback_seconds = clamp_positive_int(
             self._get_int("edmc_mining_refinement_window", state.refinement_lookback_seconds),
@@ -173,6 +175,11 @@ class PreferencesManager:
             config.set("edmc_mining_discord_summary", int(state.send_summary_to_discord))
         except Exception:
             _log.exception("Failed to persist Discord summary preference")
+
+        try:
+            config.set("edmc_mining_discord_reset_summary", int(state.send_reset_summary))
+        except Exception:
+            _log.exception("Failed to persist Discord reset summary preference")
 
         try:
             config.set("edmc_mining_discord_image", state.discord_image_url or "")

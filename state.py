@@ -75,6 +75,7 @@ class MiningState:
     auto_unpause_on_event: bool = True
     discord_webhook_url: str = ""
     send_summary_to_discord: bool = False
+    send_reset_summary: bool = False
     last_session_summary: Optional[str] = None
     discord_image_url: str = ""
 

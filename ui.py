@@ -351,9 +351,11 @@ class MiningUI:
         self._prefs_rpm_green_var: Optional[tk.IntVar] = None
         self._prefs_webhook_var: Optional[tk.StringVar] = None
         self._prefs_send_summary_var: Optional[tk.BooleanVar] = None
+        self._prefs_send_reset_summary_var: Optional[tk.BooleanVar] = None
         self._prefs_image_var: Optional[tk.StringVar] = None
         self._reset_capacities_btn: Optional[ttk.Button] = None
         self._send_summary_cb: Optional[ttk.Checkbutton] = None
+        self._send_reset_summary_cb: Optional[ttk.Checkbutton] = None
         self._test_webhook_btn: Optional[ttk.Button] = None
 
         self._updating_bin_var = False
@@ -367,6 +369,7 @@ class MiningUI:
         self._updating_rpm_vars = False
         self._updating_webhook_var = False
         self._updating_send_summary_var = False
+        self._updating_send_reset_summary_var = False
         self._updating_image_var = False
 
         self._rate_update_job: Optional[str] = None
@@ -728,6 +731,25 @@ class MiningUI:
         self._state.send_summary_to_discord = value
         self._update_discord_controls()
 
+    def _on_send_reset_summary_change(self, *_: object) -> None:
+        if (
+            self._prefs_send_reset_summary_var is None
+            or self._updating_send_reset_summary_var
+        ):
+            return
+        try:
+            value = bool(self._prefs_send_reset_summary_var.get())
+        except (tk.TclError, ValueError):
+            return
+        if value and not self._state.discord_webhook_url:
+            self._updating_send_reset_summary_var = True
+            self._prefs_send_reset_summary_var.set(False)
+            self._updating_send_reset_summary_var = False
+            self._state.send_reset_summary = False
+            return
+        self._state.send_reset_summary = value
+        self._update_discord_controls()
+
     def _on_test_webhook(self) -> None:
         callback = self._test_webhook_callback
         if not callback:
@@ -757,9 +779,24 @@ class MiningUI:
             self._updating_send_summary_var = True
             self._prefs_send_summary_var.set(bool(self._state.send_summary_to_discord))
             self._updating_send_summary_var = False
+        if not has_url and self._state.send_reset_summary:
+            self._state.send_reset_summary = False
+            if self._prefs_send_reset_summary_var is not None:
+                self._updating_send_reset_summary_var = True
+                self._prefs_send_reset_summary_var.set(False)
+                self._updating_send_reset_summary_var = False
+        elif has_url and self._prefs_send_reset_summary_var is not None:
+            self._updating_send_reset_summary_var = True
+            self._prefs_send_reset_summary_var.set(bool(self._state.send_reset_summary))
+            self._updating_send_reset_summary_var = False
         if self._send_summary_cb is not None:
             try:
                 self._send_summary_cb.configure(state=tk.NORMAL if has_url else tk.DISABLED)
+            except tk.TclError:
+                pass
+        if self._send_reset_summary_cb is not None:
+            try:
+                self._send_reset_summary_cb.configure(state=tk.NORMAL if has_url else tk.DISABLED)
             except tk.TclError:
                 pass
         if self._test_webhook_btn is not None:
@@ -1110,12 +1147,26 @@ class MiningUI:
         self._theme.register(send_summary_cb)
         self._send_summary_cb = send_summary_cb
 
+        self._prefs_send_reset_summary_var = tk.BooleanVar(
+            master=logging_frame,
+            value=self._state.send_reset_summary,
+        )
+        self._prefs_send_reset_summary_var.trace_add("write", self._on_send_reset_summary_change)
+        send_reset_summary_cb = ttk.Checkbutton(
+            logging_frame,
+            text="Send Discord summary when resetting session",
+            variable=self._prefs_send_reset_summary_var,
+        )
+        send_reset_summary_cb.grid(row=8, column=0, sticky="w", pady=(0, 4))
+        self._theme.register(send_reset_summary_cb)
+        self._send_reset_summary_cb = send_reset_summary_cb
+
         test_btn = ttk.Button(
             logging_frame,
             text="Test webhook",
             command=self._on_test_webhook,
         )
-        test_btn.grid(row=8, column=0, sticky="w", pady=(0, 6))
+        test_btn.grid(row=9, column=0, sticky="w", pady=(0, 6))
         self._theme.register(test_btn)
         self._test_webhook_btn = test_btn
 

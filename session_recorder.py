@@ -51,10 +51,22 @@ class SessionRecorder:
                 {"reason": reason},
             )
 
-    def end_session(self, timestamp: datetime, *, reason: str) -> None:
+    def end_session(
+        self,
+        timestamp: datetime,
+        *,
+        reason: str,
+        reset: bool = False,
+        force_summary: bool = False,
+    ) -> None:
         self._session_end = self._ensure_aware(timestamp)
+        send_setting = (
+            self._state.send_reset_summary if reset else self._state.send_summary_to_discord
+        )
         should_generate = bool(
-            self._state.session_logging_enabled or self._state.send_summary_to_discord
+            self._state.session_logging_enabled
+            or send_setting
+            or force_summary
         )
         if not should_generate:
             self._events.clear()
@@ -80,7 +92,16 @@ class SessionRecorder:
             json_path = self._write_payload(payload)
 
         if payload:
-            self._maybe_send_summary(payload, json_path)
+            meta = payload.setdefault("meta", {})
+            meta["session_end_reason"] = reason
+            if reset:
+                meta["ended_via_reset"] = True
+            self._maybe_send_summary(
+                payload,
+                json_path,
+                reset=reset,
+                force_summary=force_summary,
+            )
 
         self._events.clear()
         self._recording = False
@@ -390,8 +411,21 @@ class SessionRecorder:
         }
         self._events.append(payload)
 
-    def _maybe_send_summary(self, payload: dict[str, Any], json_path: Optional[Path]) -> None:
-        if not self._state.send_summary_to_discord:
+    def _maybe_send_summary(
+        self,
+        payload: dict[str, Any],
+        json_path: Optional[Path],
+        *,
+        reset: bool = False,
+        force_summary: bool = False,
+    ) -> None:
+        should_send = bool(force_summary)
+        if not should_send:
+            if reset:
+                should_send = bool(self._state.send_reset_summary)
+            else:
+                should_send = bool(self._state.send_summary_to_discord)
+        if not should_send:
             _log.debug("Discord summary disabled; skipping delivery")
             return
         url = (self._state.discord_webhook_url or "").strip()
@@ -457,6 +491,9 @@ class SessionRecorder:
         ]
         lines.append(f"Collectors abandoned: {meta.get('collectors_abandoned', 0)}")
 
+        if meta.get("ended_via_reset"):
+            lines.append("Session ended via manual reset.")
+
         rpm_meta = meta.get("refinement_activity", {})
 
         def _format_rpm(value: Any) -> str:
@@ -466,12 +503,8 @@ class SessionRecorder:
                 return "-"
 
         rpm_parts = [
-            f"max {_format_rpm(rpm_meta.get('max_rpm', meta.get('max_rpm')))} RPM",
-            f"current {_format_rpm(rpm_meta.get('current_rpm', self._state.current_rpm))} RPM",
+            f"max {_format_rpm(rpm_meta.get('max_rpm', meta.get('max_rpm')))} RPM"
         ]
-        window_value = rpm_meta.get("lookback_seconds", self._state.refinement_lookback_seconds)
-        if isinstance(window_value, (int, float)):
-            rpm_parts.append(f"window {int(window_value)}s")
         lines.append("Refinements: " + " | ".join(rpm_parts))
 
         commodities = payload.get("commodities", {})

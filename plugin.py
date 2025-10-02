@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 from urllib import error, request
@@ -186,8 +186,28 @@ class MiningAnalyticsPlugin:
     # Internal helpers
     # ------------------------------------------------------------------
     def _handle_reset_request(self) -> None:
-        reset_mining_state(self.state)
-        self.ui.cancel_rate_update()
+        now = datetime.now(timezone.utc)
+        state = self.state
+
+        session_was_active = bool(state.mining_start or state.is_mining)
+        if session_was_active:
+            state.is_mining = False
+            state.mining_end = now
+            if self.session_recorder:
+                try:
+                    self.session_recorder.end_session(
+                        now,
+                        reason="manual reset",
+                        reset=True,
+                        force_summary=state.send_reset_summary,
+                    )
+                except Exception:
+                    _log.exception("Failed to finalize mining session during reset")
+            self._on_session_end()
+        else:
+            self.ui.cancel_rate_update()
+
+        reset_mining_state(state)
         self.ui.clear_transient_widgets()
         self.ui.set_paused(False, source="system")
         self._refresh_ui_safe()

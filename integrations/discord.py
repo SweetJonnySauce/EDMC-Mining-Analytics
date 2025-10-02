@@ -81,7 +81,6 @@ def build_summary_message(
 
     refinement_meta = meta.get("refinement_activity", {})
     raw_max_rpm = refinement_meta.get("max_rpm", state.max_rpm)
-    raw_current_rpm = refinement_meta.get("current_rpm", state.current_rpm)
     raw_window = refinement_meta.get("lookback_seconds", state.refinement_lookback_seconds)
 
     def _format_rpm(value: Any) -> str:
@@ -91,17 +90,10 @@ def build_summary_message(
             return "-"
         return f"{numeric:.1f}"
 
+    rpm_field_lines = [f"Max {_format_rpm(raw_max_rpm)} RPM"]
     if isinstance(raw_window, (int, float)):
-        rpm_field_value = (
-            f"Max {_format_rpm(raw_max_rpm)} RPM\n"
-            f"Current {_format_rpm(raw_current_rpm)} RPM\n"
-            f"Window {int(raw_window)}s"
-        )
-    else:
-        rpm_field_value = (
-            f"Max {_format_rpm(raw_max_rpm)} RPM\n"
-            f"Current {_format_rpm(raw_current_rpm)} RPM"
-        )
+        rpm_field_lines.append(f"Window {int(raw_window)}s")
+    rpm_field_value = "\n".join(rpm_field_lines)
 
     fields: List[Dict[str, Any]] = [
         {
@@ -158,6 +150,15 @@ def build_summary_message(
     materials_value = _format_materials(materials)
     if materials_value:
         fields.append({"name": "Materials", "value": materials_value, "inline": False})
+
+    if meta.get("ended_via_reset"):
+        fields.append(
+            {
+                "name": "Notes",
+                "value": "Session ended via manual reset.",
+                "inline": False,
+            }
+        )
 
     if json_path is not None:
         fields.append(
