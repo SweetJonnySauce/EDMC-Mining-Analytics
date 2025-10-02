@@ -59,10 +59,12 @@ def build_summary_message(
     system = location_info.get("system") or state.current_system or "Unknown system"
     ring = meta.get("ring") or state.mining_ring
 
-    if ring and ring.lower() not in body.lower():
-        location_text = f"{ring}\n{system}"
+    if body and body.strip():
+        location_value = body.strip()
+    elif system and system.strip():
+        location_value = system.strip()
     else:
-        location_text = f"{body}\n{system}"
+        location_value = "Unknown"
 
     duration_seconds = float(meta.get("duration_seconds", 0.0) or 0.0)
     duration_text = format_duration(duration_seconds)
@@ -80,7 +82,7 @@ def build_summary_message(
     fields: List[Dict[str, Any]] = [
         {
             "name": "Location",
-            "value": _clamp_text(location_text, 1024),
+            "value": _clamp_text(location_value, 1024),
             "inline": False,
         },
         {
@@ -166,8 +168,8 @@ def build_test_message(state: MiningState) -> Dict[str, Any]:
             "tons_per_hour": 0.0,
         },
         "location": {
-            "body": state.mining_location or "Unknown body",
-            "system": state.current_system or "Unknown system",
+            "body": state.mining_location if state.mining_location else None,
+            "system": state.current_system if state.current_system else None,
         },
         "ship": state.current_ship or "Unknown ship",
         "prospected": {

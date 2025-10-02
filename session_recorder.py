@@ -416,11 +416,13 @@ class SessionRecorder:
         location_info = meta.get("location", {})
         body = location_info.get("body") or "Unknown"
         system = location_info.get("system") or "Unknown"
-        ring = meta.get("ring") or self._derive_ring_name()
-        if ring and ring.lower() not in body.lower():
-            location_line = f"{ring} — {system}"
+        location_line = None
+        if body:
+            location_line = body
+        elif system:
+            location_line = system
         else:
-            location_line = f"{body} ({system})"
+            location_line = "Unknown"
         ship = meta.get("ship") or "Unknown ship"
         commander = meta.get("commander") or self._state.cmdr_name or "Unknown"
         prospected = meta.get("prospected", {})
