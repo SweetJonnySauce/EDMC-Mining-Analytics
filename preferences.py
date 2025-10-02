@@ -58,6 +58,7 @@ class PreferencesManager:
             state.session_log_retention = 30
             state.discord_webhook_url = ""
             state.send_summary_to_discord = False
+            state.discord_image_url = ""
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
@@ -80,6 +81,7 @@ class PreferencesManager:
         )
         state.discord_webhook_url = self._get_str("edmc_mining_discord_webhook", "").strip()
         state.send_summary_to_discord = bool(self._get_int("edmc_mining_discord_summary", 0))
+        state.discord_image_url = self._get_str("edmc_mining_discord_image", "").strip()
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -139,6 +141,11 @@ class PreferencesManager:
             config.set("edmc_mining_discord_summary", int(state.send_summary_to_discord))
         except Exception:
             _log.exception("Failed to persist Discord summary preference")
+
+        try:
+            config.set("edmc_mining_discord_image", state.discord_image_url or "")
+        except Exception:
+            _log.exception("Failed to persist Discord image URL")
 
     @staticmethod
     def _get_int(key: str, default: int) -> int:

@@ -76,6 +76,7 @@ class MiningState:
     discord_webhook_url: str = ""
     send_summary_to_discord: bool = False
     last_session_summary: Optional[str] = None
+    discord_image_url: str = ""
 
 
 def reset_mining_state(state: MiningState) -> None:

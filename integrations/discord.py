@@ -147,6 +147,10 @@ def build_summary_message(
         "footer": {"text": "EDMC Mining Analytics"},
     }
 
+    image_url = (state.discord_image_url or "").strip()
+    if image_url:
+        embed["image"] = {"url": image_url}
+
     end_time = meta.get("end_time")
     if isinstance(end_time, str) and end_time:
         embed["timestamp"] = end_time
@@ -198,6 +202,9 @@ def build_test_message(state: MiningState) -> Dict[str, Any]:
     embed["title"] += " (Test)"
     embed["description"] = "Webhook test message"
     embed["color"] = TEST_COLOR
+    image_url = (state.discord_image_url or "").strip()
+    if image_url:
+        embed["image"] = {"url": image_url}
     return message
 
 

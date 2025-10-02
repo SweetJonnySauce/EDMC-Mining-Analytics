@@ -328,6 +328,7 @@ class MiningUI:
         self._prefs_session_retention_var: Optional[tk.IntVar] = None
         self._prefs_webhook_var: Optional[tk.StringVar] = None
         self._prefs_send_summary_var: Optional[tk.BooleanVar] = None
+        self._prefs_image_var: Optional[tk.StringVar] = None
         self._reset_capacities_btn: Optional[ttk.Button] = None
         self._send_summary_cb: Optional[ttk.Checkbutton] = None
         self._test_webhook_btn: Optional[ttk.Button] = None
@@ -341,6 +342,7 @@ class MiningUI:
         self._updating_session_retention_var = False
         self._updating_webhook_var = False
         self._updating_send_summary_var = False
+        self._updating_image_var = False
 
         self._rate_update_job: Optional[str] = None
         self._content_collapsed = False
@@ -656,6 +658,12 @@ class MiningUI:
         except Exception:
             _log.exception("Failed to invoke webhook test")
 
+    def _on_discord_image_change(self, *_: object) -> None:
+        if self._prefs_image_var is None or self._updating_image_var:
+            return
+        value = self._prefs_image_var.get()
+        self._state.discord_image_url = value.strip() if isinstance(value, str) else ""
+
     def _update_discord_controls(self) -> None:
         has_url = bool(self._state.discord_webhook_url.strip())
         if not has_url and self._state.send_summary_to_discord:
@@ -878,6 +886,27 @@ class MiningUI:
         webhook_entry.grid(row=4, column=0, sticky="ew", pady=(0, 6))
         self._theme.register(webhook_entry)
 
+        image_label = tk.Label(
+            logging_frame,
+            text="Discord image URL (optional)",
+            anchor="w",
+        )
+        image_label.grid(row=5, column=0, sticky="w", pady=(0, 2))
+        self._theme.register(image_label)
+
+        self._prefs_image_var = tk.StringVar(master=logging_frame)
+        self._updating_image_var = True
+        self._prefs_image_var.set(self._state.discord_image_url)
+        self._updating_image_var = False
+        self._prefs_image_var.trace_add("write", self._on_discord_image_change)
+        image_entry = ttk.Entry(
+            logging_frame,
+            textvariable=self._prefs_image_var,
+            width=60,
+        )
+        image_entry.grid(row=6, column=0, sticky="ew", pady=(0, 6))
+        self._theme.register(image_entry)
+
         self._prefs_send_summary_var = tk.BooleanVar(
             master=logging_frame,
             value=self._state.send_summary_to_discord,
@@ -888,7 +917,7 @@ class MiningUI:
             text="Send session summary to Discord",
             variable=self._prefs_send_summary_var,
         )
-        send_summary_cb.grid(row=5, column=0, sticky="w", pady=(0, 4))
+        send_summary_cb.grid(row=7, column=0, sticky="w", pady=(0, 4))
         self._theme.register(send_summary_cb)
         self._send_summary_cb = send_summary_cb
 
@@ -897,7 +926,7 @@ class MiningUI:
             text="Test webhook",
             command=self._on_test_webhook,
         )
-        test_btn.grid(row=6, column=0, sticky="w", pady=(0, 6))
+        test_btn.grid(row=8, column=0, sticky="w", pady=(0, 6))
         self._theme.register(test_btn)
         self._test_webhook_btn = test_btn
 
