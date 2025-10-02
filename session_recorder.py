@@ -8,10 +8,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple
 
-from urllib import error as urlerror, request as urlrequest
-
 from logging_utils import get_logger
 from state import MiningState
+from integrations.discord import (
+    build_summary_message,
+    build_test_message,
+    format_duration,
+    send_webhook,
+)
 
 
 _log = get_logger("session_recorder")
@@ -31,39 +35,48 @@ class SessionRecorder:
     # Lifecycle
     # ------------------------------------------------------------------
     def start_session(self, timestamp: datetime, *, reason: str) -> None:
+        should_generate = bool(
+            self._state.session_logging_enabled or self._state.send_summary_to_discord
+        )
         self._events.clear()
         self._session_start = self._ensure_aware(timestamp)
         self._session_end = None
         self._recording = bool(self._state.session_logging_enabled)
-        if not self._recording:
+        if not should_generate:
             return
-        self._record_event(
-            "mining_session_started",
-            self._session_start,
-            {"reason": reason},
-        )
+        if self._recording:
+            self._record_event(
+                "mining_session_started",
+                self._session_start,
+                {"reason": reason},
+            )
 
     def end_session(self, timestamp: datetime, *, reason: str) -> None:
         self._session_end = self._ensure_aware(timestamp)
-        if not self._recording:
+        should_generate = bool(
+            self._state.session_logging_enabled or self._state.send_summary_to_discord
+        )
+        if not should_generate:
             self._events.clear()
             self._session_start = None
             self._session_end = None
-        else:
+            return
+
+        if self._recording:
             self._record_event(
                 "mining_session_stopped",
                 self._session_end,
                 {"reason": reason},
             )
 
-        payload: Optional[dict[str, Any]] = None
         try:
             payload = self._build_payload()
         except Exception:
             _log.exception("Failed to build session payload; skipping export")
+            payload = None
 
         json_path: Optional[Path] = None
-        if payload and self._recording:
+        if payload and self._state.session_logging_enabled:
             json_path = self._write_payload(payload)
 
         if payload:
@@ -226,12 +239,25 @@ class SessionRecorder:
             "materials": self._materials_snapshot(state.materials_collected),
         }
 
+        meta["commander"] = state.cmdr_name
+        meta["ring"] = self._derive_ring_name()
+        meta["prospectors_lost"] = max(0, state.prospector_launched_count - state.prospected_count)
+
         payload = {
             "meta": meta,
             "commodities": self._commodity_breakdown(end),
             "events": list(self._events),
         }
         return payload
+
+    def _derive_ring_name(self) -> Optional[str]:
+        ring = getattr(self._state, "mining_ring", None)
+        if isinstance(ring, str) and ring.strip():
+            return ring.strip()
+        location = self._state.mining_location
+        if isinstance(location, str) and "ring" in location.lower():
+            return location
+        return None
 
     def _materials_snapshot(self, materials: Counter[str]) -> list[dict[str, Any]]:
         snapshot: list[dict[str, Any]] = []
@@ -367,29 +393,42 @@ class SessionRecorder:
         if not summary_text:
             _log.debug("Skipping Discord summary: nothing to send")
             return
-        success, message = self._post_to_discord(summary_text)
+
+        message_payload = build_summary_message(self._state, payload, json_path)
+        success, detail = send_webhook(url, message_payload)
         if success:
             _log.info("Posted mining session summary to Discord")
         else:
-            detail = f": {message}" if message else ""
-            _log.warning("Discord session summary delivery failed%s (see prior logs for details)", detail)
+            detail_text = f": {detail}" if detail else ""
+            _log.warning(
+                "Discord session summary delivery failed%s (see prior logs for details)",
+                detail_text,
+            )
 
     def _render_summary(self, payload: dict[str, Any], json_path: Optional[Path]) -> str:
         meta = payload.get("meta", {})
         overall = meta.get("overall_tph", {})
         duration_seconds = float(meta.get("duration_seconds", 0.0) or 0.0)
-        duration_text = self._format_duration(duration_seconds)
+        duration_text = format_duration(duration_seconds)
         total_tons = overall.get("tons")
         tph_value = overall.get("tons_per_hour")
         tph_text = f"{tph_value:.1f}" if isinstance(tph_value, (int, float)) else "-"
-        body = meta.get("location", {}).get("body") or "Unknown"
-        system = meta.get("location", {}).get("system") or "Unknown"
+        location_info = meta.get("location", {})
+        body = location_info.get("body") or "Unknown"
+        system = location_info.get("system") or "Unknown"
+        ring = meta.get("ring") or self._derive_ring_name()
+        if ring and ring.lower() not in body.lower():
+            location_line = f"{ring} — {system}"
+        else:
+            location_line = f"{body} ({system})"
         ship = meta.get("ship") or "Unknown ship"
+        commander = meta.get("commander") or self._state.cmdr_name or "Unknown"
         prospected = meta.get("prospected", {})
         content = meta.get("content_summary", {})
         lines = [
             "**Mining Session Summary**",
-            f"Location: {body} ({system})",
+            f"Commander: {commander}",
+            f"Location: {location_line}",
             f"Ship: {ship}",
             f"Duration: {duration_text}",
             f"Total: {total_tons}t @ {tph_text} TPH",
@@ -400,10 +439,11 @@ class SessionRecorder:
             ),
             (
                 "Prospectors launched: "
-                f"{meta.get('prospectors_launched', 0)} | Collectors: {meta.get('collectors_launched', 0)} | "
-                f"Abandoned: {meta.get('collectors_abandoned', 0)} | Limpets remaining: {meta.get('limpets_remaining', 0)}"
+                f"{meta.get('prospectors_launched', 0)} | Lost: {meta.get('prospectors_lost', 0)} | Duplicates: {prospected.get('duplicates', 0)} | "
+                f"Collectors: {meta.get('collectors_launched', 0)} | Limpets remaining: {meta.get('limpets_remaining', 0)}"
             ),
         ]
+        lines.append(f"Collectors abandoned: {meta.get('collectors_abandoned', 0)}")
 
         commodities = payload.get("commodities", {})
         if commodities:
@@ -439,42 +479,8 @@ class SessionRecorder:
         url = (self._state.discord_webhook_url or "").strip()
         if not url:
             raise ValueError("Discord webhook URL is not configured")
-        content = "EDMC Mining Analytics: webhook test message"
-        return self._post_to_discord(content)
-
-    def _post_to_discord(self, content: str) -> Tuple[bool, str]:
-        url = (self._state.discord_webhook_url or "").strip()
-        if not url:
-            return False, "Webhook URL is empty"
-        if not content:
-            return False, "No content to send"
-        body = json.dumps({"content": content}).encode("utf-8")
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "EDMC-Mining-Analytics/0.1",
-        }
-        req = urlrequest.Request(
-            url,
-            data=body,
-            headers=headers,
-            method="POST",
-        )
-        try:
-            with urlrequest.urlopen(req, timeout=5):
-                return True, ""
-        except urlerror.HTTPError as exc:
-            _log.warning(
-                "Discord webhook failed (status=%s): %s",
-                exc.code,
-                exc.reason,
-            )
-            return False, f"HTTP {exc.code}: {exc.reason}"
-        except urlerror.URLError as exc:
-            _log.warning("Discord webhook failed: %s", exc.reason)
-            return False, str(exc.reason)
-        except Exception as exc:
-            _log.exception("Failed to deliver payload to Discord")
-            return False, str(exc)
+        payload = build_test_message(self._state)
+        return send_webhook(url, payload)
 
     @staticmethod
     def _ensure_aware(value: datetime) -> datetime:
@@ -508,16 +514,3 @@ class SessionRecorder:
         if hours <= 0:
             return None
         return total / hours
-
-    @staticmethod
-    def _format_duration(seconds: float) -> str:
-        total_seconds = max(0, int(seconds))
-        hours, remainder = divmod(total_seconds, 3600)
-        minutes, secs = divmod(remainder, 60)
-        parts: list[str] = []
-        if hours:
-            parts.append(f"{hours}h")
-        if minutes or (hours and secs):
-            parts.append(f"{minutes}m")
-        parts.append(f"{secs}s")
-        return " ".join(parts)

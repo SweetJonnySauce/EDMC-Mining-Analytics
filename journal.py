@@ -249,6 +249,10 @@ class JournalProcessor:
             remaining_value = None
         already_mined = remaining_value is not None and remaining_value < 100
 
+        body_value = entry.get("Body") or entry.get("BodyName")
+        if isinstance(body_value, str) and "ring" in body_value.lower():
+            self._state.mining_ring = body_value
+
         if self._session_recorder:
             materials_payload = entry.get("Materials")
             materials_iter = materials_payload if isinstance(materials_payload, list) else []
@@ -1151,6 +1155,8 @@ class JournalProcessor:
         try:
             body = state.get("Body")
             if body:
+                if isinstance(body, str) and "ring" in body.lower():
+                    self._state.mining_ring = str(body)
                 return str(body)
         except Exception:
             pass

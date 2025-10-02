@@ -30,9 +30,11 @@ class MiningState:
     mining_start: Optional[datetime] = None
     mining_end: Optional[datetime] = None
     mining_location: Optional[str] = None
+    mining_ring: Optional[str] = None
     current_system: Optional[str] = None
     current_ship: Optional[str] = None
     current_ship_key: Optional[str] = None
+    cmdr_name: Optional[str] = None
 
     prospected_count: int = 0
     already_mined_count: int = 0
@@ -83,6 +85,7 @@ def reset_mining_state(state: MiningState) -> None:
     state.mining_start = None
     state.mining_end = None
     state.mining_location = None
+    state.mining_ring = None
 
     state.prospected_count = 0
     state.already_mined_count = 0

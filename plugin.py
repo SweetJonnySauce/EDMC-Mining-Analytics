@@ -156,6 +156,8 @@ class MiningAnalyticsPlugin:
         prefs.grid(row=0, column=0, sticky="nsew")
         container.columnconfigure(0, weight=1)
         container.rowconfigure(0, weight=1)
+        if cmdr:
+            self.state.cmdr_name = cmdr
         return container
 
     def plugin_stop(self) -> None:
@@ -166,11 +168,14 @@ class MiningAnalyticsPlugin:
         self._refresh_ui_safe()
 
     def handle_journal_entry(self, entry: dict, shared_state: Optional[dict] = None) -> None:
+        self._update_commander(entry, shared_state)
         self.journal.handle_entry(entry, shared_state)
 
     def prefs_changed(self, cmdr: Optional[str], is_beta: bool) -> None:
         self._sync_logger_level()
         self.preferences.save(self.state)
+        if cmdr:
+            self.state.cmdr_name = cmdr
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -247,6 +252,21 @@ class MiningAnalyticsPlugin:
             _log.warning("Discord webhook test skipped: %s", exc)
         except Exception:
             _log.exception("Failed to send Discord webhook test message")
+
+    def _update_commander(self, entry: Optional[dict], shared_state: Optional[dict]) -> None:
+        commander: Optional[str] = None
+        if isinstance(entry, dict):
+            commander = entry.get("Cmdr") or entry.get("Commander")
+            if not commander:
+                user = entry.get("UserName")
+                if isinstance(user, str) and user.strip():
+                    commander = user
+        if not commander and isinstance(shared_state, dict):
+            commander = shared_state.get("Cmdr") or shared_state.get("Commander")
+        if commander:
+            commander_str = str(commander).strip()
+            if commander_str:
+                self.state.cmdr_name = commander_str
 
     # ------------------------------------------------------------------
     # Version checking
