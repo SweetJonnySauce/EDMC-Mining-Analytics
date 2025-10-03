@@ -1,53 +1,48 @@
-# EDMC-Mining-Analytics
+# EDMC Mining Analytics
 
-EDMC-Mining-Analytics is a plugin for Elite Dangerous Market Connector (EDMC) that tracks and analyzes your mining activities. It provides an in-game UI for monitoring mining statistics, including commodity yields, session efficiency, and more.
+EDMC Mining Analytics extends Elite Dangerous Market Connector (EDMC) with a mining-focused control panel. The plugin listens to in-game journal events to present live production metrics, highlight rock quality, and capture session history without leaving EDMC.
 
-This is at best an alpha script. Use at your own peril. Feedback welcome.
+This is a beta release. As such, breaking changes may be introduced. Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/issues). Your feedback helps shape the next release.
 
-<img width="965" height="489" alt="image" src="https://github.com/user-attachments/assets/0c4fdec7-5098-4274-947c-b4f50db8a769" />
+## Key Features
+- Real-time mining dashboard showing cargo totals, tons-per-hour trends, limpets, refinements-per-minute and ship context.
+- Automated session management that starts, pauses, and resets analytics in response to journal events or user input, with optional auto-resume when activity resumes.
+- Prospecting intelligence with duplicate detection, commodity histograms, and quick-glance content summaries for each asteroid.
+- Integrations that help you act on the data, including Inara commodity lookups and Discord webhook summaries of completed runs.
+- Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
+- Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
 
-
-## Features
-
-- Tracks mining sessions, prospecting, harvested commodities, and materials.
-- Displays mining analytics in a dedicated UI pane within EDMC.
-- Visualizes yield distributions for mined materials with interactive histograms. (click on the %Range value to see this)
-- Calculates and displays mining efficiency (tons per hour) for each commodity and overall.
-- Tracks limpets: remaining, launched, and abandoned.
-- Preferences pane for configuring histogram bin sizes and update intervals.
-- Automatically detects mining state from journal events.
-- Handles version checking and update notifications.
-- Tracks prospector launches, asteroid yields, and collected materials in detail.
+## Requirements
+- Elite Dangerous Market Connector 5.x or newer.
 
 ## Installation
+1. Open EDMC and choose `File → Settings → Plugins`, then click `Open Plugins Folder` to reveal your plugins directory.
+2. Download the latest release or clone the repository from [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics). Do **not** download individual files. Keep the directory structure intact (`integrations/`, `session_recorder.py`, `commodity_links.json`, etc.).
+3. Create a folder named `EDMC-Mining-Analytics` inside the EDMC plugins directory if it does not already exist.
+4. Copy the entire contents of the release (or clone) into that folder.
+5. Restart EDMC. The plugin appears under `Plugins → EDMC Mining Analytics` and adds a panel to the main window.
 
-1. **Prerequisites**:  
-   - Ensure you have [Elite Dangerous Market Connector (EDMC)](https://github.com/EDCD/EDMarketConnector) installed.
-   - Python 3.7+ (EDMC includes its own Python environment).
-   
-2. **Download the Plugin**:  
-   - Download **all files** from the [repository](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics) or from a release.  
-     _Note: Do **not** just download `load.py`. The plugin requires all files in the repository to function properly._
+_To update, replace the contents of the `EDMC-Mining-Analytics` folder with the files from the latest release and restart EDMC._
 
-3. **Install the Plugin**:  
-   - Create a folder named `EDMC-Mining-Analytics` in EDMC's `plugins` directory:
-     - In EDMC, go to File menu > Settings > Plugins > Open Plugins Folder
-   - Place **all the downloaded files** into the `EDMC-Mining-Analytics` folder.
+## First Run & Configuration
+- The plugin panel opens automatically in EDMC to view live metrics. The interface follows the active EDMC theme automatically with some noticable gaps that I have not been able to fix yet.
+- Use the plugin preferences (within EDMC's Plugins tab) to adjust histogram bin size, refresh cadence, and refinement per minute (RPM) thresholds.
+- Toggle automatic unpause behaviour, enable session logging, and define how many session files to retain.
+- Configure Inara search mode and filters (carriers, surface ports) for one-click commodity lookups.
+- Provide an optional Discord webhook URL and image to deliver session summaries, and use the built-in test button to confirm connectivity.
 
-4. **Restart EDMC**  
-   - The plugin will appear in EDMC's Plugins menu.
+## Using the Plugin
+- Simply start mining. The plugin recognises mining states, begins tracking tonnage, and monitors prospecting and refinement events.
+- Cargo updates and limpet usage are tracked automatically, including abandoned collectors and drones launched.
+- Click the `% Range` column in the prospects table to open interactive histograms that visualise material distributions.
+- When you leave mining (supercruise, manual reset, etc.), the session recorder can persist a JSON summary and optionally push a Discord embed.
 
-## Usage
+## Session History & Webhooks
+- Enable `Session logging` in preferences to write structured summaries to the plugin's `session_data/` directory. Retention is configurable.
+- Discord webhook summaries include duration, output, RPM, prospector usage, top commodities, and materials, making it easy to share highlights.
+- Use the `Send test message` control to validate your webhook configuration without completing a full session.
 
-- Start mining in Elite Dangerous. The plugin will automatically detect mining activity and display real-time analytics.
-- Configure preferences such as histogram bin sizes and update intervals under the plugin's Preferences pane.
-- Reset analytics at any time from the UI.
-- Review after-action reports (planned/partial implementation).
+## Support
+Questions, ideas, or bugs? Open an issue on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/issues). Feedback helps shape the next release. Yes, this project is 100% vibe coded using Codex. I'm doing it as an experiment/learning experience to see what is possible.
 
-## Support & Feedback
-
-For issues, suggestions, or contributions, please visit the [GitHub repository](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics).
-
----
-
-*This project is not affiliated with Frontier Developments plc or Elite Dangerous. EDMC is developed by the [EDCD](https://github.com/EDCD/EDMarketConnector) team.*
+*EDMC Mining Analytics is a community project and is not affiliated with Frontier Developments or the EDCD team.*
