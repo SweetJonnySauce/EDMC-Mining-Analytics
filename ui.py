@@ -1480,15 +1480,17 @@ class MiningUI:
                     range_label = self._format_range_label(name)
                     present = present_counts.get(name, 0)
                     percent = (present / total_asteroids) * 100 if total_asteroids else 0
+                    commodity_value = self._format_cargo_name(name)
+                    range_value = range_label
                     item = cargo_tree.insert(
                         "",
                         "end",
                         values=(
-                            self._format_cargo_name(name),
+                            commodity_value,
                             present,
                             f"{percent:.1f}",
                             self._state.cargo_totals.get(name, 0),
-                            range_label,
+                            range_value,
                             self._format_tph(name),
                         ),
                         tags=("odd" if idx % 2 else "even",),
@@ -1788,6 +1790,7 @@ class MiningUI:
             return
 
         self._clear_range_link_labels()
+        self._clear_commodity_link_labels()
 
         try:
             base_font = tree.cget("font")
@@ -1816,6 +1819,8 @@ class MiningUI:
                 pending = True
                 continue
             x, y, width, height = bbox
+            if width <= 0 or height <= 0:
+                continue
             tags = tree.item(item, "tags") or ()
             bg_color = self._theme.table_background_color()
             if "odd" in tags:
@@ -1837,6 +1842,10 @@ class MiningUI:
             self._theme.register(label)
             try:
                 label.place(x=x + 2, y=y + 1, width=width - 4, height=height - 2)
+                try:
+                    label.lift()
+                except Exception:
+                    pass
                 label.bind("<Button-1>", lambda _evt, commodity=commodity: self.open_histogram_window(commodity))
                 self._range_link_labels[item] = label
             except Exception:
@@ -1914,6 +1923,10 @@ class MiningUI:
                     width=max(0, width - pad_x * 2),
                     height=max(0, height - pad_y * 2),
                 )
+                try:
+                    label.lift()
+                except Exception:
+                    pass
             except Exception:
                 continue
             label.bind("<Button-1>", lambda _evt, commodity=commodity: self._inara.open_link(commodity))

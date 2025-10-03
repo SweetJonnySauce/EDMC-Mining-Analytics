@@ -117,6 +117,7 @@ class InaraClient:
         if not url:
             return
         try:
-            webbrowser.open(url)
+            if not webbrowser.open_new(url):
+                webbrowser.open(url)
         except Exception:
             _log.exception("Failed to open browser for commodity %s", commodity)
