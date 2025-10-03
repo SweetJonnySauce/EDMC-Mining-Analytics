@@ -12,6 +12,9 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
 - Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
 
+<img width="611" height="508" alt="image" src="https://github.com/user-attachments/assets/7c78855c-c2f7-49ba-bfe7-ea5b39280ab1" />
+
+
 ## Requirements
 - Elite Dangerous Market Connector 5.x or newer.
 
