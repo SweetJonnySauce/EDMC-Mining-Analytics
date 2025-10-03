@@ -12,6 +12,7 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
 - Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
 
+## Screenshots
 ### Minimal display when not mining
 
 <img width="501" height="39" alt="image" src="https://github.com/user-attachments/assets/287fe085-519a-4415-aa5e-4dc55c10cf7c" />
