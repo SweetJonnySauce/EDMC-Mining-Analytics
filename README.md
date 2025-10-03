@@ -41,10 +41,10 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 
 ## Installation
 1. Open EDMC and choose `File → Settings → Plugins`, then click `Open Plugins Folder` to reveal your plugins directory.
-2. Download the latest release or clone the repository from [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics). Do **not** download individual files. Keep the directory structure intact (`integrations/`, `session_recorder.py`, `commodity_links.json`, etc.).
-3. Create a folder named `EDMC-Mining-Analytics` inside the EDMC plugins directory if it does not already exist.
-4. Copy the entire contents of the release (or clone) into that folder.
-5. Restart EDMC. The plugin appears under `Plugins → EDMC Mining Analytics` and adds a panel to the main window.
+2. Download the latest release or clone the repository from [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics). Do **not** download individual files. Keep the directory structure intact (`integrations/`, `session_recorder.py`, `commodity_links.json`, etc.). If you download a release .zip file use the contents of the folder inside the zip file. Do not copy the top level folder.
+4. Create a folder named `EDMC-Mining-Analytics` inside the EDMC plugins directory if it does not already exist.
+5. Copy the entire contents of the release (or clone) into that folder.
+6. Restart EDMC. The plugin appears under `Plugins → EDMC Mining Analytics` and adds a panel to the main window.
 
 _To update, replace the contents of the `EDMC-Mining-Analytics` folder with the files from the latest release and restart EDMC._
 
