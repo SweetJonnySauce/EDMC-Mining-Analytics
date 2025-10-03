@@ -24,6 +24,10 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 
 <img width="685" height="228" alt="image" src="https://github.com/user-attachments/assets/00f8e485-5df8-4fe2-a752-7d782dbf3e2d" />
 
+### Settings dialog box (admittedly, it needs a re-layout)
+
+<img width="522" height="919" alt="image" src="https://github.com/user-attachments/assets/41c6f1f7-1b54-4f65-aaf6-c8db2b10891d" />
+
 ### Summarize (ang brag) in your Discord channel
 
 <img width="487" height="797" alt="image" src="https://github.com/user-attachments/assets/9975568a-97a8-4d1d-ab44-5dc32948301f" />
