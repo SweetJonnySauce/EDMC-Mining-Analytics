@@ -12,8 +12,16 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
 - Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
 
+Minimal display when not mining
+<img width="501" height="39" alt="image" src="https://github.com/user-attachments/assets/287fe085-519a-4415-aa5e-4dc55c10cf7c" />
+
+Detailed mining metrics while you mine
 <img width="611" height="508" alt="image" src="https://github.com/user-attachments/assets/7c78855c-c2f7-49ba-bfe7-ea5b39280ab1" />
+
+Click on %Range value to see the yield distribution of the asteroids you've prospected
 <img width="685" height="228" alt="image" src="https://github.com/user-attachments/assets/00f8e485-5df8-4fe2-a752-7d782dbf3e2d" />
+
+Summarize (ang brag) in your Discord channel
 <img width="487" height="797" alt="image" src="https://github.com/user-attachments/assets/9975568a-97a8-4d1d-ab44-5dc32948301f" />
 
 
@@ -53,3 +61,5 @@ _To update, replace the contents of the `EDMC-Mining-Analytics` folder with the 
 Questions, ideas, or bugs? Open an issue on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/issues). Feedback helps shape the next release. Yes, this project is 100% vibe coded using Codex. I'm doing it as an experiment/learning experience to see what is possible.
 
 *EDMC Mining Analytics is a community project and is not affiliated with Frontier Developments or the EDCD team.*
+
+Thanks to [FCDN](https://github.com/aweeri/FCDN) for the Discord integration ideas.
