@@ -80,9 +80,9 @@ class MiningState:
     discord_image_url: str = ""
 
     refinement_lookback_seconds: int = 10
-    rpm_threshold_red: int = 10
+    rpm_threshold_red: int = 1
     rpm_threshold_yellow: int = 20
-    rpm_threshold_green: int = 30
+    rpm_threshold_green: int = 40
     recent_refinements: Deque[datetime] = field(default_factory=deque)
     current_rpm: float = 0.0
     max_rpm: float = 0.0

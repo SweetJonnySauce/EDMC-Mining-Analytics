@@ -69,9 +69,9 @@ class PreferencesManager:
             state.send_reset_summary = False
             state.discord_image_url = ""
             state.refinement_lookback_seconds = 10
-            state.rpm_threshold_red = 10
+            state.rpm_threshold_red = 1
             state.rpm_threshold_yellow = 20
-            state.rpm_threshold_green = 30
+            state.rpm_threshold_green = 40
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
@@ -101,9 +101,13 @@ class PreferencesManager:
             state.refinement_lookback_seconds,
             maximum=3600,
         )
+
+        raw_red_threshold = self._get_int("edmc_mining_rpm_red", state.rpm_threshold_red)
+        if raw_red_threshold == 10:  # migrate legacy default to the new baseline
+            raw_red_threshold = 1
         state.rpm_threshold_red = clamp_positive_int(
-            self._get_int("edmc_mining_rpm_red", state.rpm_threshold_red),
-            state.rpm_threshold_red,
+            raw_red_threshold,
+            1,
             maximum=10_000,
         )
         state.rpm_threshold_yellow = clamp_positive_int(
@@ -111,9 +115,13 @@ class PreferencesManager:
             state.rpm_threshold_yellow,
             maximum=10_000,
         )
+
+        raw_green_threshold = self._get_int("edmc_mining_rpm_green", state.rpm_threshold_green)
+        if raw_green_threshold == 30:  # migrate legacy default to new baseline
+            raw_green_threshold = 40
         state.rpm_threshold_green = clamp_positive_int(
-            self._get_int("edmc_mining_rpm_green", state.rpm_threshold_green),
-            state.rpm_threshold_green,
+            raw_green_threshold,
+            40,
             maximum=10_000,
         )
 
@@ -197,7 +205,7 @@ class PreferencesManager:
         try:
             config.set(
                 "edmc_mining_rpm_red",
-                clamp_positive_int(state.rpm_threshold_red, 10),
+                clamp_positive_int(state.rpm_threshold_red, 1),
             )
         except Exception:
             _log.exception("Failed to persist RPM red threshold")
@@ -213,7 +221,7 @@ class PreferencesManager:
         try:
             config.set(
                 "edmc_mining_rpm_green",
-                clamp_positive_int(state.rpm_threshold_green, 30),
+                clamp_positive_int(state.rpm_threshold_green, 40),
             )
         except Exception:
             _log.exception("Failed to persist RPM green threshold")
