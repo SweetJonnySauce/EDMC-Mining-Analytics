@@ -322,6 +322,9 @@ class edmcmaMiningUI:
         self._rpm_tooltip: Optional[WidgetTooltip] = None
         self._rpm_font: Optional[tkfont.Font] = None
         self._rpm_frame: Optional[tk.Frame] = None
+        self._rpm_display_value: float = 0.0
+        self._rpm_target_value: float = 0.0
+        self._rpm_animation_after: Optional[str] = None
         self._pause_btn: Optional[tk.Button] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_tree: Optional[ttk.Treeview] = None
@@ -1400,16 +1403,7 @@ class edmcmaMiningUI:
 
         now = datetime.now(timezone.utc)
         rpm = update_rpm(self._state, now)
-
-        rpm_var.set(f"{rpm:.1f}")
-        color = self._determine_rpm_color(rpm)
-        for widget in (rpm_label, self._rpm_title_label):
-            if widget is None:
-                continue
-            try:
-                widget.configure(foreground=color)
-            except tk.TclError:
-                pass
+        self._start_rpm_animation(rpm)
 
         tooltip = self._rpm_tooltip
         if tooltip is not None:
@@ -1439,6 +1433,60 @@ class edmcmaMiningUI:
         if rpm >= max(1, red_threshold):
             return RPM_COLOR_RED
         return self._theme.default_text_color()
+
+    def _start_rpm_animation(self, target_rpm: float) -> None:
+        self._rpm_target_value = target_rpm
+        if self._frame is None:
+            return
+
+        if self._rpm_animation_after is not None:
+            try:
+                self._frame.after_cancel(self._rpm_animation_after)
+            except Exception:
+                pass
+            self._rpm_animation_after = None
+
+        if abs(self._rpm_display_value - target_rpm) < 0.05:
+            self._set_rpm_display(target_rpm)
+            return
+
+        self._schedule_rpm_step()
+
+    def _schedule_rpm_step(self) -> None:
+        frame = self._frame
+        if frame is None:
+            return
+        self._rpm_animation_after = frame.after(50, self._animate_rpm_step)
+
+    def _animate_rpm_step(self) -> None:
+        target_rpm = self._rpm_target_value
+        current_display = self._rpm_display_value
+
+        delta = target_rpm - current_display
+        if abs(delta) < 0.05:
+            self._set_rpm_display(target_rpm)
+            self._rpm_animation_after = None
+            return
+
+        step = 0.2 if delta > 0 else -0.2
+        next_value = round(current_display + step, 1)
+        self._set_rpm_display(next_value)
+        self._schedule_rpm_step()
+
+    def _set_rpm_display(self, value: float) -> None:
+        self._rpm_display_value = value
+        rpm_var = self._rpm_var
+        if rpm_var is not None:
+            rpm_var.set(f"{value:.1f}")
+
+        color = self._determine_rpm_color(value)
+        for widget in (self._rpm_label, self._rpm_title_label):
+            if widget is None:
+                continue
+            try:
+                widget.configure(foreground=color)
+            except tk.TclError:
+                pass
 
     def _populate_tables(self) -> None:
         cargo_tree = self._cargo_tree
