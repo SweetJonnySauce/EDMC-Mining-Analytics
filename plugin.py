@@ -31,9 +31,9 @@ from journal import JournalProcessor
 from preferences import PreferencesManager
 from session_recorder import SessionRecorder
 from state import MiningState, reset_mining_state
-from ui import MiningUI
 from logging_utils import get_logger, set_log_level
 from version import PLUGIN_VERSION, is_newer_version
+from mining_analytics_ui import edmcmaMiningUI
 
 
 PLUGIN_NAME = "EDMC Mining Analytics"
@@ -101,7 +101,7 @@ class MiningAnalyticsPlugin:
         self.preferences = PreferencesManager()
         self.inara = InaraClient(self.state)
         self.session_recorder = SessionRecorder(self.state)
-        self.ui = MiningUI(
+        self.ui = edmcmaMiningUI(
             self.state,
             self.inara,
             self._handle_reset_request,

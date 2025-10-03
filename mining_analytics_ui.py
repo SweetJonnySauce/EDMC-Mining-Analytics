@@ -290,7 +290,7 @@ class ThemeAdapter:
         return self._fallback_panel_bg
 
 
-class MiningUI:
+class edmcmaMiningUI:
     """Encapsulates widget construction and refresh logic."""
 
     def __init__(
@@ -2026,8 +2026,8 @@ class MiningUI:
 
     @staticmethod
     def _calculate_elapsed_seconds(start: datetime, end: datetime) -> float:
-        start_time = MiningUI._ensure_aware(start)
-        end_time = MiningUI._ensure_aware(end)
+        start_time = edmcmaMiningUI._ensure_aware(start)
+        end_time = edmcmaMiningUI._ensure_aware(end)
         return max(0.0, (end_time - start_time).total_seconds())
 
     @staticmethod
