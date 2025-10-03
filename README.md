@@ -36,7 +36,7 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 
 
 ## Requirements
-- Elite Dangerous Market Connector 5.x or newer.
+- [Elite Dangerous Market Connector](https://github.com/EDCD/EDMarketConnector) 5.x or newer.
 
 ## Installation
 1. Open EDMC and choose `File → Settings → Plugins`, then click `Open Plugins Folder` to reveal your plugins directory.
