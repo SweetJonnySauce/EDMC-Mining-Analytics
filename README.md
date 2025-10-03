@@ -13,6 +13,8 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 - Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
 
 <img width="611" height="508" alt="image" src="https://github.com/user-attachments/assets/7c78855c-c2f7-49ba-bfe7-ea5b39280ab1" />
+<img width="685" height="228" alt="image" src="https://github.com/user-attachments/assets/00f8e485-5df8-4fe2-a752-7d782dbf3e2d" />
+
 
 
 ## Requirements
