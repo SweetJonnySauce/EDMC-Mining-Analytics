@@ -34,6 +34,7 @@ from state import MiningState, reset_mining_state
 from logging_utils import get_logger, set_log_level
 from version import PLUGIN_VERSION, is_newer_version
 from mining_analytics_ui import edmcmaMiningUI
+from update_manager import UpdateManager
 
 
 PLUGIN_NAME = "EDMC Mining Analytics"
@@ -101,6 +102,7 @@ class MiningAnalyticsPlugin:
         self.preferences = PreferencesManager()
         self.inara = InaraClient(self.state)
         self.session_recorder = SessionRecorder(self.state)
+        self.update_manager: Optional[UpdateManager] = None
         self.ui = edmcmaMiningUI(
             self.state,
             self.inara,
@@ -135,6 +137,13 @@ class MiningAnalyticsPlugin:
         self.preferences.load(self.state)
         self.inara.load_mapping(self.plugin_dir / "commodity_links.json")
         self._ensure_version_check()
+
+        try:
+            self.update_manager = UpdateManager(self.plugin_dir)
+            self.update_manager.start()
+        except Exception:
+            _log.exception("Failed to start auto-update manager")
+
         return PLUGIN_NAME
 
     def plugin_app(self, parent: tk.Widget) -> tk.Frame:
