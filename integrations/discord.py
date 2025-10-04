@@ -116,7 +116,7 @@ def build_summary_message(
             "name": "Asteroids",
             "value": (
                 f"{prospected.get('total', 0)} total\n"
-                f"High {content.get('High', 0)} | Medium {content.get('Medium', 0)} | Low {content.get('Low', 0)}"
+                f"H:{content.get('High', 0)} | M:{content.get('Medium', 0)} | L:{content.get('Low', 0)}"
             ),
             "inline": True,
         },
