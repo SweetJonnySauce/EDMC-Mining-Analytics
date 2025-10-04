@@ -1164,89 +1164,94 @@ class edmcmaMiningUI:
         session_path_feedback_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
         self._theme.register(session_path_feedback_label)
 
+        discord_frame = tk.LabelFrame(frame, text="Discord summary")
+        discord_frame.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
+        discord_frame.columnconfigure(0, weight=1)
+        self._theme.register(discord_frame)
+
+        self._prefs_send_summary_var = tk.BooleanVar(
+            master=discord_frame,
+            value=self._state.send_summary_to_discord,
+        )
+        self._prefs_send_summary_var.trace_add("write", self._on_send_summary_change)
+        send_summary_cb = ttk.Checkbutton(
+            discord_frame,
+            text="Send session summary to Discord",
+            variable=self._prefs_send_summary_var,
+        )
+        send_summary_cb.grid(row=0, column=0, sticky="w", pady=(4, 4))
+        self._theme.register(send_summary_cb)
+        self._send_summary_cb = send_summary_cb
+
         webhook_label = tk.Label(
-            logging_frame,
+            discord_frame,
             text="Discord webhook URL",
             anchor="w",
         )
-        webhook_label.grid(row=4, column=0, sticky="w", pady=(6, 2))
+        webhook_label.grid(row=1, column=0, sticky="w", pady=(0, 2))
         self._theme.register(webhook_label)
 
-        self._prefs_webhook_var = tk.StringVar(master=logging_frame)
+        self._prefs_webhook_var = tk.StringVar(master=discord_frame)
         self._updating_webhook_var = True
         self._prefs_webhook_var.set(self._state.discord_webhook_url)
         self._updating_webhook_var = False
         self._prefs_webhook_var.trace_add("write", self._on_webhook_change)
         webhook_entry = ttk.Entry(
-            logging_frame,
+            discord_frame,
             textvariable=self._prefs_webhook_var,
             width=60,
         )
-        webhook_entry.grid(row=5, column=0, sticky="ew", pady=(0, 6))
+        webhook_entry.grid(row=2, column=0, sticky="ew", pady=(0, 6))
         self._theme.register(webhook_entry)
 
         image_label = tk.Label(
-            logging_frame,
+            discord_frame,
             text="Discord image URL (optional)",
             anchor="w",
         )
-        image_label.grid(row=6, column=0, sticky="w", pady=(0, 2))
+        image_label.grid(row=3, column=0, sticky="w", pady=(0, 2))
         self._theme.register(image_label)
 
-        self._prefs_image_var = tk.StringVar(master=logging_frame)
+        self._prefs_image_var = tk.StringVar(master=discord_frame)
         self._updating_image_var = True
         self._prefs_image_var.set(self._state.discord_image_url)
         self._updating_image_var = False
         self._prefs_image_var.trace_add("write", self._on_discord_image_change)
         image_entry = ttk.Entry(
-            logging_frame,
+            discord_frame,
             textvariable=self._prefs_image_var,
             width=60,
         )
-        image_entry.grid(row=7, column=0, sticky="ew", pady=(0, 6))
+        image_entry.grid(row=4, column=0, sticky="ew", pady=(0, 6))
         self._theme.register(image_entry)
 
-        self._prefs_send_summary_var = tk.BooleanVar(
-            master=logging_frame,
-            value=self._state.send_summary_to_discord,
-        )
-        self._prefs_send_summary_var.trace_add("write", self._on_send_summary_change)
-        send_summary_cb = ttk.Checkbutton(
-            logging_frame,
-            text="Send session summary to Discord",
-            variable=self._prefs_send_summary_var,
-        )
-        send_summary_cb.grid(row=8, column=0, sticky="w", pady=(0, 4))
-        self._theme.register(send_summary_cb)
-        self._send_summary_cb = send_summary_cb
-
         self._prefs_send_reset_summary_var = tk.BooleanVar(
-            master=logging_frame,
+            master=discord_frame,
             value=self._state.send_reset_summary,
         )
         self._prefs_send_reset_summary_var.trace_add("write", self._on_send_reset_summary_change)
         send_reset_summary_cb = ttk.Checkbutton(
-            logging_frame,
+            discord_frame,
             text="Send Discord summary when resetting session",
             variable=self._prefs_send_reset_summary_var,
         )
-        send_reset_summary_cb.grid(row=9, column=0, sticky="w", pady=(0, 4))
+        send_reset_summary_cb.grid(row=5, column=0, sticky="w", pady=(0, 4))
         self._theme.register(send_reset_summary_cb)
         self._send_reset_summary_cb = send_reset_summary_cb
 
         test_btn = ttk.Button(
-            logging_frame,
+            discord_frame,
             text="Test webhook",
             command=self._on_test_webhook,
         )
-        test_btn.grid(row=10, column=0, sticky="w", pady=(0, 6))
+        test_btn.grid(row=6, column=0, sticky="w", pady=(0, 6))
         self._theme.register(test_btn)
         self._test_webhook_btn = test_btn
 
         self._update_discord_controls()
 
         inara_frame = tk.LabelFrame(frame, text="Inara Links")
-        inara_frame.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
+        inara_frame.grid(row=5, column=0, sticky="ew", padx=10, pady=(0, 10))
         inara_frame.columnconfigure(0, weight=1)
         self._theme.register(inara_frame)
 
