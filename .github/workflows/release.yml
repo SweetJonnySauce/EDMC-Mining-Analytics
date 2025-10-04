@@ -26,15 +26,14 @@ jobs:
 
       - name: Prepare release folder
         run: |
-          mkdir release
-          # Copy everything except *.md and files ignored by .gitignore
-          # Find all tracked files, exclude *.md, and copy preserving directory structure
-          git ls-files | grep -vE '\.md$' | xargs -I{} cp --parents {} release/
+          mkdir -p release/EDMC-Mining-Analytics
+          # Copy all tracked (non-ignored) files into the package folder, preserving structure
+          git ls-files -z | rsync -a --files-from=- --from0 ./ release/EDMC-Mining-Analytics/
 
       - name: Create archive
         run: |
           cd release
-          zip -r ../EDMC-Mining-Analytics-${{ steps.get_tag.outputs.tag_name || github.run_number }}.zip .
+          zip -r ../EDMC-Mining-Analytics-${{ steps.get_tag.outputs.tag_name || github.run_number }}.zip EDMC-Mining-Analytics
         shell: bash
 
       - name: Upload release asset
