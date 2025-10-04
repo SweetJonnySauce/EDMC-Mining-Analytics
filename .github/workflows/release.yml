@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p release/EDMC-Mining-Analytics
           # Copy all tracked (non-ignored) files into the package folder, preserving structure
-          git ls-files -z | rsync -a --files-from=- --from0 ./ release/EDMC-Mining-Analytics/
+          git ls-files -z | rsync -a --files-from=- --from0 ./ release/EDMC-Mining-Analytics/ --exclude='.github' --exclude='.gitignore' --filter='- *.md'
 
       - name: Create archive
         run: |
