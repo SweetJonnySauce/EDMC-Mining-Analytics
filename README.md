@@ -64,7 +64,7 @@ _To update, replace the contents of the `EDMC-Mining-Analytics` folder with the 
 ## Session History & Webhooks
 - Enable `Session logging` in preferences to write structured summaries to the plugin's `session_data/` directory. Retention is configurable.
 - Discord webhook summaries include duration, output, RPM, prospector usage, top commodities, and materials, making it easy to share highlights.
-- Use the `Send test message` control to validate your webhook configuration without completing a full session.
+- Use the `Test Webook` control to validate your webhook configuration without completing a full session.
 
 ## Support
 Questions, ideas, or bugs? Open an issue on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/issues). Feedback helps shape the next release. Yes, this project is 100% vibe coded using Codex. I'm doing it as an experiment/learning experience to see what is possible.
