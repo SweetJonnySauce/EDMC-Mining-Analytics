@@ -2,6 +2,8 @@
 
 Keeps the EDMC-required functions in this module while delegating the
 implementation to the top-level plugin orchestrator.
+
+Plugin now supports Auto update functionality. Currently being tested as of 0.2.4
 """
 
 from __future__ import annotations
