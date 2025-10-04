@@ -71,4 +71,6 @@ Questions, ideas, or bugs? Open an issue on [GitHub](https://github.com/SweetJon
 
 *EDMC Mining Analytics is a community project and is not affiliated with Frontier Developments or the EDCD team.*
 
+Big thanks to [Aussig of BGS-Tally](https://github.com/aussig/BGS-Tally) fame for auto-update functionality examples and other bits.
 Thanks to [FCDN](https://github.com/aweeri/FCDN) for the Discord integration ideas.
+
