@@ -78,6 +78,8 @@ class MiningState:
     send_reset_summary: bool = False
     last_session_summary: Optional[str] = None
     discord_image_url: str = ""
+    show_mined_commodities: bool = True
+    show_materials_collected: bool = True
 
     refinement_lookback_seconds: int = 10
     rpm_threshold_red: int = 1

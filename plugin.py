@@ -108,6 +108,7 @@ class MiningAnalyticsPlugin:
             on_pause_changed=self._handle_pause_change,
             on_reset_inferred_capacities=self._handle_reset_inferred_capacities,
             on_test_webhook=self._handle_test_webhook,
+            on_settings_changed=self._persist_preferences,
         )
         self.journal = JournalProcessor(
             self.state,
@@ -162,6 +163,7 @@ class MiningAnalyticsPlugin:
 
     def plugin_stop(self) -> None:
         _log.info("Stopping %s", PLUGIN_NAME)
+        self._persist_preferences()
         self.ui.cancel_rate_update()
         self.ui.close_histogram_windows()
         reset_mining_state(self.state)
@@ -217,6 +219,12 @@ class MiningAnalyticsPlugin:
             self.ui.refresh()
         except Exception:
             _log.exception("Failed to refresh Mining Analytics UI")
+
+    def _persist_preferences(self) -> None:
+        try:
+            self.preferences.save(self.state)
+        except Exception:
+            _log.exception("Failed to persist plugin preferences")
 
     def _on_session_start(self) -> None:
         self.ui.schedule_rate_update()

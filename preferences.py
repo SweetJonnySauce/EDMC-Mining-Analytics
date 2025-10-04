@@ -96,6 +96,12 @@ class PreferencesManager:
         state.send_summary_to_discord = bool(self._get_int("edmc_mining_discord_summary", 0))
         state.send_reset_summary = bool(self._get_int("edmc_mining_discord_reset_summary", 0))
         state.discord_image_url = self._get_str("edmc_mining_discord_image", "").strip()
+        state.show_mined_commodities = bool(
+            self._get_int("edmc_mining_show_commodities", int(state.show_mined_commodities))
+        )
+        state.show_materials_collected = bool(
+            self._get_int("edmc_mining_show_materials", int(state.show_materials_collected))
+        )
         state.refinement_lookback_seconds = clamp_positive_int(
             self._get_int("edmc_mining_refinement_window", state.refinement_lookback_seconds),
             state.refinement_lookback_seconds,
@@ -193,6 +199,16 @@ class PreferencesManager:
             config.set("edmc_mining_discord_image", state.discord_image_url or "")
         except Exception:
             _log.exception("Failed to persist Discord image URL")
+
+        try:
+            config.set("edmc_mining_show_commodities", int(state.show_mined_commodities))
+        except Exception:
+            _log.exception("Failed to persist commodities visibility preference")
+
+        try:
+            config.set("edmc_mining_show_materials", int(state.show_materials_collected))
+        except Exception:
+            _log.exception("Failed to persist materials visibility preference")
 
         try:
             config.set(
