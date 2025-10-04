@@ -360,6 +360,8 @@ class edmcmaMiningUI:
         self._send_summary_cb: Optional[ttk.Checkbutton] = None
         self._send_reset_summary_cb: Optional[ttk.Checkbutton] = None
         self._test_webhook_btn: Optional[ttk.Button] = None
+        self._session_path_feedback: Optional[tk.StringVar] = None
+        self._session_path_feedback_after: Optional[str] = None
 
         self._updating_bin_var = False
         self._updating_rate_var = False
@@ -694,6 +696,53 @@ class edmcmaMiningUI:
             self._updating_session_retention_var = True
             self._prefs_session_retention_var.set(limit)
             self._updating_session_retention_var = False
+
+    def _copy_session_log_path(self) -> None:
+        frame = self._frame
+        if frame is None:
+            return
+        plugin_dir = self._state.plugin_dir
+        if plugin_dir is None:
+            self._update_session_path_feedback("Plugin folder unavailable")
+            _log.warning("Unable to copy session log path; plugin directory unknown")
+            return
+
+        target = (plugin_dir / "session_data").resolve()
+        try:
+            frame.clipboard_clear()
+            frame.clipboard_append(str(target))
+            frame.update_idletasks()
+        except Exception:
+            self._update_session_path_feedback("Copy failed")
+            _log.exception("Failed to copy session log directory to clipboard")
+            return
+
+        self._update_session_path_feedback("Copied folder path")
+
+    def _update_session_path_feedback(self, message: str, *, clear_after: int = 3000) -> None:
+        var = self._session_path_feedback
+        frame = self._frame
+        if var is None or frame is None:
+            return
+
+        var.set(message)
+        if self._session_path_feedback_after is not None:
+            try:
+                frame.after_cancel(self._session_path_feedback_after)
+            except Exception:
+                pass
+            self._session_path_feedback_after = None
+
+        if message:
+            self._session_path_feedback_after = frame.after(
+                clear_after,
+                self._clear_session_path_feedback,
+            )
+
+    def _clear_session_path_feedback(self) -> None:
+        self._session_path_feedback_after = None
+        if self._session_path_feedback is not None:
+            self._session_path_feedback.set("")
 
     def _on_reset_inferred_capacities(self) -> None:
         callback = self._reset_capacities_callback
@@ -1094,12 +1143,33 @@ class edmcmaMiningUI:
             textvariable=self._prefs_session_retention_var,
         ).grid(row=0, column=1, sticky="w")
 
+        session_path_container = tk.Frame(logging_frame, highlightthickness=0, bd=0)
+        session_path_container.grid(row=3, column=0, sticky="w", pady=(6, 0))
+        self._theme.register(session_path_container)
+
+        copy_session_path_btn = ttk.Button(
+            session_path_container,
+            text="Copy session log folder location",
+            command=self._copy_session_log_path,
+        )
+        copy_session_path_btn.grid(row=0, column=0, sticky="w")
+        self._theme.register(copy_session_path_btn)
+
+        self._session_path_feedback = tk.StringVar(master=session_path_container, value="")
+        session_path_feedback_label = tk.Label(
+            session_path_container,
+            textvariable=self._session_path_feedback,
+            anchor="w",
+        )
+        session_path_feedback_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
+        self._theme.register(session_path_feedback_label)
+
         webhook_label = tk.Label(
             logging_frame,
             text="Discord webhook URL",
             anchor="w",
         )
-        webhook_label.grid(row=3, column=0, sticky="w", pady=(6, 2))
+        webhook_label.grid(row=4, column=0, sticky="w", pady=(6, 2))
         self._theme.register(webhook_label)
 
         self._prefs_webhook_var = tk.StringVar(master=logging_frame)
@@ -1112,7 +1182,7 @@ class edmcmaMiningUI:
             textvariable=self._prefs_webhook_var,
             width=60,
         )
-        webhook_entry.grid(row=4, column=0, sticky="ew", pady=(0, 6))
+        webhook_entry.grid(row=5, column=0, sticky="ew", pady=(0, 6))
         self._theme.register(webhook_entry)
 
         image_label = tk.Label(
@@ -1120,7 +1190,7 @@ class edmcmaMiningUI:
             text="Discord image URL (optional)",
             anchor="w",
         )
-        image_label.grid(row=5, column=0, sticky="w", pady=(0, 2))
+        image_label.grid(row=6, column=0, sticky="w", pady=(0, 2))
         self._theme.register(image_label)
 
         self._prefs_image_var = tk.StringVar(master=logging_frame)
@@ -1133,7 +1203,7 @@ class edmcmaMiningUI:
             textvariable=self._prefs_image_var,
             width=60,
         )
-        image_entry.grid(row=6, column=0, sticky="ew", pady=(0, 6))
+        image_entry.grid(row=7, column=0, sticky="ew", pady=(0, 6))
         self._theme.register(image_entry)
 
         self._prefs_send_summary_var = tk.BooleanVar(
@@ -1146,7 +1216,7 @@ class edmcmaMiningUI:
             text="Send session summary to Discord",
             variable=self._prefs_send_summary_var,
         )
-        send_summary_cb.grid(row=7, column=0, sticky="w", pady=(0, 4))
+        send_summary_cb.grid(row=8, column=0, sticky="w", pady=(0, 4))
         self._theme.register(send_summary_cb)
         self._send_summary_cb = send_summary_cb
 
@@ -1160,7 +1230,7 @@ class edmcmaMiningUI:
             text="Send Discord summary when resetting session",
             variable=self._prefs_send_reset_summary_var,
         )
-        send_reset_summary_cb.grid(row=8, column=0, sticky="w", pady=(0, 4))
+        send_reset_summary_cb.grid(row=9, column=0, sticky="w", pady=(0, 4))
         self._theme.register(send_reset_summary_cb)
         self._send_reset_summary_cb = send_reset_summary_cb
 
@@ -1169,7 +1239,7 @@ class edmcmaMiningUI:
             text="Test webhook",
             command=self._on_test_webhook,
         )
-        test_btn.grid(row=9, column=0, sticky="w", pady=(0, 6))
+        test_btn.grid(row=10, column=0, sticky="w", pady=(0, 6))
         self._theme.register(test_btn)
         self._test_webhook_btn = test_btn
 
