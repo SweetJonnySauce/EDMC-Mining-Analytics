@@ -7,7 +7,7 @@ import random
 import webbrowser
 from collections import Counter
 from datetime import datetime, timezone
-from typing import Callable, Dict, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 try:
     import tkinter as tk
@@ -222,6 +222,9 @@ class ThemeAdapter:
             value = None
         return value or self._fallback_text_fg
 
+    def panel_background_color(self) -> str:
+        return self._fallback_panel_bg
+
     @staticmethod
     def _tint_color(color: str, factor: float) -> Optional[str]:
         if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
@@ -289,6 +292,26 @@ class ThemeAdapter:
             return color
         return self._fallback_panel_bg
 
+    def style_checkbox(self, checkbox: tk.Checkbutton) -> None:
+        self.register(checkbox)
+        if not self._is_dark_theme:
+            return
+        background = self.panel_background_color()
+        try:
+            checkbox.configure(
+                background=background,
+                activebackground=background,
+                selectcolor=background,
+                highlightbackground=background,
+                highlightcolor=background,
+                highlightthickness=0,
+                bd=0,
+                relief=tk.FLAT,
+                indicatoron=True,
+            )
+        except tk.TclError:
+            pass
+
 
 class edmcmaMiningUI:
     """Encapsulates widget construction and refresh logic."""
@@ -328,8 +351,9 @@ class edmcmaMiningUI:
         self._pause_btn: Optional[tk.Button] = None
         self._cargo_tree: Optional[ttk.Treeview] = None
         self._materials_tree: Optional[ttk.Treeview] = None
-        self._materials_frame: Optional[ttk.Frame] = None
+        self._materials_frame: Optional[tk.Frame] = None
         self._total_tph_var: Optional[tk.StringVar] = None
+        self._total_tph_font: Optional[tkfont.Font] = None
         self._range_link_labels: Dict[str, tk.Label] = {}
         self._commodity_link_labels: Dict[str, tk.Label] = {}
         self._range_link_font: Optional[tkfont.Font] = None
@@ -339,6 +363,13 @@ class edmcmaMiningUI:
         self._content_widgets: Sequence[tk.Widget] = ()
         self._version_label: Optional[tk.Label] = None
         self._version_font: Optional[tkfont.Font] = None
+        self._show_commodities_var: Optional[tk.BooleanVar] = None
+        self._show_materials_var: Optional[tk.BooleanVar] = None
+        self._commodities_header: Optional[tk.Frame] = None
+        self._materials_header: Optional[tk.Frame] = None
+        self._commodities_frame: Optional[tk.Frame] = None
+        self._commodities_grid: Optional[Dict[str, Any]] = None
+        self._materials_grid: Optional[Dict[str, Any]] = None
 
         self._prefs_bin_var: Optional[tk.IntVar] = None
         self._prefs_rate_var: Optional[tk.IntVar] = None
@@ -473,17 +504,41 @@ class edmcmaMiningUI:
         self._theme.style_button(self._details_toggle)
         self._details_toggle.grid(row=0, column=0, padx=0, pady=0)
 
+        commodities_header = tk.Frame(frame, highlightthickness=0, bd=0)
+        self._commodities_header = commodities_header
+        commodities_header.grid(row=3, column=0, sticky="w", padx=4)
+        self._theme.register(commodities_header)
+
         commodities_label = tk.Label(
-            frame,
+            commodities_header,
             text="Mined Commodities",
             font=(None, 9, "bold"),
             anchor="w",
         )
-        commodities_label.grid(row=2, column=0, sticky="w", padx=4)
+        commodities_label.pack(side="left")
         self._theme.register(commodities_label)
 
+        self._show_commodities_var = tk.BooleanVar(master=frame, value=True)
+        commodities_toggle = tk.Checkbutton(
+            commodities_header,
+            variable=self._show_commodities_var,
+            command=self._on_toggle_commodities,
+        )
+        commodities_toggle.pack(side="left", padx=(6, 0))
+        self._theme.register(commodities_toggle)
+        self._theme.style_checkbox(commodities_toggle)
+
         table_frame = tk.Frame(frame, highlightthickness=0, bd=0)
-        table_frame.grid(row=3, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
+        self._commodities_frame = table_frame
+        self._commodities_grid = {
+            "row": 4,
+            "column": 0,
+            "columnspan": 3,
+            "sticky": "nsew",
+            "padx": 4,
+            "pady": (2, 6),
+        }
+        table_frame.grid(**self._commodities_grid)
         self._theme.register(table_frame)
 
         header_font = tkfont.Font(family="TkDefaultFont", size=9, weight="normal")
@@ -552,11 +607,18 @@ class edmcmaMiningUI:
             textvariable=self._total_tph_var,
             anchor="w",
         )
-        total_label.grid(row=4, column=0, sticky="w", padx=4, pady=(0, 6))
+        try:
+            base_font = tkfont.nametofont(total_label.cget("font"))
+            self._total_tph_font = tkfont.Font(font=base_font)
+            self._total_tph_font.configure(weight="bold")
+            total_label.configure(font=self._total_tph_font)
+        except tk.TclError:
+            self._total_tph_font = None
+        total_label.grid(row=2, column=0, sticky="w", padx=4, pady=(0, 6))
         self._theme.register(total_label)
 
         button_bar = tk.Frame(frame, highlightthickness=0, bd=0)
-        button_bar.grid(row=4, column=2, sticky="e", padx=4, pady=(0, 6))
+        button_bar.grid(row=2, column=2, sticky="e", padx=4, pady=(0, 6))
         self._theme.register(button_bar)
 
         pause_btn = tk.Button(button_bar, text="Pause", command=self._toggle_pause, cursor="hand2")
@@ -568,17 +630,40 @@ class edmcmaMiningUI:
         self._theme.style_button(reset_btn)
         reset_btn.grid(row=0, column=1, padx=0, pady=0)
 
+        materials_header = tk.Frame(frame, highlightthickness=0, bd=0)
+        self._materials_header = materials_header
+        materials_header.grid(row=5, column=0, sticky="w", padx=4)
+        self._theme.register(materials_header)
+
         materials_label = tk.Label(
-            frame,
+            materials_header,
             text="Materials Collected",
             font=(None, 9, "bold"),
             anchor="w",
         )
-        materials_label.grid(row=5, column=0, sticky="w", padx=4)
+        materials_label.pack(side="left")
         self._theme.register(materials_label)
 
+        self._show_materials_var = tk.BooleanVar(master=frame, value=True)
+        materials_toggle = tk.Checkbutton(
+            materials_header,
+            variable=self._show_materials_var,
+            command=self._on_toggle_materials,
+        )
+        materials_toggle.pack(side="left", padx=(6, 0))
+        self._theme.register(materials_toggle)
+        self._theme.style_checkbox(materials_toggle)
+
         self._materials_frame = tk.Frame(frame, highlightthickness=0, bd=0)
-        self._materials_frame.grid(row=6, column=0, columnspan=3, sticky="nsew", padx=4, pady=(2, 6))
+        self._materials_grid = {
+            "row": 6,
+            "column": 0,
+            "columnspan": 3,
+            "sticky": "nsew",
+            "padx": 4,
+            "pady": (2, 6),
+        }
+        self._materials_frame.grid(**self._materials_grid)
         self._theme.register(self._materials_frame)
 
         self._materials_tree = ttk.Treeview(
@@ -618,23 +703,24 @@ class edmcmaMiningUI:
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=0)
-        frame.rowconfigure(3, weight=1)
+        frame.rowconfigure(4, weight=1)
         frame.rowconfigure(6, weight=1)
 
         self._content_widgets = (
             summary_label,
             rpm_frame,
-            commodities_label,
-            table_frame,
             total_label,
             button_bar,
-            materials_label,
+            commodities_header,
+            table_frame,
+            materials_header,
             self._materials_frame,
         )
 
         self._update_pause_button()
 
         self._apply_initial_visibility()
+        self._apply_table_visibility()
 
         self._update_rpm_indicator()
 
@@ -897,12 +983,65 @@ class edmcmaMiningUI:
                 widget.grid()
             else:
                 widget.grid_remove()
+        if visible:
+            self._apply_table_visibility()
         if self._details_toggle:
             label = "Hide Details" if visible else "Show Details"
             try:
                 self._details_toggle.configure(text=label)
             except Exception:
                 pass
+
+    def _apply_table_visibility(self) -> None:
+        self._apply_commodities_visibility()
+        self._apply_materials_visibility()
+
+    def _apply_commodities_visibility(self) -> None:
+        frame = self._commodities_frame
+        if frame is None:
+            return
+        if not self._details_visible:
+            frame.grid_remove()
+            return
+        should_show = self._bool_from_var(self._show_commodities_var, default=True)
+        if should_show:
+            self._restore_grid(frame, self._commodities_grid)
+        else:
+            frame.grid_remove()
+
+    def _apply_materials_visibility(self) -> None:
+        frame = self._materials_frame
+        if frame is None:
+            return
+        if not self._details_visible:
+            frame.grid_remove()
+            return
+        should_show = self._bool_from_var(self._show_materials_var, default=True)
+        if should_show:
+            self._restore_grid(frame, self._materials_grid)
+        else:
+            frame.grid_remove()
+
+    def _on_toggle_commodities(self) -> None:
+        self._apply_commodities_visibility()
+
+    def _on_toggle_materials(self) -> None:
+        self._apply_materials_visibility()
+
+    def _restore_grid(self, widget: tk.Widget, grid_options: Optional[Dict[str, Any]]) -> None:
+        if grid_options is None:
+            widget.grid()
+            return
+        widget.grid(**grid_options)
+
+    @staticmethod
+    def _bool_from_var(var: Optional[tk.BooleanVar], default: bool) -> bool:
+        if var is None:
+            return default
+        try:
+            return bool(var.get())
+        except (tk.TclError, ValueError):
+            return default
 
     def build_preferences(self, parent: tk.Widget) -> tk.Widget:
         frame = tk.Frame(parent, highlightthickness=0, bd=0)
