@@ -30,7 +30,8 @@ jobs:
         run: |
           mkdir -p release/EDMC-Mining-Analytics
           # Copy tracked (non-ignored) files into the package folder, excluding .github, .gitignore, and Markdown files
-          git ls-files -- ':!:*.md' ':!:*.MD' ':!.github/**' ':!.gitignore' -z \
+          git ls-files -z \
+            | python3 -c "import sys; data=sys.stdin.buffer.read().split(b'\0'); files=[f for f in data if f and not f.lower().endswith(b'.md') and not f.startswith(b'.github/') and f != b'.gitignore']; sys.stdout.buffer.write(b''.join(f + b'\0' for f in files))" \
             | rsync -a --from0 --files-from=- ./ release/EDMC-Mining-Analytics/
 
       - name: Create archive
