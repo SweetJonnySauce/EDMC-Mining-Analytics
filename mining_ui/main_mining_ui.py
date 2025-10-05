@@ -79,7 +79,6 @@ class edmcmaMiningUI:
         self._reserve_line: Optional[tk.Frame] = None
         self._reserve_label: Optional[tk.Label] = None
         self._reserve_warning_label: Optional[tk.Label] = None
-        self._reserve_warning_font: Optional[tkfont.Font] = None
         self._rpm_var: Optional[tk.StringVar] = None
         self._rpm_label: Optional[tk.Label] = None
         self._rpm_title_label: Optional[tk.Label] = None
@@ -178,11 +177,12 @@ class edmcmaMiningUI:
             justify="left",
             anchor="w",
         )
-        status_label.grid(row=0, column=0, columnspan=2, sticky="w")
+        status_label.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 0))
+        status_label.configure(pady=0)
         self._theme.register(status_label)
 
         reserve_line = tk.Frame(status_container, highlightthickness=0, bd=0)
-        reserve_line.grid(row=1, column=0, columnspan=2, sticky="w")
+        reserve_line.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 0))
         self._theme.register(reserve_line)
         self._reserve_line = reserve_line
 
@@ -193,7 +193,8 @@ class edmcmaMiningUI:
             justify="left",
             anchor="w",
         )
-        reserve_label.pack(side="left", anchor="w")
+        reserve_label.pack(side="left", anchor="w", pady=0)
+        reserve_label.configure(pady=0)
         self._theme.register(reserve_label)
         self._reserve_label = reserve_label
 
@@ -203,14 +204,13 @@ class edmcmaMiningUI:
             justify="left",
             anchor="w",
         )
-        warning_label.pack(side="left", anchor="w")
+        warning_label.pack(side="left", anchor="w", pady=0)
+        warning_label.configure(pady=0)
         try:
             base_font = tkfont.nametofont(reserve_label.cget("font"))
-            self._reserve_warning_font = tkfont.Font(font=base_font)
-            self._reserve_warning_font.configure(weight="bold")
-            warning_label.configure(font=self._reserve_warning_font)
+            warning_label.configure(font=base_font)
         except tk.TclError:
-            self._reserve_warning_font = None
+            pass
         try:
             background = reserve_line.cget("background")
             warning_label.configure(background=background)
