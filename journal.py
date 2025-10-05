@@ -18,6 +18,7 @@ from state import (
 )
 from session_recorder import SessionRecorder
 from logging_utils import get_logger
+from integrations.mining_edsm import EdsmClient
 
 try:  # pragma: no cover - only available inside EDMC
     from edmc_data import ship_name_map  # type: ignore[import]
@@ -59,6 +60,7 @@ class JournalProcessor:
         persist_inferred_capacities: Callable[[], None],
         notify_mining_activity: Optional[Callable[[str], None]] = None,
         session_recorder: Optional[SessionRecorder] = None,
+        edsm_client: Optional[EdsmClient] = None,
     ) -> None:
         self._state = state
         self._refresh_ui = refresh_ui
@@ -70,6 +72,7 @@ class JournalProcessor:
         self._pending_ship_updates: dict[str, PendingShipUpdate] = {}
         self._pending_timeout_timer: Optional[threading.Timer] = None
         self._session_recorder = session_recorder
+        self._edsm = edsm_client
 
     # ------------------------------------------------------------------
     # Public API
@@ -184,6 +187,7 @@ class JournalProcessor:
         system_name = self._detect_current_system(entry)
         if system_name:
             self._set_current_system(system_name)
+            self._refresh_edsm()
 
         if isinstance(shared_state, dict):
             shared_state.update(
@@ -260,6 +264,7 @@ class JournalProcessor:
         body_value = entry.get("Body") or entry.get("BodyName")
         if isinstance(body_value, str) and "ring" in body_value.lower():
             self._state.mining_ring = body_value
+            self._refresh_edsm()
 
         if self._session_recorder:
             materials_payload = entry.get("Materials")
@@ -312,6 +317,7 @@ class JournalProcessor:
 
         recompute_histograms(self._state)
         self._emit_mining_activity("ProspectedAsteroid")
+        self._refresh_edsm()
 
     def _register_material_collected(self, entry: dict) -> None:
         name = entry.get("Name")
@@ -1057,6 +1063,7 @@ class JournalProcessor:
             system_name = self._detect_current_system(state or entry)
             if system_name:
                 self._set_current_system(system_name)
+            self._refresh_edsm()
 
             self._state.current_ship = ship_to_use
             self._state.current_ship_key = ship_key or existing_ship_key
@@ -1142,11 +1149,12 @@ class JournalProcessor:
             system_name = self._detect_current_system(state)
             if system_name:
                 self._set_current_system(system_name)
-            if self._session_recorder and self._state.mining_end is not None:
-                self._session_recorder.end_session(self._state.mining_end, reason=reason)
-            self._on_session_end()
+        if self._session_recorder and self._state.mining_end is not None:
+            self._session_recorder.end_session(self._state.mining_end, reason=reason)
+        self._on_session_end()
 
         _log.info("Mining state changed to %s (%s)", "active" if active else "inactive", reason)
+        self._refresh_edsm()
 
     # ------------------------------------------------------------------
     # Utility helpers
@@ -1165,6 +1173,7 @@ class JournalProcessor:
             if body:
                 if isinstance(body, str) and "ring" in body.lower():
                     self._state.mining_ring = str(body)
+                    self._refresh_edsm()
                 return str(body)
         except Exception:
             pass
@@ -1188,6 +1197,14 @@ class JournalProcessor:
             if value:
                 return str(value)
         return None
+
+    def _refresh_edsm(self) -> None:
+        if not self._edsm:
+            return
+        self._edsm.refresh(
+            system=self._state.current_system,
+            ring_name=self._state.mining_ring,
+        )
 
     def _resolve_ship_name(self, state: Optional[dict]) -> Optional[str]:
         if not state:

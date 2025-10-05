@@ -89,6 +89,10 @@ class MiningState:
     current_rpm: float = 0.0
     max_rpm: float = 0.0
 
+    edsm_reserve_level: Optional[str] = None
+    edsm_ring_type: Optional[str] = None
+    edsm_body_name: Optional[str] = None
+
 
 def compute_percentage_stats(samples: Iterable[float]) -> Optional[Tuple[float, float, float]]:
     """Return min/avg/max percentages from an iterable of sample values."""

@@ -833,7 +833,12 @@ class edmcmaMiningUI:
 
         summary_lines = self._status_summary_lines()
 
-        status_var.set(status_text)
+        reserve_line = ""
+        if self._state.is_mining:
+            reserve_line = self._format_edsm_info()
+        combined_status = status_text if not reserve_line else f"{status_text}\n{reserve_line}"
+
+        status_var.set(combined_status)
         summary_var.set("\n".join(summary_lines))
         self._update_summary_tooltip()
         self._update_rpm_indicator()
@@ -910,6 +915,12 @@ class edmcmaMiningUI:
             )
 
         return lines
+
+    def _format_edsm_info(self) -> str:
+        reserve = (self._state.edsm_reserve_level or "").strip()
+        ring_type = (self._state.edsm_ring_type or "").strip()
+        parts = [value for value in (reserve, ring_type) if value]
+        return " ".join(parts)
 
     def _update_summary_tooltip(self) -> None:
         tooltip = self._summary_tooltip

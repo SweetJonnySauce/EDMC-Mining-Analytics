@@ -231,6 +231,26 @@ class SessionRecorder:
         if tons_per_hour is not None:
             tons_per_hour = round(tons_per_hour, 3)
 
+        ring_name = self._derive_ring_name()
+        body_value = state.edsm_body_name or state.mining_location
+        if (
+            isinstance(body_value, str)
+            and isinstance(ring_name, str)
+            and body_value.strip().lower() == ring_name.strip().lower()
+        ):
+            body_value = self._strip_ring_from_name(body_value)
+
+        location_meta = {
+            "body": body_value,
+            "system": state.current_system,
+        }
+        if ring_name:
+            location_meta["ring"] = ring_name
+        if state.edsm_reserve_level:
+            location_meta["reserve_level"] = state.edsm_reserve_level
+        if state.edsm_ring_type:
+            location_meta["ring_type"] = state.edsm_ring_type
+
         meta: dict[str, Any] = {
             "start_time": self._isoformat(start),
             "end_time": self._isoformat(end),
@@ -240,10 +260,7 @@ class SessionRecorder:
                 "elapsed_seconds": duration_seconds,
                 "tons_per_hour": tons_per_hour,
             },
-            "location": {
-                "body": state.mining_location,
-                "system": state.current_system,
-            },
+            "location": location_meta,
             "ship": state.current_ship,
             "prospected": {
                 "total": state.prospected_count,
@@ -271,7 +288,7 @@ class SessionRecorder:
         }
 
         meta["commander"] = (state.cmdr_name or "").strip() or "Unknown"
-        meta["ring"] = self._derive_ring_name()
+        # ring is now recorded inside meta["location"]
         meta["prospectors_lost"] = max(0, state.prospector_launched_count - state.prospected_count)
 
         payload = {
@@ -289,6 +306,15 @@ class SessionRecorder:
         if isinstance(location, str) and "ring" in location.lower():
             return location
         return None
+
+    @staticmethod
+    def _strip_ring_from_name(value: str) -> str:
+        candidate = value.strip()
+        lowered = candidate.lower()
+        suffix = " ring"
+        if lowered.endswith(suffix):
+            return candidate[: -len(suffix)].rstrip()
+        return candidate
 
     def _materials_snapshot(self, materials: Counter[str]) -> list[dict[str, Any]]:
         snapshot: list[dict[str, Any]] = []
@@ -475,10 +501,21 @@ class SessionRecorder:
         location_line = None
         if body:
             location_line = body
+            extra_location = None
         elif system:
             location_line = system
+            extra_location = None
         else:
             location_line = "Unknown"
+            extra_location = None
+        ring_info = self._format_ring_info(
+            location_info.get("reserve_level") or meta.get("reserve_level"),
+            location_info.get("ring_type") or meta.get("ring_type"),
+        )
+        if ring_info:
+            extra_location = ring_info
+        if extra_location:
+            location_line = f"{location_line} ({extra_location})"
         ship = meta.get("ship") or "Unknown ship"
         commander = meta.get("commander") or self._state.cmdr_name or "Unknown"
         prospected = meta.get("prospected", {})
@@ -490,17 +527,17 @@ class SessionRecorder:
             f"Ship: {ship}",
             f"Duration: {duration_text}",
             f"Total: {total_tons}t @ {tph_text} TPH",
-            (
-                "Asteroids prospected: "
-                f"{prospected.get('total', 0)} (High {content.get('High', 0)}, "
-                f"Medium {content.get('Medium', 0)}, Low {content.get('Low', 0)})"
-            ),
-            (
-                "Prospectors launched: "
-                f"{meta.get('prospectors_launched', 0)} | Lost: {meta.get('prospectors_lost', 0)} | Duplicates: {prospected.get('duplicates', 0)} | "
-                f"Collectors: {meta.get('collectors_launched', 0)} | Limpets remaining: {meta.get('limpets_remaining', 0)}"
-            ),
         ]
+        lines.append(
+            "Asteroids prospected: "
+            f"{prospected.get('total', 0)} (High {content.get('High', 0)}, "
+            f"Medium {content.get('Medium', 0)}, Low {content.get('Low', 0)})"
+        )
+        lines.append(
+            "Prospectors launched: "
+            f"{meta.get('prospectors_launched', 0)} | Lost: {meta.get('prospectors_lost', 0)} | Duplicates: {prospected.get('duplicates', 0)} | "
+            f"Collectors: {meta.get('collectors_launched', 0)} | Limpets remaining: {meta.get('limpets_remaining', 0)}"
+        )
         lines.append(f"Collectors abandoned: {meta.get('collectors_abandoned', 0)}")
 
         if meta.get("ended_via_reset"):
@@ -554,6 +591,18 @@ class SessionRecorder:
         if len(summary) > 1900:
             summary = summary[:1890].rstrip() + "…"
         return summary
+
+    @staticmethod
+    def _format_ring_info(
+        reserve: Optional[Any],
+        ring_type: Optional[Any],
+    ) -> Optional[str]:
+        reserve_text = reserve.strip() if isinstance(reserve, str) else None
+        ring_text = ring_type.strip() if isinstance(ring_type, str) else None
+        parts = [value for value in (reserve_text, ring_text) if value]
+        if not parts:
+            return None
+        return " ".join(parts)
 
     def send_test_message(self) -> Tuple[bool, str]:
         url = (self._state.discord_webhook_url or "").strip()

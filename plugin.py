@@ -27,6 +27,7 @@ except ImportError:  # pragma: no cover
     appname = "EDMarketConnector"  # type: ignore[assignment]
 
 from integrations.mining_inara import InaraClient
+from integrations.mining_edsm import EdsmClient
 from journal import JournalProcessor
 from preferences import PreferencesManager
 from session_recorder import SessionRecorder
@@ -101,6 +102,7 @@ class MiningAnalyticsPlugin:
         self.state = MiningState()
         self.preferences = PreferencesManager()
         self.inara = InaraClient(self.state)
+        self.edsm = EdsmClient(self.state, self._schedule_ui_refresh)
         self.session_recorder = SessionRecorder(self.state)
         self.update_manager: Optional[UpdateManager] = None
         self.ui = edmcmaMiningUI(
@@ -120,6 +122,7 @@ class MiningAnalyticsPlugin:
             persist_inferred_capacities=self._persist_inferred_capacities,
             notify_mining_activity=self._handle_mining_activity,
             session_recorder=self.session_recorder,
+            edsm_client=self.edsm,
         )
 
         self.plugin_dir: Optional[Path] = None
@@ -228,6 +231,16 @@ class MiningAnalyticsPlugin:
             self.ui.refresh()
         except Exception:
             _log.exception("Failed to refresh Mining Analytics UI")
+
+    def _schedule_ui_refresh(self) -> None:
+        frame = self.ui.get_root()
+        if frame is not None and frame.winfo_exists():
+            try:
+                frame.after(0, self._refresh_ui_safe)
+                return
+            except Exception:
+                pass
+        self._refresh_ui_safe()
 
     def _persist_preferences(self) -> None:
         try:

@@ -59,12 +59,22 @@ def build_summary_message(
     system = location_info.get("system") or state.current_system or "Unknown system"
     ring = meta.get("ring") or state.mining_ring
 
+    base_location = None
     if body and body.strip():
-        location_value = body.strip()
+        base_location = body.strip()
     elif system and system.strip():
-        location_value = system.strip()
+        base_location = system.strip()
     else:
-        location_value = "Unknown"
+        base_location = "Unknown"
+
+    ring_suffix = _format_ring_info(
+        location_info.get("reserve_level") or meta.get("reserve_level") or state.edsm_reserve_level,
+        location_info.get("ring_type") or meta.get("ring_type") or state.edsm_ring_type,
+    )
+    if ring_suffix:
+        location_value = f"{base_location} ({ring_suffix})"
+    else:
+        location_value = base_location
 
     duration_seconds = float(meta.get("duration_seconds", 0.0) or 0.0)
     duration_text = format_duration(duration_seconds)
@@ -137,6 +147,8 @@ def build_summary_message(
             "inline": True,
         },
     ]
+
+    location_info = meta.get("location", {})
 
     top_value = _format_top_commodities(commodities)
     if top_value:
@@ -271,10 +283,22 @@ def _format_top_commodities(commodities: Dict[str, Any]) -> Optional[str]:
         if isinstance(stats, dict):
             avg_value = stats.get("avg")
             if isinstance(avg_value, (int, float)):
-                avg_fragment = f" | Avg {avg_value:.1f}%"
+                avg_fragment = f" | Avg Yield {avg_value:.1f}%"
         lines.append(f"{name}: {tons}t ({tph_text}){avg_fragment}")
     value = "\n".join(lines)
     return _clamp_text(value, 1024) if value else None
+
+
+def _format_ring_info(
+    reserve: Optional[Any],
+    ring_type: Optional[Any],
+) -> Optional[str]:
+    reserve_text = reserve.strip() if isinstance(reserve, str) else None
+    ring_text = ring_type.strip() if isinstance(ring_type, str) else None
+    parts = [value for value in (reserve_text, ring_text) if value]
+    if not parts:
+        return None
+    return " ".join(parts)
 
 
 def _format_materials(materials: Iterable[Dict[str, Any]]) -> Optional[str]:
