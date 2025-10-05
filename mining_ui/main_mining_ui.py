@@ -43,6 +43,8 @@ _log = get_logger("ui")
 RPM_COLOR_RED = "#e74c3c"
 RPM_COLOR_YELLOW = "#f7931e"
 RPM_COLOR_GREEN = "#2ecc71"
+NON_METAL_WARNING_COLOR = "#ff4d4d"
+NON_METAL_WARNING_TEXT = " (Warning: Non-Metallic ring)"
 
 
 class edmcmaMiningUI:
@@ -69,10 +71,15 @@ class edmcmaMiningUI:
 
         self._frame: Optional[tk.Widget] = None
         self._status_var: Optional[tk.StringVar] = None
+        self._reserve_var: Optional[tk.StringVar] = None
         self._summary_var: Optional[tk.StringVar] = None
         self._summary_label: Optional[tk.Label] = None
         self._summary_tooltip: Optional[WidgetTooltip] = None
         self._summary_inferred_bounds: Optional[Tuple[int, int, int, int]] = None
+        self._reserve_line: Optional[tk.Frame] = None
+        self._reserve_label: Optional[tk.Label] = None
+        self._reserve_warning_label: Optional[tk.Label] = None
+        self._reserve_warning_font: Optional[tkfont.Font] = None
         self._rpm_var: Optional[tk.StringVar] = None
         self._rpm_label: Optional[tk.Label] = None
         self._rpm_title_label: Optional[tk.Label] = None
@@ -121,6 +128,7 @@ class edmcmaMiningUI:
         self._prefs_send_summary_var: Optional[tk.BooleanVar] = None
         self._prefs_send_reset_summary_var: Optional[tk.BooleanVar] = None
         self._prefs_image_var: Optional[tk.StringVar] = None
+        self._prefs_warn_non_metallic_var: Optional[tk.BooleanVar] = None
         self._reset_capacities_btn: Optional[ttk.Button] = None
         self._send_summary_cb: Optional[ttk.Checkbutton] = None
         self._send_reset_summary_cb: Optional[ttk.Checkbutton] = None
@@ -141,6 +149,7 @@ class edmcmaMiningUI:
         self._updating_send_summary_var = False
         self._updating_send_reset_summary_var = False
         self._updating_image_var = False
+        self._updating_warn_non_metallic_var = False
 
         self._rate_update_job: Optional[str] = None
         self._content_collapsed = False
@@ -157,15 +166,58 @@ class edmcmaMiningUI:
         self._frame = frame
         self._theme.register(frame)
 
-        self._status_var = tk.StringVar(master=frame, value="Not mining")
+        status_container = tk.Frame(frame, highlightthickness=0, bd=0)
+        status_container.grid(row=0, column=0, sticky="w", padx=4, pady=(4, 2))
+        status_container.columnconfigure(0, weight=1)
+        self._theme.register(status_container)
+
+        self._status_var = tk.StringVar(master=status_container, value="Not mining")
         status_label = tk.Label(
-            frame,
+            status_container,
             textvariable=self._status_var,
             justify="left",
             anchor="w",
         )
-        status_label.grid(row=0, column=0, sticky="w", padx=4, pady=(4, 2))
+        status_label.grid(row=0, column=0, columnspan=2, sticky="w")
         self._theme.register(status_label)
+
+        reserve_line = tk.Frame(status_container, highlightthickness=0, bd=0)
+        reserve_line.grid(row=1, column=0, columnspan=2, sticky="w")
+        self._theme.register(reserve_line)
+        self._reserve_line = reserve_line
+
+        self._reserve_var = tk.StringVar(master=reserve_line, value="")
+        reserve_label = tk.Label(
+            reserve_line,
+            textvariable=self._reserve_var,
+            justify="left",
+            anchor="w",
+        )
+        reserve_label.pack(side="left", anchor="w")
+        self._theme.register(reserve_label)
+        self._reserve_label = reserve_label
+
+        warning_label = tk.Label(
+            reserve_line,
+            text="",
+            justify="left",
+            anchor="w",
+        )
+        warning_label.pack(side="left", anchor="w")
+        try:
+            base_font = tkfont.nametofont(reserve_label.cget("font"))
+            self._reserve_warning_font = tkfont.Font(font=base_font)
+            self._reserve_warning_font.configure(weight="bold")
+            warning_label.configure(font=self._reserve_warning_font)
+        except tk.TclError:
+            self._reserve_warning_font = None
+        try:
+            background = reserve_line.cget("background")
+            warning_label.configure(background=background)
+        except tk.TclError:
+            pass
+        warning_label.configure(foreground=NON_METAL_WARNING_COLOR)
+        self._reserve_warning_label = warning_label
 
         version_text = display_version(PLUGIN_VERSION)
         version_label = tk.Label(frame, text=version_text, anchor="e", cursor="hand2")
@@ -487,6 +539,22 @@ class edmcmaMiningUI:
         except (tk.TclError, ValueError):
             return
         self._state.auto_unpause_on_event = value
+
+    def _on_warn_non_metallic_change(self, *_: object) -> None:
+        if (
+            self._prefs_warn_non_metallic_var is None
+            or self._updating_warn_non_metallic_var
+        ):
+            return
+        try:
+            value = bool(self._prefs_warn_non_metallic_var.get())
+        except (tk.TclError, ValueError):
+            return
+        if value == self._state.warn_on_non_metallic_ring:
+            return
+        self._state.warn_on_non_metallic_ring = value
+        self._notify_settings_changed()
+        self._refresh_status_line()
 
     def _on_session_logging_change(self, *_: object) -> None:
         if (
@@ -833,12 +901,25 @@ class edmcmaMiningUI:
 
         summary_lines = self._status_summary_lines()
 
-        reserve_line = ""
+        reserve_text = ""
+        warning_text = ""
         if self._state.is_mining:
-            reserve_line = self._format_edsm_info()
-        combined_status = status_text if not reserve_line else f"{status_text}\n{reserve_line}"
+            reserve_text = self._format_edsm_info()
+            warning_text = self._non_metal_warning_text()
 
-        status_var.set(combined_status)
+        status_var.set(status_text)
+        reserve_var = self._reserve_var
+        if reserve_var is not None:
+            reserve_var.set(reserve_text)
+        reserve_line = self._reserve_line
+        if reserve_line is not None:
+            if reserve_text:
+                reserve_line.grid()
+            else:
+                reserve_line.grid_remove()
+        warning_label = self._reserve_warning_label
+        if warning_label is not None:
+            warning_label.configure(text=warning_text, foreground=NON_METAL_WARNING_COLOR)
         summary_var.set("\n".join(summary_lines))
         self._update_summary_tooltip()
         self._update_rpm_indicator()
@@ -921,6 +1002,16 @@ class edmcmaMiningUI:
         ring_type = (self._state.edsm_ring_type or "").strip()
         parts = [value for value in (reserve, ring_type) if value]
         return " ".join(parts)
+
+    def _non_metal_warning_text(self) -> str:
+        if not (self._state.warn_on_non_metallic_ring and self._state.is_mining):
+            return ""
+        ring_type = (self._state.edsm_ring_type or "").strip()
+        if not ring_type:
+            return ""
+        if "metallic" in ring_type.lower():
+            return ""
+        return NON_METAL_WARNING_TEXT
 
     def _update_summary_tooltip(self) -> None:
         tooltip = self._summary_tooltip

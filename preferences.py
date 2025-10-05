@@ -102,6 +102,12 @@ class PreferencesManager:
         state.show_materials_collected = bool(
             self._get_int("edmc_mining_show_materials", int(state.show_materials_collected))
         )
+        state.warn_on_non_metallic_ring = bool(
+            self._get_int(
+                "edmc_mining_warn_non_metallic",
+                int(state.warn_on_non_metallic_ring),
+            )
+        )
         state.refinement_lookback_seconds = clamp_positive_int(
             self._get_int("edmc_mining_refinement_window", state.refinement_lookback_seconds),
             state.refinement_lookback_seconds,
@@ -209,6 +215,11 @@ class PreferencesManager:
             config.set("edmc_mining_show_materials", int(state.show_materials_collected))
         except Exception:
             _log.exception("Failed to persist materials visibility preference")
+
+        try:
+            config.set("edmc_mining_warn_non_metallic", int(state.warn_on_non_metallic_ring))
+        except Exception:
+            _log.exception("Failed to persist non-metallic warning preference")
 
         try:
             config.set(

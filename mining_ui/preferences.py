@@ -80,12 +80,27 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     auto_unpause_cb.grid(row=4, column=0, sticky="w", pady=(0, 4))
     ui._theme.register(auto_unpause_cb)
 
+    ui._prefs_warn_non_metallic_var = tk.BooleanVar(
+        master=general_frame,
+        value=ui._state.warn_on_non_metallic_ring,
+    )
+    ui._prefs_warn_non_metallic_var.trace_add("write", ui._on_warn_non_metallic_change)
+    warn_non_metallic_cb = tk.Checkbutton(
+        general_frame,
+        text="Warn on non-metallic rings. Useful if you laser mine platinum",
+        variable=ui._prefs_warn_non_metallic_var,
+        wraplength=400,
+        justify="left",
+    )
+    warn_non_metallic_cb.grid(row=5, column=0, sticky="w", pady=(0, 4))
+    ui._theme.register(warn_non_metallic_cb)
+
     reset_cap_btn = ttk.Button(
         general_frame,
         text="Reset refined capacity estimates",
         command=ui._on_reset_inferred_capacities,
     )
-    reset_cap_btn.grid(row=5, column=0, sticky="w", pady=(0, 8))
+    reset_cap_btn.grid(row=6, column=0, sticky="w", pady=(0, 8))
     ui._theme.register(reset_cap_btn)
     ui._reset_capacities_btn = reset_cap_btn
 

@@ -80,6 +80,7 @@ class MiningState:
     discord_image_url: str = ""
     show_mined_commodities: bool = True
     show_materials_collected: bool = True
+    warn_on_non_metallic_ring: bool = False
 
     refinement_lookback_seconds: int = 10
     rpm_threshold_red: int = 1
