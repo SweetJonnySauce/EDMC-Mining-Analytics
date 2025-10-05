@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import webbrowser
 from typing import TYPE_CHECKING
 
 try:
@@ -13,60 +14,79 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
+from version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
+
 
 def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     frame = tk.Frame(parent, highlightthickness=0, bd=0)
     ui._theme.register(frame)
 
-    title = tk.Label(frame, text="EDMC Mining Analytics", anchor="w")
-    title.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 2))
+    header = tk.Frame(frame, highlightthickness=0, bd=0)
+    header.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 4))
+    header.columnconfigure(0, weight=1)
+    ui._theme.register(header)
+
+    title = tk.Label(header, text="EDMC Mining Analytics", anchor="w", font=("TkDefaultFont", 10, "bold"))
+    title.grid(row=0, column=0, sticky="w")
     ui._theme.register(title)
+
+    version_text = display_version(PLUGIN_VERSION)
+    version_label = tk.Label(
+        header,
+        text=version_text,
+        anchor="e",
+        cursor="hand2",
+        font=("TkDefaultFont", 9, "underline"),
+    )
+    version_label.grid(row=0, column=1, sticky="e")
+    ui._theme.register(version_label)
+    version_label.configure(foreground="#1e90ff")
+    version_label.bind("<Button-1>", lambda _evt: webbrowser.open(PLUGIN_REPO_URL))
 
     general_frame = tk.LabelFrame(frame, text="General")
     general_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
-    general_frame.columnconfigure(0, weight=1)
+    general_frame.columnconfigure(0, weight=0)
+    general_frame.columnconfigure(1, weight=1)
     ui._theme.register(general_frame)
-
-    desc1 = tk.Label(
-        general_frame,
-        text="Prospecting histogram bin size (percentage range per bin)",
-        anchor="w",
-        justify="left",
-        wraplength=400,
-    )
-    desc1.grid(row=0, column=0, sticky="w", pady=(4, 4))
-    ui._theme.register(desc1)
 
     ui._prefs_bin_var = tk.IntVar(master=general_frame, value=ui._state.histogram_bin_size)
     ui._prefs_bin_var.trace_add("write", ui._on_histogram_bin_change)
-    ttk.Spinbox(
+    bin_spin = ttk.Spinbox(
         general_frame,
         from_=1,
         to=100,
         textvariable=ui._prefs_bin_var,
         width=6,
-    ).grid(row=1, column=0, sticky="w", pady=(0, 8))
+    )
+    bin_spin.grid(row=0, column=0, sticky="w", pady=(4, 2))
 
-    desc2 = tk.Label(
+    bin_label = tk.Label(
+        general_frame,
+        text="Prospecting histogram bin size (%)",
+        anchor="w",
+    )
+    bin_label.grid(row=0, column=0, sticky="w", padx=(80, 0), pady=(4, 2))
+    ui._theme.register(bin_label)
+
+    rate_label = tk.Label(
         general_frame,
         text="Tons/hour auto-update interval (seconds)",
         anchor="w",
-        justify="left",
-        wraplength=400,
     )
-    desc2.grid(row=2, column=0, sticky="w", pady=(0, 4))
-    ui._theme.register(desc2)
+    rate_label.grid(row=1, column=0, sticky="w", padx=(80, 0), pady=(0, 2))
+    ui._theme.register(rate_label)
 
     ui._prefs_rate_var = tk.IntVar(master=general_frame, value=ui._state.rate_interval_seconds)
     ui._prefs_rate_var.trace_add("write", ui._on_rate_interval_change)
-    ttk.Spinbox(
+    rate_spin = ttk.Spinbox(
         general_frame,
         from_=5,
         to=3600,
         increment=5,
         textvariable=ui._prefs_rate_var,
         width=6,
-    ).grid(row=3, column=0, sticky="w", pady=(0, 8))
+    )
+    rate_spin.grid(row=1, column=0, sticky="w", pady=(0, 2))
 
     ui._prefs_auto_unpause_var = tk.BooleanVar(
         master=general_frame, value=ui._state.auto_unpause_on_event
@@ -77,7 +97,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         text="Mining event automatically un-pauses the plugin",
         variable=ui._prefs_auto_unpause_var,
     )
-    auto_unpause_cb.grid(row=4, column=0, sticky="w", pady=(0, 4))
+    auto_unpause_cb.grid(row=2, column=0, columnspan=2, sticky="w", pady=(8, 4))
     ui._theme.register(auto_unpause_cb)
 
     ui._prefs_warn_non_metallic_var = tk.BooleanVar(
@@ -85,22 +105,20 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         value=ui._state.warn_on_non_metallic_ring,
     )
     ui._prefs_warn_non_metallic_var.trace_add("write", ui._on_warn_non_metallic_change)
-    warn_non_metallic_cb = tk.Checkbutton(
+    warn_non_metallic_cb = ttk.Checkbutton(
         general_frame,
-        text="Warn on non-metallic rings. Useful if you laser mine platinum",
+        text="Warn on non-metallic rings (helpful when laser mining platinum)",
         variable=ui._prefs_warn_non_metallic_var,
-        wraplength=400,
-        justify="left",
     )
-    warn_non_metallic_cb.grid(row=5, column=0, sticky="w", pady=(0, 4))
+    warn_non_metallic_cb.grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 6))
     ui._theme.register(warn_non_metallic_cb)
 
     reset_cap_btn = ttk.Button(
         general_frame,
-        text="Reset refined capacity estimates",
+        text="Reset inferred cargo estimates",
         command=ui._on_reset_inferred_capacities,
     )
-    reset_cap_btn.grid(row=6, column=0, sticky="w", pady=(0, 8))
+    reset_cap_btn.grid(row=4, column=0, sticky="w", pady=(0, 4))
     ui._theme.register(reset_cap_btn)
     ui._reset_capacities_btn = reset_cap_btn
 
