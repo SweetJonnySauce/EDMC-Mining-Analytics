@@ -33,7 +33,7 @@ from preferences import PreferencesManager
 from session_recorder import SessionRecorder
 from state import MiningState, reset_mining_state
 from logging_utils import get_logger, set_log_level
-from version import PLUGIN_VERSION, is_newer_version
+from version import PLUGIN_VERSION, is_newer_version, normalize_version
 from mining_analytics_ui import edmcmaMiningUI
 from update_manager import UpdateManager
 
@@ -127,6 +127,7 @@ class MiningAnalyticsPlugin:
 
         self.plugin_dir: Optional[Path] = None
         self._latest_version: Optional[str] = None
+        self._update_ready_version: Optional[str] = None
         self._version_check_started = False
 
     # ------------------------------------------------------------------
@@ -142,7 +143,10 @@ class MiningAnalyticsPlugin:
         self._ensure_version_check()
 
         try:
-            self.update_manager = UpdateManager(self.plugin_dir)
+            self.update_manager = UpdateManager(
+                self.plugin_dir,
+                on_update_ready=self._handle_update_ready,
+            )
             self.update_manager.start()
         except Exception:
             _log.exception("Failed to start auto-update manager")
@@ -152,6 +156,11 @@ class MiningAnalyticsPlugin:
     def plugin_app(self, parent: tk.Widget) -> tk.Frame:
         frame = self.ui.build(parent)
         self._refresh_ui_safe()
+        self.ui.update_version_label(
+            PLUGIN_VERSION,
+            self._latest_version,
+            self._update_ready_version is not None,
+        )
         self.ui.schedule_rate_update()
         return frame
 
@@ -404,6 +413,13 @@ class MiningAnalyticsPlugin:
                 self._latest_version,
                 PLUGIN_VERSION,
             )
+        elif is_newer_version(PLUGIN_VERSION, self._latest_version):
+            _log.debug(
+                "%s is ahead of the published version %s (local %s)",
+                PLUGIN_NAME,
+                self._latest_version,
+                PLUGIN_VERSION,
+            )
         else:
             _log.debug("%s is up to date (version %s)", PLUGIN_NAME, PLUGIN_VERSION)
         self._schedule_version_label_update()
@@ -414,10 +430,34 @@ class MiningAnalyticsPlugin:
             root.after(
                 0,
                 lambda: self.ui.update_version_label(
-                    PLUGIN_VERSION, self._latest_version
+                    PLUGIN_VERSION,
+                    self._latest_version,
+                    self._update_ready_version is not None,
                 ),
             )
 
     def _handle_latest_version(self, latest: str) -> None:
-        self._latest_version = latest
+        latest_value = normalize_version(latest) or latest.strip()
+        self._latest_version = latest_value
+
+        if not is_newer_version(latest_value, PLUGIN_VERSION):
+            self._update_ready_version = None
+        elif (
+            self._update_ready_version is not None
+            and self._update_ready_version != latest_value
+        ):
+            self._update_ready_version = None
+
         self._log_version_status()
+
+    def _handle_update_ready(self, version: str) -> None:
+        ready_version = normalize_version(version) or version.strip()
+        self._update_ready_version = ready_version or None
+
+        if ready_version and (
+            self._latest_version is None
+            or is_newer_version(ready_version, self._latest_version)
+        ):
+            self._latest_version = ready_version
+
+        self._schedule_version_label_update()

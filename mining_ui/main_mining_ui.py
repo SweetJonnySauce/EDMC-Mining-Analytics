@@ -516,13 +516,24 @@ class edmcmaMiningUI:
 
         return frame
 
-    def update_version_label(self, current_version: str, latest_version: Optional[str]) -> None:
+    def update_version_label(
+        self,
+        current_version: str,
+        latest_version: Optional[str],
+        update_ready: bool,
+    ) -> None:
         label = self._version_label
         if label is None or not getattr(label, "winfo_exists", lambda: False)():
             return
         text = display_version(current_version)
-        if latest_version and is_newer_version(latest_version, current_version):
-            text = f"{text} (a newer version exists)"
+        if latest_version:
+            if is_newer_version(latest_version, current_version):
+                if update_ready:
+                    text = f"{text} (restart to update)"
+                else:
+                    text = f"{text} (a newer version exists)"
+            elif is_newer_version(current_version, latest_version):
+                text = f"{text} (development)"
         label.configure(text=text)
 
     def refresh(self) -> None:
