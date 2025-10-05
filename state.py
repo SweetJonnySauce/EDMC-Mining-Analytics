@@ -6,7 +6,7 @@ from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Deque, Dict, List, Optional, Set, Tuple
+from typing import Deque, Dict, Iterable, List, Optional, Set, Tuple
 
 
 ProspectKey = Tuple[str, Tuple[Tuple[str, float], ...]]
@@ -88,6 +88,23 @@ class MiningState:
     recent_refinements: Deque[datetime] = field(default_factory=deque)
     current_rpm: float = 0.0
     max_rpm: float = 0.0
+
+
+def compute_percentage_stats(samples: Iterable[float]) -> Optional[Tuple[float, float, float]]:
+    """Return min/avg/max percentages from an iterable of sample values."""
+
+    cleaned: List[float] = []
+    for sample in samples:
+        try:
+            cleaned.append(float(sample))
+        except (TypeError, ValueError):
+            continue
+    if not cleaned:
+        return None
+    min_val = min(cleaned)
+    max_val = max(cleaned)
+    avg_val = sum(cleaned) / len(cleaned)
+    return min_val, avg_val, max_val
 
 
 def reset_mining_state(state: MiningState) -> None:

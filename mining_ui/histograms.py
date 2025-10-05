@@ -14,6 +14,8 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
+from state import compute_percentage_stats
+
 
 def open_histogram_window(ui: "edmcmaMiningUI", commodity: str) -> None:
     counter = ui._state.prospected_histogram.get(commodity)
@@ -38,7 +40,7 @@ def open_histogram_window(ui: "edmcmaMiningUI", commodity: str) -> None:
     canvas = tk.Canvas(
         top,
         width=360,
-        height=200,
+        height=260,
         background=ui._theme.table_background_color(),
         highlightthickness=0,
     )
@@ -101,8 +103,8 @@ def draw_histogram(
     width = max(1, canvas.winfo_width())
     height = max(1, canvas.winfo_height())
     padding_x = 24
-    padding_top = 24
-    padding_bottom = 36
+    padding_top = 80
+    padding_bottom = 48
     min_height = padding_top + padding_bottom + 1
     if height < min_height:
         height = float(min_height)
@@ -110,6 +112,9 @@ def draw_histogram(
     full_range = list(range(bins[0], bins[-1] + 1))
     size = max(1, ui._state.histogram_bin_size)
     labels = {bin_index: ui._format_bin_label(bin_index, size) for bin_index in full_range}
+
+    stats = compute_percentage_stats(ui._state.prospected_samples.get(commodity, []))
+    average_percent = stats[1] if stats else None
 
     label_font = tkfont.nametofont("TkDefaultFont")
     max_label_width = max((label_font.measure(text) for text in labels.values()), default=0)
@@ -119,6 +124,8 @@ def draw_histogram(
     bin_width = max(min_bin_width, available_width / bin_count)
 
     heading_text = f"{ui._format_cargo_name(commodity)} histogram"
+    if average_percent is not None:
+        heading_text += f" — avg {average_percent:.1f}%"
     try:
         title_font = tkfont.nametofont("TkCaptionFont")
     except (tk.TclError, RuntimeError):
@@ -134,14 +141,22 @@ def draw_histogram(
 
     max_count = max((counter.get(bin_index, 0) for bin_index in full_range), default=0) or 1
     if ui._theme.is_dark_theme:
-        text_color = ui._theme.highlight_text_color()
-        bar_color = ui._theme.default_text_color()
+        text_color = ui._theme.default_text_color()
+        bar_color = ui._theme.button_background_color()
     else:
         text_color = ui._theme.table_foreground_color()
         bar_color = "#4a90e2"
     bar_area_height = max(1, height - padding_top - padding_bottom)
     bar_base_y = height - padding_bottom
     label_y = bar_base_y + 6
+
+    canvas.create_text(
+        width / 2,
+        padding_top / 2,
+        text=heading_text,
+        fill=text_color,
+        font=title_font,
+    )
 
     for idx, bin_index in enumerate(full_range):
         count = counter.get(bin_index, 0)

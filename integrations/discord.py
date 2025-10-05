@@ -266,7 +266,13 @@ def _format_top_commodities(commodities: Dict[str, Any]) -> Optional[str]:
         tons = info.get("gathered", {}).get("tons", 0)
         tph = info.get("tons_per_hour")
         tph_text = f"{tph:.1f} TPH" if isinstance(tph, (int, float)) else "-"
-        lines.append(f"{name}: {tons}t ({tph_text})")
+        avg_fragment = ""
+        stats = info.get("percentage_stats")
+        if isinstance(stats, dict):
+            avg_value = stats.get("avg")
+            if isinstance(avg_value, (int, float)):
+                avg_fragment = f" | Avg {avg_value:.1f}%"
+        lines.append(f"{name}: {tons}t ({tph_text}){avg_fragment}")
     value = "\n".join(lines)
     return _clamp_text(value, 1024) if value else None
 

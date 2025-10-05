@@ -17,7 +17,7 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
 from tooltip import TreeTooltip, WidgetTooltip
-from state import MiningState, update_rpm
+from state import MiningState, compute_percentage_stats, update_rpm
 from integrations.mining_inara import InaraClient
 from preferences import (
     clamp_bin_size,
@@ -299,7 +299,7 @@ class edmcmaMiningUI:
         self._cargo_tree.column("present", anchor="center", width=60, stretch=False)
         self._cargo_tree.column("percent", anchor="center", width=60, stretch=False)
         self._cargo_tree.column("total", anchor="center", width=80, stretch=False)
-        self._cargo_tree.column("range", anchor="center", width=120, stretch=False)
+        self._cargo_tree.column("range", anchor="center", width=140, stretch=False)
         self._cargo_tree.column("tph", anchor="center", width=80, stretch=False)
         self._cargo_tree.pack(fill="both", expand=True)
         self._cargo_tree.tag_configure(
@@ -330,7 +330,7 @@ class edmcmaMiningUI:
             )
             self._cargo_tooltip.set_heading_tooltip(
                 "range",
-                "Min/Max percentages of this commodity on an asteroid when found.",
+                "Minimum, average, and maximum percentages of this commodity on an asteroid when found.",
             )
             self._cargo_tooltip.set_heading_tooltip(
                 "tph",
@@ -1595,14 +1595,21 @@ class edmcmaMiningUI:
         samples = self._state.prospected_samples.get(commodity)
         if not samples:
             return ""
-        cleaned = [value for value in samples if isinstance(value, (int, float))]
-        if not cleaned:
+        numeric_samples: list[float] = []
+        for value in samples:
+            try:
+                numeric_samples.append(float(value))
+            except (TypeError, ValueError):
+                continue
+        if not numeric_samples:
             return ""
-        min_val = min(cleaned)
-        max_val = max(cleaned)
-        if abs(max_val - min_val) < 1e-6:
-            return f"{min_val:.1f}%"
-        return f"{min_val:.1f}%-{max_val:.1f}%"
+        if len(numeric_samples) == 1:
+            return f"{numeric_samples[0]:.1f}%"
+        stats = compute_percentage_stats(numeric_samples)
+        if not stats:
+            return ""
+        low, avg, high = stats
+        return f"{low:.1f}%-{avg:.1f}%-{high:.1f}%"
 
     def _compute_total_tph(self) -> Optional[float]:
         if not self._state.mining_start:

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple
 
 from logging_utils import get_logger
-from state import MiningState, update_rpm
+from state import MiningState, compute_percentage_stats, update_rpm
 from integrations.discord import (
     build_summary_message,
     build_test_message,
@@ -317,6 +317,17 @@ class SessionRecorder:
             tph = self._compute_rate(total, elapsed_seconds) if elapsed_seconds else None
             if tph is not None:
                 tph = round(tph, 3)
+            stats = compute_percentage_stats(samples)
+            percentage_stats: Optional[dict[str, Optional[float]]]
+            if stats:
+                min_pct, avg_pct, max_pct = stats
+                percentage_stats = {
+                    "min": round(min_pct, 3),
+                    "avg": round(avg_pct, 3),
+                    "max": round(max_pct, 3),
+                }
+            else:
+                percentage_stats = None
             result[friendly_name] = {
                 "asteroids_prospected": sample_count,
                 "percentage_of_asteroids": percent,
@@ -325,6 +336,7 @@ class SessionRecorder:
                     "elapsed_seconds": elapsed_seconds,
                 },
                 "percentage_breakdown": breakdown,
+                "percentage_stats": percentage_stats,
                 "tons_per_hour": tph,
             }
         return result
@@ -519,7 +531,13 @@ class SessionRecorder:
                 tons = info.get("gathered", {}).get("tons", 0)
                 tph = info.get("tons_per_hour")
                 tph_text = f"{tph:.1f} TPH" if isinstance(tph, (int, float)) else "-"
-                lines.append(f"• {name}: {tons}t ({tph_text})")
+                avg_pct = None
+                if isinstance(info.get("percentage_stats"), dict):
+                    avg_candidate = info["percentage_stats"].get("avg")
+                    if isinstance(avg_candidate, (int, float)):
+                        avg_pct = avg_candidate
+                avg_fragment = f" | Avg {avg_pct:.1f}%" if avg_pct is not None else ""
+                lines.append(f"• {name}: {tons}t ({tph_text}){avg_fragment}")
 
         materials = meta.get("materials", [])
         if materials:
