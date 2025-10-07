@@ -28,6 +28,7 @@ except ImportError:  # pragma: no cover
 
 from integrations.mining_inara import InaraClient
 from integrations.mining_edsm import EdsmClient
+from integrations.edmcoverlay import EdmcOverlayHelper
 from journal import JournalProcessor
 from preferences import PreferencesManager
 from session_recorder import SessionRecorder
@@ -104,7 +105,11 @@ class MiningAnalyticsPlugin:
         self.inara = InaraClient(self.state)
         self.edsm = EdsmClient(self.state, self._schedule_ui_refresh)
         self.session_recorder = SessionRecorder(self.state)
+        self.overlay_helper = EdmcOverlayHelper(self.state)
+        self.overlay_helper.refresh_availability()
         self.update_manager: Optional[UpdateManager] = None
+        self._overlay_refresh_job: Optional[str] = None
+        self._overlay_enabled_last: bool = False
         self.ui = edmcmaMiningUI(
             self.state,
             self.inara,
@@ -112,7 +117,7 @@ class MiningAnalyticsPlugin:
             on_pause_changed=self._handle_pause_change,
             on_reset_inferred_capacities=self._handle_reset_inferred_capacities,
             on_test_webhook=self._handle_test_webhook,
-            on_settings_changed=self._persist_preferences,
+            on_settings_changed=self._on_ui_settings_changed,
         )
         self.journal = JournalProcessor(
             self.state,
@@ -139,6 +144,10 @@ class MiningAnalyticsPlugin:
         self._sync_logger_level()
         _log.info("Starting %s v%s", PLUGIN_NAME, PLUGIN_VERSION)
         self.preferences.load(self.state)
+        self.overlay_helper.refresh_availability()
+        self._overlay_enabled_last = self.state.overlay_enabled
+        if self.state.overlay_enabled:
+            self.overlay_helper.trigger_preview(duration_seconds=5)
         self.inara.load_mapping(self.plugin_dir / "commodity_links.json")
         self._ensure_version_check()
 
@@ -187,6 +196,8 @@ class MiningAnalyticsPlugin:
         self._persist_preferences()
         self.ui.cancel_rate_update()
         self.ui.close_histogram_windows()
+        self._cancel_overlay_refresh()
+        self.overlay_helper.clear_preview()
         reset_mining_state(self.state)
         self._refresh_ui_safe()
 
@@ -240,6 +251,57 @@ class MiningAnalyticsPlugin:
             self.ui.refresh()
         except Exception:
             _log.exception("Failed to refresh Mining Analytics UI")
+        self._refresh_overlay_now()
+        self._schedule_overlay_refresh()
+
+    def _refresh_overlay_now(self) -> None:
+        try:
+            self.overlay_helper.refresh_availability()
+            self.overlay_helper.push_metrics()
+        except Exception:
+            _log.exception("Failed to update EDMCOverlay metrics")
+
+    def _schedule_overlay_refresh(self) -> None:
+        if self._overlay_refresh_job is not None:
+            return
+        if not self._should_refresh_overlay():
+            return
+        frame = self.ui.get_root()
+        if frame is None or not frame.winfo_exists():
+            return
+        interval_ms = max(200, int(self.state.overlay_refresh_interval_ms or 1000))
+        delay_ms = interval_ms
+        preview_remaining = self.overlay_helper.preview_seconds_remaining()
+        if preview_remaining is not None and preview_remaining > 0:
+            preview_delay = int(preview_remaining * 1000) + 200
+            delay_ms = min(delay_ms, max(200, preview_delay))
+        self._overlay_refresh_job = frame.after(delay_ms, self._overlay_tick)
+
+    def _cancel_overlay_refresh(self) -> None:
+        if self._overlay_refresh_job is None:
+            return
+        frame = self.ui.get_root()
+        if frame and frame.winfo_exists():
+            try:
+                frame.after_cancel(self._overlay_refresh_job)
+            except Exception:
+                pass
+        self._overlay_refresh_job = None
+
+    def _overlay_tick(self) -> None:
+        self._overlay_refresh_job = None
+        self._refresh_overlay_now()
+        if self._should_refresh_overlay():
+            self._schedule_overlay_refresh()
+
+    def _should_refresh_overlay(self) -> bool:
+        if not self.state.overlay_enabled:
+            return False
+        if self.state.is_mining and bool(self.state.overlay_available):
+            return True
+        if self.overlay_helper.is_preview_active() and bool(self.state.overlay_available):
+            return True
+        return False
 
     def _schedule_ui_refresh(self) -> None:
         frame = self.ui.get_root()
@@ -257,11 +319,28 @@ class MiningAnalyticsPlugin:
         except Exception:
             _log.exception("Failed to persist plugin preferences")
 
+    def _on_ui_settings_changed(self) -> None:
+        self._persist_preferences()
+        was_enabled = self._overlay_enabled_last
+        self._overlay_enabled_last = self.state.overlay_enabled
+        if self.state.overlay_enabled and not was_enabled:
+            self.overlay_helper.trigger_preview(duration_seconds=5)
+        elif not self.state.overlay_enabled and was_enabled:
+            self.overlay_helper.clear_preview()
+        self._cancel_overlay_refresh()
+        self._refresh_overlay_now()
+        self._schedule_overlay_refresh()
+
     def _on_session_start(self) -> None:
         self.ui.schedule_rate_update()
+        self.overlay_helper.clear_preview()
+        self._cancel_overlay_refresh()
+        self._refresh_overlay_now()
+        self._schedule_overlay_refresh()
 
     def _on_session_end(self) -> None:
         self.ui.cancel_rate_update()
+        self._cancel_overlay_refresh()
         self._refresh_ui_safe()
         self._persist_inferred_capacities()
 

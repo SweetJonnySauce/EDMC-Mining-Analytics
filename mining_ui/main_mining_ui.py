@@ -19,11 +19,14 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 from tooltip import TreeTooltip, WidgetTooltip
 from state import MiningState, compute_percentage_stats, update_rpm
 from integrations.mining_inara import InaraClient
+from integrations.edmcoverlay import determine_rpm_color
 from preferences import (
     clamp_bin_size,
     clamp_positive_int,
     clamp_rate_interval,
     clamp_session_retention,
+    clamp_overlay_coordinate,
+    clamp_overlay_interval,
 )
 from logging_utils import get_logger
 from version import PLUGIN_VERSION, PLUGIN_REPO_URL, display_version, is_newer_version
@@ -40,9 +43,6 @@ from mining_ui.histograms import (
 
 _log = get_logger("ui")
 
-RPM_COLOR_RED = "#e74c3c"
-RPM_COLOR_YELLOW = "#f7931e"
-RPM_COLOR_GREEN = "#2ecc71"
 NON_METAL_WARNING_COLOR = "#ff4d4d"
 NON_METAL_WARNING_TEXT = " (Warning: Non-Metallic ring)"
 
@@ -128,12 +128,18 @@ class edmcmaMiningUI:
         self._prefs_send_reset_summary_var: Optional[tk.BooleanVar] = None
         self._prefs_image_var: Optional[tk.StringVar] = None
         self._prefs_warn_non_metallic_var: Optional[tk.BooleanVar] = None
+        self._prefs_overlay_enabled_var: Optional[tk.BooleanVar] = None
+        self._prefs_overlay_x_var: Optional[tk.IntVar] = None
+        self._prefs_overlay_y_var: Optional[tk.IntVar] = None
+        self._prefs_overlay_interval_var: Optional[tk.IntVar] = None
         self._reset_capacities_btn: Optional[ttk.Button] = None
         self._send_summary_cb: Optional[ttk.Checkbutton] = None
         self._send_reset_summary_cb: Optional[ttk.Checkbutton] = None
         self._test_webhook_btn: Optional[ttk.Button] = None
         self._session_path_feedback: Optional[tk.StringVar] = None
         self._session_path_feedback_after: Optional[str] = None
+        self._overlay_controls: list[tk.Widget] = []
+        self._overlay_hint_label: Optional[tk.Label] = None
 
         self._updating_bin_var = False
         self._updating_rate_var = False
@@ -149,6 +155,10 @@ class edmcmaMiningUI:
         self._updating_send_reset_summary_var = False
         self._updating_image_var = False
         self._updating_warn_non_metallic_var = False
+        self._updating_overlay_enabled_var = False
+        self._updating_overlay_x_var = False
+        self._updating_overlay_y_var = False
+        self._updating_overlay_interval_var = False
 
         self._rate_update_job: Optional[str] = None
         self._content_collapsed = False
@@ -541,6 +551,7 @@ class edmcmaMiningUI:
         self._refresh_status_line()
         self._populate_tables()
         self._render_range_links()
+        self._update_overlay_controls()
 
     def _on_auto_unpause_change(self, *_: object) -> None:
         if self._prefs_auto_unpause_var is None:
@@ -566,6 +577,91 @@ class edmcmaMiningUI:
         self._state.warn_on_non_metallic_ring = value
         self._notify_settings_changed()
         self._refresh_status_line()
+
+    def _on_overlay_enabled_change(self, *_: object) -> None:
+        if self._prefs_overlay_enabled_var is None or self._updating_overlay_enabled_var:
+            return
+        try:
+            value = bool(self._prefs_overlay_enabled_var.get())
+        except (tk.TclError, ValueError):
+            return
+        if value == self._state.overlay_enabled:
+            return
+        self._state.overlay_enabled = value
+        self._notify_settings_changed()
+
+    def _on_overlay_anchor_x_change(self, *_: object) -> None:
+        if self._prefs_overlay_x_var is None or self._updating_overlay_x_var:
+            return
+        try:
+            raw_value = int(self._prefs_overlay_x_var.get())
+        except (tk.TclError, TypeError, ValueError):
+            return
+        clamped = clamp_overlay_coordinate(raw_value, self._state.overlay_anchor_x)
+        if clamped == self._state.overlay_anchor_x:
+            return
+        self._state.overlay_anchor_x = clamped
+        self._updating_overlay_x_var = True
+        self._prefs_overlay_x_var.set(clamped)
+        self._updating_overlay_x_var = False
+        self._notify_settings_changed()
+
+    def _on_overlay_anchor_y_change(self, *_: object) -> None:
+        if self._prefs_overlay_y_var is None or self._updating_overlay_y_var:
+            return
+        try:
+            raw_value = int(self._prefs_overlay_y_var.get())
+        except (tk.TclError, TypeError, ValueError):
+            return
+        clamped = clamp_overlay_coordinate(raw_value, self._state.overlay_anchor_y)
+        if clamped == self._state.overlay_anchor_y:
+            return
+        self._state.overlay_anchor_y = clamped
+        self._updating_overlay_y_var = True
+        self._prefs_overlay_y_var.set(clamped)
+        self._updating_overlay_y_var = False
+        self._notify_settings_changed()
+
+    def _on_overlay_interval_change(self, *_: object) -> None:
+        if self._prefs_overlay_interval_var is None or self._updating_overlay_interval_var:
+            return
+        try:
+            raw_value = int(self._prefs_overlay_interval_var.get())
+        except (tk.TclError, TypeError, ValueError):
+            return
+        clamped = clamp_overlay_interval(raw_value, self._state.overlay_refresh_interval_ms)
+        if clamped == self._state.overlay_refresh_interval_ms:
+            return
+        self._state.overlay_refresh_interval_ms = clamped
+        self._updating_overlay_interval_var = True
+        self._prefs_overlay_interval_var.set(clamped)
+        self._updating_overlay_interval_var = False
+        self._notify_settings_changed()
+
+    def _update_overlay_controls(self) -> None:
+        controls = tuple(self._overlay_controls)
+        available = self._state.overlay_available
+        desired_state = tk.NORMAL if available else tk.DISABLED
+        for widget in controls:
+            if widget is None:
+                continue
+            try:
+                widget.configure(state=desired_state)
+            except tk.TclError:
+                continue
+        hint = self._overlay_hint_label
+        if hint is not None:
+            try:
+                if available:
+                    hint.configure(
+                        text="Displays metrics in-game via EDMCOverlay (anchored from the top-left corner)."
+                    )
+                else:
+                    hint.configure(
+                        text="EDMCOverlay plugin not detected. Install it to enable in-game metrics."
+                    )
+            except tk.TclError:
+                pass
 
     def _on_session_logging_change(self, *_: object) -> None:
         if (
@@ -1101,23 +1197,8 @@ class edmcmaMiningUI:
             )
 
     def _determine_rpm_color(self, rpm: float) -> str:
-        state = self._state
-        try:
-            green_threshold = int(state.rpm_threshold_green)
-            yellow_threshold = int(state.rpm_threshold_yellow)
-            red_threshold = int(state.rpm_threshold_red)
-        except (TypeError, ValueError):
-            green_threshold = state.rpm_threshold_green
-            yellow_threshold = state.rpm_threshold_yellow
-            red_threshold = state.rpm_threshold_red
-
-        if rpm >= max(1, green_threshold):
-            return RPM_COLOR_GREEN
-        if rpm >= max(1, yellow_threshold):
-            return RPM_COLOR_YELLOW
-        if rpm >= max(1, red_threshold):
-            return RPM_COLOR_RED
-        return self._theme.default_text_color()
+        default_color = self._theme.default_text_color()
+        return determine_rpm_color(self._state, rpm, default=default_color)
 
     def _start_rpm_animation(self, target_rpm: float) -> None:
         self._rpm_target_value = target_rpm
@@ -1165,6 +1246,7 @@ class edmcmaMiningUI:
             rpm_var.set(f"{value:.1f}")
 
         color = self._determine_rpm_color(value)
+        self._state.rpm_display_color = color
         if self._rpm_label is not None:
             try:
                 self._rpm_label.configure(foreground=color)

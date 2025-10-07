@@ -50,6 +50,22 @@ def clamp_positive_int(value: int, default: int, maximum: int = 10_000) -> int:
     return max(1, min(maximum, result))
 
 
+def clamp_overlay_coordinate(value: int, default: int) -> int:
+    try:
+        result = int(value)
+    except (TypeError, ValueError):
+        result = default
+    return max(0, min(4000, result))
+
+
+def clamp_overlay_interval(value: int, default: int) -> int:
+    try:
+        result = int(value)
+    except (TypeError, ValueError):
+        result = default
+    return max(200, min(60_000, result))
+
+
 class PreferencesManager:
     """Loads and persists user preferences via EDMC's config object."""
 
@@ -72,6 +88,10 @@ class PreferencesManager:
             state.rpm_threshold_red = 1
             state.rpm_threshold_yellow = 20
             state.rpm_threshold_green = 40
+            state.overlay_enabled = False
+            state.overlay_anchor_x = 40
+            state.overlay_anchor_y = 120
+            state.overlay_refresh_interval_ms = 1000
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
@@ -135,6 +155,19 @@ class PreferencesManager:
             raw_green_threshold,
             40,
             maximum=10_000,
+        )
+        state.overlay_enabled = bool(self._get_int("edmc_mining_overlay_enabled", int(state.overlay_enabled)))
+        state.overlay_anchor_x = clamp_overlay_coordinate(
+            self._get_int("edmc_mining_overlay_anchor_x", state.overlay_anchor_x),
+            state.overlay_anchor_x,
+        )
+        state.overlay_anchor_y = clamp_overlay_coordinate(
+            self._get_int("edmc_mining_overlay_anchor_y", state.overlay_anchor_y),
+            state.overlay_anchor_y,
+        )
+        state.overlay_refresh_interval_ms = clamp_overlay_interval(
+            self._get_int("edmc_mining_overlay_refresh_ms", state.overlay_refresh_interval_ms),
+            state.overlay_refresh_interval_ms,
         )
 
     def save(self, state: MiningState) -> None:
@@ -252,6 +285,35 @@ class PreferencesManager:
             )
         except Exception:
             _log.exception("Failed to persist RPM green threshold")
+
+        try:
+            config.set("edmc_mining_overlay_enabled", int(state.overlay_enabled))
+        except Exception:
+            _log.exception("Failed to persist overlay enabled preference")
+
+        try:
+            config.set(
+                "edmc_mining_overlay_anchor_x",
+                clamp_overlay_coordinate(state.overlay_anchor_x, state.overlay_anchor_x),
+            )
+        except Exception:
+            _log.exception("Failed to persist overlay anchor X preference")
+
+        try:
+            config.set(
+                "edmc_mining_overlay_anchor_y",
+                clamp_overlay_coordinate(state.overlay_anchor_y, state.overlay_anchor_y),
+            )
+        except Exception:
+            _log.exception("Failed to persist overlay anchor Y preference")
+
+        try:
+            config.set(
+                "edmc_mining_overlay_refresh_ms",
+                clamp_overlay_interval(state.overlay_refresh_interval_ms, state.overlay_refresh_interval_ms),
+            )
+        except Exception:
+            _log.exception("Failed to persist overlay refresh interval preference")
 
     @staticmethod
     def _get_int(key: str, default: int) -> int:

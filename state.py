@@ -93,6 +93,12 @@ class MiningState:
     edsm_reserve_level: Optional[str] = None
     edsm_ring_type: Optional[str] = None
     edsm_body_name: Optional[str] = None
+    overlay_enabled: bool = False
+    overlay_anchor_x: int = 40
+    overlay_anchor_y: int = 120
+    overlay_available: bool = False
+    rpm_display_color: str = "#ffffff"
+    overlay_refresh_interval_ms: int = 1000
 
 
 def compute_percentage_stats(samples: Iterable[float]) -> Optional[Tuple[float, float, float]]:
@@ -153,6 +159,8 @@ def reset_mining_state(state: MiningState) -> None:
     state.recent_refinements.clear()
     state.current_rpm = 0.0
     state.max_rpm = 0.0
+    state.rpm_display_color = "#ffffff"
+    state.overlay_refresh_interval_ms = 1000
 
 
 def recompute_histograms(state: MiningState) -> None:
