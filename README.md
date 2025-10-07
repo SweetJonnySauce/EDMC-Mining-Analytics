@@ -33,6 +33,9 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 
 <img width="487" height="797" alt="image" src="https://github.com/user-attachments/assets/9975568a-97a8-4d1d-ab44-5dc32948301f" />
 
+### Optionally, you can send HUD stats to EDMCOverlay
+
+<img width="929" height="425" alt="image" src="https://github.com/user-attachments/assets/d98cb973-fadd-4850-abd0-25248e78e918" />
 
 
 
