@@ -1,0 +1,56 @@
+name: Create Release Package
+
+on:
+  push:
+    tags:
+      - '*'   # Trigger on any tag
+  release:
+    types: [published]  # Trigger when a release is published
+
+jobs:
+  package:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Get current tag (if any)
+        id: get_tag
+        run: |
+          echo "tag_name=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+
+      - name: Prepare release folder
+        run: |
+          mkdir -p release/EDMC-Mining-Analytics
+          # Copy tracked (non-ignored) files into the package folder, excluding .github, .gitignore, and Markdown files
+          git ls-files -z \
+            | python3 -c "import sys; data=sys.stdin.buffer.read().split(b'\0'); files=[f for f in data if f and not f.lower().endswith(b'.md') and not f.startswith(b'.github/') and f != b'.gitignore']; sys.stdout.buffer.write(b''.join(f + b'\0' for f in files))" \
+            | rsync -a --from0 --files-from=- ./ release/EDMC-Mining-Analytics/
+
+      - name: Create archive
+        run: |
+          cd release
+          zip -r ../EDMC-Mining-Analytics-${{ steps.get_tag.outputs.tag_name || github.run_number }}.zip EDMC-Mining-Analytics
+        shell: bash
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: EDMC-Mining-Analytics-${{ steps.get_tag.outputs.tag_name || github.run_number }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload as artifact (for tag pushes)
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: EDMC-Mining-Analytics-${{ steps.get_tag.outputs.tag_name || github.run_number }}.zip
+          path: EDMC-Mining-Analytics-${{ steps.get_tag.outputs.tag_name || github.run_number }}.zip
