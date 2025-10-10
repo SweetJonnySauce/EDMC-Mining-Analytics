@@ -1323,7 +1323,7 @@ class edmcmaMiningUI:
                 item = cargo_tree.insert(
                     "",
                     "end",
-                    values=("No mined commodities yet", "", "", "", "", ""),
+                    values=("No mined commodities", "", "", "", "", ""),
                     tags=("even",),
                 )
                 if self._cargo_tooltip:
