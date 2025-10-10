@@ -97,65 +97,119 @@ class ThemeAdapter:
         return self._fallback_text_fg
 
     def treeview_style(self) -> str:
-        background = self.table_background_color()
-        foreground = self.table_foreground_color()
-        header_bg = self.table_header_background_color()
-        header_fg = self.table_header_foreground_color()
-        header_hover = self.table_header_hover_color()
-        header_font = self._style.lookup("Treeview.Heading", "font") or ("TkDefaultFont", 9, "bold")
+        """Return a style name for Treeviews used by this plugin.
 
-        selected_bg = self.button_active_background_color()
-        selected_fg = self.button_foreground_color()
+        - Uses a plugin-scoped style so we don't clobber EDMC's global styles.
+        - In light theme, avoid overriding background/foreground so EDMC's
+          default theme remains readable.
+        - In dark theme, explicitly set colors for readability.
+        """
+        style_name = "EDMCMA.Treeview"
+        heading_name = f"{style_name}.Heading"
 
-        self._style.configure(
-            "Treeview",
-            background=background,
-            fieldbackground=background,
-            foreground=foreground,
-            bordercolor=header_bg,
-            borderwidth=0,
-            relief=tk.FLAT,
-            highlightthickness=0,
-            rowheight=22,
+        # Ensure the style objects exist but keep them inheriting defaults
+        # unless we're on dark theme.
+        try:
+            self._style.configure(style_name, rowheight=22)
+        except tk.TclError:
+            pass
+
+        header_font = (
+            self._style.lookup("Treeview.Heading", "font") or ("TkDefaultFont", 9, "bold")
         )
-        self._style.map(
-            "Treeview",
-            background=[("selected", selected_bg)],
-            foreground=[("selected", selected_fg)],
-        )
-        self._style.configure(
-            "Treeview.Heading",
-            background=header_bg,
-            foreground=header_fg,
-            relief="flat",
-            borderwidth=0,
-            font=header_font,
-        )
-        self._style.map(
-            "Treeview.Heading",
-            background=[("active", header_hover)],
-            foreground=[("active", header_fg)],
-        )
-        return "Treeview"
+
+        if self._is_dark_theme:
+            background = self.table_background_color()
+            foreground = self.table_foreground_color()
+            header_bg = self.table_header_background_color()
+            header_fg = self.table_header_foreground_color()
+            header_hover = self.table_header_hover_color()
+            selected_bg = self.button_active_background_color()
+            selected_fg = self.button_foreground_color()
+
+            # Configure our scoped style with explicit dark colors
+            self._style.configure(
+                style_name,
+                background=background,
+                fieldbackground=background,
+                foreground=foreground,
+                bordercolor=header_bg,
+                borderwidth=0,
+                relief=tk.FLAT,
+                highlightthickness=0,
+            )
+            self._style.map(
+                style_name,
+                background=[("selected", selected_bg)],
+                foreground=[("selected", selected_fg)],
+            )
+            self._style.configure(
+                heading_name,
+                background=header_bg,
+                foreground=header_fg,
+                relief="flat",
+                borderwidth=0,
+                font=header_font,
+            )
+            self._style.map(
+                heading_name,
+                background=[("active", header_hover)],
+                foreground=[("active", header_fg)],
+            )
+        else:
+            # Light theme: inherit EDMC defaults; only set font to keep header tidy.
+            try:
+                self._style.configure(heading_name, font=header_font)
+            except tk.TclError:
+                pass
+
+        return style_name
 
     def table_background_color(self) -> str:
-        return (
-            self._style.lookup("Treeview", "background")
-            or self._style.lookup("TFrame", "background")
-            or self._fallback_table_bg
-        )
+        # Prefer existing theme value; fall back to a safe default for our palettes.
+        val = None
+        try:
+            val = self._style.lookup("Treeview", "background")
+        except tk.TclError:
+            val = None
+        if not val:
+            try:
+                val = self._style.lookup("TFrame", "background")
+            except tk.TclError:
+                val = None
+        if val:
+            return val
+        # If no style-provided value, prefer a neutral system default on light theme
+        # to avoid unreadable contrasts.
+        if not self._is_dark_theme:
+            return "SystemWindow"
+        return self._fallback_table_bg
 
     def table_foreground_color(self) -> str:
-        return (
-            self._style.lookup("Treeview", "foreground")
-            or self._style.lookup("TLabel", "foreground")
-            or self._fallback_table_header_fg
-        )
+        try:
+            val = self._style.lookup("Treeview", "foreground")
+        except tk.TclError:
+            val = None
+        if not val:
+            try:
+                val = self._style.lookup("TLabel", "foreground")
+            except tk.TclError:
+                val = None
+        if val:
+            return val
+        if not self._is_dark_theme:
+            return "SystemWindowText"
+        return self._fallback_table_header_fg
 
     def table_stripe_color(self) -> str:
+        # Derive a subtle stripe from the base background. On light theme,
+        # keep contrast very low to avoid heavy dark rows.
         base = self.table_background_color()
-        adjusted = self._tint_color(base, 1.08 if self._is_dark_theme else 0.92)
-        return adjusted or self._fallback_table_stripe
+        factor = 1.08 if self._is_dark_theme else 0.98
+        adjusted = self._tint_color(base, factor)
+        if adjusted:
+            return adjusted
+        return self._fallback_table_stripe
 
     def table_header_background_color(self) -> str:
         return self._fallback_table_header_bg

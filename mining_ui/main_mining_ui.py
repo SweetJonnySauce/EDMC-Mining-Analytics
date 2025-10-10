@@ -365,16 +365,20 @@ class edmcmaMiningUI:
         self._cargo_tree.column("range", anchor="center", width=140, stretch=False)
         self._cargo_tree.column("tph", anchor="center", width=80, stretch=False)
         self._cargo_tree.pack(fill="both", expand=True)
-        self._cargo_tree.tag_configure(
-            "even",
-            background=self._theme.table_background_color(),
-            foreground=self._theme.table_foreground_color(),
-        )
-        self._cargo_tree.tag_configure(
-            "odd",
-            background=self._theme.table_stripe_color(),
-            foreground=self._theme.table_foreground_color(),
-        )
+        # Only apply explicit zebra striping on dark theme; in the EDMC
+        # default (light) theme we inherit platform colors to keep rows
+        # readable.
+        if self._theme.is_dark_theme:
+            self._cargo_tree.tag_configure(
+                "even",
+                background=self._theme.table_background_color(),
+                foreground=self._theme.table_foreground_color(),
+            )
+            self._cargo_tree.tag_configure(
+                "odd",
+                background=self._theme.table_stripe_color(),
+                foreground=self._theme.table_foreground_color(),
+            )
         self._theme.register(self._cargo_tree)
 
         self._cargo_tooltip = TreeTooltip(self._cargo_tree)
@@ -480,16 +484,17 @@ class edmcmaMiningUI:
         self._materials_tree.column("material", anchor="w", stretch=True, width=160)
         self._materials_tree.column("quantity", anchor="center", stretch=False, width=80)
         self._materials_tree.pack(fill="both", expand=True)
-        self._materials_tree.tag_configure(
-            "even",
-            background=self._theme.table_background_color(),
-            foreground=self._theme.table_foreground_color(),
-        )
-        self._materials_tree.tag_configure(
-            "odd",
-            background=self._theme.table_stripe_color(),
-            foreground=self._theme.table_foreground_color(),
-        )
+        if self._theme.is_dark_theme:
+            self._materials_tree.tag_configure(
+                "even",
+                background=self._theme.table_background_color(),
+                foreground=self._theme.table_foreground_color(),
+            )
+            self._materials_tree.tag_configure(
+                "odd",
+                background=self._theme.table_stripe_color(),
+                foreground=self._theme.table_foreground_color(),
+            )
         self._theme.register(self._materials_tree)
 
         self._cargo_tree.bind("<Configure>", lambda _e: self._render_range_links(), add="+")
@@ -1292,16 +1297,17 @@ class edmcmaMiningUI:
     def _populate_tables(self) -> None:
         cargo_tree = self._cargo_tree
         if cargo_tree and getattr(cargo_tree, "winfo_exists", lambda: False)():
-            cargo_tree.tag_configure(
-                "even",
-                background=self._theme.table_background_color(),
-                foreground=self._theme.table_foreground_color(),
-            )
-            cargo_tree.tag_configure(
-                "odd",
-                background=self._theme.table_stripe_color(),
-                foreground=self._theme.table_foreground_color(),
-            )
+            if self._theme.is_dark_theme:
+                cargo_tree.tag_configure(
+                    "even",
+                    background=self._theme.table_background_color(),
+                    foreground=self._theme.table_foreground_color(),
+                )
+                cargo_tree.tag_configure(
+                    "odd",
+                    background=self._theme.table_stripe_color(),
+                    foreground=self._theme.table_foreground_color(),
+                )
             cargo_tree.delete(*cargo_tree.get_children())
             if self._cargo_tooltip:
                 self._cargo_tooltip.clear()
@@ -1355,16 +1361,17 @@ class edmcmaMiningUI:
 
         materials_tree = self._materials_tree
         if materials_tree and getattr(materials_tree, "winfo_exists", lambda: False)():
-            materials_tree.tag_configure(
-                "even",
-                background=self._theme.table_background_color(),
-                foreground=self._theme.table_foreground_color(),
-            )
-            materials_tree.tag_configure(
-                "odd",
-                background=self._theme.table_stripe_color(),
-                foreground=self._theme.table_foreground_color(),
-            )
+            if self._theme.is_dark_theme:
+                materials_tree.tag_configure(
+                    "even",
+                    background=self._theme.table_background_color(),
+                    foreground=self._theme.table_foreground_color(),
+                )
+                materials_tree.tag_configure(
+                    "odd",
+                    background=self._theme.table_stripe_color(),
+                    foreground=self._theme.table_foreground_color(),
+                )
             materials_tree.delete(*materials_tree.get_children())
             if not self._state.materials_collected:
                 materials_tree.insert(
