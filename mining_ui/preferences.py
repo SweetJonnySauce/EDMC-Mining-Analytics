@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 try:
     import tkinter as tk
-    from tkinter import ttk
+    from tkinter import ttk, font as tkfont
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
@@ -20,6 +20,9 @@ from version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
 def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     frame = tk.Frame(parent, highlightthickness=0, bd=0)
     ui._theme.register(frame)
+
+    section_heading_font = tkfont.nametofont("TkDefaultFont").copy()
+    section_heading_font.configure(weight="bold")
 
     header = tk.Frame(frame, highlightthickness=0, bd=0)
     header.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 4))
@@ -43,7 +46,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     version_label.configure(foreground="#1e90ff")
     version_label.bind("<Button-1>", lambda _evt: webbrowser.open(PLUGIN_REPO_URL))
 
-    general_frame = tk.LabelFrame(frame, text="General")
+    general_frame = tk.LabelFrame(frame, text="General", font=section_heading_font)
     general_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
     general_frame.columnconfigure(0, weight=0)
     general_frame.columnconfigure(1, weight=1)
@@ -122,7 +125,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     ui._theme.register(reset_cap_btn)
     ui._reset_capacities_btn = reset_cap_btn
 
-    overlay_frame = tk.LabelFrame(frame, text="Overlay")
+    overlay_frame = tk.LabelFrame(frame, text="Overlay", font=section_heading_font)
     overlay_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
     overlay_frame.columnconfigure(0, weight=0)
     overlay_frame.columnconfigure(1, weight=1)
@@ -216,7 +219,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     ui._overlay_hint_label = overlay_hint
     ui._update_overlay_controls()
 
-    refinement_frame = tk.LabelFrame(frame, text="Refinement Session Logging")
+    refinement_frame = tk.LabelFrame(frame, text="Refinement Session Logging", font=section_heading_font)
     refinement_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))
     refinement_frame.columnconfigure(0, weight=1)
     ui._theme.register(refinement_frame)
@@ -299,7 +302,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         width=6,
     ).grid(row=2, column=2, sticky="w")
 
-    logging_frame = tk.LabelFrame(frame, text="Session Logging")
+    logging_frame = tk.LabelFrame(frame, text="Session Logging", font=section_heading_font)
     logging_frame.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
     logging_frame.columnconfigure(0, weight=1)
     ui._theme.register(logging_frame)
@@ -370,7 +373,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     session_path_feedback_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
     ui._theme.register(session_path_feedback_label)
 
-    discord_frame = tk.LabelFrame(frame, text="Discord summary")
+    discord_frame = tk.LabelFrame(frame, text="Discord summary", font=section_heading_font)
     discord_frame.grid(row=5, column=0, sticky="ew", padx=10, pady=(0, 10))
     discord_frame.columnconfigure(0, weight=1)
     ui._theme.register(discord_frame)
@@ -456,7 +459,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
 
     ui._update_discord_controls()
 
-    inara_frame = tk.LabelFrame(frame, text="Inara Links")
+    inara_frame = tk.LabelFrame(frame, text="Inara Links", font=section_heading_font)
     inara_frame.grid(row=6, column=0, sticky="ew", padx=10, pady=(0, 10))
     inara_frame.columnconfigure(0, weight=1)
     ui._theme.register(inara_frame)
