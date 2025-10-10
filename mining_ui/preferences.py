@@ -14,6 +14,7 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
+from integrations.edmcoverlay import is_overlay_available
 from version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
 
 
@@ -124,6 +125,8 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     reset_cap_btn.grid(row=4, column=0, sticky="w", pady=(0, 4))
     ui._theme.register(reset_cap_btn)
     ui._reset_capacities_btn = reset_cap_btn
+
+    ui._state.overlay_available = is_overlay_available()
 
     overlay_frame = tk.LabelFrame(frame, text="Overlay", font=section_heading_font)
     overlay_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))

@@ -33,6 +33,12 @@ _METRIC_ORDER: Sequence[Tuple[str, str]] = (
 )
 
 
+def is_overlay_available() -> bool:
+    """Check whether the EDMCOverlay module is importable."""
+
+    return _overlay_module is not None
+
+
 def determine_rpm_color(state: MiningState, rpm: float, *, default: str = DEFAULT_VALUE_COLOR) -> str:
     """Resolve the RPM colour based on user-configured thresholds."""
 
@@ -80,7 +86,7 @@ class EdmcOverlayHelper:
     def is_supported(self) -> bool:
         """Return True when the edmcoverlay compatibility layer is importable."""
 
-        return _overlay_module is not None
+        return is_overlay_available()
 
     def refresh_availability(self) -> bool:
         """Synchronise the state flag with current availability."""
@@ -355,4 +361,3 @@ class EdmcOverlayHelper:
             self._preview_until = None
             return False
         return True
-
