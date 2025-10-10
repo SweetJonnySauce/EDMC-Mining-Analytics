@@ -149,7 +149,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         text="Anchor X (px from left)",
         anchor="w",
     )
-    x_label.grid(row=1, column=0, sticky="w", padx=(0, 8))
+    x_label.grid(row=1, column=1, sticky="w", padx=(8, 0))
     ui._theme.register(x_label)
 
     ui._prefs_overlay_x_var = tk.IntVar(master=overlay_frame, value=ui._state.overlay_anchor_x)
@@ -159,16 +159,16 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         from_=0,
         to=4000,
         textvariable=ui._prefs_overlay_x_var,
-        width=8,
+        width=6,
     )
-    overlay_x_spin.grid(row=1, column=1, sticky="w")
+    overlay_x_spin.grid(row=1, column=0, sticky="w", padx=(0, 8))
 
     y_label = tk.Label(
         overlay_frame,
         text="Anchor Y (px from top)",
         anchor="w",
     )
-    y_label.grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(4, 0))
+    y_label.grid(row=2, column=1, sticky="w", padx=(8, 0), pady=(0, 2))
     ui._theme.register(y_label)
 
     ui._prefs_overlay_y_var = tk.IntVar(master=overlay_frame, value=ui._state.overlay_anchor_y)
@@ -178,9 +178,9 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         from_=0,
         to=4000,
         textvariable=ui._prefs_overlay_y_var,
-        width=8,
+        width=6,
     )
-    overlay_y_spin.grid(row=2, column=1, sticky="w", pady=(4, 0))
+    overlay_y_spin.grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
 
     overlay_hint = tk.Label(
         overlay_frame,
@@ -189,14 +189,14 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         justify="left",
         wraplength=380,
     )
-    overlay_hint.grid(row=5, column=0, columnspan=2, sticky="w", pady=(6, 4))
+    overlay_hint.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 4))
     ui._theme.register(overlay_hint)
     interval_label = tk.Label(
         overlay_frame,
         text="Refresh interval (milliseconds)",
         anchor="w",
     )
-    interval_label.grid(row=4, column=0, sticky="w", padx=(0, 8))
+    interval_label.grid(row=3, column=1, sticky="w", padx=(8, 0), pady=(0, 2))
     ui._theme.register(interval_label)
 
     ui._prefs_overlay_interval_var = tk.IntVar(
@@ -210,9 +210,9 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         to=60000,
         increment=100,
         textvariable=ui._prefs_overlay_interval_var,
-        width=8,
+        width=6,
     )
-    overlay_interval_spin.grid(row=4, column=1, sticky="w")
+    overlay_interval_spin.grid(row=3, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
     ui._theme.register(overlay_interval_spin)
 
     ui._overlay_controls = [overlay_enable_cb, overlay_x_spin, overlay_y_spin, overlay_interval_spin]
@@ -241,14 +241,26 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         master=refinement_frame, value=ui._state.refinement_lookback_seconds
     )
     ui._prefs_refinement_window_var.trace_add("write", ui._on_refinement_window_change)
+    refinement_window_container = tk.Frame(refinement_frame, highlightthickness=0, bd=0)
+    refinement_window_container.grid(row=1, column=0, sticky="w", pady=(0, 4))
+    ui._theme.register(refinement_window_container)
+
     ttk.Spinbox(
-        refinement_frame,
+        refinement_window_container,
         from_=5,
         to=240,
         increment=5,
         textvariable=ui._prefs_refinement_window_var,
         width=6,
-    ).grid(row=1, column=0, sticky="w", pady=(0, 4))
+    ).grid(row=0, column=0, sticky="w")
+
+    refinement_seconds_label = tk.Label(
+        refinement_window_container,
+        text="seconds",
+        anchor="w",
+    )
+    refinement_seconds_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
+    ui._theme.register(refinement_seconds_label)
 
     thresholds_container = tk.Frame(refinement_frame, highlightthickness=0, bd=0)
     thresholds_container.grid(row=2, column=0, sticky="ew", pady=(6, 4))
@@ -335,25 +347,27 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     retention_container.grid(row=2, column=0, sticky="w", pady=(4, 0))
     ui._theme.register(retention_container)
 
-    retention_label = tk.Label(retention_container, text="Sessions to retain")
-    retention_label.grid(row=0, column=0, sticky="w", padx=(0, 8))
-    ui._theme.register(retention_label)
-
     ui._prefs_session_retention_var = tk.IntVar(
         master=retention_container, value=ui._state.session_log_retention
     )
     ui._prefs_session_retention_var.trace_add("write", ui._on_session_retention_change)
-    ttk.Spinbox(
+    retention_spin = ttk.Spinbox(
         retention_container,
         from_=1,
         to=500,
         increment=1,
         width=6,
         textvariable=ui._prefs_session_retention_var,
-    ).grid(row=0, column=1, sticky="w")
+    )
+    retention_spin.grid(row=0, column=0, sticky="w", padx=(0, 8))
+    ui._theme.register(retention_spin)
+
+    retention_label = tk.Label(retention_container, text="Sessions to retain")
+    retention_label.grid(row=0, column=1, sticky="w")
+    ui._theme.register(retention_label)
 
     session_path_container = tk.Frame(logging_frame, highlightthickness=0, bd=0)
-    session_path_container.grid(row=3, column=0, sticky="w", pady=(6, 0))
+    session_path_container.grid(row=3, column=0, sticky="w", pady=(6, 10))
     ui._theme.register(session_path_container)
 
     copy_session_path_btn = ttk.Button(

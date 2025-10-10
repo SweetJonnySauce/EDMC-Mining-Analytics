@@ -689,13 +689,13 @@ class edmcmaMiningUI:
         if hint is not None:
             try:
                 if available:
-                    hint.configure(
-                        text="Displays metrics in-game via EDMCOverlay (anchored from the top-left corner)."
-                    )
+                    hint.configure(text="")
+                    hint.grid_remove()
                 else:
                     hint.configure(
                         text="EDMCOverlay plugin not detected. Install it to enable in-game metrics."
                     )
+                    hint.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 4))
             except tk.TclError:
                 pass
 
