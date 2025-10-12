@@ -2037,6 +2037,7 @@ class _HotspotSearchParams:
     ring_signals: Tuple[str, ...]
     reserve_levels: Tuple[str, ...]
     ring_types: Tuple[str, ...]
+    min_hotspots: int
     reference_text: str
 
 
@@ -2048,6 +2049,7 @@ class HotspotSearchWindow:
     DEFAULT_SIGNAL = "Platinum"
     DEFAULT_RESERVE = "Pristine"
     DEFAULT_RING_TYPE = "Metallic"
+    DEFAULT_MIN_HOTSPOTS = 1
 
     FALLBACK_RING_SIGNALS = [
         "Platinum",
@@ -2097,6 +2099,7 @@ class HotspotSearchWindow:
         self._signals_listbox: Optional[tk.Listbox] = None
         self._ring_type_listbox: Optional[tk.Listbox] = None
         self._reserve_combobox: Optional[ttk.Combobox] = None
+        self._min_hotspots_var: Optional[tk.StringVar] = None
         self._reference_entry: Optional[ttk.Entry] = None
         self._reference_frame: Optional[tk.Frame] = None
         self._results_tree: Optional[ttk.Treeview] = None
@@ -2191,6 +2194,7 @@ class HotspotSearchWindow:
         self._reference_entry = None
         self._reference_frame = None
         self._reference_system_var = None
+        self._min_hotspots_var = None
         self._hide_reference_suggestions()
         self._reference_suggestions_listbox = None
         self._reference_suggestions_visible = False
@@ -2255,11 +2259,13 @@ class HotspotSearchWindow:
         left_controls_frame = tk.Frame(layout_frame, highlightthickness=0, bd=0)
         left_controls_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 12))
         left_controls_frame.columnconfigure(0, weight=1)
+        left_controls_frame.columnconfigure(1, weight=0)
+        left_controls_frame.rowconfigure(1, weight=1)
         self._theme.register(left_controls_frame)
         self._hotspot_controls_frame = left_controls_frame
 
         distance_frame = tk.LabelFrame(left_controls_frame, text="Distance (LY)")
-        distance_frame.grid(row=0, column=0, sticky="ew")
+        distance_frame.grid(row=0, column=0, sticky="ew", padx=(0, 8))
         self._theme.register(distance_frame)
 
         tk.Label(distance_frame, text="Min").grid(row=0, column=0, sticky="w", padx=(4, 4), pady=(2, 2))
@@ -2271,7 +2277,7 @@ class HotspotSearchWindow:
         max_entry.grid(row=1, column=1, sticky="w", padx=(0, 8), pady=(2, 2))
 
         reserve_frame = tk.LabelFrame(left_controls_frame, text="Reserve Level")
-        reserve_frame.grid(row=1, column=0, sticky="ew", pady=(8, 0))
+        reserve_frame.grid(row=0, column=1, sticky="ew")
         self._theme.register(reserve_frame)
 
         reserve_values = self._reserve_level_options or self.FALLBACK_RESERVE_LEVELS
@@ -2296,8 +2302,7 @@ class HotspotSearchWindow:
         self._reserve_combobox = reserve_combo
 
         ring_type_frame = tk.LabelFrame(left_controls_frame, text="Ring Filters")
-        ring_type_frame.grid(row=2, column=0, sticky="nsew", pady=(8, 0))
-        left_controls_frame.rowconfigure(2, weight=1)
+        ring_type_frame.grid(row=1, column=0, sticky="nsew", pady=(8, 0), padx=(0, 8))
         self._theme.register(ring_type_frame)
 
         ring_type_list = tk.Listbox(
@@ -2323,6 +2328,27 @@ class HotspotSearchWindow:
             allow_empty=allow_empty_rings,
         )
         ring_type_list.bind("<<ListboxSelect>>", self._on_filters_changed, add="+")
+
+        min_hotspots_initial = self._state.spansh_last_min_hotspots or self.DEFAULT_MIN_HOTSPOTS
+        min_hotspots_initial = max(1, int(min_hotspots_initial or self.DEFAULT_MIN_HOTSPOTS))
+        self._min_hotspots_var = tk.StringVar(master=self._toplevel, value=str(min_hotspots_initial))
+        min_hotspots_frame = tk.LabelFrame(left_controls_frame, text="Minimum Hotspots")
+        min_hotspots_frame.grid(row=1, column=1, sticky="ew", pady=(8, 0))
+        self._theme.register(min_hotspots_frame)
+        spinbox_kwargs = {
+            "from_": 1,
+            "to": 999,
+            "width": 6,
+            "textvariable": self._min_hotspots_var,
+            "increment": 1,
+        }
+        try:
+            min_hotspots_spin = ttk.Spinbox(min_hotspots_frame, **spinbox_kwargs)
+        except AttributeError:
+            min_hotspots_spin = tk.Spinbox(min_hotspots_frame, **spinbox_kwargs)
+        min_hotspots_spin.grid(row=0, column=0, padx=6, pady=6, sticky="w")
+        self._theme.register(min_hotspots_spin)
+        self._min_hotspots_var.trace_add("write", self._on_filters_changed)
 
         signal_frame = tk.LabelFrame(layout_frame, text="Ring Signals")
         signal_frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
@@ -2536,6 +2562,17 @@ class HotspotSearchWindow:
             return None
 
     @staticmethod
+    def _parse_min_hotspots(value: Optional[str], default: int) -> int:
+        stripped = value.strip() if value else ""
+        if not stripped:
+            return max(1, default)
+        try:
+            parsed = int(stripped)
+        except (TypeError, ValueError):
+            return max(1, default)
+        return max(1, parsed)
+
+    @staticmethod
     def _get_listbox_selection(listbox: Optional[tk.Listbox]) -> List[str]:
         if not listbox:
             return []
@@ -2652,7 +2689,6 @@ class HotspotSearchWindow:
         if not self._reference_suggestions_listbox:
             return
 
-        current_value = self._reference_system_var.get().strip() if self._reference_system_var else ""
         self._reference_suggestions_listbox.delete(0, "end")
         if not suggestions:
             self._hide_reference_suggestions()
@@ -2743,7 +2779,7 @@ class HotspotSearchWindow:
         self._reference_suggestions_listbox.activate(index)
         return "break"
 
-    def _collect_selections(self) -> Tuple[float, float, List[str], List[str], List[str]]:
+    def _collect_selections(self) -> Tuple[float, float, List[str], List[str], List[str], int]:
         min_distance = self._parse_float(self._distance_min_var.get(), float(self.DEFAULT_DISTANCE_MIN))
         max_distance = self._parse_float(self._distance_max_var.get(), float(self.DEFAULT_DISTANCE_MAX))
 
@@ -2760,7 +2796,12 @@ class HotspotSearchWindow:
         if ring_type_list:
             ring_types = [ring_type_list.get(index) for index in ring_type_list.curselection()]
 
-        return min_distance, max_distance, signals, reserves, ring_types
+        min_hotspots = self._parse_min_hotspots(
+            self._min_hotspots_var.get() if self._min_hotspots_var else None,
+            self.DEFAULT_MIN_HOTSPOTS,
+        )
+
+        return min_distance, max_distance, signals, reserves, ring_types, min_hotspots
 
     def _on_filters_changed(self, *_: object) -> None:
         self._state.spansh_last_distance_min = self._parse_optional_float(
@@ -2779,6 +2820,12 @@ class HotspotSearchWindow:
         self._state.spansh_last_ring_types = self._get_listbox_selection(self._ring_type_listbox)
         self._state.spansh_last_ring_signals = self._get_listbox_selection(self._signals_listbox)
 
+        min_hotspots = self._parse_min_hotspots(
+            self._min_hotspots_var.get() if self._min_hotspots_var else None,
+            self.DEFAULT_MIN_HOTSPOTS,
+        )
+        self._state.spansh_last_min_hotspots = min_hotspots
+
         self._queue_reference_suggestion_fetch()
 
     # ------------------------------------------------------------------
@@ -2790,7 +2837,7 @@ class HotspotSearchWindow:
             return
 
         try:
-            min_distance, max_distance, signals, reserves, ring_types = self._collect_selections()
+            min_distance, max_distance, signals, reserves, ring_types, min_hotspots = self._collect_selections()
         except ValueError as exc:
             self._status_var.set(f"Invalid input: {exc}")
             return
@@ -2807,6 +2854,7 @@ class HotspotSearchWindow:
             ring_signals=tuple(signals),
             reserve_levels=tuple(reserves),
             ring_types=tuple(ring_types),
+            min_hotspots=int(min_hotspots),
             reference_text=reference_input,
         )
         self._start_search(params)
@@ -2819,6 +2867,13 @@ class HotspotSearchWindow:
 
         reference_text = (params.reference_text or "").strip()
         display_reference = reference_text or self._state.current_system or "Unknown system"
+
+        self._state.spansh_last_distance_min = params.distance_min
+        self._state.spansh_last_distance_max = params.distance_max
+        self._state.spansh_last_ring_signals = list(params.ring_signals)
+        self._state.spansh_last_reserve_levels = list(params.reserve_levels)
+        self._state.spansh_last_ring_types = list(params.ring_types)
+        self._state.spansh_last_min_hotspots = max(1, int(params.min_hotspots))
 
         if self._search_thread and self._search_thread.is_alive():
             self._pending_search_params = params
@@ -2847,6 +2902,7 @@ class HotspotSearchWindow:
         ring_signals = params.ring_signals
         reserve_levels = params.reserve_levels
         ring_types = params.ring_types
+        min_hotspots = max(1, int(params.min_hotspots))
         reference_text_input = reference_text
 
         self._hide_reference_suggestions()
@@ -2863,6 +2919,7 @@ class HotspotSearchWindow:
                     ring_signals=ring_signals,
                     reserve_levels=reserve_levels,
                     ring_types=ring_types,
+                    min_hotspots=min_hotspots,
                     reference_system=resolved_reference,
                 )
                 outcome: tuple[str, object] = ("success", (result, resolved_reference))

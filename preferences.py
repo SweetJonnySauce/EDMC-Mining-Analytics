@@ -174,6 +174,7 @@ class PreferencesManager:
         state.spansh_last_ring_signals = self._load_string_list("edmc_mining_spansh_ring_signals")
         state.spansh_last_reserve_levels = self._load_string_list("edmc_mining_spansh_reserve_levels")
         state.spansh_last_ring_types = self._load_string_list("edmc_mining_spansh_ring_types")
+        state.spansh_last_min_hotspots = self._get_optional_int("edmc_mining_spansh_min_hotspots")
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -353,6 +354,16 @@ class PreferencesManager:
             except Exception:
                 _log.exception("Failed to persist Spansh ring types")
 
+        try:
+            value = (
+                str(max(1, int(state.spansh_last_min_hotspots)))
+                if state.spansh_last_min_hotspots is not None
+                else ""
+            )
+            config.set("edmc_mining_spansh_min_hotspots", value)
+        except Exception:
+            _log.exception("Failed to persist Spansh minimum hotspots")
+
 
     @staticmethod
     def _get_int(key: str, default: int) -> int:
@@ -385,6 +396,18 @@ class PreferencesManager:
             return None
         value = str(raw).strip()
         return value or None
+
+    def _get_optional_int(self, key: str) -> Optional[int]:
+        text = self._get_optional_str(key)
+        if text is None:
+            return None
+        try:
+            value = int(text)
+        except (TypeError, ValueError):
+            return None
+        if value < 1:
+            return 1
+        return value
 
     def _get_float(self, key: str, default: Optional[float]) -> Optional[float]:
         text = self._get_optional_str(key)

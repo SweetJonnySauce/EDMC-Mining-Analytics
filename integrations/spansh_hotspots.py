@@ -223,6 +223,7 @@ class SpanshHotspotClient:
         limit: int = DEFAULT_RESULT_SIZE,
         page: int = 0,
         reference_system: Optional[str] = None,
+        min_hotspots: int = 1,
     ) -> HotspotSearchResult:
         """Query Spansh for hotspots near the current system."""
 
@@ -231,6 +232,8 @@ class SpanshHotspotClient:
             raise ValueError("Reference system is unknown; cannot perform hotspot search.")
 
         filters: Dict[str, object] = {}
+
+        min_count = max(1, int(min_hotspots))
 
         if distance_min is not None or distance_max is not None:
             min_val = float(distance_min if distance_min is not None else 0.0)
@@ -242,7 +245,8 @@ class SpanshHotspotClient:
         cleaned_signals = [signal for signal in (ring_signals or []) if signal]
         if cleaned_signals:
             filters["ring_signals"] = [
-                {"comparison": "<=>", "count": [1, MAX_SIGNAL_COUNT], "name": signal} for signal in cleaned_signals
+                {"comparison": "<=>", "count": [min_count, MAX_SIGNAL_COUNT], "name": signal}
+                for signal in cleaned_signals
             ]
 
         cleaned_reserves = [reserve for reserve in (reserve_levels or []) if reserve]
