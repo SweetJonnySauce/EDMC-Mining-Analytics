@@ -306,15 +306,16 @@ class SpanshHotspotClient:
                 total_count,
                 payload["size"],
                 payload["page"],
+                filters,
             )
             if _log.isEnabledFor(logging.DEBUG):
                 _log.debug(
-                    "Spansh hotspot search for %s returned %d rows (hotspots=%d, total_count=%d, limit=%d, page=%d)",
+                    "Spansh hotspot search for %s returned %d rows (hotspots=%d, total_count=%d, limit=%d, page=%d) with filters %s",
                     *log_args,
                 )
             if _plugin_log is not _log and _plugin_log.isEnabledFor(logging.DEBUG):
                 _plugin_log.debug(
-                    "Spansh hotspot search for %s returned %d rows (hotspots=%d, total_count=%d, limit=%d, page=%d)",
+                    "Spansh hotspot search for %s returned %d rows (hotspots=%d, total_count=%d, limit=%d, page=%d) with filters %s",
                     *log_args,
                 )
 
