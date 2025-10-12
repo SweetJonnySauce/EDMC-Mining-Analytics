@@ -7,7 +7,7 @@ import random
 import webbrowser
 from collections import Counter
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 try:
     import tkinter as tk
@@ -19,6 +19,11 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 from tooltip import TreeTooltip, WidgetTooltip
 from state import MiningState, compute_percentage_stats, update_rpm
 from integrations.mining_inara import InaraClient
+from integrations.spansh_hotspots import (
+    HotspotSearchResult,
+    RingHotspot,
+    SpanshHotspotClient,
+)
 from integrations.edmcoverlay import determine_rpm_color
 from preferences import (
     clamp_bin_size,
@@ -59,6 +64,7 @@ class edmcmaMiningUI:
         self,
         state: MiningState,
         inara: InaraClient,
+        hotspot_client: Optional[SpanshHotspotClient],
         on_reset: Callable[[], None],
         on_pause_changed: Optional[Callable[[bool, str, datetime], None]] = None,
         on_reset_inferred_capacities: Optional[Callable[[], None]] = None,
@@ -67,6 +73,7 @@ class edmcmaMiningUI:
     ) -> None:
         self._state = state
         self._inara = inara
+        self._hotspot_client = hotspot_client
         self._on_reset = on_reset
         self._pause_callback = on_pause_changed
         self._reset_capacities_callback = on_reset_inferred_capacities
@@ -115,6 +122,8 @@ class edmcmaMiningUI:
         self._commodities_frame: Optional[tk.Frame] = None
         self._commodities_grid: Optional[Dict[str, Any]] = None
         self._materials_grid: Optional[Dict[str, Any]] = None
+        self._hotspot_window: Optional["HotspotSearchWindow"] = None
+        self._hotspot_button: Optional[tk.Button] = None
 
         self._prefs_bin_var: Optional[tk.IntVar] = None
         self._prefs_rate_var: Optional[tk.IntVar] = None
@@ -249,6 +258,17 @@ class edmcmaMiningUI:
         self._theme.register(version_label)
         self._version_label = version_label
 
+        hotspot_button = tk.Button(
+            frame,
+            text="H",
+            command=self._handle_hotspot_button,
+            cursor="hand2",
+            width=3,
+        )
+        self._theme.style_button(hotspot_button)
+        hotspot_button.grid(row=0, column=2, sticky="e", padx=(0, 4), pady=(4, 2))
+        self._hotspot_button = hotspot_button
+
         self._summary_var = tk.StringVar(master=frame, value="")
         summary_label = tk.Label(
             frame,
@@ -295,7 +315,7 @@ class edmcmaMiningUI:
         self._rpm_tooltip = WidgetTooltip(rpm_title)
 
         button_frame = tk.Frame(frame, highlightthickness=0, bd=0)
-        button_frame.grid(row=0, column=2, sticky="e", padx=4, pady=(4, 2))
+        button_frame.grid(row=0, column=3, sticky="e", padx=4, pady=(4, 2))
         self._theme.register(button_frame)
         self._details_toggle = tk.Button(
             button_frame,
@@ -920,6 +940,32 @@ class edmcmaMiningUI:
             except Exception:
                 pass
         self._rate_update_job = None
+
+    def _handle_hotspot_button(self) -> None:
+        if not self._hotspot_client:
+            _log.debug("Hotspot client not available; skipping search window request.")
+            return
+
+        frame = self._frame
+        if frame is None or not frame.winfo_exists():
+            return
+
+        window = self._hotspot_window
+        if window and window.is_open:
+            window.focus()
+            return
+
+        self._hotspot_window = HotspotSearchWindow(
+            parent=frame,
+            theme=self._theme,
+            client=self._hotspot_client,
+            state=self._state,
+            on_close=self._on_hotspot_window_closed,
+        )
+
+    def _on_hotspot_window_closed(self, window: "HotspotSearchWindow") -> None:
+        if self._hotspot_window is window:
+            self._hotspot_window = None
 
     def _toggle_details(self) -> None:
         self._details_visible = not self._details_visible
@@ -1976,3 +2022,383 @@ class edmcmaMiningUI:
 
     def _recompute_histograms(self) -> None:
         _hist_recompute(self)
+
+
+class HotspotSearchWindow:
+    """Toplevel window that performs and displays Spansh hotspot searches."""
+
+    DEFAULT_DISTANCE_MIN = "0"
+    DEFAULT_DISTANCE_MAX = "100"
+    DEFAULT_SIGNAL = "Platinum"
+    DEFAULT_RESERVE = "Pristine"
+    DEFAULT_RING_TYPE = "Metallic"
+
+    FALLBACK_RING_SIGNALS = [
+        "Platinum",
+        "Painite",
+        "Void Opal",
+        "Tritium",
+        "Serendibite",
+        "Rhodplumsite",
+        "Monazite",
+    ]
+    FALLBACK_RING_TYPES = ["Metallic", "Metal Rich", "Icy", "Rocky"]
+    FALLBACK_RESERVE_LEVELS = ["Pristine", "Major", "Common", "Low", "Depleted"]
+
+    def __init__(
+        self,
+        parent: tk.Widget,
+        theme: ThemeAdapter,
+        client: SpanshHotspotClient,
+        state: MiningState,
+        on_close: Callable[["HotspotSearchWindow"], None],
+    ) -> None:
+        self._parent = parent
+        self._theme = theme
+        self._client = client
+        self._state = state
+        self._on_close = on_close
+        self._search_job: Optional[str] = None
+
+        self._toplevel = tk.Toplevel(parent)
+        self._toplevel.title("Nearby Hotspots")
+        self._toplevel.transient(parent.winfo_toplevel())
+        self._toplevel.protocol("WM_DELETE_WINDOW", self.close)
+        self._toplevel.minsize(700, 420)
+        self._theme.register(self._toplevel)
+
+        self._distance_min_var = tk.StringVar(master=self._toplevel, value=self.DEFAULT_DISTANCE_MIN)
+        self._distance_max_var = tk.StringVar(master=self._toplevel, value=self.DEFAULT_DISTANCE_MAX)
+        self._reserve_var = tk.StringVar(master=self._toplevel, value=self.DEFAULT_RESERVE)
+
+        self._ring_signal_options = self._sorted_unique(self._client.list_ring_signals(), self.FALLBACK_RING_SIGNALS)
+        self._ring_type_options = self._sorted_unique(self._client.list_ring_types(), self.FALLBACK_RING_TYPES)
+        self._reserve_level_options = self._sorted_unique(
+            self._client.list_reserve_levels(), self.FALLBACK_RESERVE_LEVELS, preserve_order=True
+        )
+
+        self._signals_listbox: Optional[tk.Listbox] = None
+        self._ring_type_listbox: Optional[tk.Listbox] = None
+        self._reserve_combobox: Optional[ttk.Combobox] = None
+        self._results_tree: Optional[ttk.Treeview] = None
+        self._status_var = tk.StringVar(master=self._toplevel, value="")
+
+        self._build_ui()
+        self._schedule_initial_search()
+
+    # ------------------------------------------------------------------
+    # Window lifecycle helpers
+    # ------------------------------------------------------------------
+    @property
+    def is_open(self) -> bool:
+        return bool(self._toplevel and self._toplevel.winfo_exists())
+
+    def focus(self) -> None:
+        if not self.is_open:
+            return
+        try:
+            self._toplevel.deiconify()
+            self._toplevel.lift()
+            self._toplevel.focus_force()
+        except Exception:
+            pass
+
+    def close(self) -> None:
+        if self._search_job and self._toplevel and self._toplevel.winfo_exists():
+            try:
+                self._toplevel.after_cancel(self._search_job)
+            except Exception:
+                pass
+        self._search_job = None
+
+        if self._toplevel and self._toplevel.winfo_exists():
+            try:
+                self._toplevel.destroy()
+            except Exception:
+                pass
+
+        if self._on_close:
+            try:
+                self._on_close(self)
+            except Exception:
+                pass
+
+        self._toplevel = None
+
+    # ------------------------------------------------------------------
+    # UI construction
+    # ------------------------------------------------------------------
+    def _build_ui(self) -> None:
+        container = tk.Frame(self._toplevel, highlightthickness=0, bd=0)
+        container.pack(fill="both", expand=True, padx=12, pady=12)
+        self._theme.register(container)
+
+        controls_frame = tk.Frame(container, highlightthickness=0, bd=0)
+        controls_frame.pack(fill="x", pady=(0, 12))
+        self._theme.register(controls_frame)
+
+        distance_frame = tk.LabelFrame(controls_frame, text="Distance (LY)")
+        distance_frame.pack(side="left", padx=(0, 12))
+        self._theme.register(distance_frame)
+
+        tk.Label(distance_frame, text="Min").grid(row=0, column=0, sticky="w", padx=(4, 4), pady=(2, 2))
+        min_entry = ttk.Entry(distance_frame, textvariable=self._distance_min_var, width=8)
+        min_entry.grid(row=0, column=1, sticky="w", padx=(0, 8), pady=(2, 2))
+
+        tk.Label(distance_frame, text="Max").grid(row=1, column=0, sticky="w", padx=(4, 4), pady=(2, 2))
+        max_entry = ttk.Entry(distance_frame, textvariable=self._distance_max_var, width=8)
+        max_entry.grid(row=1, column=1, sticky="w", padx=(0, 8), pady=(2, 2))
+
+        reserve_frame = tk.LabelFrame(controls_frame, text="Reserve Level")
+        reserve_frame.pack(side="left", padx=(0, 12))
+        self._theme.register(reserve_frame)
+
+        reserve_values = self._reserve_level_options or self.FALLBACK_RESERVE_LEVELS
+        reserve_combo = ttk.Combobox(
+            reserve_frame,
+            textvariable=self._reserve_var,
+            values=reserve_values,
+            width=12,
+            state="readonly",
+        )
+        reserve_combo.grid(row=0, column=0, padx=6, pady=6)
+        if self.DEFAULT_RESERVE in reserve_values:
+            reserve_combo.set(self.DEFAULT_RESERVE)
+        elif reserve_values:
+            reserve_combo.current(0)
+        self._reserve_combobox = reserve_combo
+
+        ring_type_frame = tk.LabelFrame(controls_frame, text="Ring Filters")
+        ring_type_frame.pack(side="left", padx=(0, 12))
+        self._theme.register(ring_type_frame)
+
+        ring_type_list = tk.Listbox(
+            ring_type_frame,
+            selectmode="extended",
+            height=min(6, max(3, len(self._ring_type_options))),
+            exportselection=False,
+        )
+        ring_type_list.grid(row=0, column=0, padx=6, pady=6)
+        self._theme.register(ring_type_list)
+        for option in self._ring_type_options:
+            ring_type_list.insert("end", option)
+        self._ring_type_listbox = ring_type_list
+        self._select_defaults(ring_type_list, [self.DEFAULT_RING_TYPE])
+
+        signal_frame = tk.LabelFrame(controls_frame, text="Ring Signals")
+        signal_frame.pack(side="left", padx=(0, 0), fill="both", expand=True)
+        self._theme.register(signal_frame)
+
+        signal_list = tk.Listbox(
+            signal_frame,
+            selectmode="extended",
+            height=10,
+            exportselection=False,
+        )
+        signal_list.grid(row=0, column=0, sticky="nsew", padx=(6, 0), pady=6)
+        self._theme.register(signal_list)
+        signal_scroll = tk.Scrollbar(signal_frame, orient="vertical", command=signal_list.yview)
+        signal_scroll.grid(row=0, column=1, sticky="ns", pady=6, padx=(0, 6))
+        signal_list.configure(yscrollcommand=signal_scroll.set)
+        for option in self._ring_signal_options:
+            signal_list.insert("end", option)
+        self._signals_listbox = signal_list
+        self._select_defaults(signal_list, [self.DEFAULT_SIGNAL])
+        signal_frame.columnconfigure(0, weight=1)
+
+        action_frame = tk.Frame(container, highlightthickness=0, bd=0)
+        action_frame.pack(fill="x", pady=(0, 8))
+        self._theme.register(action_frame)
+
+        search_button = ttk.Button(action_frame, text="Search", command=self._perform_search)
+        search_button.pack(side="left")
+
+        status_label = tk.Label(action_frame, textvariable=self._status_var, anchor="w", justify="left")
+        status_label.pack(side="left", fill="x", expand=True, padx=(12, 0))
+        self._theme.register(status_label)
+
+        results_frame = tk.Frame(container, highlightthickness=0, bd=0)
+        results_frame.pack(fill="both", expand=True)
+        self._theme.register(results_frame)
+
+        columns = ("system", "body", "ring", "type", "distance_ls", "distance_ly", "signals")
+        tree = ttk.Treeview(results_frame, columns=columns, show="headings")
+        tree.heading("system", text="System")
+        tree.heading("body", text="Body")
+        tree.heading("ring", text="Ring")
+        tree.heading("type", text="Type")
+        tree.heading("distance_ls", text="Distance (LS)")
+        tree.heading("distance_ly", text="Distance (LY)")
+        tree.heading("signals", text="Signals")
+
+        tree.column("system", width=140, anchor="w")
+        tree.column("body", width=140, anchor="w")
+        tree.column("ring", width=160, anchor="w")
+        tree.column("type", width=120, anchor="w")
+        tree.column("distance_ls", width=110, anchor="e")
+        tree.column("distance_ly", width=110, anchor="e")
+        tree.column("signals", width=260, anchor="w")
+
+        tree_scroll = ttk.Scrollbar(results_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=tree_scroll.set)
+        tree.pack(side="left", fill="both", expand=True)
+        tree_scroll.pack(side="right", fill="y")
+
+        self._results_tree = tree
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    def _schedule_initial_search(self) -> None:
+        if not self.is_open:
+            return
+        self._status_var.set("Searching for hotspots...")
+        self._search_job = self._toplevel.after(50, self._perform_search)
+
+    @staticmethod
+    def _sorted_unique(values: Sequence[str], fallback: Sequence[str], preserve_order: bool = False) -> List[str]:
+        cleaned = [value for value in values if isinstance(value, str) and value]
+        if not cleaned:
+            cleaned = list(fallback)
+        if preserve_order:
+            seen: set[str] = set()
+            ordered: List[str] = []
+            for value in cleaned:
+                if value in seen:
+                    continue
+                seen.add(value)
+                ordered.append(value)
+            return ordered
+        return sorted(set(cleaned), key=str.casefold)
+
+    @staticmethod
+    def _select_defaults(listbox: Optional[tk.Listbox], defaults: Sequence[str]) -> None:
+        if not listbox:
+            return
+        options = listbox.get(0, "end")
+        selected = False
+        for default in defaults:
+            try:
+                index = options.index(default)
+            except ValueError:
+                continue
+            listbox.selection_set(index)
+            listbox.see(index)
+            selected = True
+        if not selected and options:
+            listbox.selection_set(0)
+
+    @staticmethod
+    def _parse_float(value: str, fallback: float) -> float:
+        stripped = value.strip() if value else ""
+        if not stripped:
+            return fallback
+        return float(stripped)
+
+    def _collect_selections(self) -> Tuple[float, float, List[str], List[str], List[str]]:
+        min_distance = self._parse_float(self._distance_min_var.get(), float(self.DEFAULT_DISTANCE_MIN))
+        max_distance = self._parse_float(self._distance_max_var.get(), float(self.DEFAULT_DISTANCE_MAX))
+
+        reserve_value = self._reserve_var.get().strip()
+        reserves = [reserve_value] if reserve_value else []
+
+        signal_list = self._signals_listbox
+        signals = []
+        if signal_list:
+            signals = [signal_list.get(index) for index in signal_list.curselection()]
+
+        ring_type_list = self._ring_type_listbox
+        ring_types = []
+        if ring_type_list:
+            ring_types = [ring_type_list.get(index) for index in ring_type_list.curselection()]
+
+        return min_distance, max_distance, signals, reserves, ring_types
+
+    # ------------------------------------------------------------------
+    # Search + render
+    # ------------------------------------------------------------------
+    def _perform_search(self) -> None:
+        self._search_job = None
+        if not self.is_open:
+            return
+
+        try:
+            min_distance, max_distance, signals, reserves, ring_types = self._collect_selections()
+        except ValueError as exc:
+            self._status_var.set(f"Invalid input: {exc}")
+            return
+
+        current_system = self._state.current_system or "Unknown system"
+        if not self._state.current_system:
+            self._status_var.set("Current system unknown. Move to a system to search for hotspots.")
+            return
+
+        tree = self._results_tree
+        if tree:
+            for item in tree.get_children():
+                tree.delete(item)
+
+        self._status_var.set(f"Searching for hotspots near {current_system}...")
+        if self._toplevel:
+            self._toplevel.update_idletasks()
+
+        try:
+            result = self._client.search_hotspots(
+                distance_min=min_distance,
+                distance_max=max_distance,
+                ring_signals=signals,
+                reserve_levels=reserves,
+                ring_types=ring_types,
+            )
+        except ValueError as exc:
+            self._status_var.set(str(exc))
+            return
+        except RuntimeError as exc:
+            self._status_var.set(str(exc))
+            return
+        except Exception as exc:
+            _log.exception("Unexpected error during hotspot search: %s", exc)
+            self._status_var.set("An unexpected error occurred while searching for hotspots.")
+            return
+
+        self._render_results(result)
+
+    def _render_results(self, result: HotspotSearchResult) -> None:
+        tree = self._results_tree
+        if not tree:
+            return
+
+        for item in tree.get_children():
+            tree.delete(item)
+
+        entries = list(result.entries)
+        for entry in entries:
+            signals_text = ", ".join(
+                f"{signal.name} ({signal.count})" if signal.count else signal.name for signal in entry.signals
+            )
+            if not signals_text:
+                signals_text = "—"
+            tree.insert(
+                "",
+                "end",
+                values=(
+                    entry.system_name or "—",
+                    entry.body_name or "—",
+                    entry.ring_name or "—",
+                    entry.ring_type or "—",
+                    f"{entry.distance_ls:.0f}",
+                    f"{entry.distance_ly:.2f}",
+                    signals_text,
+                ),
+            )
+
+        if not entries:
+            self._status_var.set("No hotspots matched the selected filters.")
+            return
+
+        status_parts = [f"Displaying {len(entries)} hotspot(s)"]
+        if result.total_count > len(entries):
+            status_parts.append(f"of {result.total_count} total matches")
+        if result.reference_system:
+            status_parts.append(f"near {result.reference_system}")
+        self._status_var.set("; ".join(status_parts))
