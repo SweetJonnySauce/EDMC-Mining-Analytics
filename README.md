@@ -5,10 +5,12 @@ EDMC Mining Analytics extends Elite Dangerous Market Connector (EDMC) with a min
 This is a beta release. As such, breaking changes may be introduced. Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/issues). Your feedback helps shape the next release.
 
 ## Key Features
-- Real-time mining dashboard showing cargo totals, tons-per-hour trends, limpets, refinements-per-minute and ship context.
+- Real-time mining dashboard showing cargo totals, tons-per-hour trends, limpets, refinements-per-minute to gauge your collection efficiency and ship context.
+- Cross platform. Works on Windows and Linux.
+- EDMCOverlay support built in
 - Automated session management that starts, pauses, and resets analytics in response to journal events or user input, with optional auto-resume when activity resumes.
 - Prospecting intelligence with duplicate detection, commodity histograms, and quick-glance content summaries for each asteroid.
-- Integrations that help you act on the data, including Inara commodity lookups and Discord webhook summaries of completed runs.
+- Integrations that help you act on the data, including Inara commodity lookups for nearest/best price (click on the commodity name in the table) and Discord webhook summaries of completed runs.
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
 - Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
 
