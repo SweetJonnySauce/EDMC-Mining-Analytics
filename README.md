@@ -10,7 +10,8 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 - EDMCOverlay support built in
 - Automated session management that starts, pauses, and resets analytics in response to journal events or user input, with optional auto-resume when activity resumes.
 - Prospecting intelligence with duplicate detection, commodity histograms, and quick-glance content summaries for each asteroid.
-- Integrations that help you act on the data, including Inara commodity lookups for nearest/best price (click on the commodity name in the table) and Discord webhook summaries of completed runs.
+- Integrations that help you act on the data, including Inara commodity lookups for nearest/best price (click on the commodity name in the table), EDSM lookup for reserve level and ring type, and Discord webhook summaries of completed runs.
+- Optional warning that you are in a non-metallic ring (for those laser platinum miners)
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
 - Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
 
