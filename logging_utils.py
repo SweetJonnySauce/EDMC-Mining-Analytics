@@ -23,10 +23,9 @@ def get_logger(suffix: str | None = None) -> logging.Logger:
 
     if suffix is None:
         return BASE_LOGGER
-    name = f"{PLUGIN_LOGGER_NAME}.{suffix}"
-    logger = logging.getLogger(name)
+    logger = BASE_LOGGER.getChild(suffix)
     logger.propagate = True
-    logger.setLevel(BASE_LOGGER.level)
+    logger.setLevel(logging.NOTSET)
     return logger
 
 
@@ -34,4 +33,3 @@ def set_log_level(level: int) -> None:
     """Update the base logger level (and implicitly its children)."""
 
     BASE_LOGGER.setLevel(level)
-

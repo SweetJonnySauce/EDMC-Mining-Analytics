@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -11,6 +12,7 @@ from logging_utils import get_logger
 from state import MiningState
 
 _log = get_logger("spansh")
+_plugin_log = get_logger()
 
 API_BASE = "https://spansh.co.uk/api"
 DEFAULT_TIMEOUT = 10
@@ -171,11 +173,35 @@ class SpanshHotspotClient:
             raise RuntimeError("Unable to decode Spansh hotspot results") from exc
 
         results = data.get("results") or []
-        entries = self._extract_ring_entries(results, set(cleaned_signals) if cleaned_signals else None, set(cleaned_rings) if cleaned_rings else None)
+        entries = self._extract_ring_entries(
+            results,
+            set(cleaned_signals) if cleaned_signals else None,
+            set(cleaned_rings) if cleaned_rings else None,
+        )
 
         reference = data.get("reference") or {}
         reference_name = reference.get("name") if isinstance(reference, dict) else None
         total_count = int(data.get("count") or 0)
+
+        if _log.isEnabledFor(logging.DEBUG) or _plugin_log.isEnabledFor(logging.DEBUG):
+            log_args = (
+                system,
+                len(results),
+                len(entries),
+                total_count,
+                payload["size"],
+                payload["page"],
+            )
+            if _log.isEnabledFor(logging.DEBUG):
+                _log.debug(
+                    "Spansh hotspot search for %s returned %d rows (hotspots=%d, total_count=%d, limit=%d, page=%d)",
+                    *log_args,
+                )
+            if _plugin_log is not _log and _plugin_log.isEnabledFor(logging.DEBUG):
+                _plugin_log.debug(
+                    "Spansh hotspot search for %s returned %d rows (hotspots=%d, total_count=%d, limit=%d, page=%d)",
+                    *log_args,
+                )
 
         return HotspotSearchResult(
             total_count=total_count,

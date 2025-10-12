@@ -155,6 +155,9 @@ class edmcmaMiningUI:
         self._overlay_controls: list[tk.Widget] = []
         self._overlay_hint_label: Optional[tk.Label] = None
 
+        self._hotspot_container: Optional[tk.Frame] = None
+        self._hotspot_controls_frame: Optional[tk.Frame] = None
+        self._results_frame: Optional[tk.Frame] = None
         self._updating_bin_var = False
         self._updating_rate_var = False
         self._updating_inara_mode_var = False
@@ -2124,6 +2127,10 @@ class HotspotSearchWindow:
                 pass
 
         self._toplevel = None
+        self._hotspot_container = None
+        self._hotspot_controls_frame = None
+        self._results_frame = None
+        self._results_tree = None
 
     # ------------------------------------------------------------------
     # UI construction
@@ -2132,10 +2139,12 @@ class HotspotSearchWindow:
         container = tk.Frame(self._toplevel, highlightthickness=0, bd=0)
         container.pack(fill="both", expand=True, padx=12, pady=12)
         self._theme.register(container)
+        self._hotspot_container = container
 
         controls_frame = tk.Frame(container, highlightthickness=0, bd=0)
         controls_frame.pack(fill="x", pady=(0, 12))
         self._theme.register(controls_frame)
+        self._hotspot_controls_frame = controls_frame
 
         distance_frame = tk.LabelFrame(controls_frame, text="Distance (LY)")
         distance_frame.pack(side="left", padx=(0, 12))
@@ -2220,24 +2229,41 @@ class HotspotSearchWindow:
         results_frame = tk.Frame(container, highlightthickness=0, bd=0)
         results_frame.pack(fill="both", expand=True)
         self._theme.register(results_frame)
+        self._results_frame = results_frame
 
-        columns = ("system", "body", "ring", "type", "distance_ls", "distance_ly", "signals")
+        columns = ("system", "body", "ring", "type", "distance_ly", "distance_ls", "signals")
         tree = ttk.Treeview(results_frame, columns=columns, show="headings")
         tree.heading("system", text="System")
         tree.heading("body", text="Body")
         tree.heading("ring", text="Ring")
         tree.heading("type", text="Type")
-        tree.heading("distance_ls", text="Distance (LS)")
         tree.heading("distance_ly", text="Distance (LY)")
+        tree.heading("distance_ls", text="Dist2Arrival (LS)")
         tree.heading("signals", text="Signals")
 
         tree.column("system", width=140, anchor="w")
         tree.column("body", width=140, anchor="w")
         tree.column("ring", width=160, anchor="w")
         tree.column("type", width=120, anchor="w")
-        tree.column("distance_ls", width=110, anchor="e")
         tree.column("distance_ly", width=110, anchor="e")
+        tree.column("distance_ls", width=110, anchor="e")
         tree.column("signals", width=260, anchor="w")
+
+        try:
+            heading_font = tkfont.nametofont("TkHeadingFont")
+        except tk.TclError:
+            heading_font = tkfont.nametofont("TkDefaultFont")
+        label_widths = {
+            "body": "Body",
+            "ring": "Ring",
+            "type": "Type",
+            "distance_ly": "Distance (LY)",
+            "distance_ls": "Dist2Arrival (LS)",
+        }
+        padding = 16
+        for column, label in label_widths.items():
+            width = heading_font.measure(label) + padding
+            tree.column(column, width=width, minwidth=width, stretch=False)
 
         tree_scroll = ttk.Scrollbar(results_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=tree_scroll.set)
@@ -2372,25 +2398,87 @@ class HotspotSearchWindow:
             tree.delete(item)
 
         entries = list(result.entries)
+        system_labels: List[str] = []
+        signals_labels: List[str] = []
         for entry in entries:
             signals_text = ", ".join(
                 f"{signal.name} ({signal.count})" if signal.count else signal.name for signal in entry.signals
             )
             if not signals_text:
                 signals_text = "—"
+            signals_labels.append(signals_text)
+            system_display = entry.system_name or "—"
+            system_labels.append(system_display)
+            body_display = entry.body_name or "—"
+            if entry.system_name and entry.body_name:
+                system = entry.system_name.strip()
+                body = entry.body_name.strip()
+                if system and body.lower().startswith(system.lower()):
+                    trimmed_body = body[len(system) :].lstrip(" -")
+                    if trimmed_body:
+                        body_display = trimmed_body
+            if not body_display or body_display == entry.body_name:
+                body_display = entry.body_name or "—"
+            ring_display = entry.ring_name or "—"
+            if entry.body_name and entry.ring_name:
+                body = entry.body_name.strip()
+                ring = entry.ring_name.strip()
+                if body and ring.lower().startswith(body.lower()):
+                    trimmed = ring[len(body) :].lstrip(" -")
+                    if trimmed:
+                        ring_display = trimmed
+            if not ring_display or ring_display == entry.ring_name:
+                ring_display = entry.ring_name or "—"
             tree.insert(
                 "",
                 "end",
                 values=(
-                    entry.system_name or "—",
-                    entry.body_name or "—",
-                    entry.ring_name or "—",
+                    system_display,
+                    body_display,
+                    ring_display,
                     entry.ring_type or "—",
-                    f"{entry.distance_ls:.0f}",
                     f"{entry.distance_ly:.2f}",
+                    f"{entry.distance_ls:.0f}",
                     signals_text,
                 ),
             )
+
+        if entries:
+            try:
+                item_font_name = tree.cget("font")
+            except tk.TclError:
+                item_font_name = ""
+            try:
+                item_font = (
+                    tkfont.nametofont(item_font_name)
+                    if item_font_name
+                    else tkfont.nametofont("TkDefaultFont")
+                )
+            except tk.TclError:
+                item_font = None
+
+            try:
+                heading_font = tkfont.nametofont("TkHeadingFont")
+            except tk.TclError:
+                heading_font = None
+
+            if item_font:
+                max_width = max(item_font.measure(label) for label in (*system_labels, "System"))
+                tree.column("system", width=max(140, max_width + 16))
+                signals_width = max(item_font.measure(label) for label in (*signals_labels, "Signals"))
+            else:
+                signals_width = 0
+
+            header_width = heading_font.measure("Signals") if heading_font else signals_width
+            target_signal_width = max(header_width, signals_width) + 16
+            current_config = tree.column("signals")
+            current_width = current_config.get("width", 0) if isinstance(current_config, dict) else 0
+            current_min = current_config.get("minwidth", 0) if isinstance(current_config, dict) else 0
+            effective_width = max(target_signal_width, current_width, current_min)
+            if effective_width > 0:
+                tree.column("signals", width=effective_width, minwidth=effective_width, stretch=False)
+
+        self._resize_to_fit_results()
 
         if not entries:
             self._status_var.set("No hotspots matched the selected filters.")
@@ -2402,3 +2490,30 @@ class HotspotSearchWindow:
         if result.reference_system:
             status_parts.append(f"near {result.reference_system}")
         self._status_var.set("; ".join(status_parts))
+
+    def _resize_to_fit_results(self) -> None:
+        if not self._toplevel or not self._results_tree:
+            return
+        try:
+            self._toplevel.update_idletasks()
+            widths: List[int] = []
+            if self._results_frame and self._results_frame.winfo_exists():
+                widths.append(self._results_frame.winfo_reqwidth())
+            if self._hotspot_controls_frame and self._hotspot_controls_frame.winfo_exists():
+                widths.append(self._hotspot_controls_frame.winfo_reqwidth())
+            if self._hotspot_container and self._hotspot_container.winfo_exists():
+                widths.append(self._hotspot_container.winfo_reqwidth())
+            if not widths:
+                widths.append(self._results_tree.winfo_reqwidth())
+            padding = 24  # container has padx=12 on each side
+            desired_width = max(widths) + padding
+            current_width = self._toplevel.winfo_width()
+            if current_width <= 1:
+                current_width = self._toplevel.winfo_reqwidth()
+            current_height = self._toplevel.winfo_height()
+            if current_height <= 1:
+                current_height = self._toplevel.winfo_reqheight()
+            target_width = max(current_width, int(desired_width))
+            self._toplevel.geometry(f"{target_width}x{current_height}")
+        except Exception:
+            pass
