@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import logging
+import queue
 import random
+import threading
 import webbrowser
 from collections import Counter
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -2027,6 +2030,16 @@ class edmcmaMiningUI:
         _hist_recompute(self)
 
 
+@dataclass(frozen=True)
+class _HotspotSearchParams:
+    distance_min: float
+    distance_max: float
+    ring_signals: Tuple[str, ...]
+    reserve_levels: Tuple[str, ...]
+    ring_types: Tuple[str, ...]
+    system_label: str
+
+
 class HotspotSearchWindow:
     """Toplevel window that performs and displays Spansh hotspot searches."""
 
@@ -2067,7 +2080,7 @@ class HotspotSearchWindow:
         self._toplevel.title("Nearby Hotspots")
         self._toplevel.transient(parent.winfo_toplevel())
         self._toplevel.protocol("WM_DELETE_WINDOW", self.close)
-        self._toplevel.minsize(700, 420)
+        self._toplevel.minsize(960, 420)
         self._theme.register(self._toplevel)
 
         self._distance_min_var = tk.StringVar(master=self._toplevel, value=self.DEFAULT_DISTANCE_MIN)
@@ -2084,6 +2097,14 @@ class HotspotSearchWindow:
         self._ring_type_listbox: Optional[tk.Listbox] = None
         self._reserve_combobox: Optional[ttk.Combobox] = None
         self._results_tree: Optional[ttk.Treeview] = None
+        self._hotspot_container: Optional[tk.Frame] = None
+        self._hotspot_controls_frame: Optional[tk.Frame] = None
+        self._results_frame: Optional[tk.Frame] = None
+        self._search_thread: Optional[threading.Thread] = None
+        self._pending_search_params: Optional[_HotspotSearchParams] = None
+        self._search_token: int = 0
+        self._search_result_queue: "queue.Queue[tuple[int, tuple[str, object]]]" = queue.Queue()
+        self._result_poll_job: Optional[str] = None
         self._status_var = tk.StringVar(master=self._toplevel, value="")
 
         self._build_ui()
@@ -2115,10 +2136,23 @@ class HotspotSearchWindow:
         self._search_job = None
 
         if self._toplevel and self._toplevel.winfo_exists():
+            if self._result_poll_job:
+                try:
+                    self._toplevel.after_cancel(self._result_poll_job)
+                except Exception:
+                    pass
             try:
                 self._toplevel.destroy()
             except Exception:
                 pass
+        elif self._result_poll_job and self._toplevel:
+            try:
+                self._toplevel.after_cancel(self._result_poll_job)
+            except Exception:
+                pass
+        self._result_poll_job = None
+        self._pending_search_params = None
+        self._search_thread = None
 
         if self._on_close:
             try:
@@ -2241,7 +2275,7 @@ class HotspotSearchWindow:
         tree.heading("distance_ls", text="Dist2Arrival (LS)")
         tree.heading("signals", text="Signals")
 
-        tree.column("system", width=140, anchor="w")
+        tree.column("system", width=140, minwidth=140, anchor="w", stretch=False)
         tree.column("body", width=140, anchor="w")
         tree.column("ring", width=160, anchor="w")
         tree.column("type", width=120, anchor="w")
@@ -2271,6 +2305,7 @@ class HotspotSearchWindow:
         tree_scroll.pack(side="right", fill="y")
 
         self._results_tree = tree
+        self._schedule_result_poll()
 
     # ------------------------------------------------------------------
     # Helpers
@@ -2354,40 +2389,88 @@ class HotspotSearchWindow:
             self._status_var.set(f"Invalid input: {exc}")
             return
 
-        current_system = self._state.current_system or "Unknown system"
-        if not self._state.current_system:
+        system_name = self._state.current_system
+        if not system_name:
             self._status_var.set("Current system unknown. Move to a system to search for hotspots.")
             return
+
+        params = _HotspotSearchParams(
+            distance_min=float(min_distance),
+            distance_max=float(max_distance),
+            ring_signals=tuple(signals),
+            reserve_levels=tuple(reserves),
+            ring_types=tuple(ring_types),
+            system_label=system_name,
+        )
+        self._start_search(params)
+
+    def _start_search(self, params: _HotspotSearchParams) -> None:
+        if not self.is_open:
+            return
+
+        self._schedule_result_poll()
+
+        if self._search_thread and self._search_thread.is_alive():
+            self._pending_search_params = params
+            self._status_var.set(
+                f"Waiting for previous Spansh search to finish before searching near {params.system_label}..."
+            )
+            return
+
+        self._pending_search_params = None
+
+        system_label = params.system_label or "Unknown system"
+        self._status_var.set(f"Searching for hotspots near {system_label}...")
 
         tree = self._results_tree
         if tree:
             for item in tree.get_children():
                 tree.delete(item)
 
-        self._status_var.set(f"Searching for hotspots near {current_system}...")
         if self._toplevel:
-            self._toplevel.update_idletasks()
+            try:
+                self._toplevel.update_idletasks()
+            except Exception:
+                pass
 
-        try:
-            result = self._client.search_hotspots(
-                distance_min=min_distance,
-                distance_max=max_distance,
-                ring_signals=signals,
-                reserve_levels=reserves,
-                ring_types=ring_types,
-            )
-        except ValueError as exc:
-            self._status_var.set(str(exc))
-            return
-        except RuntimeError as exc:
-            self._status_var.set(str(exc))
-            return
-        except Exception as exc:
-            _log.exception("Unexpected error during hotspot search: %s", exc)
-            self._status_var.set("An unexpected error occurred while searching for hotspots.")
-            return
+        distance_min = params.distance_min
+        distance_max = params.distance_max
+        ring_signals = params.ring_signals
+        reserve_levels = params.reserve_levels
+        ring_types = params.ring_types
 
-        self._render_results(result)
+        self._search_token += 1
+        token = self._search_token
+
+        def worker() -> None:
+            try:
+                result = self._client.search_hotspots(
+                    distance_min=distance_min,
+                    distance_max=distance_max,
+                    ring_signals=ring_signals,
+                    reserve_levels=reserve_levels,
+                    ring_types=ring_types,
+                )
+                outcome: tuple[str, object] = ("success", result)
+            except ValueError as exc:
+                outcome = ("value_error", str(exc))
+            except RuntimeError as exc:
+                outcome = ("runtime_error", str(exc))
+            except Exception as exc:
+                _log.exception("Unexpected error during hotspot search: %s", exc)
+                outcome = ("exception", str(exc))
+
+            try:
+                self._search_result_queue.put_nowait((token, outcome))
+            except Exception:
+                pass
+
+        self._search_thread = threading.Thread(
+            target=worker,
+            name="EDMC-SpanshSearch",
+            daemon=True,
+        )
+        self._search_thread.start()
 
     def _render_results(self, result: HotspotSearchResult) -> None:
         tree = self._results_tree
@@ -2400,6 +2483,8 @@ class HotspotSearchWindow:
         entries = list(result.entries)
         system_labels: List[str] = []
         signals_labels: List[str] = []
+        ring_labels: List[str] = []
+        type_labels: List[str] = []
         for entry in entries:
             signals_text = ", ".join(
                 f"{signal.name} ({signal.count})" if signal.count else signal.name for signal in entry.signals
@@ -2429,6 +2514,8 @@ class HotspotSearchWindow:
                         ring_display = trimmed
             if not ring_display or ring_display == entry.ring_name:
                 ring_display = entry.ring_name or "—"
+            ring_labels.append(ring_display or "—")
+            type_labels.append(entry.ring_type or "—")
             tree.insert(
                 "",
                 "end",
@@ -2462,12 +2549,19 @@ class HotspotSearchWindow:
             except tk.TclError:
                 heading_font = None
 
+            system_width = 0
             if item_font:
                 max_width = max(item_font.measure(label) for label in (*system_labels, "System"))
-                tree.column("system", width=max(140, max_width + 16))
+                system_width = max(140, max_width + 16)
+                tree.column("system", width=system_width, minwidth=system_width, stretch=False)
                 signals_width = max(item_font.measure(label) for label in (*signals_labels, "Signals"))
+                ring_width = max(item_font.measure(label) for label in (*ring_labels, "Ring"))
+                type_width = max(item_font.measure(label) for label in (*type_labels, "Type"))
             else:
+                system_width = 0
                 signals_width = 0
+                ring_width = 0
+                type_width = 0
 
             header_width = heading_font.measure("Signals") if heading_font else signals_width
             target_signal_width = max(header_width, signals_width) + 16
@@ -2477,6 +2571,21 @@ class HotspotSearchWindow:
             effective_width = max(target_signal_width, current_width, current_min)
             if effective_width > 0:
                 tree.column("signals", width=effective_width, minwidth=effective_width, stretch=False)
+
+            def _resize_column(column: str, content_width: int, header_text: str) -> None:
+                header_w = heading_font.measure(header_text) if heading_font else content_width
+                target = max(header_w, content_width) + 16
+                config = tree.column(column)
+                current_w = config.get("width", 0) if isinstance(config, dict) else 0
+                current_min_w = config.get("minwidth", 0) if isinstance(config, dict) else 0
+                effective = max(target, current_w, current_min_w)
+                if effective > 0:
+                    tree.column(column, width=effective, minwidth=effective, stretch=False)
+
+            if ring_width:
+                _resize_column("ring", ring_width, "Ring")
+            if type_width:
+                _resize_column("type", type_width, "Type")
 
         self._resize_to_fit_results()
 
@@ -2491,11 +2600,39 @@ class HotspotSearchWindow:
             status_parts.append(f"near {result.reference_system}")
         self._status_var.set("; ".join(status_parts))
 
+    def _handle_search_outcome(self, token: int, outcome: tuple[str, object]) -> None:
+        if not self.is_open:
+            return
+
+        if token != self._search_token:
+            return
+
+        self._search_thread = None
+
+        kind, payload = outcome
+        if kind == "success":
+            if isinstance(payload, HotspotSearchResult):
+                self._render_results(payload)
+            else:
+                _log.warning("Unexpected search payload type: %r", type(payload))
+        elif kind in {"value_error", "runtime_error"}:
+            message = str(payload) if payload else "An unexpected error occurred while searching for hotspots."
+            self._status_var.set(message)
+        else:
+            self._status_var.set("An unexpected error occurred while searching for hotspots.")
+
+        if self._pending_search_params is not None:
+            pending = self._pending_search_params
+            self._pending_search_params = None
+            self._start_search(pending)
+
     def _resize_to_fit_results(self) -> None:
         if not self._toplevel or not self._results_tree:
             return
         try:
             self._toplevel.update_idletasks()
+            if self._results_tree.winfo_exists():
+                self._results_tree.update_idletasks()
             widths: List[int] = []
             if self._results_frame and self._results_frame.winfo_exists():
                 widths.append(self._results_frame.winfo_reqwidth())
@@ -2503,6 +2640,14 @@ class HotspotSearchWindow:
                 widths.append(self._hotspot_controls_frame.winfo_reqwidth())
             if self._hotspot_container and self._hotspot_container.winfo_exists():
                 widths.append(self._hotspot_container.winfo_reqwidth())
+            if self._results_tree and self._results_tree.winfo_exists():
+                total_columns = 0
+                for column in self._results_tree["columns"]:
+                    config = self._results_tree.column(column)
+                    if isinstance(config, dict):
+                        total_columns += config.get("width", 0)
+                if total_columns:
+                    widths.append(total_columns + 24)
             if not widths:
                 widths.append(self._results_tree.winfo_reqwidth())
             padding = 24  # container has padx=12 on each side
@@ -2517,3 +2662,24 @@ class HotspotSearchWindow:
             self._toplevel.geometry(f"{target_width}x{current_height}")
         except Exception:
             pass
+
+    def _schedule_result_poll(self) -> None:
+        if not self._toplevel or not self._toplevel.winfo_exists():
+            return
+        if self._result_poll_job:
+            return
+        self._result_poll_job = self._toplevel.after(100, self._poll_search_results)
+
+    def _poll_search_results(self) -> None:
+        self._result_poll_job = None
+        if not self.is_open:
+            return
+
+        while True:
+            try:
+                token, outcome = self._search_result_queue.get_nowait()
+            except queue.Empty:
+                break
+            self._handle_search_outcome(token, outcome)
+
+        self._schedule_result_poll()
