@@ -2398,8 +2398,9 @@ class HotspotSearchWindow:
         self._theme.register(results_frame)
         self._results_frame = results_frame
 
-        columns = ("system", "body", "ring", "type", "distance_ly", "distance_ls", "signals")
+        columns = ("copy", "system", "body", "ring", "type", "distance_ly", "distance_ls", "signals")
         tree = ttk.Treeview(results_frame, columns=columns, show="headings")
+        tree.heading("copy", text="")
         tree.heading("system", text="System")
         tree.heading("body", text="Body")
         tree.heading("ring", text="Ring")
@@ -2408,6 +2409,7 @@ class HotspotSearchWindow:
         tree.heading("distance_ls", text="Dist2Arrival (LS)")
         tree.heading("signals", text="Signals")
 
+        tree.column("copy", width=28, minwidth=28, anchor="center", stretch=False)
         tree.column("system", width=140, minwidth=140, anchor="w", stretch=False)
         tree.column("body", width=140, anchor="w")
         tree.column("ring", width=160, anchor="w")
@@ -2438,6 +2440,7 @@ class HotspotSearchWindow:
         tree_scroll.pack(side="right", fill="y")
 
         self._results_tree = tree
+        tree.bind("<ButtonRelease-1>", self._handle_result_click, add="+")
         self._schedule_result_poll()
         reserve_combo.bind("<<ComboboxSelected>>", self._on_filters_changed, add="+")
         self._distance_min_var.trace_add("write", self._on_filters_changed)
@@ -2614,6 +2617,26 @@ class HotspotSearchWindow:
         self._hide_reference_suggestions()
         self._perform_search()
         return "break"
+
+    def _handle_result_click(self, event: tk.Event) -> None:
+        tree = self._results_tree
+        if not tree or not tree.winfo_exists():
+            return
+
+        item_id = tree.identify_row(event.y)
+        if not item_id:
+            return
+        column = tree.identify_column(event.x)
+        if column != "#1":
+            return
+
+        values = tree.item(item_id, "values")
+        if not values or len(values) < 2:
+            return
+        system_name = values[1]
+        if not isinstance(system_name, str) or not system_name.strip():
+            return
+        self._copy_system_to_clipboard(system_name.strip())
 
     def _queue_reference_suggestion_fetch(self) -> None:
         if not self._reference_system_var or not self._toplevel:
@@ -2991,6 +3014,7 @@ class HotspotSearchWindow:
                 "",
                 "end",
                 values=(
+                    "📋",
                     system_display,
                     body_display,
                     ring_display,
@@ -3153,6 +3177,16 @@ class HotspotSearchWindow:
             self._toplevel.geometry(f"{target_width}x{current_height}")
         except Exception:
             pass
+
+    def _copy_system_to_clipboard(self, system_name: str) -> None:
+        if not self._toplevel or not system_name:
+            return
+        try:
+            self._toplevel.clipboard_clear()
+            self._toplevel.clipboard_append(system_name)
+            self._status_var.set(f"Copied '{system_name}' to clipboard")
+        except Exception:
+            _log.exception("Failed to copy system name to clipboard")
 
     def _schedule_result_poll(self) -> None:
         if not self._toplevel or not self._toplevel.winfo_exists():
