@@ -2234,6 +2234,7 @@ class HotspotSearchWindow:
         self._theme.register(reference_entry)
         reference_entry.bind("<KeyRelease>", self._handle_reference_key_release, add="+")
         reference_entry.bind("<Down>", self._handle_reference_entry_down, add="+")
+        reference_entry.bind("<Return>", self._handle_reference_entry_return, add="+")
         self._reference_entry = reference_entry
 
         suggestions_listbox = tk.Listbox(reference_frame, height=6, exportselection=False)
@@ -2571,6 +2572,12 @@ class HotspotSearchWindow:
                 return "break"
         return None
 
+    def _handle_reference_entry_return(self, _event: tk.Event) -> str:
+        self._reference_suggestions_suppressed = True
+        self._hide_reference_suggestions()
+        self._perform_search()
+        return "break"
+
     def _queue_reference_suggestion_fetch(self) -> None:
         if not self._reference_system_var or not self._toplevel:
             return
@@ -2711,6 +2718,7 @@ class HotspotSearchWindow:
         self._reference_last_query = lowered
         self._reference_suggestions_suppressed = True
         self._reference_system_var.set(trimmed)
+        self._perform_search()
         self._hide_reference_suggestions()
         if self._reference_entry:
             self._reference_entry.focus_set()
