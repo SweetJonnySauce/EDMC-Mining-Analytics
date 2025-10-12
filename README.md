@@ -2,7 +2,7 @@
 
 EDMC Mining Analytics extends Elite Dangerous Market Connector (EDMC) with a mining-focused control panel. The plugin listens to in-game journal events to present live production metrics, highlight rock quality, and capture session history without leaving EDMC.
 
-This is a beta release. As such, breaking changes may be introduced. Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/issues). Your feedback helps shape the next release.
+Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/issues). Your feedback helps shape the next release.
 
 ## Key Features
 - Real-time mining dashboard showing cargo totals, tons-per-hour trends, limpets, refinements-per-minute to gauge your collection efficiency and ship context.
@@ -11,6 +11,7 @@ This is a beta release. As such, breaking changes may be introduced. Please repo
 - Automated session management that starts, pauses, and resets analytics in response to journal events or user input, with optional auto-resume when activity resumes.
 - Prospecting intelligence with duplicate detection, commodity histograms, and quick-glance content summaries for each asteroid.
 - Integrations that help you act on the data, including Inara commodity lookups for nearest/best price (click on the commodity name in the table), EDSM lookup for reserve level and ring type, and Discord webhook summaries of completed runs.
+- No in-game configurations needed. Simply install it as an EDMC plugin and restart EDMC.
 - Optional warning that you are in a non-metallic ring (for those laser platinum miners)
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
 - Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
