@@ -2168,6 +2168,7 @@ class HotspotSearchWindow:
         self._results_frame = None
         self._results_tree = None
         self._reference_entry = None
+        self._reference_system_var = None
 
     # ------------------------------------------------------------------
     # UI construction
@@ -2178,7 +2179,7 @@ class HotspotSearchWindow:
         self._theme.register(container)
         self._hotspot_container = container
 
-        reference_initial = self._state.spansh_last_reference_system or self._state.current_system or ""
+        reference_initial = self._state.current_system or ""
         self._reference_system_var.set(reference_initial)
 
         reference_frame = tk.Frame(container, highlightthickness=0, bd=0)
@@ -2516,16 +2517,6 @@ class HotspotSearchWindow:
         return min_distance, max_distance, signals, reserves, ring_types
 
     def _on_filters_changed(self, *_: object) -> None:
-        reference_value = self._reference_system_var.get().strip() if self._reference_system_var else ""
-        if (
-            reference_value
-            and self._state.current_system
-            and reference_value.lower() == self._state.current_system.lower()
-        ):
-            self._state.spansh_last_reference_system = None
-        else:
-            self._state.spansh_last_reference_system = reference_value or None
-
         self._state.spansh_last_distance_min = self._parse_optional_float(
             self._distance_min_var.get() if self._distance_min_var else None
         )

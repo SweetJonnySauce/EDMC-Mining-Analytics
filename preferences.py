@@ -174,7 +174,6 @@ class PreferencesManager:
         state.spansh_last_ring_signals = self._load_string_list("edmc_mining_spansh_ring_signals")
         state.spansh_last_reserve_levels = self._load_string_list("edmc_mining_spansh_reserve_levels")
         state.spansh_last_ring_types = self._load_string_list("edmc_mining_spansh_ring_types")
-        state.spansh_last_reference_system = self._get_optional_str("edmc_mining_spansh_reference_system")
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -354,11 +353,6 @@ class PreferencesManager:
             except Exception:
                 _log.exception("Failed to persist Spansh ring types")
 
-        try:
-            value = (state.spansh_last_reference_system or "").strip()
-            config.set("edmc_mining_spansh_reference_system", value)
-        except Exception:
-            _log.exception("Failed to persist Spansh reference system")
 
     @staticmethod
     def _get_int(key: str, default: int) -> int:
