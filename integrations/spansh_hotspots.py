@@ -245,8 +245,11 @@ class SpanshHotspotClient:
         cleaned_signals = [signal for signal in (ring_signals or []) if signal]
         if cleaned_signals:
             filters["ring_signals"] = [
-                {"comparison": "<=>", "count": [min_count, MAX_SIGNAL_COUNT], "name": signal}
-                for signal in cleaned_signals
+                {
+                    "comparison": "<=>",
+                    "count": [min_count, MAX_SIGNAL_COUNT],
+                    "name": cleaned_signals,
+                }
             ]
 
         cleaned_reserves = [reserve for reserve in (reserve_levels or []) if reserve]
@@ -258,7 +261,7 @@ class SpanshHotspotClient:
 
         cleaned_rings = [ring_type for ring_type in (ring_types or []) if ring_type]
         if cleaned_rings:
-            filters["rings"] = [{"type": ring_type} for ring_type in cleaned_rings]
+            filters["rings"] = [{"type": cleaned_rings}]
 
         payload = {
             "filters": filters,
