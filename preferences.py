@@ -174,6 +174,7 @@ class PreferencesManager:
         state.spansh_last_ring_signals = self._load_string_list("edmc_mining_spansh_ring_signals")
         state.spansh_last_reserve_levels = self._load_string_list("edmc_mining_spansh_reserve_levels")
         state.spansh_last_ring_types = self._load_string_list("edmc_mining_spansh_ring_types")
+        state.spansh_last_reference_system = self._get_optional_str("edmc_mining_spansh_reference_system")
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -353,6 +354,12 @@ class PreferencesManager:
             except Exception:
                 _log.exception("Failed to persist Spansh ring types")
 
+        try:
+            value = (state.spansh_last_reference_system or "").strip()
+            config.set("edmc_mining_spansh_reference_system", value)
+        except Exception:
+            _log.exception("Failed to persist Spansh reference system")
+
     @staticmethod
     def _get_int(key: str, default: int) -> int:
         if config is None:
@@ -362,22 +369,31 @@ class PreferencesManager:
         except Exception:
             return default
 
-    def _get_str(self, key: str, default: Optional[str]) -> Optional[str]:
+    def _get_str(self, key: str, default: str) -> str:
         if config is None:
             return default
         try:
             raw = config.get_str(key)  # type: ignore[arg-type]
         except Exception:
             raw = None
+        if not raw:
+            return default
+        return str(raw)
+
+    def _get_optional_str(self, key: str) -> Optional[str]:
+        if config is None:
+            return None
+        try:
+            raw = config.get_str(key)  # type: ignore[arg-type]
+        except Exception:
+            return None
         if raw is None:
-            return default
-        raw_str = str(raw)
-        if not raw_str:
-            return default
-        return raw_str
+            return None
+        value = str(raw).strip()
+        return value or None
 
     def _get_float(self, key: str, default: Optional[float]) -> Optional[float]:
-        text = self._get_str(key, None)
+        text = self._get_optional_str(key)
         if not text:
             return default
         try:
@@ -445,7 +461,7 @@ class PreferencesManager:
         return cleaned
 
     def _load_string_list(self, key: str) -> Optional[List[str]]:
-        payload = self._get_str(key, None)
+        payload = self._get_optional_str(key)
         if payload is None:
             return None
         try:

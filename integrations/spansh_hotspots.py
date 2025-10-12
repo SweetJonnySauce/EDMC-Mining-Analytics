@@ -71,6 +71,50 @@ class SpanshHotspotClient:
     def list_reserve_levels(self) -> List[str]:
         return self._get_field_values("reserve_level")
 
+    def resolve_reference_system(self, reference: Optional[str]) -> str:
+        candidate = (reference or "").strip()
+        current_system = (self._state.current_system or "").strip()
+
+        if not candidate:
+            if current_system:
+                return current_system
+            raise ValueError("Reference system is unknown; please enter a system name.")
+
+        if current_system and candidate.lower() == current_system.lower():
+            return current_system
+
+        url = f"{API_BASE}/systems/field_values/system_names"
+        params = {"q": candidate}
+        try:
+            response = self._session.get(url, params=params, timeout=DEFAULT_TIMEOUT)
+        except Exception as exc:
+            _log.exception("Spansh reference system lookup failed: %s", exc)
+            raise RuntimeError("Failed to contact spansh.co.uk systems API") from exc
+
+        if response.status_code != 200:
+            raise RuntimeError(f"Spansh reference system lookup failed with status {response.status_code}")
+
+        try:
+            data = response.json()
+        except Exception as exc:
+            _log.exception("Failed to parse Spansh reference system response: %s", exc)
+            raise RuntimeError("Unable to decode Spansh reference system response") from exc
+
+        values = data.get("values")
+        if not isinstance(values, list):
+            values = []
+
+        cleaned = [str(value).strip() for value in values if isinstance(value, str) and str(value).strip()]
+        if not cleaned:
+            raise ValueError(f"Reference system '{candidate}' was not found on spansh.co.uk")
+
+        candidate_lower = candidate.lower()
+        for name in cleaned:
+            if name.lower() == candidate_lower:
+                return name
+
+        return cleaned[0]
+
     def _get_field_values(self, field: str) -> List[str]:
         cached = self._field_cache.get(field)
         if cached is not None:
@@ -114,12 +158,13 @@ class SpanshHotspotClient:
         ring_types: Sequence[str],
         limit: int = DEFAULT_RESULT_SIZE,
         page: int = 0,
+        reference_system: Optional[str] = None,
     ) -> HotspotSearchResult:
         """Query Spansh for hotspots near the current system."""
 
-        system = self._state.current_system
+        system = (reference_system or self._state.current_system or "").strip()
         if not system:
-            raise ValueError("Current system is unknown; cannot perform hotspot search.")
+            raise ValueError("Reference system is unknown; cannot perform hotspot search.")
 
         filters: Dict[str, object] = {}
 
@@ -181,6 +226,8 @@ class SpanshHotspotClient:
 
         reference = data.get("reference") or {}
         reference_name = reference.get("name") if isinstance(reference, dict) else None
+        if not reference_name:
+            reference_name = system
         total_count = int(data.get("count") or 0)
 
         if _log.isEnabledFor(logging.DEBUG) or _plugin_log.isEnabledFor(logging.DEBUG):

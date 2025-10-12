@@ -104,6 +104,7 @@ class MiningState:
     spansh_last_ring_signals: Optional[List[str]] = None
     spansh_last_reserve_levels: Optional[List[str]] = None
     spansh_last_ring_types: Optional[List[str]] = None
+    spansh_last_reference_system: Optional[str] = None
 
 
 def compute_percentage_stats(samples: Iterable[float]) -> Optional[Tuple[float, float, float]]:

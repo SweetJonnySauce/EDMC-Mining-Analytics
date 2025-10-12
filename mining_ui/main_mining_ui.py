@@ -2037,7 +2037,7 @@ class _HotspotSearchParams:
     ring_signals: Tuple[str, ...]
     reserve_levels: Tuple[str, ...]
     ring_types: Tuple[str, ...]
-    system_label: str
+    reference_text: str
 
 
 class HotspotSearchWindow:
@@ -2086,6 +2086,7 @@ class HotspotSearchWindow:
         self._distance_min_var = tk.StringVar(master=self._toplevel, value=self.DEFAULT_DISTANCE_MIN)
         self._distance_max_var = tk.StringVar(master=self._toplevel, value=self.DEFAULT_DISTANCE_MAX)
         self._reserve_var = tk.StringVar(master=self._toplevel, value=self.DEFAULT_RESERVE)
+        self._reference_system_var = tk.StringVar(master=self._toplevel, value="")
 
         self._ring_signal_options = self._sorted_unique(self._client.list_ring_signals(), self.FALLBACK_RING_SIGNALS)
         self._ring_type_options = self._sorted_unique(self._client.list_ring_types(), self.FALLBACK_RING_TYPES)
@@ -2096,6 +2097,7 @@ class HotspotSearchWindow:
         self._signals_listbox: Optional[tk.Listbox] = None
         self._ring_type_listbox: Optional[tk.Listbox] = None
         self._reserve_combobox: Optional[ttk.Combobox] = None
+        self._reference_entry: Optional[ttk.Entry] = None
         self._results_tree: Optional[ttk.Treeview] = None
         self._hotspot_container: Optional[tk.Frame] = None
         self._hotspot_controls_frame: Optional[tk.Frame] = None
@@ -2165,6 +2167,7 @@ class HotspotSearchWindow:
         self._hotspot_controls_frame = None
         self._results_frame = None
         self._results_tree = None
+        self._reference_entry = None
 
     # ------------------------------------------------------------------
     # UI construction
@@ -2174,6 +2177,22 @@ class HotspotSearchWindow:
         container.pack(fill="both", expand=True, padx=12, pady=12)
         self._theme.register(container)
         self._hotspot_container = container
+
+        reference_initial = self._state.spansh_last_reference_system or self._state.current_system or ""
+        self._reference_system_var.set(reference_initial)
+
+        reference_frame = tk.Frame(container, highlightthickness=0, bd=0)
+        reference_frame.pack(fill="x", pady=(0, 8))
+        self._theme.register(reference_frame)
+
+        reference_label = tk.Label(reference_frame, text="Reference System", anchor="w")
+        reference_label.pack(side="left", padx=(0, 8))
+        self._theme.register(reference_label)
+
+        reference_entry = ttk.Entry(reference_frame, textvariable=self._reference_system_var, width=28)
+        reference_entry.pack(side="left", fill="x", expand=True)
+        self._theme.register(reference_entry)
+        self._reference_entry = reference_entry
 
         self._distance_min_var.set(self._format_distance(self._state.spansh_last_distance_min, self.DEFAULT_DISTANCE_MIN))
         self._distance_max_var.set(self._format_distance(self._state.spansh_last_distance_max, self.DEFAULT_DISTANCE_MAX))
@@ -2340,6 +2359,7 @@ class HotspotSearchWindow:
         reserve_combo.bind("<<ComboboxSelected>>", self._on_filters_changed, add="+")
         self._distance_min_var.trace_add("write", self._on_filters_changed)
         self._distance_max_var.trace_add("write", self._on_filters_changed)
+        self._reference_system_var.trace_add("write", self._on_filters_changed)
         self._on_filters_changed()
 
     # ------------------------------------------------------------------
@@ -2496,6 +2516,16 @@ class HotspotSearchWindow:
         return min_distance, max_distance, signals, reserves, ring_types
 
     def _on_filters_changed(self, *_: object) -> None:
+        reference_value = self._reference_system_var.get().strip() if self._reference_system_var else ""
+        if (
+            reference_value
+            and self._state.current_system
+            and reference_value.lower() == self._state.current_system.lower()
+        ):
+            self._state.spansh_last_reference_system = None
+        else:
+            self._state.spansh_last_reference_system = reference_value or None
+
         self._state.spansh_last_distance_min = self._parse_optional_float(
             self._distance_min_var.get() if self._distance_min_var else None
         )
@@ -2526,9 +2556,10 @@ class HotspotSearchWindow:
             self._status_var.set(f"Invalid input: {exc}")
             return
 
-        system_name = self._state.current_system
-        if not system_name:
-            self._status_var.set("Current system unknown. Move to a system to search for hotspots.")
+        reference_input = self._reference_system_var.get().strip() if self._reference_system_var else ""
+        fallback_system = reference_input or self._state.current_system or ""
+        if not fallback_system:
+            self._status_var.set("Reference system unknown. Enter a system name to search for hotspots.")
             return
 
         params = _HotspotSearchParams(
@@ -2537,7 +2568,7 @@ class HotspotSearchWindow:
             ring_signals=tuple(signals),
             reserve_levels=tuple(reserves),
             ring_types=tuple(ring_types),
-            system_label=system_name,
+            reference_text=reference_input,
         )
         self._start_search(params)
 
@@ -2547,23 +2578,19 @@ class HotspotSearchWindow:
 
         self._schedule_result_poll()
 
-        self._state.spansh_last_distance_min = params.distance_min
-        self._state.spansh_last_distance_max = params.distance_max
-        self._state.spansh_last_ring_signals = list(params.ring_signals)
-        self._state.spansh_last_reserve_levels = list(params.reserve_levels)
-        self._state.spansh_last_ring_types = list(params.ring_types)
+        reference_text = (params.reference_text or "").strip()
+        display_reference = reference_text or self._state.current_system or "Unknown system"
 
         if self._search_thread and self._search_thread.is_alive():
             self._pending_search_params = params
             self._status_var.set(
-                f"Waiting for previous Spansh search to finish before searching near {params.system_label}..."
+                f"Waiting for previous Spansh search to finish before searching near {display_reference}..."
             )
             return
 
         self._pending_search_params = None
 
-        system_label = params.system_label or "Unknown system"
-        self._status_var.set(f"Searching for hotspots near {system_label}...")
+        self._status_var.set(f"Searching for hotspots near {display_reference}...")
 
         tree = self._results_tree
         if tree:
@@ -2581,20 +2608,23 @@ class HotspotSearchWindow:
         ring_signals = params.ring_signals
         reserve_levels = params.reserve_levels
         ring_types = params.ring_types
+        reference_text_input = reference_text
 
         self._search_token += 1
         token = self._search_token
 
         def worker() -> None:
             try:
+                resolved_reference = self._client.resolve_reference_system(reference_text_input)
                 result = self._client.search_hotspots(
                     distance_min=distance_min,
                     distance_max=distance_max,
                     ring_signals=ring_signals,
                     reserve_levels=reserve_levels,
                     ring_types=ring_types,
+                    reference_system=resolved_reference,
                 )
-                outcome: tuple[str, object] = ("success", result)
+                outcome: tuple[str, object] = ("success", (result, resolved_reference))
             except ValueError as exc:
                 outcome = ("value_error", str(exc))
             except RuntimeError as exc:
@@ -2754,10 +2784,27 @@ class HotspotSearchWindow:
 
         kind, payload = outcome
         if kind == "success":
-            if isinstance(payload, HotspotSearchResult):
-                self._render_results(payload)
-            else:
+            resolved_reference: Optional[str] = None
+            result_obj: Optional[HotspotSearchResult] = None
+            if isinstance(payload, tuple) and len(payload) == 2:
+                candidate_result, candidate_reference = payload
+                if isinstance(candidate_result, HotspotSearchResult):
+                    result_obj = candidate_result
+                if isinstance(candidate_reference, str) and candidate_reference:
+                    resolved_reference = candidate_reference
+            elif isinstance(payload, HotspotSearchResult):
+                result_obj = payload
+
+            if result_obj is None:
                 _log.warning("Unexpected search payload type: %r", type(payload))
+            else:
+                if resolved_reference:
+                    if (
+                        self._reference_system_var
+                        and self._reference_system_var.get().strip() != resolved_reference
+                    ):
+                        self._reference_system_var.set(resolved_reference)
+                self._render_results(result_obj)
         elif kind in {"value_error", "runtime_error"}:
             message = str(payload) if payload else "An unexpected error occurred while searching for hotspots."
             self._status_var.set(message)
