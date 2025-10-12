@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Sequence
 
 try:
     from config import config  # type: ignore[import]
@@ -169,6 +169,11 @@ class PreferencesManager:
             self._get_int("edmc_mining_overlay_refresh_ms", state.overlay_refresh_interval_ms),
             state.overlay_refresh_interval_ms,
         )
+        state.spansh_last_distance_min = self._get_float("edmc_mining_spansh_distance_min", None)
+        state.spansh_last_distance_max = self._get_float("edmc_mining_spansh_distance_max", None)
+        state.spansh_last_ring_signals = self._load_string_list("edmc_mining_spansh_ring_signals")
+        state.spansh_last_reserve_levels = self._load_string_list("edmc_mining_spansh_reserve_levels")
+        state.spansh_last_ring_types = self._load_string_list("edmc_mining_spansh_ring_types")
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -315,6 +320,39 @@ class PreferencesManager:
         except Exception:
             _log.exception("Failed to persist overlay refresh interval preference")
 
+        try:
+            value = "" if state.spansh_last_distance_min is None else str(float(state.spansh_last_distance_min))
+            config.set("edmc_mining_spansh_distance_min", value)
+        except Exception:
+            _log.exception("Failed to persist Spansh minimum distance")
+
+        try:
+            value = "" if state.spansh_last_distance_max is None else str(float(state.spansh_last_distance_max))
+            config.set("edmc_mining_spansh_distance_max", value)
+        except Exception:
+            _log.exception("Failed to persist Spansh maximum distance")
+
+        if state.spansh_last_ring_signals is not None:
+            try:
+                payload = json.dumps(self._normalise_string_list(state.spansh_last_ring_signals))
+                config.set("edmc_mining_spansh_ring_signals", payload)
+            except Exception:
+                _log.exception("Failed to persist Spansh ring signals")
+
+        if state.spansh_last_reserve_levels is not None:
+            try:
+                payload = json.dumps(self._normalise_string_list(state.spansh_last_reserve_levels))
+                config.set("edmc_mining_spansh_reserve_levels", payload)
+            except Exception:
+                _log.exception("Failed to persist Spansh reserve levels")
+
+        if state.spansh_last_ring_types is not None:
+            try:
+                payload = json.dumps(self._normalise_string_list(state.spansh_last_ring_types))
+                config.set("edmc_mining_spansh_ring_types", payload)
+            except Exception:
+                _log.exception("Failed to persist Spansh ring types")
+
     @staticmethod
     def _get_int(key: str, default: int) -> int:
         if config is None:
@@ -324,16 +362,28 @@ class PreferencesManager:
         except Exception:
             return default
 
-    def _get_str(self, key: str, default: str) -> str:
+    def _get_str(self, key: str, default: Optional[str]) -> Optional[str]:
         if config is None:
             return default
         try:
             raw = config.get_str(key)  # type: ignore[arg-type]
         except Exception:
             raw = None
-        if not raw:
+        if raw is None:
             return default
-        return str(raw)
+        raw_str = str(raw)
+        if not raw_str:
+            return default
+        return raw_str
+
+    def _get_float(self, key: str, default: Optional[float]) -> Optional[float]:
+        text = self._get_str(key, None)
+        if not text:
+            return default
+        try:
+            return float(text)
+        except (TypeError, ValueError):
+            return default
 
     def _load_inferred_capacities(self) -> Dict[str, int]:
         payload = self._get_str("edmc_mining_inferred_cargo_map", "{}")
@@ -380,6 +430,35 @@ class PreferencesManager:
             config.set("edmc_mining_inferred_cargo_map", payload)
         except Exception:
             _log.exception("Failed to persist inferred cargo capacities")
+
+    @staticmethod
+    def _normalise_string_list(values: Optional[Sequence[str]]) -> List[str]:
+        if not values:
+            return []
+        cleaned: List[str] = []
+        for value in values:
+            if not value:
+                continue
+            item = str(value)
+            if item not in cleaned:
+                cleaned.append(item)
+        return cleaned
+
+    def _load_string_list(self, key: str) -> Optional[List[str]]:
+        payload = self._get_str(key, None)
+        if payload is None:
+            return None
+        try:
+            data = json.loads(payload)
+        except Exception:
+            return []
+        if not isinstance(data, list):
+            return []
+        cleaned: List[str] = []
+        for item in data:
+            if isinstance(item, str) and item and item not in cleaned:
+                cleaned.append(item)
+        return cleaned
 
     def reset_inferred_capacities(self, state: MiningState) -> None:
         state.inferred_capacity_map.clear()

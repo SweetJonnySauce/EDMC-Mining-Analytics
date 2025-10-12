@@ -2175,6 +2175,9 @@ class HotspotSearchWindow:
         self._theme.register(container)
         self._hotspot_container = container
 
+        self._distance_min_var.set(self._format_distance(self._state.spansh_last_distance_min, self.DEFAULT_DISTANCE_MIN))
+        self._distance_max_var.set(self._format_distance(self._state.spansh_last_distance_max, self.DEFAULT_DISTANCE_MAX))
+
         controls_frame = tk.Frame(container, highlightthickness=0, bd=0)
         controls_frame.pack(fill="x", pady=(0, 12))
         self._theme.register(controls_frame)
@@ -2205,8 +2208,14 @@ class HotspotSearchWindow:
             state="readonly",
         )
         reserve_combo.grid(row=0, column=0, padx=6, pady=6)
-        if self.DEFAULT_RESERVE in reserve_values:
-            reserve_combo.set(self.DEFAULT_RESERVE)
+        reserve_default = self._resolve_single_default(
+            self._state.spansh_last_reserve_levels,
+            reserve_values,
+            self.DEFAULT_RESERVE,
+        )
+        self._reserve_var.set(reserve_default)
+        if reserve_default in reserve_values:
+            reserve_combo.set(reserve_default)
         elif reserve_values:
             reserve_combo.current(0)
         self._reserve_combobox = reserve_combo
@@ -2226,7 +2235,18 @@ class HotspotSearchWindow:
         for option in self._ring_type_options:
             ring_type_list.insert("end", option)
         self._ring_type_listbox = ring_type_list
-        self._select_defaults(ring_type_list, [self.DEFAULT_RING_TYPE])
+        default_ring_types = self._filter_defaults(
+            self._state.spansh_last_ring_types,
+            self._ring_type_options,
+        )
+        allow_empty_rings = self._state.spansh_last_ring_types is not None
+        self._select_defaults(
+            ring_type_list,
+            default_ring_types,
+            fallback=self.DEFAULT_RING_TYPE,
+            allow_empty=allow_empty_rings,
+        )
+        ring_type_list.bind("<<ListboxSelect>>", self._on_filters_changed, add="+")
 
         signal_frame = tk.LabelFrame(controls_frame, text="Ring Signals")
         signal_frame.pack(side="left", padx=(0, 0), fill="both", expand=True)
@@ -2246,7 +2266,18 @@ class HotspotSearchWindow:
         for option in self._ring_signal_options:
             signal_list.insert("end", option)
         self._signals_listbox = signal_list
-        self._select_defaults(signal_list, [self.DEFAULT_SIGNAL])
+        default_signals = self._filter_defaults(
+            self._state.spansh_last_ring_signals,
+            self._ring_signal_options,
+        )
+        allow_empty_signals = self._state.spansh_last_ring_signals is not None
+        self._select_defaults(
+            signal_list,
+            default_signals,
+            fallback=self.DEFAULT_SIGNAL,
+            allow_empty=allow_empty_signals,
+        )
+        signal_list.bind("<<ListboxSelect>>", self._on_filters_changed, add="+")
         signal_frame.columnconfigure(0, weight=1)
 
         action_frame = tk.Frame(container, highlightthickness=0, bd=0)
@@ -2306,6 +2337,10 @@ class HotspotSearchWindow:
 
         self._results_tree = tree
         self._schedule_result_poll()
+        reserve_combo.bind("<<ComboboxSelected>>", self._on_filters_changed, add="+")
+        self._distance_min_var.trace_add("write", self._on_filters_changed)
+        self._distance_max_var.trace_add("write", self._on_filters_changed)
+        self._on_filters_changed()
 
     # ------------------------------------------------------------------
     # Helpers
@@ -2333,7 +2368,13 @@ class HotspotSearchWindow:
         return sorted(set(cleaned), key=str.casefold)
 
     @staticmethod
-    def _select_defaults(listbox: Optional[tk.Listbox], defaults: Sequence[str]) -> None:
+    def _select_defaults(
+        listbox: Optional[tk.Listbox],
+        defaults: Sequence[str],
+        *,
+        fallback: Optional[str] = None,
+        allow_empty: bool = False,
+    ) -> None:
         if not listbox:
             return
         options = listbox.get(0, "end")
@@ -2346,8 +2387,59 @@ class HotspotSearchWindow:
             listbox.selection_set(index)
             listbox.see(index)
             selected = True
-        if not selected and options:
+
+        if selected:
+            return
+
+        if allow_empty:
+            listbox.selection_clear(0, "end")
+            return
+
+        if fallback and fallback in options:
+            try:
+                index = options.index(fallback)
+                listbox.selection_set(index)
+                listbox.see(index)
+                return
+            except ValueError:
+                pass
+
+        if options:
             listbox.selection_set(0)
+
+    @staticmethod
+    def _format_distance(value: Optional[float], fallback: str) -> str:
+        if value is None:
+            return fallback
+        try:
+            return f"{float(value):g}"
+        except (TypeError, ValueError):
+            return fallback
+
+    @staticmethod
+    def _filter_defaults(candidates: Optional[Sequence[str]], options: Sequence[str]) -> List[str]:
+        if not candidates:
+            return []
+        filtered: List[str] = []
+        option_set = {opt for opt in options}
+        for candidate in candidates:
+            if candidate in option_set and candidate not in filtered:
+                filtered.append(candidate)
+        return filtered
+
+    @staticmethod
+    def _resolve_single_default(
+        candidates: Optional[Sequence[str]],
+        options: Sequence[str],
+        fallback: str,
+    ) -> str:
+        if candidates:
+            for candidate in candidates:
+                if candidate in options:
+                    return candidate
+        if fallback in options:
+            return fallback
+        return options[0] if options else fallback
 
     @staticmethod
     def _parse_float(value: str, fallback: float) -> float:
@@ -2355,6 +2447,34 @@ class HotspotSearchWindow:
         if not stripped:
             return fallback
         return float(stripped)
+
+    @staticmethod
+    def _parse_optional_float(value: Optional[str]) -> Optional[float]:
+        stripped = value.strip() if value else ""
+        if not stripped:
+            return None
+        try:
+            return float(stripped)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _get_listbox_selection(listbox: Optional[tk.Listbox]) -> List[str]:
+        if not listbox:
+            return []
+        selections: List[str] = []
+        try:
+            indices = listbox.curselection()
+        except Exception:
+            return []
+        for index in indices:
+            try:
+                value = listbox.get(index)
+            except Exception:
+                continue
+            if isinstance(value, str):
+                selections.append(value)
+        return selections
 
     def _collect_selections(self) -> Tuple[float, float, List[str], List[str], List[str]]:
         min_distance = self._parse_float(self._distance_min_var.get(), float(self.DEFAULT_DISTANCE_MIN))
@@ -2374,6 +2494,23 @@ class HotspotSearchWindow:
             ring_types = [ring_type_list.get(index) for index in ring_type_list.curselection()]
 
         return min_distance, max_distance, signals, reserves, ring_types
+
+    def _on_filters_changed(self, *_: object) -> None:
+        self._state.spansh_last_distance_min = self._parse_optional_float(
+            self._distance_min_var.get() if self._distance_min_var else None
+        )
+        self._state.spansh_last_distance_max = self._parse_optional_float(
+            self._distance_max_var.get() if self._distance_max_var else None
+        )
+
+        reserve_value = self._reserve_var.get().strip() if self._reserve_var else ""
+        if reserve_value:
+            self._state.spansh_last_reserve_levels = [reserve_value]
+        else:
+            self._state.spansh_last_reserve_levels = []
+
+        self._state.spansh_last_ring_types = self._get_listbox_selection(self._ring_type_listbox)
+        self._state.spansh_last_ring_signals = self._get_listbox_selection(self._signals_listbox)
 
     # ------------------------------------------------------------------
     # Search + render
@@ -2409,6 +2546,12 @@ class HotspotSearchWindow:
             return
 
         self._schedule_result_poll()
+
+        self._state.spansh_last_distance_min = params.distance_min
+        self._state.spansh_last_distance_max = params.distance_max
+        self._state.spansh_last_ring_signals = list(params.ring_signals)
+        self._state.spansh_last_reserve_levels = list(params.reserve_levels)
+        self._state.spansh_last_ring_types = list(params.ring_types)
 
         if self._search_thread and self._search_thread.is_alive():
             self._pending_search_params = params

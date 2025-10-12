@@ -99,6 +99,11 @@ class MiningState:
     overlay_available: bool = False
     rpm_display_color: str = "#ffffff"
     overlay_refresh_interval_ms: int = 1000
+    spansh_last_distance_min: Optional[float] = None
+    spansh_last_distance_max: Optional[float] = None
+    spansh_last_ring_signals: Optional[List[str]] = None
+    spansh_last_reserve_levels: Optional[List[str]] = None
+    spansh_last_ring_types: Optional[List[str]] = None
 
 
 def compute_percentage_stats(samples: Iterable[float]) -> Optional[Tuple[float, float, float]]:
