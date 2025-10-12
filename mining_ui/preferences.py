@@ -15,7 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
 from integrations.edmcoverlay import is_overlay_available
-from version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
+from edmc_mining_analytics_version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
 
 
 def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:

@@ -29,7 +29,12 @@ from preferences import (
     clamp_overlay_interval,
 )
 from logging_utils import get_logger
-from version import PLUGIN_VERSION, PLUGIN_REPO_URL, display_version, is_newer_version
+from edmc_mining_analytics_version import (
+    PLUGIN_VERSION,
+    PLUGIN_REPO_URL,
+    display_version,
+    is_newer_version,
+)
 from mining_ui.theme_adapter import ThemeAdapter
 from mining_ui.preferences import build_preferences as build_preferences_ui
 from mining_ui.histograms import (

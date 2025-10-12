@@ -13,7 +13,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import requests
 
 from logging_utils import get_logger
-from version import PLUGIN_VERSION, is_newer_version
+from edmc_mining_analytics_version import PLUGIN_VERSION, is_newer_version
 
 BACKUP_COUNT = 3
 DATETIME_FORMAT = "%Y-%m-%d-%H-%M-%S"

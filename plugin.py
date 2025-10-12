@@ -34,7 +34,11 @@ from preferences import PreferencesManager
 from session_recorder import SessionRecorder
 from state import MiningState, reset_mining_state
 from logging_utils import get_logger, set_log_level
-from version import PLUGIN_VERSION, is_newer_version, normalize_version
+from edmc_mining_analytics_version import (
+    PLUGIN_VERSION,
+    is_newer_version,
+    normalize_version,
+)
 from mining_analytics_ui import edmcmaMiningUI
 from update_manager import UpdateManager
 
