@@ -2098,6 +2098,7 @@ class HotspotSearchWindow:
         self._ring_type_listbox: Optional[tk.Listbox] = None
         self._reserve_combobox: Optional[ttk.Combobox] = None
         self._reference_entry: Optional[ttk.Entry] = None
+        self._reference_frame: Optional[tk.Frame] = None
         self._results_tree: Optional[ttk.Treeview] = None
         self._hotspot_container: Optional[tk.Frame] = None
         self._hotspot_controls_frame: Optional[tk.Frame] = None
@@ -2187,6 +2188,7 @@ class HotspotSearchWindow:
         self._results_frame = None
         self._results_tree = None
         self._reference_entry = None
+        self._reference_frame = None
         self._reference_system_var = None
         self._hide_reference_suggestions()
         self._reference_suggestions_listbox = None
@@ -2205,25 +2207,37 @@ class HotspotSearchWindow:
         self._reference_system_var.set(reference_initial)
         self._reference_last_query = reference_initial.strip().lower()
 
-        reference_frame = tk.Frame(container, highlightthickness=0, bd=0)
-        reference_frame.pack(fill="x", pady=(0, 8))
+        layout_frame = tk.Frame(container, highlightthickness=0, bd=0)
+        layout_frame.pack(fill="x", pady=(0, 12))
+        self._theme.register(layout_frame)
+        layout_frame.columnconfigure(0, weight=1)
+        layout_frame.columnconfigure(1, weight=1)
+        layout_frame.rowconfigure(0, weight=0)
+        layout_frame.rowconfigure(1, weight=1)
+
+        reference_frame = tk.Frame(layout_frame, highlightthickness=0, bd=0)
+        reference_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 12), pady=(0, 8))
         self._theme.register(reference_frame)
+        self._reference_frame = reference_frame
+
+        reference_frame.columnconfigure(0, weight=0)
+        reference_frame.columnconfigure(1, weight=1)
 
         reference_label = tk.Label(reference_frame, text="Reference System", anchor="w")
-        reference_label.pack(side="left", padx=(0, 8))
+        reference_label.grid(row=0, column=0, sticky="w", padx=0)
         self._theme.register(reference_label)
 
         reference_entry = ttk.Entry(reference_frame, textvariable=self._reference_system_var, width=28)
-        reference_entry.pack(side="left", fill="x", expand=True)
+        reference_entry.grid(row=0, column=1, sticky="ew")
         self._theme.register(reference_entry)
         reference_entry.bind("<KeyRelease>", self._handle_reference_key_release, add="+")
         reference_entry.bind("<Down>", self._handle_reference_entry_down, add="+")
         self._reference_entry = reference_entry
 
-        suggestions_listbox = tk.Listbox(container, height=6, exportselection=False)
+        suggestions_listbox = tk.Listbox(reference_frame, height=6, exportselection=False)
         self._theme.register(suggestions_listbox)
-        suggestions_listbox.pack(fill="x", padx=12, pady=(0, 8))
-        suggestions_listbox.pack_forget()
+        suggestions_listbox.grid(row=1, column=1, sticky="ew", pady=(0, 0))
+        suggestions_listbox.grid_remove()
         suggestions_listbox.bind("<Return>", self._apply_reference_suggestion_event, add="+")
         suggestions_listbox.bind("<Double-Button-1>", self._apply_reference_suggestion_event, add="+")
         suggestions_listbox.bind("<Escape>", self._hide_reference_suggestions_event, add="+")
@@ -2235,13 +2249,14 @@ class HotspotSearchWindow:
         self._distance_min_var.set(self._format_distance(self._state.spansh_last_distance_min, self.DEFAULT_DISTANCE_MIN))
         self._distance_max_var.set(self._format_distance(self._state.spansh_last_distance_max, self.DEFAULT_DISTANCE_MAX))
 
-        controls_frame = tk.Frame(container, highlightthickness=0, bd=0)
-        controls_frame.pack(fill="x", pady=(0, 12))
-        self._theme.register(controls_frame)
-        self._hotspot_controls_frame = controls_frame
+        left_controls_frame = tk.Frame(layout_frame, highlightthickness=0, bd=0)
+        left_controls_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 12))
+        left_controls_frame.columnconfigure(0, weight=1)
+        self._theme.register(left_controls_frame)
+        self._hotspot_controls_frame = left_controls_frame
 
-        distance_frame = tk.LabelFrame(controls_frame, text="Distance (LY)")
-        distance_frame.pack(side="left", padx=(0, 12))
+        distance_frame = tk.LabelFrame(left_controls_frame, text="Distance (LY)")
+        distance_frame.grid(row=0, column=0, sticky="ew")
         self._theme.register(distance_frame)
 
         tk.Label(distance_frame, text="Min").grid(row=0, column=0, sticky="w", padx=(4, 4), pady=(2, 2))
@@ -2252,8 +2267,8 @@ class HotspotSearchWindow:
         max_entry = ttk.Entry(distance_frame, textvariable=self._distance_max_var, width=8)
         max_entry.grid(row=1, column=1, sticky="w", padx=(0, 8), pady=(2, 2))
 
-        reserve_frame = tk.LabelFrame(controls_frame, text="Reserve Level")
-        reserve_frame.pack(side="left", padx=(0, 12))
+        reserve_frame = tk.LabelFrame(left_controls_frame, text="Reserve Level")
+        reserve_frame.grid(row=1, column=0, sticky="ew", pady=(8, 0))
         self._theme.register(reserve_frame)
 
         reserve_values = self._reserve_level_options or self.FALLBACK_RESERVE_LEVELS
@@ -2277,8 +2292,9 @@ class HotspotSearchWindow:
             reserve_combo.current(0)
         self._reserve_combobox = reserve_combo
 
-        ring_type_frame = tk.LabelFrame(controls_frame, text="Ring Filters")
-        ring_type_frame.pack(side="left", padx=(0, 12))
+        ring_type_frame = tk.LabelFrame(left_controls_frame, text="Ring Filters")
+        ring_type_frame.grid(row=2, column=0, sticky="nsew", pady=(8, 0))
+        left_controls_frame.rowconfigure(2, weight=1)
         self._theme.register(ring_type_frame)
 
         ring_type_list = tk.Listbox(
@@ -2305,8 +2321,8 @@ class HotspotSearchWindow:
         )
         ring_type_list.bind("<<ListboxSelect>>", self._on_filters_changed, add="+")
 
-        signal_frame = tk.LabelFrame(controls_frame, text="Ring Signals")
-        signal_frame.pack(side="left", padx=(0, 0), fill="both", expand=True)
+        signal_frame = tk.LabelFrame(layout_frame, text="Ring Signals")
+        signal_frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
         self._theme.register(signal_frame)
 
         signal_list = tk.Listbox(
@@ -2644,21 +2660,18 @@ class HotspotSearchWindow:
             self._reference_suggestions_listbox.activate(0)
 
         if not self._reference_suggestions_visible:
-            before_widget = self._hotspot_controls_frame if self._hotspot_controls_frame else None
-            if before_widget:
-                self._reference_suggestions_listbox.pack(
-                    fill="x",
-                    padx=12,
-                    pady=(0, 8),
-                    before=before_widget,
-                )
-            else:
-                self._reference_suggestions_listbox.pack(fill="x", padx=12, pady=(0, 8))
+            try:
+                self._reference_suggestions_listbox.grid(row=1, column=1, sticky="ew", pady=(0, 0))
+            except tk.TclError:
+                pass
             self._reference_suggestions_visible = True
 
     def _hide_reference_suggestions(self) -> None:
         if self._reference_suggestions_listbox and self._reference_suggestions_visible:
-            self._reference_suggestions_listbox.pack_forget()
+            try:
+                self._reference_suggestions_listbox.grid_remove()
+            except tk.TclError:
+                self._reference_suggestions_listbox.pack_forget()
             self._reference_suggestions_listbox.selection_clear(0, "end")
             self._reference_suggestions_visible = False
 
