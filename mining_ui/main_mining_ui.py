@@ -2107,6 +2107,13 @@ class HotspotSearchWindow:
         self._search_token: int = 0
         self._search_result_queue: "queue.Queue[tuple[int, tuple[str, object]]]" = queue.Queue()
         self._result_poll_job: Optional[str] = None
+        self._reference_suggestions_listbox: Optional[tk.Listbox] = None
+        self._reference_suggestions_visible = False
+        self._reference_suggestion_job: Optional[str] = None
+        self._reference_suggestion_poll_job: Optional[str] = None
+        self._reference_suggestion_queue: "queue.Queue[tuple[int, List[str]]]" = queue.Queue()
+        self._reference_suggestion_token: int = 0
+        self._reference_last_query: str = ""
         self._status_var = tk.StringVar(master=self._toplevel, value="")
 
         self._build_ui()
@@ -2143,6 +2150,16 @@ class HotspotSearchWindow:
                     self._toplevel.after_cancel(self._result_poll_job)
                 except Exception:
                     pass
+            if self._reference_suggestion_job:
+                try:
+                    self._toplevel.after_cancel(self._reference_suggestion_job)
+                except Exception:
+                    pass
+            if self._reference_suggestion_poll_job:
+                try:
+                    self._toplevel.after_cancel(self._reference_suggestion_poll_job)
+                except Exception:
+                    pass
             try:
                 self._toplevel.destroy()
             except Exception:
@@ -2153,6 +2170,8 @@ class HotspotSearchWindow:
             except Exception:
                 pass
         self._result_poll_job = None
+        self._reference_suggestion_job = None
+        self._reference_suggestion_poll_job = None
         self._pending_search_params = None
         self._search_thread = None
 
@@ -2169,6 +2188,9 @@ class HotspotSearchWindow:
         self._results_tree = None
         self._reference_entry = None
         self._reference_system_var = None
+        self._hide_reference_suggestions()
+        self._reference_suggestions_listbox = None
+        self._reference_suggestions_visible = False
 
     # ------------------------------------------------------------------
     # UI construction
@@ -2181,6 +2203,7 @@ class HotspotSearchWindow:
 
         reference_initial = self._state.current_system or ""
         self._reference_system_var.set(reference_initial)
+        self._reference_last_query = reference_initial.strip().lower()
 
         reference_frame = tk.Frame(container, highlightthickness=0, bd=0)
         reference_frame.pack(fill="x", pady=(0, 8))
@@ -2193,7 +2216,21 @@ class HotspotSearchWindow:
         reference_entry = ttk.Entry(reference_frame, textvariable=self._reference_system_var, width=28)
         reference_entry.pack(side="left", fill="x", expand=True)
         self._theme.register(reference_entry)
+        reference_entry.bind("<KeyRelease>", self._handle_reference_key_release, add="+")
+        reference_entry.bind("<Down>", self._handle_reference_entry_down, add="+")
         self._reference_entry = reference_entry
+
+        suggestions_listbox = tk.Listbox(container, height=6, exportselection=False)
+        self._theme.register(suggestions_listbox)
+        suggestions_listbox.pack(fill="x", padx=12, pady=(0, 8))
+        suggestions_listbox.pack_forget()
+        suggestions_listbox.bind("<Return>", self._apply_reference_suggestion_event, add="+")
+        suggestions_listbox.bind("<Double-Button-1>", self._apply_reference_suggestion_event, add="+")
+        suggestions_listbox.bind("<Escape>", self._hide_reference_suggestions_event, add="+")
+        suggestions_listbox.bind("<FocusOut>", self._on_reference_suggestions_focus_out, add="+")
+        suggestions_listbox.bind("<Up>", self._handle_suggestion_navigation, add="+")
+        suggestions_listbox.bind("<Down>", self._handle_suggestion_navigation, add="+")
+        self._reference_suggestions_listbox = suggestions_listbox
 
         self._distance_min_var.set(self._format_distance(self._state.spansh_last_distance_min, self.DEFAULT_DISTANCE_MIN))
         self._distance_max_var.set(self._format_distance(self._state.spansh_last_distance_max, self.DEFAULT_DISTANCE_MAX))
@@ -2497,6 +2534,185 @@ class HotspotSearchWindow:
                 selections.append(value)
         return selections
 
+    def _handle_reference_key_release(self, event: tk.Event) -> Optional[str]:
+        keysym = getattr(event, "keysym", "")
+        if keysym in {"Up", "Down", "Left", "Right", "Escape", "Return", "Tab"}:
+            if keysym == "Escape":
+                self._hide_reference_suggestions()
+            return None
+        self._queue_reference_suggestion_fetch()
+        return None
+
+    def _handle_reference_entry_down(self, event: tk.Event) -> Optional[str]:
+        if self._reference_suggestions_visible and self._reference_suggestions_listbox:
+            if self._reference_suggestions_listbox.size() > 0:
+                self._reference_suggestions_listbox.selection_clear(0, "end")
+                self._reference_suggestions_listbox.selection_set(0)
+                self._reference_suggestions_listbox.activate(0)
+                self._reference_suggestions_listbox.focus_set()
+                return "break"
+        return None
+
+    def _queue_reference_suggestion_fetch(self) -> None:
+        if not self._reference_system_var or not self._toplevel:
+            return
+        query = self._reference_system_var.get().strip()
+        query_key = query.lower()
+        if query_key == self._reference_last_query:
+            return
+        self._reference_last_query = query_key
+        if self._reference_suggestion_job:
+            try:
+                self._toplevel.after_cancel(self._reference_suggestion_job)
+            except Exception:
+                pass
+        self._reference_suggestion_job = self._toplevel.after(200, lambda q=query: self._request_reference_suggestions(q))
+
+    def _request_reference_suggestions(self, query: str) -> None:
+        self._reference_suggestion_job = None
+        if not self.is_open:
+            return
+        trimmed = query.strip()
+        if len(trimmed) < 2:
+            self._update_reference_suggestions([])
+            return
+
+        self._reference_suggestion_token += 1
+        token = self._reference_suggestion_token
+
+        def worker() -> None:
+            try:
+                suggestions = self._client.suggest_system_names(trimmed, limit=10)
+            except Exception:
+                suggestions = []
+            try:
+                self._reference_suggestion_queue.put((token, suggestions))
+            except Exception:
+                pass
+
+        threading.Thread(target=worker, name="EDMC-SpanshSuggestions", daemon=True).start()
+        self._schedule_reference_suggestion_poll()
+
+    def _schedule_reference_suggestion_poll(self) -> None:
+        if not self._toplevel or not self._toplevel.winfo_exists():
+            return
+        if self._reference_suggestion_poll_job:
+            return
+        self._reference_suggestion_poll_job = self._toplevel.after(100, self._poll_reference_suggestions)
+
+    def _poll_reference_suggestions(self) -> None:
+        self._reference_suggestion_poll_job = None
+        if not self.is_open:
+            return
+
+        latest: Optional[List[str]] = None
+        while True:
+            try:
+                token, suggestions = self._reference_suggestion_queue.get_nowait()
+            except queue.Empty:
+                break
+            if token >= self._reference_suggestion_token:
+                latest = suggestions
+
+        if latest is not None:
+            self._update_reference_suggestions(latest)
+
+        if self._reference_suggestion_token:
+            self._schedule_reference_suggestion_poll()
+
+    def _update_reference_suggestions(self, suggestions: List[str]) -> None:
+        if not self._reference_suggestions_listbox:
+            return
+
+        current_value = self._reference_system_var.get().strip() if self._reference_system_var else ""
+        self._reference_suggestions_listbox.delete(0, "end")
+        if not suggestions:
+            self._hide_reference_suggestions()
+            return
+
+        seen: set[str] = set()
+        for item in suggestions:
+            lowered = item.lower()
+            if lowered in seen:
+                continue
+            seen.add(lowered)
+            self._reference_suggestions_listbox.insert("end", item)
+
+        if self._reference_suggestions_listbox.size() > 0:
+            self._reference_suggestions_listbox.selection_clear(0, "end")
+            self._reference_suggestions_listbox.selection_set(0)
+            self._reference_suggestions_listbox.activate(0)
+
+        if not self._reference_suggestions_visible:
+            before_widget = self._hotspot_controls_frame if self._hotspot_controls_frame else None
+            if before_widget:
+                self._reference_suggestions_listbox.pack(
+                    fill="x",
+                    padx=12,
+                    pady=(0, 8),
+                    before=before_widget,
+                )
+            else:
+                self._reference_suggestions_listbox.pack(fill="x", padx=12, pady=(0, 8))
+            self._reference_suggestions_visible = True
+
+    def _hide_reference_suggestions(self) -> None:
+        if self._reference_suggestions_listbox and self._reference_suggestions_visible:
+            self._reference_suggestions_listbox.pack_forget()
+            self._reference_suggestions_listbox.selection_clear(0, "end")
+            self._reference_suggestions_visible = False
+
+    def _hide_reference_suggestions_event(self, _event: tk.Event) -> str:
+        self._hide_reference_suggestions()
+        if self._reference_entry:
+            self._reference_entry.focus_set()
+        return "break"
+
+    def _on_reference_suggestions_focus_out(self, _event: tk.Event) -> None:
+        if not self._toplevel or not self._toplevel.winfo_exists():
+            return
+        self._toplevel.after(150, self._hide_reference_suggestions)
+
+    def _apply_reference_suggestion_event(self, _event: tk.Event) -> str:
+        self._apply_reference_suggestion()
+        return "break"
+
+    def _apply_reference_suggestion(self) -> None:
+        if not self._reference_suggestions_listbox or not self._reference_system_var:
+            return
+        selection = self._reference_suggestions_listbox.curselection()
+        if not selection:
+            return
+        value = self._reference_suggestions_listbox.get(selection[0])
+        if not isinstance(value, str):
+            return
+        trimmed = value.strip()
+        self._reference_system_var.set(trimmed)
+        self._reference_last_query = trimmed.lower()
+        self._hide_reference_suggestions()
+        if self._reference_entry:
+            self._reference_entry.focus_set()
+            self._reference_entry.icursor("end")
+
+    def _handle_suggestion_navigation(self, event: tk.Event) -> str:
+        if not self._reference_suggestions_listbox:
+            return "break"
+        size = self._reference_suggestions_listbox.size()
+        if size == 0:
+            return "break"
+        selection = self._reference_suggestions_listbox.curselection()
+        index = selection[0] if selection else -1
+        if event.keysym == "Up":
+            index = 0 if index <= 0 else index - 1
+        elif event.keysym == "Down":
+            index = 0 if index < 0 else min(size - 1, index + 1)
+        else:
+            return "break"
+        self._reference_suggestions_listbox.selection_clear(0, "end")
+        self._reference_suggestions_listbox.selection_set(index)
+        self._reference_suggestions_listbox.activate(index)
+        return "break"
+
     def _collect_selections(self) -> Tuple[float, float, List[str], List[str], List[str]]:
         min_distance = self._parse_float(self._distance_min_var.get(), float(self.DEFAULT_DISTANCE_MIN))
         max_distance = self._parse_float(self._distance_max_var.get(), float(self.DEFAULT_DISTANCE_MAX))
@@ -2532,6 +2748,8 @@ class HotspotSearchWindow:
 
         self._state.spansh_last_ring_types = self._get_listbox_selection(self._ring_type_listbox)
         self._state.spansh_last_ring_signals = self._get_listbox_selection(self._signals_listbox)
+
+        self._queue_reference_suggestion_fetch()
 
     # ------------------------------------------------------------------
     # Search + render
@@ -2600,6 +2818,8 @@ class HotspotSearchWindow:
         reserve_levels = params.reserve_levels
         ring_types = params.ring_types
         reference_text_input = reference_text
+
+        self._hide_reference_suggestions()
 
         self._search_token += 1
         token = self._search_token
@@ -2795,6 +3015,7 @@ class HotspotSearchWindow:
                         and self._reference_system_var.get().strip() != resolved_reference
                     ):
                         self._reference_system_var.set(resolved_reference)
+                        self._reference_last_query = resolved_reference.strip().lower()
                 self._render_results(result_obj)
         elif kind in {"value_error", "runtime_error"}:
             message = str(payload) if payload else "An unexpected error occurred while searching for hotspots."

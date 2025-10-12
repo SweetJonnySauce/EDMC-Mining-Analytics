@@ -71,6 +71,70 @@ class SpanshHotspotClient:
     def list_reserve_levels(self) -> List[str]:
         return self._get_field_values("reserve_level")
 
+    def suggest_system_names(self, query: str, limit: int = 10) -> List[str]:
+        candidate = (query or "").strip()
+        if len(candidate) < 2:
+            return []
+
+        url = f"{API_BASE}/systems/field_values/system_names"
+        params = {"q": candidate}
+        try:
+            response = self._session.get(url, params=params, timeout=DEFAULT_TIMEOUT)
+        except Exception:
+            _plugin_log.debug("Spansh reference suggestions failed (query=%r): request error", candidate)
+            return []
+
+        if response.status_code != 200:
+            _plugin_log.debug(
+                "Spansh reference suggestions failed (query=%r): status %s",
+                candidate,
+                response.status_code,
+            )
+            return []
+
+        try:
+            data = response.json()
+        except Exception:
+            _plugin_log.debug("Spansh reference suggestions failed (query=%r): invalid JSON", candidate)
+            return []
+
+        values = data.get("values")
+        if not isinstance(values, list):
+            _plugin_log.debug("Spansh reference suggestions unexpected payload (query=%r): %s", candidate, data)
+            return []
+
+        cleaned = []
+        seen: set[str] = set()
+        candidate_lower = candidate.lower()
+
+        for value in values:
+            if not isinstance(value, str):
+                continue
+            name = value.strip()
+            if not name:
+                continue
+            if name.lower() in seen:
+                continue
+            seen.add(name.lower())
+            cleaned.append(name)
+            if len(cleaned) >= limit:
+                break
+
+        # Ensure the user's current system is considered when it matches the query
+        current_system = (self._state.current_system or "").strip()
+        if current_system and current_system.lower().startswith(candidate_lower):
+            if current_system.lower() not in seen:
+                cleaned.insert(0, current_system)
+
+        _plugin_log.debug(
+            "Spansh reference suggestions query=%r params=%s returned %d candidate(s)",
+            candidate,
+            params,
+            len(cleaned),
+        )
+
+        return cleaned
+
     def resolve_reference_system(self, reference: Optional[str]) -> str:
         candidate = (reference or "").strip()
         current_system = (self._state.current_system or "").strip()
