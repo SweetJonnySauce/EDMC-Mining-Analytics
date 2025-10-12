@@ -2115,6 +2115,7 @@ class HotspotSearchWindow:
         self._reference_suggestion_queue: "queue.Queue[tuple[int, List[str]]]" = queue.Queue()
         self._reference_suggestion_token: int = 0
         self._reference_last_query: str = ""
+        self._reference_suggestions_suppressed = False
         self._status_var = tk.StringVar(master=self._toplevel, value="")
 
         self._build_ui()
@@ -2193,6 +2194,7 @@ class HotspotSearchWindow:
         self._hide_reference_suggestions()
         self._reference_suggestions_listbox = None
         self._reference_suggestions_visible = False
+        self._reference_suggestions_suppressed = False
 
     # ------------------------------------------------------------------
     # UI construction
@@ -2575,7 +2577,10 @@ class HotspotSearchWindow:
         query = self._reference_system_var.get().strip()
         query_key = query.lower()
         if query_key == self._reference_last_query:
+            if self._reference_suggestions_suppressed:
+                return
             return
+        self._reference_suggestions_suppressed = False
         self._reference_last_query = query_key
         if self._reference_suggestion_job:
             try:
@@ -2688,6 +2693,8 @@ class HotspotSearchWindow:
 
     def _apply_reference_suggestion_event(self, _event: tk.Event) -> str:
         self._apply_reference_suggestion()
+        self._reference_last_query = self._reference_system_var.get().strip().lower() if self._reference_system_var else ""
+        self._reference_suggestions_suppressed = True
         return "break"
 
     def _apply_reference_suggestion(self) -> None:
@@ -2700,8 +2707,10 @@ class HotspotSearchWindow:
         if not isinstance(value, str):
             return
         trimmed = value.strip()
+        lowered = trimmed.lower()
+        self._reference_last_query = lowered
+        self._reference_suggestions_suppressed = True
         self._reference_system_var.set(trimmed)
-        self._reference_last_query = trimmed.lower()
         self._hide_reference_suggestions()
         if self._reference_entry:
             self._reference_entry.focus_set()
@@ -3027,8 +3036,10 @@ class HotspotSearchWindow:
                         self._reference_system_var
                         and self._reference_system_var.get().strip() != resolved_reference
                     ):
+                        lowered = resolved_reference.strip().lower()
+                        self._reference_last_query = lowered
+                        self._reference_suggestions_suppressed = True
                         self._reference_system_var.set(resolved_reference)
-                        self._reference_last_query = resolved_reference.strip().lower()
                 self._render_results(result_obj)
         elif kind in {"value_error", "runtime_error"}:
             message = str(payload) if payload else "An unexpected error occurred while searching for hotspots."
