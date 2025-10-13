@@ -1534,14 +1534,13 @@ class edmcmaMiningUI:
             if self._state.cargo_additions.get(name, 0) > 0
         )
 
-        table_fg = self._theme.default_text_color()
         link_fg = self._theme.link_color()
 
         if not rows:
             row_labels = self._ensure_commodity_row(0)
             for col_index, label in enumerate(row_labels):
                 if col_index == 0:
-                    self._apply_label_style(label, text="No mined commodities", foreground=table_fg)
+                    self._apply_label_style(label, text="No mined commodities")
                     label.grid()
                     label.unbind("<Button-1>")
                 else:
@@ -1607,7 +1606,7 @@ class edmcmaMiningUI:
                 self._apply_label_style(
                     label,
                     text=text,
-                    foreground=foreground,
+                    foreground=foreground if clickable else None,
                     cursor="hand2" if clickable else "",
                     clickable=clickable,
                 )
@@ -1621,13 +1620,12 @@ class edmcmaMiningUI:
         # Display totals row similar to BGS-Tally
     def _populate_materials_table(self) -> None:
         rows = sorted(self._state.materials_collected.items())
-        table_fg = self._theme.default_text_color()
 
         if not rows:
             labels = self._ensure_material_row(0)
             for col_index, label in enumerate(labels):
                 if col_index == 0:
-                    self._apply_label_style(label, text="No materials collected yet", foreground=table_fg)
+                    self._apply_label_style(label, text="No materials collected yet")
                     label.grid()
                 else:
                     label.grid_remove()
@@ -1648,7 +1646,7 @@ class edmcmaMiningUI:
             for col_index, text in enumerate(texts):
                 label = labels[col_index]
                 label.unbind("<Button-1>")
-                self._apply_label_style(label, text=text, foreground=table_fg, cursor="")
+                self._apply_label_style(label, text=text, cursor="")
 
         for idx in range(len(rows), len(self._materials_rows)):
             for label in self._materials_rows[idx]:
