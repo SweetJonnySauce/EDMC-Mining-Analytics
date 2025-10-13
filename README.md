@@ -49,10 +49,9 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 
 ## Installation
 1. Open EDMC and choose `File → Settings → Plugins`, then click `Open Plugins Folder` to reveal your plugins directory.
-2. Download the latest release or clone the repository from [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics). Do **not** download individual files. Keep the directory structure intact (`integrations/`, `session_recorder.py`, `commodity_links.json`, etc.). If you download a release .zip file use the contents of the folder inside the zip file. Do not copy the top level folder.
-4. Create a folder named `EDMC-Mining-Analytics` inside the EDMC plugins directory if it does not already exist.
-5. Copy the entire contents of the release (or clone) into that folder.
-6. Restart EDMC. The plugin appears under `Plugins → EDMC Mining Analytics` and adds a panel to the main window.
+2. Download the latest release or clone the repository from [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics). Do **not** download individual files. Keep the directory structure intact (`integrations/`, `session_recorder.py`, `commodity_links.json`, etc.). 
+3. Extract the `EDMC-Mining-Analytics` from the release .zip file and move it to the EDMC plugin directory.
+4. Restart EDMC. The plugin appears under `Plugins → EDMC Mining Analytics` and adds a panel to the main window.
 
 _To update, replace the contents of the `EDMC-Mining-Analytics` folder with the files from the latest release and restart EDMC._
 
@@ -61,18 +60,14 @@ _To update, replace the contents of the `EDMC-Mining-Analytics` folder with the 
 - Use the plugin preferences (within EDMC's Plugins tab) to adjust histogram bin size, refresh cadence, and refinement per minute (RPM) thresholds.
 - Toggle automatic unpause behaviour, enable session logging, and define how many session files to retain.
 - Configure Inara search mode and filters (carriers, surface ports) for one-click commodity lookups.
-- Provide an optional Discord webhook URL and image to deliver session summaries, and use the built-in test button to confirm connectivity.
+- Provide an optional Discord webhook URL and image links to deliver session summaries, and use the built-in test button to confirm connectivity.
 
 ## Using the Plugin
 - Simply start mining. The plugin recognises mining states, begins tracking tonnage, and monitors prospecting and refinement events.
 - Cargo updates and limpet usage are tracked automatically, including abandoned collectors and drones launched.
-- Click the `% Range` column in the prospects table to open interactive histograms that visualise material distributions.
+- Click the commodity in the Commodities column to do an Inara search for nearest/best price for selling.
+- Click the value in the `% Range` column in the Commodities table to open histograms that visualise asteroid yield % distributions.
 - When you leave mining (supercruise, manual reset, etc.), the session recorder can persist a JSON summary and optionally push a Discord embed.
-
-## Session History & Webhooks
-- Enable `Session logging` in preferences to write structured summaries to the plugin's `session_data/` directory. Retention is configurable.
-- Discord webhook summaries include duration, output, RPM, prospector usage, top commodities, and materials, making it easy to share highlights.
-- Use the `Test Webook` control to validate your webhook configuration without completing a full session.
 
 ## Support
 Questions, ideas, or bugs? Open an issue on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/issues). Feedback helps shape the next release. Yes, this project is 100% vibe coded using Codex. I'm doing it as an experiment/learning experience to see what is possible.
