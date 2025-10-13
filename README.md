@@ -34,13 +34,13 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 
 <img width="1101" height="597" alt="image" src="https://github.com/user-attachments/assets/89f806a4-bcc3-4ab6-b884-f847c517bf08" />
 
-### Settings dialog box (admittedly, it needs a re-layout)
+### Settings dialog box
 
-<img width="522" height="919" alt="image" src="https://github.com/user-attachments/assets/41c6f1f7-1b54-4f65-aaf6-c8db2b10891d" />
+<img width="1284" height="982" alt="image" src="https://github.com/user-attachments/assets/8bb31cb7-ad94-44f7-bcd0-3508a3fea2d8" />
 
 ### Summarize (ang brag) in your Discord channel
 
-<img width="487" height="797" alt="image" src="https://github.com/user-attachments/assets/9975568a-97a8-4d1d-ab44-5dc32948301f" />
+<img width="452" height="777" alt="image" src="https://github.com/user-attachments/assets/c2957523-4d9e-416d-b6fc-d65d8376a7c1" />
 
 ### Optionally, you can send HUD stats to EDMCOverlay
 
