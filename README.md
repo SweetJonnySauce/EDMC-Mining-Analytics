@@ -7,7 +7,7 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 ## Key Features
 - Real-time mining dashboard showing cargo totals, tons-per-hour trends, limpets, refinements-per-minute to gauge your collection efficiency and ship context.
 - Cross platform. Works on Windows and Linux.
-- EDMCOverlay support built in
+- EDMCOverlay support built in. Track total tons per hour, RPM, and limpets remaining on your HUD.
 - Automated session management that starts, pauses, and resets analytics in response to journal events or user input, with optional auto-resume when activity resumes.
 - Prospecting intelligence with duplicate detection, commodity histograms, and quick-glance content summaries for each asteroid.
 - Integrations that help you act on the data, including Inara commodity lookups for nearest/best price (click on the commodity name in the table), EDSM lookup for reserve level and ring type, and Discord webhook summaries of completed runs.
