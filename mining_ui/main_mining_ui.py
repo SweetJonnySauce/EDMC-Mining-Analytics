@@ -261,8 +261,13 @@ class edmcmaMiningUI:
         self._frame = frame
         self._theme.register(frame)
 
-        status_container = tk.Frame(frame, highlightthickness=0, bd=0)
-        status_container.grid(row=0, column=0, sticky="w", padx=4, pady=(4, 2))
+        top_bar = tk.Frame(frame, highlightthickness=0, bd=0)
+        top_bar.grid(row=0, column=0, sticky="w", padx=4, pady=(4, 2))
+        top_bar.columnconfigure(0, weight=1)
+        self._theme.register(top_bar)
+
+        status_container = tk.Frame(top_bar, highlightthickness=0, bd=0)
+        status_container.grid(row=0, column=0, sticky="w")
         status_container.columnconfigure(0, weight=1)
         self._theme.register(status_container)
 
@@ -316,7 +321,7 @@ class edmcmaMiningUI:
         self._reserve_warning_label = warning_label
 
         version_text = display_version(PLUGIN_VERSION)
-        version_label = tk.Label(frame, text=version_text, anchor="e", cursor="hand2")
+        version_label = tk.Label(top_bar, text=version_text, anchor="e", cursor="hand2")
         try:
             base_font = tkfont.nametofont(version_label.cget("font"))
             self._version_font = tkfont.Font(font=base_font)
@@ -324,7 +329,7 @@ class edmcmaMiningUI:
             version_label.configure(font=self._version_font)
         except tk.TclError:
             self._version_font = None
-        version_label.grid(row=0, column=1, sticky="e", padx=(4, 4), pady=(4, 2))
+        version_label.grid(row=0, column=1, sticky="e", padx=(4, 4))
         version_label.bind("<Button-1>", lambda _evt: webbrowser.open(PLUGIN_REPO_URL))
         self._theme.register(version_label)
         self._version_label = version_label
@@ -346,7 +351,7 @@ class edmcmaMiningUI:
             self._hotspot_icon = None
 
         hotspot_button = tk.Button(
-            frame,
+            top_bar,
             image=self._hotspot_icon,
             command=self._handle_hotspot_button,
             cursor="hand2",
@@ -356,18 +361,23 @@ class edmcmaMiningUI:
         if self._hotspot_icon is None:
             hotspot_button.configure(text="H", width=3)
         self._theme.style_button(hotspot_button)
-        hotspot_button.grid(row=0, column=2, sticky="e", padx=(0, 4), pady=(4, 2))
+        hotspot_button.grid(row=0, column=2, sticky="e", padx=(0, 4))
         self._hotspot_button = hotspot_button
         self._hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
 
-        self._summary_var = tk.StringVar(master=frame, value="")
+        self._details_bar = tk.Frame(frame, highlightthickness=0, bd=0)
+        self._details_bar.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 6))
+        self._details_bar.columnconfigure(0, weight=1)
+        self._theme.register(self._details_bar)
+
+        self._summary_var = tk.StringVar(master=self._details_bar, value="")
         summary_label = tk.Label(
-            frame,
+            self._details_bar,
             textvariable=self._summary_var,
             justify="left",
             anchor="w",
         )
-        summary_label.grid(row=1, column=0, columnspan=2, sticky="w", padx=4, pady=(0, 6))
+        summary_label.grid(row=0, column=0, sticky="w")
         self._theme.register(summary_label)
         self._summary_label = summary_label
         self._summary_tooltip = WidgetTooltip(
@@ -375,8 +385,8 @@ class edmcmaMiningUI:
             hover_predicate=self._is_pointer_over_inferred,
         )
 
-        rpm_frame = tk.Frame(frame, highlightthickness=0, bd=0)
-        rpm_frame.grid(row=1, column=2, sticky="ne", padx=(0, 8), pady=(0, 6))
+        rpm_frame = tk.Frame(self._details_bar, highlightthickness=0, bd=0)
+        rpm_frame.grid(row=0, column=1, sticky="e", padx=(8, 0))
         self._theme.register(rpm_frame)
         rpm_frame.columnconfigure(0, weight=1)
         self._rpm_frame = rpm_frame
@@ -405,17 +415,14 @@ class edmcmaMiningUI:
         self._rpm_title_label = rpm_title
         self._rpm_tooltip = WidgetTooltip(rpm_title)
 
-        button_frame = tk.Frame(frame, highlightthickness=0, bd=0)
-        button_frame.grid(row=0, column=3, sticky="e", padx=4, pady=(4, 2))
-        self._theme.register(button_frame)
         self._details_toggle = tk.Button(
-            button_frame,
+            top_bar,
             text="",
             command=self._toggle_details,
             cursor="hand2",
         )
         self._theme.style_button(self._details_toggle)
-        self._details_toggle.grid(row=0, column=0, padx=0, pady=0)
+        self._details_toggle.grid(row=0, column=3, sticky="e")
 
         commodities_header = tk.Frame(frame, highlightthickness=0, bd=0)
         self._commodities_header = commodities_header
@@ -557,15 +564,12 @@ class edmcmaMiningUI:
             self._schedule_header_style(header)
             self._materials_headers.append(header)
 
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=0)
+        frame.columnconfigure(0, weight=0)
         frame.rowconfigure(4, weight=1)
         frame.rowconfigure(6, weight=1)
 
         self._content_widgets = (
-            summary_label,
-            rpm_frame,
+            self._details_bar,
             total_label,
             button_bar,
             commodities_header,
