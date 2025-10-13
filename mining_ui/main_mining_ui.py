@@ -145,7 +145,6 @@ class edmcmaMiningUI:
         self._prefs_webhook_var: Optional[tk.StringVar] = None
         self._prefs_send_summary_var: Optional[tk.BooleanVar] = None
         self._prefs_send_reset_summary_var: Optional[tk.BooleanVar] = None
-        self._prefs_image_var: Optional[tk.StringVar] = None
         self._prefs_warn_non_metallic_var: Optional[tk.BooleanVar] = None
         self._prefs_overlay_enabled_var: Optional[tk.BooleanVar] = None
         self._prefs_overlay_x_var: Optional[tk.IntVar] = None
@@ -159,6 +158,9 @@ class edmcmaMiningUI:
         self._session_path_feedback_after: Optional[str] = None
         self._overlay_controls: list[tk.Widget] = []
         self._overlay_hint_label: Optional[tk.Label] = None
+        self._discord_images_tree: Optional[ttk.Treeview] = None
+        self._discord_image_ship_var: Optional[tk.StringVar] = None
+        self._discord_image_url_var: Optional[tk.StringVar] = None
 
         self._hotspot_container: Optional[tk.Frame] = None
         self._hotspot_controls_frame: Optional[tk.Frame] = None
@@ -175,7 +177,6 @@ class edmcmaMiningUI:
         self._updating_webhook_var = False
         self._updating_send_summary_var = False
         self._updating_send_reset_summary_var = False
-        self._updating_image_var = False
         self._updating_warn_non_metallic_var = False
         self._updating_overlay_enabled_var = False
         self._updating_overlay_x_var = False
@@ -901,12 +902,6 @@ class edmcmaMiningUI:
         except Exception:
             _log.exception("Failed to invoke webhook test")
 
-    def _on_discord_image_change(self, *_: object) -> None:
-        if self._prefs_image_var is None or self._updating_image_var:
-            return
-        value = self._prefs_image_var.get()
-        self._state.discord_image_url = value.strip() if isinstance(value, str) else ""
-
     def _update_discord_controls(self) -> None:
         has_url = bool(self._state.discord_webhook_url.strip())
         if not has_url and self._state.send_summary_to_discord:
@@ -944,6 +939,80 @@ class edmcmaMiningUI:
                 self._test_webhook_btn.configure(state=tk.NORMAL if has_url else tk.DISABLED)
             except tk.TclError:
                 pass
+
+    def _refresh_discord_image_list(self) -> None:
+        tree = self._discord_images_tree
+        if tree is None:
+            return
+        for item in tree.get_children():
+            tree.delete(item)
+        entries = getattr(self._state, "discord_images", []) or []
+        for idx, (ship, url) in enumerate(entries):
+            display_ship = ship if ship else "Any"
+            tree.insert("", "end", iid=str(idx), values=(display_ship, url))
+
+    def _on_discord_image_add(self) -> None:
+        if not self._discord_image_url_var:
+            return
+        url = self._discord_image_url_var.get().strip()
+        if not url:
+            return
+        ship = self._discord_image_ship_var.get().strip() if self._discord_image_ship_var else ""
+        if ship.lower() == "any":
+            ship = ""
+        self._state.discord_images.append((ship, url))
+        key = ship.lower() if ship else "__any__"
+        cycle = getattr(self._state, "discord_image_cycle", None)
+        if cycle is None:
+            cycle = self._state.discord_image_cycle = {}
+        cycle.pop(key, None)
+        if self._discord_image_ship_var:
+            self._discord_image_ship_var.set("")
+        if self._discord_image_url_var:
+            self._discord_image_url_var.set("")
+        self._refresh_discord_image_list()
+        if self._on_settings_changed:
+            try:
+                self._on_settings_changed()
+            except Exception:
+                _log.exception("Failed to propagate settings change after adding Discord image")
+
+    def _on_discord_image_delete(self) -> None:
+        tree = self._discord_images_tree
+        if tree is None:
+            return
+        selection = tree.selection()
+        if not selection:
+            return
+        entries = getattr(self._state, "discord_images", []) or []
+        indices = []
+        for item in selection:
+            try:
+                indices.append(int(item))
+            except ValueError:
+                continue
+        if not indices:
+            return
+        indices.sort(reverse=True)
+        removed_keys: set[str] = set()
+        for idx in indices:
+            if 0 <= idx < len(entries):
+                ship, _ = entries.pop(idx)
+                ship_value = (ship or "").strip()
+                key = ship_value.lower() if ship_value else "__any__"
+                removed_keys.add(key)
+        cycle = getattr(self._state, "discord_image_cycle", None)
+        if cycle is None:
+            cycle = self._state.discord_image_cycle = {}
+        for key in removed_keys:
+            if not any(((entry[0] or "").strip().lower() if (entry[0] or "").strip() else "__any__") == key for entry in entries):
+                cycle.pop(key, None)
+        self._refresh_discord_image_list()
+        if self._on_settings_changed:
+            try:
+                self._on_settings_changed()
+            except Exception:
+                _log.exception("Failed to propagate settings change after removing Discord image")
 
     def schedule_rate_update(self) -> None:
         frame = self._frame

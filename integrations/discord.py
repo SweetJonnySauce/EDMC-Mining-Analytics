@@ -16,6 +16,48 @@ EMBED_COLOR = 0x1d9bf0
 TEST_COLOR = 0x95a5a6
 
 
+def _select_discord_image(state: MiningState) -> Optional[str]:
+    entries = getattr(state, "discord_images", None) or []
+    if not entries:
+        return None
+
+    ship_name = (state.current_ship or "").strip().lower()
+    any_key = "__any__"
+
+    matches: List[str] = []
+    any_matches: List[str] = []
+
+    for entry in entries:
+        if not isinstance(entry, (list, tuple)) or len(entry) < 2:
+            continue
+        ship, url = entry[0], entry[1]
+        url_str = (url or "").strip()
+        if not url_str:
+            continue
+        ship_value = (ship or "").strip()
+        if ship_value and ship_value.lower() != "any":
+            if ship_value.lower() == ship_name:
+                matches.append(url_str)
+        else:
+            any_matches.append(url_str)
+
+    def choose(urls: List[str], key: str) -> Optional[str]:
+        if not urls:
+            return None
+        cycle = getattr(state, "discord_image_cycle", None)
+        if cycle is None:
+            cycle = state.discord_image_cycle = {}
+        idx = cycle.get(key, 0)
+        selected = urls[idx % len(urls)]
+        cycle[key] = (idx + 1) % len(urls)
+        return selected
+
+    image = choose(matches, ship_name if ship_name else any_key)
+    if image:
+        return image
+    return choose(any_matches, any_key)
+
+
 def send_webhook(webhook_url: str, payload: Dict[str, Any]) -> Tuple[bool, str]:
     """Send a JSON payload to the provided Discord webhook URL."""
 
@@ -185,9 +227,11 @@ def build_summary_message(
         "footer": {"text": "EDMC Mining Analytics"},
     }
 
-    image_url = (state.discord_image_url or "").strip()
-    if image_url:
-        embed["image"] = {"url": image_url}
+    image_url = embed.get("image", {}).get("url")
+    if not image_url:
+        image_url = _select_discord_image(state)
+        if image_url:
+            embed["image"] = {"url": image_url}
 
     end_time = meta.get("end_time")
     if isinstance(end_time, str) and end_time:
@@ -246,9 +290,6 @@ def build_test_message(state: MiningState) -> Dict[str, Any]:
     embed["title"] += " (Test)"
     embed["description"] = "Webhook test message"
     embed["color"] = TEST_COLOR
-    image_url = (state.discord_image_url or "").strip()
-    if image_url:
-        embed["image"] = {"url": image_url}
     return message
 
 

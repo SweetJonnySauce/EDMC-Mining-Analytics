@@ -83,7 +83,7 @@ class PreferencesManager:
             state.discord_webhook_url = ""
             state.send_summary_to_discord = False
             state.send_reset_summary = False
-            state.discord_image_url = ""
+            state.discord_images = []
             state.refinement_lookback_seconds = 10
             state.rpm_threshold_red = 1
             state.rpm_threshold_yellow = 20
@@ -115,7 +115,11 @@ class PreferencesManager:
         state.discord_webhook_url = self._get_str("edmc_mining_discord_webhook", "").strip()
         state.send_summary_to_discord = bool(self._get_int("edmc_mining_discord_summary", 0))
         state.send_reset_summary = bool(self._get_int("edmc_mining_discord_reset_summary", 0))
-        state.discord_image_url = self._get_str("edmc_mining_discord_image", "").strip()
+        state.discord_images = self._load_discord_images("edmc_mining_discord_images")
+        legacy_image = self._get_optional_str("edmc_mining_discord_image")
+        if legacy_image:
+            state.discord_images.append(("", legacy_image))
+        state.discord_image_cycle = {}
         state.show_mined_commodities = bool(
             self._get_int("edmc_mining_show_commodities", int(state.show_mined_commodities))
         )
@@ -241,9 +245,15 @@ class PreferencesManager:
             _log.exception("Failed to persist Discord reset summary preference")
 
         try:
-            config.set("edmc_mining_discord_image", state.discord_image_url or "")
+            payload = json.dumps(state.discord_images)
+            config.set("edmc_mining_discord_images", payload)
         except Exception:
-            _log.exception("Failed to persist Discord image URL")
+            _log.exception("Failed to persist Discord image list")
+
+        try:
+            config.set("edmc_mining_discord_image", "")
+        except Exception:
+            pass
 
         try:
             config.set("edmc_mining_show_commodities", int(state.show_mined_commodities))
@@ -492,6 +502,29 @@ class PreferencesManager:
             if isinstance(item, str) and item and item not in cleaned:
                 cleaned.append(item)
         return cleaned
+
+    def _load_discord_images(self, key: str) -> List[tuple[str, str]]:
+        payload = self._get_optional_str(key)
+        if not payload:
+            return []
+        try:
+            data = json.loads(payload)
+        except Exception:
+            return []
+        entries: List[tuple[str, str]] = []
+        if isinstance(data, list):
+            for item in data:
+                if isinstance(item, (list, tuple)) and len(item) >= 2:
+                    ship = str(item[0] or "")
+                    url = str(item[1] or "").strip()
+                    if url:
+                        entries.append((ship, url))
+                elif isinstance(item, dict):
+                    ship = str(item.get("ship") or "")
+                    url = str(item.get("url") or "").strip()
+                    if url:
+                        entries.append((ship, url))
+        return entries
 
     def reset_inferred_capacities(self, state: MiningState) -> None:
         state.inferred_capacity_map.clear()

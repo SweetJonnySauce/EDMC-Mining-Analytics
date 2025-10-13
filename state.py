@@ -77,7 +77,8 @@ class MiningState:
     send_summary_to_discord: bool = False
     send_reset_summary: bool = False
     last_session_summary: Optional[str] = None
-    discord_image_url: str = ""
+    discord_images: List[tuple[str, str]] = field(default_factory=list)
+    discord_image_cycle: Dict[str, int] = field(default_factory=dict)
     show_mined_commodities: bool = True
     show_materials_collected: bool = True
     warn_on_non_metallic_ring: bool = False
