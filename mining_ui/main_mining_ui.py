@@ -10,6 +10,7 @@ import webbrowser
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 try:
@@ -127,6 +128,7 @@ class edmcmaMiningUI:
         self._materials_grid: Optional[Dict[str, Any]] = None
         self._hotspot_window: Optional["HotspotSearchWindow"] = None
         self._hotspot_button: Optional[tk.Button] = None
+        self._hotspot_icon: Optional[tk.PhotoImage] = None
 
         self._prefs_bin_var: Optional[tk.IntVar] = None
         self._prefs_rate_var: Optional[tk.IntVar] = None
@@ -264,16 +266,36 @@ class edmcmaMiningUI:
         self._theme.register(version_label)
         self._version_label = version_label
 
+        icon_path = None
+        if getattr(self._state, "plugin_dir", None):
+            candidate = Path(self._state.plugin_dir) / "assets" / "platinum_hotspot_icon_20x20.png"
+            if candidate.exists():
+                icon_path = candidate
+        if icon_path is None:
+            try:
+                icon_path = Path(__file__).resolve().parent.parent / "assets" / "platinum_hotspot_icon_20x20.png"
+            except Exception:
+                icon_path = Path("assets/platinum_hotspot_icon_20x20.png")
+
+        try:
+            self._hotspot_icon = tk.PhotoImage(file=str(icon_path))
+        except Exception:
+            self._hotspot_icon = None
+
         hotspot_button = tk.Button(
             frame,
-            text="H",
+            image=self._hotspot_icon,
             command=self._handle_hotspot_button,
             cursor="hand2",
-            width=3,
+            width=24,
+            height=24,
         )
+        if self._hotspot_icon is None:
+            hotspot_button.configure(text="H", width=3)
         self._theme.style_button(hotspot_button)
         hotspot_button.grid(row=0, column=2, sticky="e", padx=(0, 4), pady=(4, 2))
         self._hotspot_button = hotspot_button
+        self._hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
 
         self._summary_var = tk.StringVar(master=frame, value="")
         summary_label = tk.Label(
