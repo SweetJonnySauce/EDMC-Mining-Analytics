@@ -88,6 +88,77 @@ def build_summary_message(
     if ring and ring.strip():
         fields.append({"name": "Ring", "value": ring.strip(), "inline": False})
 
+    overall = meta.get("overall_tph", {})
+    duration_seconds = _safe_float(meta.get("duration_seconds")) or 0.0
+    duration_text = format_duration(duration_seconds)
+    total_tons = _safe_float(overall.get("tons"))
+    total_text = f"{total_tons:.1f}t" if total_tons is not None else "-"
+    tph_value = _safe_float(overall.get("tons_per_hour"))
+    tph_text = f"{tph_value:.1f}" if tph_value is not None else "-"
+    session_lines = [
+        f"Duration: {duration_text}",
+        f"Total: {total_text} @ {tph_text} TPH",
+    ]
+    fields.append({"name": "Session", "value": "\n".join(session_lines), "inline": False})
+
+    inventory = _safe_float(meta.get("inventory_tonnage"))
+    capacity = _safe_float(meta.get("cargo_capacity"))
+    cargo_lines: List[str] = []
+    if inventory is not None or capacity is not None:
+        inv_text = f"{inventory:.0f}t" if inventory is not None else "-"
+        cap_text = f"{capacity:.0f}t" if capacity is not None else "-"
+        if capacity and capacity > 0 and inventory is not None:
+            percent = (inventory / capacity) * 100.0
+            cargo_lines.append(f"Cargo: {inv_text} / {cap_text} ({percent:.1f}%)")
+        else:
+            cargo_lines.append(f"Cargo: {inv_text} / {cap_text}")
+    limpet_remaining = _safe_int(meta.get("limpets_remaining"))
+    if limpet_remaining is not None:
+        cargo_lines.append(f"Limpets remaining: {limpet_remaining}")
+    if cargo_lines:
+        fields.append({"name": "Inventory", "value": "\n".join(cargo_lines), "inline": False})
+
+    prospected_meta = meta.get("prospected", {}) or {}
+    content_summary = meta.get("content_summary", {}) or {}
+    prospect_lines = []
+    total_prospected = _safe_int(prospected_meta.get("total"))
+    if total_prospected is not None:
+        high = _safe_int(content_summary.get("High"), default=0) or 0
+        medium = _safe_int(content_summary.get("Medium"), default=0) or 0
+        low = _safe_int(content_summary.get("Low"), default=0) or 0
+        prospect_lines.append(
+            f"Asteroids: {total_prospected} (High {high}, Medium {medium}, Low {low})"
+        )
+    launched = _safe_int(meta.get("prospectors_launched"))
+    lost = _safe_int(meta.get("prospectors_lost"))
+    duplicates = _safe_int(prospected_meta.get("duplicates"))
+    collectors = _safe_int(meta.get("collectors_launched"))
+    collectors_abandoned = _safe_int(meta.get("collectors_abandoned"))
+    if any(value is not None for value in (launched, lost, duplicates, collectors)):
+        prospect_lines.append(
+            "Prospectors: "
+            f"{launched or 0} launched | Lost {lost or 0} | Duplicates {duplicates or 0}"
+        )
+        prospect_lines.append(
+            f"Collectors: {collectors or 0} | Abandoned {collectors_abandoned or 0}"
+        )
+    if prospect_lines:
+        fields.append({"name": "Prospecting", "value": "\n".join(prospect_lines), "inline": False})
+
+    refinement_meta = meta.get("refinement_activity", {}) or {}
+    max_rpm = _safe_float(refinement_meta.get("max_rpm", meta.get("max_rpm")))
+    current_rpm = _safe_float(refinement_meta.get("current_rpm"))
+    lookback = _safe_int(refinement_meta.get("lookback_seconds"))
+    refinement_parts = []
+    if max_rpm is not None:
+        refinement_parts.append(f"Max {max_rpm:.1f} RPM")
+    if current_rpm is not None:
+        refinement_parts.append(f"Current {current_rpm:.1f} RPM")
+    if lookback:
+        refinement_parts.append(f"Lookback {lookback}s")
+    if refinement_parts:
+        fields.append({"name": "Refining", "value": " | ".join(refinement_parts), "inline": False})
+
     summary = payload.get("commodities", {})
     top_value = _format_top_commodities(summary)
     if top_value:
@@ -204,6 +275,21 @@ def format_duration(seconds: float) -> str:
     return " ".join(parts)
 
 
+def _safe_float(value: Any) -> Optional[float]:
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return None
+    return result
+
+
+def _safe_int(value: Any, *, default: Optional[int] = None) -> Optional[int]:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _format_top_commodities(commodities: Dict[str, Any]) -> Optional[str]:
     if not commodities:
         return None
@@ -223,4 +309,68 @@ def _format_top_commodities(commodities: Dict[str, Any]) -> Optional[str]:
 
 def _format_materials(materials: Iterable[Dict[str, Any]]) -> Optional[str]:
     if not materials:
-        return Non
+        return None
+    entries: List[Tuple[str, int]] = []
+    for material in materials:
+        if not isinstance(material, dict):
+            continue
+        name = material.get("name")
+        if not name or not isinstance(name, str):
+            continue
+        count_value = material.get("count")
+        try:
+            count = int(count_value)
+        except (TypeError, ValueError):
+            continue
+        if count <= 0:
+            continue
+        entries.append((name, count))
+    if not entries:
+        return None
+    entries.sort(key=lambda item: (-item[1], item[0]))
+    top_entries = entries[:8]
+    formatted = [f"{name} x{count}" for name, count in top_entries]
+    remaining = len(entries) - len(top_entries)
+    if remaining > 0:
+        formatted.append(f"+{remaining} more")
+    return ", ".join(formatted)
+
+
+def _materials_snapshot(materials: Counter[str]) -> List[Dict[str, Any]]:
+    if not materials:
+        return []
+    if hasattr(materials, "items"):
+        items_iter = materials.items()
+    else:
+        items_iter = materials
+    snapshot: List[Dict[str, Any]] = []
+    for entry in items_iter:
+        try:
+            raw_name, raw_count = entry
+        except (TypeError, ValueError):
+            continue
+        if raw_count is None:
+            continue
+        try:
+            count = int(raw_count)
+        except (TypeError, ValueError):
+            continue
+        if count <= 0:
+            continue
+        name = _format_name(str(raw_name))
+        snapshot.append({"name": name, "count": count})
+    snapshot.sort(key=lambda entry: entry["name"])
+    return snapshot
+
+
+def _format_ring_info(reserve: Optional[Any], ring_type: Optional[Any]) -> Optional[str]:
+    reserve_text = reserve.strip() if isinstance(reserve, str) else None
+    ring_text = ring_type.strip() if isinstance(ring_type, str) else None
+    parts = [value for value in (reserve_text, ring_text) if value]
+    if not parts:
+        return None
+    return " ".join(parts)
+
+
+def _format_name(value: str) -> str:
+    return value.replace("_", " ").title()
