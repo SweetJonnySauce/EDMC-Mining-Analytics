@@ -1510,6 +1510,11 @@ class edmcmaMiningUI:
         clickable: bool = False,
     ) -> None:
         label.configure(text=text)
+        try:
+            bg = label.master.cget("background")
+            label.configure(background=bg)
+        except tk.TclError:
+            pass
         if foreground is not None:
             try:
                 label.configure(foreground=foreground)
@@ -1529,12 +1534,16 @@ class edmcmaMiningUI:
                 if isinstance(size, str):
                     size = int(size)
                 size = abs(int(size)) or 10
-                font_tuple = (
-                    actual.get("family", "TkDefaultFont"),
-                    size,
-                    "bold",
+                font_obj = tkfont.Font(
+                    family=actual.get("family", "TkDefaultFont"),
+                    size=size,
+                    weight="bold",
+                    underline=1,
+                    slant=actual.get("slant", "roman"),
+                    overstrike=actual.get("overstrike", 0),
                 )
-                label.configure(font=font_tuple)
+                label.configure(font=font_obj)
+                setattr(label, "_edmcma_header_font", font_obj)
             except (tk.TclError, ValueError):
                 pass
 
