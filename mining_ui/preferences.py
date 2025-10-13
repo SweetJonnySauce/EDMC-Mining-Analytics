@@ -14,8 +14,10 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
-from integrations.edmcoverlay import is_overlay_available
 from edmc_mining_analytics_version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
+from .preferences_discord import create_discord_section
+from .preferences_inara import create_inara_section
+from .preferences_overlay import create_overlay_section
 
 
 def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
@@ -129,101 +131,8 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     ui._theme.register(reset_cap_btn)
     ui._reset_capacities_btn = reset_cap_btn
 
-    ui._state.overlay_available = is_overlay_available()
-
-    overlay_frame = tk.LabelFrame(frame, text="Overlay", font=section_heading_font)
+    overlay_frame = create_overlay_section(ui, frame, section_heading_font)
     overlay_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
-    overlay_frame.columnconfigure(0, weight=0)
-    overlay_frame.columnconfigure(1, weight=1)
-    ui._theme.register(overlay_frame)
-
-    ui._prefs_overlay_enabled_var = tk.BooleanVar(
-        master=overlay_frame,
-        value=ui._state.overlay_enabled,
-    )
-    ui._prefs_overlay_enabled_var.trace_add("write", ui._on_overlay_enabled_change)
-    overlay_enable_cb = ttk.Checkbutton(
-        overlay_frame,
-        text="Enable EDMCOverlay metrics",
-        variable=ui._prefs_overlay_enabled_var,
-    )
-    overlay_enable_cb.grid(row=0, column=0, columnspan=2, sticky="w", pady=(6, 4))
-    ui._theme.register(overlay_enable_cb)
-
-    x_label = tk.Label(
-        overlay_frame,
-        text="Anchor X (px from left)",
-        anchor="w",
-    )
-    x_label.grid(row=1, column=1, sticky="w", padx=(8, 0))
-    ui._theme.register(x_label)
-
-    ui._prefs_overlay_x_var = tk.IntVar(master=overlay_frame, value=ui._state.overlay_anchor_x)
-    ui._prefs_overlay_x_var.trace_add("write", ui._on_overlay_anchor_x_change)
-    overlay_x_spin = ttk.Spinbox(
-        overlay_frame,
-        from_=0,
-        to=4000,
-        textvariable=ui._prefs_overlay_x_var,
-        width=6,
-    )
-    overlay_x_spin.grid(row=1, column=0, sticky="w", padx=(0, 8))
-
-    y_label = tk.Label(
-        overlay_frame,
-        text="Anchor Y (px from top)",
-        anchor="w",
-    )
-    y_label.grid(row=2, column=1, sticky="w", padx=(8, 0), pady=(0, 2))
-    ui._theme.register(y_label)
-
-    ui._prefs_overlay_y_var = tk.IntVar(master=overlay_frame, value=ui._state.overlay_anchor_y)
-    ui._prefs_overlay_y_var.trace_add("write", ui._on_overlay_anchor_y_change)
-    overlay_y_spin = ttk.Spinbox(
-        overlay_frame,
-        from_=0,
-        to=4000,
-        textvariable=ui._prefs_overlay_y_var,
-        width=6,
-    )
-    overlay_y_spin.grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
-
-    overlay_hint = tk.Label(
-        overlay_frame,
-        text="",
-        anchor="w",
-        justify="left",
-        wraplength=380,
-    )
-    overlay_hint.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 4))
-    ui._theme.register(overlay_hint)
-    interval_label = tk.Label(
-        overlay_frame,
-        text="Refresh interval (milliseconds)",
-        anchor="w",
-    )
-    interval_label.grid(row=3, column=1, sticky="w", padx=(8, 0), pady=(0, 2))
-    ui._theme.register(interval_label)
-
-    ui._prefs_overlay_interval_var = tk.IntVar(
-        master=overlay_frame,
-        value=ui._state.overlay_refresh_interval_ms,
-    )
-    ui._prefs_overlay_interval_var.trace_add("write", ui._on_overlay_interval_change)
-    overlay_interval_spin = ttk.Spinbox(
-        overlay_frame,
-        from_=200,
-        to=60000,
-        increment=100,
-        textvariable=ui._prefs_overlay_interval_var,
-        width=6,
-    )
-    overlay_interval_spin.grid(row=3, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
-    ui._theme.register(overlay_interval_spin)
-
-    ui._overlay_controls = [overlay_enable_cb, overlay_x_spin, overlay_y_spin, overlay_interval_spin]
-    ui._overlay_hint_label = overlay_hint
-    ui._update_overlay_controls()
 
     refinement_frame = tk.LabelFrame(frame, text="Refinement Session Logging", font=section_heading_font)
     refinement_frame.grid(row=2, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))
@@ -393,189 +302,11 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     session_path_feedback_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
     ui._theme.register(session_path_feedback_label)
 
-    discord_frame = tk.LabelFrame(frame, text="Discord summary", font=section_heading_font)
+    discord_frame = create_discord_section(ui, frame, section_heading_font)
     discord_frame.grid(row=3, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))
-    discord_frame.columnconfigure(0, weight=1)
-    ui._theme.register(discord_frame)
 
-    ui._prefs_send_summary_var = tk.BooleanVar(
-        master=discord_frame,
-        value=ui._state.send_summary_to_discord,
-    )
-    ui._prefs_send_summary_var.trace_add("write", ui._on_send_summary_change)
-    send_summary_cb = ttk.Checkbutton(
-        discord_frame,
-        text="Send session summary to Discord",
-        variable=ui._prefs_send_summary_var,
-    )
-    send_summary_cb.grid(row=0, column=0, sticky="w", pady=(4, 4))
-    ui._theme.register(send_summary_cb)
-    ui._send_summary_cb = send_summary_cb
-
-    webhook_label = tk.Label(
-        discord_frame,
-        text="Discord webhook URL",
-        anchor="w",
-    )
-    webhook_label.grid(row=1, column=0, sticky="w", pady=(0, 2))
-    ui._theme.register(webhook_label)
-
-    ui._prefs_webhook_var = tk.StringVar(master=discord_frame)
-    ui._updating_webhook_var = True
-    ui._prefs_webhook_var.set(ui._state.discord_webhook_url)
-    ui._updating_webhook_var = False
-    ui._prefs_webhook_var.trace_add("write", ui._on_webhook_change)
-    webhook_entry = ttk.Entry(
-        discord_frame,
-        textvariable=ui._prefs_webhook_var,
-        width=60,
-    )
-    webhook_entry.grid(row=2, column=0, sticky="ew", pady=(0, 6))
-    ui._theme.register(webhook_entry)
-
-    images_label = tk.Label(
-        discord_frame,
-        text="Discord images (optional, leave ship blank for Any)",
-        anchor="w",
-    )
-    images_label.grid(row=3, column=0, sticky="w", pady=(0, 2))
-    ui._theme.register(images_label)
-
-    images_container = tk.Frame(discord_frame, highlightthickness=0, bd=0)
-    images_container.grid(row=4, column=0, sticky="nsew", pady=(0, 6))
-    ui._theme.register(images_container)
-    images_container.columnconfigure(0, weight=1)
-    images_container.rowconfigure(0, weight=1)
-
-    ui._discord_image_ship_var = tk.StringVar(master=discord_frame, value="")
-    ui._discord_image_url_var = tk.StringVar(master=discord_frame, value="")
-
-    images_tree = ttk.Treeview(
-        images_container,
-        columns=("ship", "url"),
-        show="headings",
-        height=4,
-    )
-    images_tree.heading("ship", text="Ship")
-    images_tree.heading("url", text="Image URL")
-    images_tree.column("ship", width=120, anchor="w")
-    images_tree.column("url", anchor="w")
-    images_tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
-    ui._theme.register(images_tree)
-
-    images_scroll = ttk.Scrollbar(images_container, orient="vertical", command=images_tree.yview)
-    images_scroll.grid(row=0, column=3, sticky="ns", padx=(4, 0))
-    images_tree.configure(yscrollcommand=images_scroll.set)
-
-    form = tk.Frame(images_container, highlightthickness=0, bd=0)
-    form.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(4, 0))
-    ui._theme.register(form)
-    form.columnconfigure(1, weight=1)
-
-    ship_label = tk.Label(form, text="Ship name", anchor="w")
-    ship_label.grid(row=0, column=0, sticky="w", padx=(0, 8))
-    ui._theme.register(ship_label)
-    ship_entry = ttk.Entry(form, textvariable=ui._discord_image_ship_var, width=20)
-    ship_entry.grid(row=0, column=1, sticky="ew", padx=(0, 8))
-    ui._theme.register(ship_entry)
-
-    url_label = tk.Label(form, text="Image URL", anchor="w")
-    url_label.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(4, 0))
-    ui._theme.register(url_label)
-    url_entry = ttk.Entry(form, textvariable=ui._discord_image_url_var, width=50)
-    url_entry.grid(row=1, column=1, sticky="ew", pady=(4, 0), padx=(0, 8))
-    ui._theme.register(url_entry)
-
-    button_frame = tk.Frame(form, highlightthickness=0, bd=0)
-    button_frame.grid(row=0, column=2, rowspan=2, sticky="ns")
-    ui._theme.register(button_frame)
-    add_button = ttk.Button(button_frame, text="Add", command=ui._on_discord_image_add)
-    add_button.grid(row=0, column=0, sticky="ew", pady=(0, 4))
-    ui._theme.register(add_button)
-    remove_button = ttk.Button(button_frame, text="Delete selected", command=ui._on_discord_image_delete)
-    remove_button.grid(row=1, column=0, sticky="ew")
-    ui._theme.register(remove_button)
-
-    ui._discord_images_tree = images_tree
-    ui._refresh_discord_image_list()
-
-    ui._prefs_send_reset_summary_var = tk.BooleanVar(
-        master=discord_frame,
-        value=ui._state.send_reset_summary,
-    )
-    ui._prefs_send_reset_summary_var.trace_add("write", ui._on_send_reset_summary_change)
-    send_reset_summary_cb = ttk.Checkbutton(
-        discord_frame,
-        text="Send Discord summary when resetting session",
-        variable=ui._prefs_send_reset_summary_var,
-    )
-    send_reset_summary_cb.grid(row=5, column=0, sticky="w", pady=(0, 4))
-    ui._theme.register(send_reset_summary_cb)
-    ui._send_reset_summary_cb = send_reset_summary_cb
-
-    test_btn = ttk.Button(
-        discord_frame,
-        text="Test webhook",
-        command=ui._on_test_webhook,
-    )
-    test_btn.grid(row=6, column=0, sticky="w", pady=(0, 6))
-    ui._theme.register(test_btn)
-    ui._test_webhook_btn = test_btn
-
-    ui._update_discord_controls()
-
-    inara_frame = tk.LabelFrame(frame, text="Inara Links", font=section_heading_font)
+    inara_frame = create_inara_section(ui, frame, section_heading_font)
     inara_frame.grid(row=3, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
-    inara_frame.columnconfigure(0, weight=1)
-    ui._theme.register(inara_frame)
-
-    inara_desc = tk.Label(
-        inara_frame,
-        text="Configure how commodity hyperlinks open Inara searches.",
-        anchor="w",
-        justify="left",
-        wraplength=380,
-    )
-    inara_desc.grid(row=0, column=0, sticky="w", pady=(4, 6))
-    ui._theme.register(inara_desc)
-
-    ui._prefs_inara_mode_var = tk.IntVar(master=inara_frame, value=ui._state.inara_settings.search_mode)
-    ui._prefs_inara_mode_var.trace_add("write", ui._on_inara_mode_change)
-    mode_container = tk.Frame(inara_frame, highlightthickness=0, bd=0)
-    mode_container.grid(row=1, column=0, sticky="w", pady=(0, 6))
-    ui._theme.register(mode_container)
-    ttk.Radiobutton(
-        mode_container,
-        text="Best price search",
-        value=1,
-        variable=ui._prefs_inara_mode_var,
-    ).grid(row=0, column=0, sticky="w", padx=(0, 12))
-    ttk.Radiobutton(
-        mode_container,
-        text="Distance search",
-        value=3,
-        variable=ui._prefs_inara_mode_var,
-    ).grid(row=0, column=1, sticky="w")
-
-    ui._prefs_inara_carriers_var = tk.BooleanVar(
-        master=inara_frame, value=ui._state.inara_settings.include_carriers
-    )
-    ui._prefs_inara_carriers_var.trace_add("write", ui._on_inara_carriers_change)
-    ttk.Checkbutton(
-        inara_frame,
-        text="Include fleet carriers in results",
-        variable=ui._prefs_inara_carriers_var,
-    ).grid(row=2, column=0, sticky="w", pady=(0, 4))
-
-    ui._prefs_inara_surface_var = tk.BooleanVar(
-        master=inara_frame, value=ui._state.inara_settings.include_surface
-    )
-    ui._prefs_inara_surface_var.trace_add("write", ui._on_inara_surface_change)
-    ttk.Checkbutton(
-        inara_frame,
-        text="Include surface stations in results",
-        variable=ui._prefs_inara_surface_var,
-    ).grid(row=3, column=0, sticky="w", pady=(0, 4))
 
     return frame
 
