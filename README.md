@@ -14,8 +14,8 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 - No in-game configurations needed. Simply install it as an EDMC plugin and restart EDMC.
 - Optional warning that you are in a non-metallic ring (for those laser platinum miners)
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
-- Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
-- Nearby Hotspot finder with integrated Spansh search: type-ahead system lookup, ring/signal filters, minimum hotspot threshold, and clipboard copy shortcuts for quick in-game paste.
+- Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences.
+- Nearby Hotspot finder with integrated real-time Spansh search: type-ahead system lookup, ring/signal filters, minimum hotspot threshold, and clipboard copy shortcuts for quick in-game paste.
 
 ## Screenshots
 ### Minimal display when not mining
