@@ -468,7 +468,7 @@ class edmcmaMiningUI:
             )
             header.grid(row=0, column=idx, sticky=column["sticky"], padx=(0, 6), pady=(0, 2))
             self._theme.register(header)
-            self._set_label_weight(header, "bold")
+            self._schedule_header_style(header)
             self._commodities_headers.append(header)
 
         self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
@@ -554,7 +554,7 @@ class edmcmaMiningUI:
             )
             header.grid(row=0, column=idx, sticky=column["sticky"], padx=(0, 6), pady=(0, 2))
             self._theme.register(header)
-            self._set_label_weight(header, "bold")
+            self._schedule_header_style(header)
             self._materials_headers.append(header)
 
         frame.columnconfigure(0, weight=1)
@@ -1520,11 +1520,41 @@ class edmcmaMiningUI:
         else:
             label.configure(cursor="hand2" if clickable else "")
 
-    def _set_label_weight(self, label: tk.Label, weight: str) -> None:
+    def _schedule_header_style(self, label: tk.Label) -> None:
+        def _apply() -> None:
+            try:
+                base = tkfont.nametofont("TkDefaultFont")
+                actual = base.actual()
+                size = actual.get("size", 10)
+                if isinstance(size, str):
+                    size = int(size)
+                size = abs(int(size)) or 10
+                font_tuple = (
+                    actual.get("family", "TkDefaultFont"),
+                    size,
+                    "bold",
+                )
+                label.configure(font=font_tuple)
+            except (tk.TclError, ValueError):
+                pass
+
+        label.after_idle(_apply)
+        label.bind("<<ThemeChanged>>", lambda _e: label.after_idle(_apply), add="+")
         try:
-            font_info = tkfont.Font(font=label.cget("font")).actual()
-            label.configure(font=(font_info["family"], font_info["size"], weight))
-        except tk.TclError:
+            base = tkfont.nametofont("TkDefaultFont")
+            actual = base.actual()
+            size = actual.get("size", 10)
+            if isinstance(size, str):
+                size = int(size)
+            size = abs(int(size))
+            font_tuple = (
+                actual.get("family", "TkDefaultFont"),
+                size,
+                "bold",
+            )
+            label.configure(font=font_tuple)
+            label.bind("<<ThemeChanged>>", lambda _e, lbl=label: self._apply_header_style(lbl), add="+")
+        except (tk.TclError, ValueError):
             pass
 
     def _populate_commodities_table(self) -> None:
