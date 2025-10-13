@@ -54,7 +54,7 @@ class ThemeAdapter:
             self._fallback_button_fg = "#1a1005"
             self._fallback_button_active = "#ffb84a"
             self._fallback_button_border = "#ffc266"
-            self._fallback_link_fg = "#f8b542"
+            self._fallback_link_fg = "#268bd2"
         else:
             self._fallback_panel_bg = "#0d0d0d"
             self._fallback_text_fg = "#f4bb60"
@@ -67,7 +67,7 @@ class ThemeAdapter:
             self._fallback_button_fg = "#1a1005"
             self._fallback_button_active = "#ffb84a"
             self._fallback_button_border = "#ffc266"
-            self._fallback_link_fg = "#f7931e"
+            self._fallback_link_fg = "#0645ad"
 
     @property
     def is_dark_theme(self) -> bool:
