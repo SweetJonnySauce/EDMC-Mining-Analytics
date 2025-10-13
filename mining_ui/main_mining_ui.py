@@ -1510,11 +1510,11 @@ class edmcmaMiningUI:
         clickable: bool = False,
     ) -> None:
         label.configure(text=text)
-        fg = foreground or self._theme.table_foreground_color()
-        try:
-            label.configure(foreground=fg)
-        except tk.TclError:
-            pass
+        if foreground is not None:
+            try:
+                label.configure(foreground=foreground)
+            except tk.TclError:
+                pass
         if cursor:
             label.configure(cursor=cursor)
         else:
@@ -1580,7 +1580,7 @@ class edmcmaMiningUI:
                 label = labels[col_index]
                 text = values[col_index]
                 clickable = False
-                foreground = table_fg
+                foreground: Optional[str] = None
 
                 if column["key"] == "commodity":
                     has_link = (
@@ -1588,7 +1588,7 @@ class edmcmaMiningUI:
                         and commodity.lower() in self._inara.commodity_map
                     )
                     clickable = has_link
-                    foreground = link_fg if has_link else table_fg
+                    foreground = link_fg if has_link else None
                     if has_link:
                         label.bind("<Button-1>", lambda _evt, name=commodity: self._inara.open_link(name))
                     else:
@@ -1606,7 +1606,7 @@ class edmcmaMiningUI:
                 self._apply_label_style(
                     label,
                     text=text,
-                    foreground=foreground if clickable else None,
+                    foreground=foreground,
                     cursor="hand2" if clickable else "",
                     clickable=clickable,
                 )
