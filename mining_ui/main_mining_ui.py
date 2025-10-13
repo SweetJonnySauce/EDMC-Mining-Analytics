@@ -66,6 +66,8 @@ NON_METAL_WARNING_TEXT = " (Warning: Non-Metallic ring)"
 class edmcmaMiningUI:
     """Encapsulates widget construction and refresh logic."""
 
+    _DEBUG_DRAW_FRAMES = True
+
     def __init__(
         self,
         state: MiningState,
@@ -257,16 +259,19 @@ class edmcmaMiningUI:
     # Public API
     # ------------------------------------------------------------------
     def build(self, parent: tk.Widget) -> tk.Frame:
-        frame = tk.Frame(parent, highlightthickness=0, bd=0)
+        border = 1 if self._DEBUG_DRAW_FRAMES else 0
+        relief = tk.SOLID if border else tk.FLAT
+        frame = tk.Frame(parent, highlightthickness=border, bd=border, relief=relief)
         self._frame = frame
         self._theme.register(frame)
+        frame.columnconfigure(0, weight=1)
 
-        top_bar = tk.Frame(frame, highlightthickness=0, bd=0)
-        top_bar.grid(row=0, column=0, sticky="w", padx=4, pady=(4, 2))
+        top_bar = tk.Frame(frame, highlightthickness=border, bd=border, relief=relief)
+        top_bar.grid(row=0, column=0, sticky="ew", padx=4, pady=(4, 2))
         top_bar.columnconfigure(0, weight=1)
         self._theme.register(top_bar)
 
-        status_container = tk.Frame(top_bar, highlightthickness=0, bd=0)
+        status_container = tk.Frame(top_bar, highlightthickness=border, bd=border, relief=relief)
         status_container.grid(row=0, column=0, sticky="w")
         status_container.columnconfigure(0, weight=1)
         self._theme.register(status_container)
@@ -365,7 +370,11 @@ class edmcmaMiningUI:
         self._hotspot_button = hotspot_button
         self._hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
 
-        self._details_bar = tk.Frame(frame, highlightthickness=0, bd=0)
+        self._width_anchor = tk.Frame(frame, height=0, highlightthickness=border, bd=border, relief=relief)
+        self._width_anchor.grid(row=1, column=0, sticky="ew", padx=4)
+        self._theme.register(self._width_anchor)
+
+        self._details_bar = tk.Frame(frame, highlightthickness=border, bd=border, relief=relief)
         self._details_bar.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 6))
         self._details_bar.columnconfigure(0, weight=1)
         self._theme.register(self._details_bar)
@@ -1061,6 +1070,12 @@ class edmcmaMiningUI:
                 widget.grid()
             else:
                 widget.grid_remove()
+        anchor = getattr(self, "_width_anchor", None)
+        if anchor is not None:
+            if visible:
+                anchor.grid_remove()
+            else:
+                anchor.grid()
         if visible:
             self._apply_table_visibility()
         if self._details_toggle:
