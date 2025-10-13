@@ -15,6 +15,7 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 - Optional warning that you are in a non-metallic ring (for those laser platinum miners)
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
 - Optional JSON session archive for deeper analysis or sharing, retained locally according to your preferences. (currently in development)
+- Nearby Hotspot finder with integrated Spansh search: type-ahead system lookup, ring/signal filters, minimum hotspot threshold, and clipboard copy shortcuts for quick in-game paste.
 
 ## Screenshots
 ### Minimal display when not mining
@@ -80,4 +81,3 @@ Questions, ideas, or bugs? Open an issue on [GitHub](https://github.com/SweetJon
 
 - Big thanks to [Aussig of BGS-Tally](https://github.com/aussig/BGS-Tally) fame for auto-update functionality examples and other bits.
 - Thanks to [FCDN](https://github.com/aweeri/FCDN) for the Discord integration ideas.
-
