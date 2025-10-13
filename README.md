@@ -76,4 +76,4 @@ Questions, ideas, or bugs? Open an issue on [GitHub](https://github.com/SweetJon
 
 - Big thanks to [Aussig of BGS-Tally](https://github.com/aussig/BGS-Tally) fame for auto-update functionality examples and other bits.
 - Thanks to [FCDN](https://github.com/aweeri/FCDN) for the Discord integration ideas.
-- Thanks to [KittenTrucker](https://github.com/KittenTrucker) for the idea of having multiple images for the discord summary.
+- Thanks to [Leerensucher](https://github.com/Leerensucher) for the idea of having multiple images for the discord summary.
