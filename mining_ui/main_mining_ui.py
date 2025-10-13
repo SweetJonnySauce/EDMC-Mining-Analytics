@@ -20,7 +20,7 @@ try:
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
-from tooltip import TreeTooltip, WidgetTooltip
+from tooltip import WidgetTooltip
 from state import MiningState, compute_percentage_stats, update_rpm
 from integrations.mining_inara import InaraClient
 from integrations.spansh_hotspots import (
@@ -109,17 +109,13 @@ class edmcmaMiningUI:
         self._rpm_target_value: float = 0.0
         self._rpm_animation_after: Optional[str] = None
         self._pause_btn: Optional[tk.Button] = None
-        self._cargo_tree: Optional[ttk.Treeview] = None
-        self._materials_tree: Optional[ttk.Treeview] = None
+        self._commodities_headers: list[tk.Label] = []
+        self._commodities_rows: list[list[tk.Label]] = []
+        self._materials_headers: list[tk.Label] = []
+        self._materials_rows: list[list[tk.Label]] = []
         self._materials_frame: Optional[tk.Frame] = None
         self._total_tph_var: Optional[tk.StringVar] = None
         self._total_tph_font: Optional[tkfont.Font] = None
-        self._range_link_labels: Dict[str, tk.Label] = {}
-        self._commodity_link_labels: Dict[str, tk.Label] = {}
-        self._range_link_font: Optional[tkfont.Font] = None
-        self._commodity_link_font: Optional[tkfont.Font] = None
-        self._cargo_tooltip: Optional[TreeTooltip] = None
-        self._cargo_item_to_commodity: Dict[str, str] = {}
         self._content_widgets: Sequence[tk.Widget] = ()
         self._version_label: Optional[tk.Label] = None
         self._version_font: Optional[tkfont.Font] = None
@@ -130,6 +126,67 @@ class edmcmaMiningUI:
         self._commodities_frame: Optional[tk.Frame] = None
         self._commodities_grid: Optional[Dict[str, Any]] = None
         self._materials_grid: Optional[Dict[str, Any]] = None
+        self._materials_table: Optional[tk.Frame] = None
+        self._commodity_columns: Sequence[Dict[str, Any]] = (
+            {
+                "key": "commodity",
+                "label": "Commodity",
+                "anchor": "w",
+                "sticky": "w",
+                "weight": 4,
+            },
+            {
+                "key": "present",
+                "label": "#",
+                "anchor": "e",
+                "sticky": "e",
+                "weight": 1,
+            },
+            {
+                "key": "percent",
+                "label": "%",
+                "anchor": "e",
+                "sticky": "e",
+                "weight": 1,
+            },
+            {
+                "key": "total",
+                "label": "Total",
+                "anchor": "e",
+                "sticky": "e",
+                "weight": 1,
+            },
+            {
+                "key": "range",
+                "label": "%Range",
+                "anchor": "e",
+                "sticky": "e",
+                "weight": 2,
+            },
+            {
+                "key": "tph",
+                "label": "Tons/hr",
+                "anchor": "e",
+                "sticky": "e",
+                "weight": 1,
+            },
+        )
+        self._materials_columns: Sequence[Dict[str, Any]] = (
+            {
+                "key": "material",
+                "label": "Material",
+                "anchor": "w",
+                "sticky": "w",
+                "weight": 3,
+            },
+            {
+                "key": "quantity",
+                "label": "Count",
+                "anchor": "e",
+                "sticky": "e",
+                "weight": 1,
+            },
+        )
         self._hotspot_controller: Optional[HotspotSearchController] = None
         self._hotspot_window: Optional[HotspotSearchWindow] = None
         self._hotspot_button: Optional[tk.Button] = None
@@ -399,69 +456,20 @@ class edmcmaMiningUI:
         table_frame.grid(**self._commodities_grid)
         self._theme.register(table_frame)
 
-        header_font = tkfont.Font(family="TkDefaultFont", size=9, weight="normal")
-        ttk.Style().configure("Treeview.Heading", font=header_font)
+        self._commodities_headers = []
+        self._commodities_rows = []
 
-        tree_style = self._theme.treeview_style()
-        self._cargo_tree = ttk.Treeview(
-            table_frame,
-            columns=("commodity", "present", "percent", "total", "range", "tph"),
-            show="headings",
-            height=5,
-            selectmode="none",
-            style=tree_style,
-        )
-        self._cargo_tree.heading("commodity", text="Commodity", anchor="center")
-        self._cargo_tree.heading("present", text="#", anchor="center")
-        self._cargo_tree.heading("percent", text="%", anchor="center")
-        self._cargo_tree.heading("total", text="Total", anchor="center")
-        self._cargo_tree.heading("range", text="%Range", anchor="center")
-        self._cargo_tree.heading("tph", text="Tons/hr", anchor="center")
-        self._cargo_tree.column("commodity", anchor="w", width=160, stretch=True)
-        self._cargo_tree.column("present", anchor="center", width=60, stretch=False)
-        self._cargo_tree.column("percent", anchor="center", width=60, stretch=False)
-        self._cargo_tree.column("total", anchor="center", width=80, stretch=False)
-        self._cargo_tree.column("range", anchor="center", width=140, stretch=False)
-        self._cargo_tree.column("tph", anchor="center", width=80, stretch=False)
-        self._cargo_tree.pack(fill="both", expand=True)
-        # Only apply explicit zebra striping on dark theme; in the EDMC
-        # default (light) theme we inherit platform colors to keep rows
-        # readable.
-        if self._theme.is_dark_theme:
-            self._cargo_tree.tag_configure(
-                "even",
-                background=self._theme.table_background_color(),
-                foreground=self._theme.table_foreground_color(),
+        for idx, column in enumerate(self._commodity_columns):
+            table_frame.columnconfigure(idx, weight=column.get("weight", 1))
+            header = tk.Label(
+                table_frame,
+                text=column["label"],
+                anchor=column["anchor"],
             )
-            self._cargo_tree.tag_configure(
-                "odd",
-                background=self._theme.table_stripe_color(),
-                foreground=self._theme.table_foreground_color(),
-            )
-        self._theme.register(self._cargo_tree)
-
-        self._cargo_tooltip = TreeTooltip(self._cargo_tree)
-        if self._cargo_tooltip:
-            self._cargo_tooltip.set_heading_tooltip(
-                "present",
-                "Number of asteroids prospected where this commodity is present.",
-            )
-            self._cargo_tooltip.set_heading_tooltip(
-                "percent",
-                "Percentage of asteroids prospected where this commodity is present.",
-            )
-            self._cargo_tooltip.set_heading_tooltip(
-                "total",
-                "Total number of tons collected.",
-            )
-            self._cargo_tooltip.set_heading_tooltip(
-                "range",
-                "Minimum, average, and maximum percentages of this commodity on an asteroid when found.",
-            )
-            self._cargo_tooltip.set_heading_tooltip(
-                "tph",
-                "Projected tons collected per hour of mining.",
-            )
+            header.grid(row=0, column=idx, sticky=column["sticky"], padx=(0, 6), pady=(0, 2))
+            self._theme.register(header)
+            self._set_label_weight(header, "bold")
+            self._commodities_headers.append(header)
 
         self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
         total_label = tk.Label(
@@ -530,40 +538,24 @@ class edmcmaMiningUI:
         self._materials_frame.grid(**self._materials_grid)
         self._theme.register(self._materials_frame)
 
-        self._materials_tree = ttk.Treeview(
-            self._materials_frame,
-            columns=("material", "quantity"),
-            show="headings",
-            height=5,
-            selectmode="none",
-            style=self._theme.treeview_style(),
-        )
-        self._materials_tree.heading("material", text="Material")
-        self._materials_tree.heading("quantity", text="Count")
-        self._materials_tree.column("material", anchor="w", stretch=True, width=160)
-        self._materials_tree.column("quantity", anchor="center", stretch=False, width=80)
-        self._materials_tree.pack(fill="both", expand=True)
-        if self._theme.is_dark_theme:
-            self._materials_tree.tag_configure(
-                "even",
-                background=self._theme.table_background_color(),
-                foreground=self._theme.table_foreground_color(),
-            )
-            self._materials_tree.tag_configure(
-                "odd",
-                background=self._theme.table_stripe_color(),
-                foreground=self._theme.table_foreground_color(),
-            )
-        self._theme.register(self._materials_tree)
+        materials_table = tk.Frame(self._materials_frame, highlightthickness=0, bd=0)
+        materials_table.pack(fill="both", expand=True)
+        self._theme.register(materials_table)
+        self._materials_table = materials_table
 
-        self._cargo_tree.bind("<Configure>", lambda _e: self._render_range_links(), add="+")
-        self._cargo_tree.bind("<ButtonRelease-3>", lambda _e: self._render_range_links(), add="+")
-        self._cargo_tree.bind("<KeyRelease>", lambda _e: self._render_range_links(), add="+")
-        self._cargo_tree.bind("<MouseWheel>", lambda _e: self._render_range_links(), add="+")
-        self._cargo_tree.bind("<ButtonRelease-4>", lambda _e: self._render_range_links(), add="+")
-        self._cargo_tree.bind("<ButtonRelease-5>", lambda _e: self._render_range_links(), add="+")
-        self._cargo_tree.bind("<Button-1>", self._on_cargo_click, add="+")
-        self._cargo_tree.bind("<Motion>", self._on_cargo_motion, add="+")
+        self._materials_headers = []
+        self._materials_rows = []
+        for idx, column in enumerate(self._materials_columns):
+            materials_table.columnconfigure(idx, weight=column.get("weight", 1))
+            header = tk.Label(
+                materials_table,
+                text=column["label"],
+                anchor=column["anchor"],
+            )
+            header.grid(row=0, column=idx, sticky=column["sticky"], padx=(0, 6), pady=(0, 2))
+            self._theme.register(header)
+            self._set_label_weight(header, "bold")
+            self._materials_headers.append(header)
 
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
@@ -645,7 +637,6 @@ class edmcmaMiningUI:
         self._update_pause_button()
         self._refresh_status_line()
         self._populate_tables()
-        self._render_range_links()
         self._update_overlay_controls()
 
     def _on_auto_unpause_change(self, *_: object) -> None:
@@ -1151,8 +1142,6 @@ class edmcmaMiningUI:
         return self._frame
 
     def clear_transient_widgets(self, *, close_histograms: bool = True) -> None:
-        self._clear_range_link_labels()
-        self._clear_commodity_link_labels()
         if close_histograms:
             self.close_histogram_windows()
 
@@ -1429,96 +1418,13 @@ class edmcmaMiningUI:
                 pass
 
     def _populate_tables(self) -> None:
-        cargo_tree = self._cargo_tree
-        if cargo_tree and getattr(cargo_tree, "winfo_exists", lambda: False)():
-            if self._theme.is_dark_theme:
-                cargo_tree.tag_configure(
-                    "even",
-                    background=self._theme.table_background_color(),
-                    foreground=self._theme.table_foreground_color(),
-                )
-                cargo_tree.tag_configure(
-                    "odd",
-                    background=self._theme.table_stripe_color(),
-                    foreground=self._theme.table_foreground_color(),
-                )
-            cargo_tree.delete(*cargo_tree.get_children())
-            if self._cargo_tooltip:
-                self._cargo_tooltip.clear()
-            self._cargo_item_to_commodity.clear()
-            self.clear_transient_widgets(close_histograms=False)
+        commodities_parent = self._commodities_frame
+        if commodities_parent and getattr(commodities_parent, "winfo_exists", lambda: False)():
+            self._populate_commodities_table()
 
-            rows = sorted(
-                name
-                for name in set(self._state.cargo_totals) | set(self._state.cargo_additions)
-                if self._state.cargo_additions.get(name, 0) > 0
-            )
-            if not rows:
-                item = cargo_tree.insert(
-                    "",
-                    "end",
-                    values=("No mined commodities", "", "", "", "", ""),
-                    tags=("even",),
-                )
-                if self._cargo_tooltip:
-                    self._cargo_tooltip.set_cell_text(item, "#6", None)
-            else:
-                present_counts = {k: len(v) for k, v in self._state.prospected_samples.items()}
-                total_asteroids = self._state.prospected_count if self._state.prospected_count > 0 else 1
-                for idx, name in enumerate(rows):
-                    range_label = self._format_range_label(name)
-                    present = present_counts.get(name, 0)
-                    percent = (present / total_asteroids) * 100 if total_asteroids else 0
-                    commodity_value = self._format_cargo_name(name)
-                    range_value = range_label
-                    item = cargo_tree.insert(
-                        "",
-                        "end",
-                        values=(
-                            commodity_value,
-                            present,
-                            f"{percent:.1f}",
-                            self._state.cargo_totals.get(name, 0),
-                            range_value,
-                            self._format_tph(name),
-                        ),
-                        tags=("odd" if idx % 2 else "even",),
-                    )
-                    self._cargo_item_to_commodity[item] = name
-                    if self._cargo_tooltip:
-                        self._cargo_tooltip.set_cell_text(
-                            item,
-                            "#6",
-                            self._make_tph_tooltip(name),
-                        )
-                cargo_tree.after(0, self._render_range_links)
-
-        materials_tree = self._materials_tree
-        if materials_tree and getattr(materials_tree, "winfo_exists", lambda: False)():
-            if self._theme.is_dark_theme:
-                materials_tree.tag_configure(
-                    "even",
-                    background=self._theme.table_background_color(),
-                    foreground=self._theme.table_foreground_color(),
-                )
-                materials_tree.tag_configure(
-                    "odd",
-                    background=self._theme.table_stripe_color(),
-                    foreground=self._theme.table_foreground_color(),
-                )
-            materials_tree.delete(*materials_tree.get_children())
-            if not self._state.materials_collected:
-                materials_tree.insert(
-                    "", "end", values=("No materials collected yet", ""), tags=("even",)
-                )
-            else:
-                for idx, name in enumerate(sorted(self._state.materials_collected)):
-                    materials_tree.insert(
-                        "",
-                        "end",
-                        values=(self._format_cargo_name(name), self._state.materials_collected[name]),
-                        tags=("odd" if idx % 2 else "even",),
-                    )
+        materials_parent = self._materials_table
+        if materials_parent and getattr(materials_parent, "winfo_exists", lambda: False)():
+            self._populate_materials_table()
 
         if self._total_tph_var is not None:
             total_rate = self._compute_total_tph()
@@ -1537,6 +1443,216 @@ class edmcmaMiningUI:
                 )
 
         self._refresh_histogram_windows()
+
+    def _ensure_commodity_row(self, row_index: int) -> list[tk.Label]:
+        parent = self._commodities_frame
+        if parent is None or not getattr(parent, "winfo_exists", lambda: False)():
+            raise RuntimeError("Commodities frame is not available")
+
+        while len(self._commodities_rows) <= row_index:
+            grid_row = len(self._commodities_rows) + 1
+            row_labels: list[tk.Label] = []
+            for col_index, column in enumerate(self._commodity_columns):
+                label = tk.Label(
+                    parent,
+                    text="",
+                    anchor=column["anchor"],
+                    justify=tk.LEFT,
+                )
+                label.grid(
+                    row=grid_row,
+                    column=col_index,
+                    sticky=column["sticky"],
+                    padx=(0, 6),
+                    pady=(0, 1),
+                )
+                label.grid_remove()
+                self._theme.register(label)
+                row_labels.append(label)
+            self._commodities_rows.append(row_labels)
+        return self._commodities_rows[row_index]
+
+    def _ensure_material_row(self, row_index: int) -> list[tk.Label]:
+        parent = self._materials_table
+        if parent is None or not getattr(parent, "winfo_exists", lambda: False)():
+            raise RuntimeError("Materials table is not available")
+
+        while len(self._materials_rows) <= row_index:
+            grid_row = len(self._materials_rows) + 1
+            row_labels: list[tk.Label] = []
+            for col_index, column in enumerate(self._materials_columns):
+                label = tk.Label(
+                    parent,
+                    text="",
+                    anchor=column["anchor"],
+                    justify=tk.LEFT,
+                )
+                label.grid(
+                    row=grid_row,
+                    column=col_index,
+                    sticky=column["sticky"],
+                    padx=(0, 6),
+                    pady=(0, 1),
+                )
+                label.grid_remove()
+                self._theme.register(label)
+                row_labels.append(label)
+            self._materials_rows.append(row_labels)
+        return self._materials_rows[row_index]
+
+    def _apply_label_style(
+        self,
+        label: tk.Label,
+        *,
+        text: str,
+        foreground: Optional[str] = None,
+        cursor: str = "",
+        clickable: bool = False,
+    ) -> None:
+        label.configure(text=text)
+        fg = foreground or self._theme.table_foreground_color()
+        try:
+            label.configure(foreground=fg)
+        except tk.TclError:
+            pass
+        if cursor:
+            label.configure(cursor=cursor)
+        else:
+            label.configure(cursor="hand2" if clickable else "")
+
+    def _set_label_weight(self, label: tk.Label, weight: str) -> None:
+        try:
+            font_info = tkfont.Font(font=label.cget("font")).actual()
+            label.configure(font=(font_info["family"], font_info["size"], weight))
+        except tk.TclError:
+            pass
+
+    def _populate_commodities_table(self) -> None:
+        rows = sorted(
+            name
+            for name in set(self._state.cargo_totals) | set(self._state.cargo_additions)
+            if self._state.cargo_additions.get(name, 0) > 0
+        )
+
+        table_fg = self._theme.default_text_color()
+        link_fg = self._theme.link_color()
+
+        if not rows:
+            row_labels = self._ensure_commodity_row(0)
+            for col_index, label in enumerate(row_labels):
+                if col_index == 0:
+                    self._apply_label_style(label, text="No mined commodities", foreground=table_fg)
+                    label.grid()
+                    label.unbind("<Button-1>")
+                else:
+                    label.grid_remove()
+                    label.unbind("<Button-1>")
+            # Hide any leftover rows beyond index 0
+            for idx in range(1, len(self._commodities_rows)):
+                for label in self._commodities_rows[idx]:
+                    label.grid_remove()
+                    label.unbind("<Button-1>")
+            return
+
+        present_counts = {k: len(v) for k, v in self._state.prospected_samples.items()}
+        total_asteroids = self._state.prospected_count if self._state.prospected_count > 0 else 1
+
+        for row_index, commodity in enumerate(rows):
+            labels = self._ensure_commodity_row(row_index)
+            for label in labels:
+                label.grid()
+
+            present = present_counts.get(commodity, 0)
+            percent = (present / total_asteroids) * 100 if total_asteroids else 0.0
+            range_label = self._format_range_label(commodity)
+            tph = self._format_tph(commodity)
+
+            total_amount = self._state.cargo_totals.get(commodity, 0)
+            values = (
+                self._truncate_text(self._format_cargo_name(commodity), 23),
+                f"{present:,d}" if present else "0",
+                f"{percent:.1f}%",
+                f"{total_amount:,}t" if total_amount else "0t",
+                range_label,
+                tph if tph else "-",
+            )
+
+            for col_index, column in enumerate(self._commodity_columns):
+                label = labels[col_index]
+                text = values[col_index]
+                clickable = False
+                foreground = table_fg
+
+                if column["key"] == "commodity":
+                    has_link = (
+                        self._state.current_system is not None
+                        and commodity.lower() in self._inara.commodity_map
+                    )
+                    clickable = has_link
+                    foreground = link_fg if has_link else table_fg
+                    if has_link:
+                        label.bind("<Button-1>", lambda _evt, name=commodity: self._inara.open_link(name))
+                    else:
+                        label.unbind("<Button-1>")
+                elif column["key"] == "range" and range_label:
+                    clickable = True
+                    foreground = link_fg
+                    label.bind(
+                        "<Button-1>",
+                        lambda _evt, name=commodity: self.open_histogram_window(name),
+                    )
+                else:
+                    label.unbind("<Button-1>")
+
+                self._apply_label_style(
+                    label,
+                    text=text,
+                    foreground=foreground,
+                    cursor="hand2" if clickable else "",
+                    clickable=clickable,
+                )
+
+        # Hide remaining rows beyond populated ones
+        for idx in range(len(rows), len(self._commodities_rows)):
+            for label in self._commodities_rows[idx]:
+                label.grid_remove()
+                label.unbind("<Button-1>")
+
+        # Display totals row similar to BGS-Tally
+    def _populate_materials_table(self) -> None:
+        rows = sorted(self._state.materials_collected.items())
+        table_fg = self._theme.default_text_color()
+
+        if not rows:
+            labels = self._ensure_material_row(0)
+            for col_index, label in enumerate(labels):
+                if col_index == 0:
+                    self._apply_label_style(label, text="No materials collected yet", foreground=table_fg)
+                    label.grid()
+                else:
+                    label.grid_remove()
+            for idx in range(1, len(self._materials_rows)):
+                for label in self._materials_rows[idx]:
+                    label.grid_remove()
+            return
+
+        for row_index, (material, quantity) in enumerate(rows):
+            labels = self._ensure_material_row(row_index)
+            for label in labels:
+                label.grid()
+
+            texts = (
+                self._truncate_text(self._format_cargo_name(material), 23),
+                f"{quantity:,}",
+            )
+            for col_index, text in enumerate(texts):
+                label = labels[col_index]
+                label.unbind("<Button-1>")
+                self._apply_label_style(label, text=text, foreground=table_fg, cursor="")
+
+        for idx in range(len(rows), len(self._materials_rows)):
+            for label in self._materials_rows[idx]:
+                label.grid_remove()
 
     # ------------------------------------------------------------------
     # Preference callbacks
@@ -1652,7 +1768,7 @@ class edmcmaMiningUI:
             self._updating_inara_mode_var = True
             self._prefs_inara_mode_var.set(self._state.inara_settings.search_mode)
             self._updating_inara_mode_var = False
-        self._render_range_links()
+        self._populate_tables()
 
     def _on_inara_carriers_change(self, *_: object) -> None:
         if self._prefs_inara_carriers_var is None or self._updating_inara_carriers_var:
@@ -1666,7 +1782,7 @@ class edmcmaMiningUI:
             self._updating_inara_carriers_var = True
             self._prefs_inara_carriers_var.set(self._state.inara_settings.include_carriers)
             self._updating_inara_carriers_var = False
-        self._render_range_links()
+        self._populate_tables()
 
     def _on_inara_surface_change(self, *_: object) -> None:
         if self._prefs_inara_surface_var is None or self._updating_inara_surface_var:
@@ -1680,7 +1796,7 @@ class edmcmaMiningUI:
             self._updating_inara_surface_var = True
             self._prefs_inara_surface_var.set(self._state.inara_settings.include_surface)
             self._updating_inara_surface_var = False
-        self._render_range_links()
+        self._populate_tables()
 
     # ------------------------------------------------------------------
     # Event handlers
@@ -1738,196 +1854,6 @@ class edmcmaMiningUI:
             self.refresh()
         self.schedule_rate_update()
 
-    def _on_cargo_click(self, event: tk.Event) -> None:  # type: ignore[override]
-        tree = self._cargo_tree
-        if not tree:
-            return
-        column = tree.identify_column(event.x)
-        item = tree.identify_row(event.y)
-        commodity = self._cargo_item_to_commodity.get(item)
-        if not commodity:
-            return
-        if column == "#5":
-            if not self._format_range_label(commodity):
-                return
-            self.open_histogram_window(commodity)
-        elif column == "#1":
-            self._inara.open_link(commodity)
-
-    def _on_cargo_motion(self, event: tk.Event) -> None:  # type: ignore[override]
-        tree = self._cargo_tree
-        if not tree:
-            return
-        column = tree.identify_column(event.x)
-        item = tree.identify_row(event.y)
-        commodity = self._cargo_item_to_commodity.get(item)
-        if column == "#5" and commodity and self._format_range_label(commodity):
-            tree.configure(cursor="hand2")
-        elif (
-            column == "#1"
-            and commodity
-            and commodity.lower() in self._inara.commodity_map
-            and self._state.current_system
-        ):
-            tree.configure(cursor="hand2")
-        else:
-            tree.configure(cursor="")
-
-    # ------------------------------------------------------------------
-    # Rendering helpers
-    # ------------------------------------------------------------------
-    def _render_range_links(self) -> None:
-        tree = self._cargo_tree
-        if not tree or not getattr(tree, "winfo_exists", lambda: False)() or self._content_collapsed:
-            self._clear_range_link_labels()
-            self._clear_commodity_link_labels()
-            return
-
-        self._clear_range_link_labels()
-        self._clear_commodity_link_labels()
-
-        try:
-            base_font = tree.cget("font")
-        except tk.TclError:
-            self._clear_commodity_link_labels()
-            return
-
-        if not self._range_link_font:
-            try:
-                font = tkfont.nametofont(base_font)
-                self._range_link_font = tkfont.Font(font=font)
-                self._range_link_font.configure(underline=True)
-            except tk.TclError:
-                self._range_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
-
-        pending = False
-        for item, commodity in self._cargo_item_to_commodity.items():
-            range_label = self._format_range_label(commodity)
-            if not range_label:
-                continue
-            try:
-                bbox = tree.bbox(item, "#5")
-            except tk.TclError:
-                bbox = None
-            if not bbox:
-                pending = True
-                continue
-            x, y, width, height = bbox
-            if width <= 0 or height <= 0:
-                continue
-            tags = tree.item(item, "tags") or ()
-            bg_color = self._theme.table_background_color()
-            if "odd" in tags:
-                bg_color = self._theme.table_stripe_color()
-            label = tk.Label(
-                tree,
-                text=range_label,
-                cursor="hand2",
-                anchor="center",
-                background=bg_color,
-                foreground=self._theme.link_color(),
-                bd=0,
-                highlightthickness=0,
-            )
-            try:
-                label.configure(font=self._range_link_font)
-            except Exception:
-                pass
-            self._theme.register(label)
-            try:
-                label.place(x=x + 2, y=y + 1, width=width - 4, height=height - 2)
-                try:
-                    label.lift()
-                except Exception:
-                    pass
-                label.bind("<Button-1>", lambda _evt, commodity=commodity: self.open_histogram_window(commodity))
-                self._range_link_labels[item] = label
-            except Exception:
-                try:
-                    label.destroy()
-                except Exception:
-                    pass
-                pending = True
-                continue
-
-        commodity_pending = self._render_commodity_links()
-        if pending or commodity_pending:
-            tree.after(16, self._render_range_links)
-
-    def _render_commodity_links(self) -> bool:
-        tree = self._cargo_tree
-        if not tree or not getattr(tree, "winfo_exists", lambda: False)() or self._content_collapsed:
-            self._clear_commodity_link_labels()
-            return False
-
-        if not self._state.current_system or not self._inara.commodity_map:
-            self._clear_commodity_link_labels()
-            return False
-
-        self._clear_commodity_link_labels()
-
-        try:
-            base_font = tree.cget("font")
-        except tk.TclError:
-            return False
-
-        if not self._commodity_link_font:
-            try:
-                font = tkfont.nametofont(base_font)
-                self._commodity_link_font = tkfont.Font(font=font)
-                self._commodity_link_font.configure(underline=True)
-            except tk.TclError:
-                self._commodity_link_font = tkfont.Font(family="TkDefaultFont", size=9, underline=True)
-
-        pending = False
-        for item, commodity in self._cargo_item_to_commodity.items():
-            if commodity.lower() not in self._inara.commodity_map:
-                continue
-            bbox = tree.bbox(item, "#1")
-            if not bbox:
-                pending = True
-                continue
-            x, y, width, height = bbox
-            if width <= 0 or height <= 0:
-                continue
-            tags = tree.item(item, "tags") or ()
-            bg_color = self._theme.table_background_color()
-            if "odd" in tags:
-                bg_color = self._theme.table_stripe_color()
-            label = tk.Label(
-                tree,
-                text=self._format_cargo_name(commodity),
-                cursor="hand2",
-                anchor="w",
-                background=bg_color,
-                foreground=self._theme.link_color(),
-                bd=0,
-                highlightthickness=0,
-            )
-            try:
-                label.configure(font=self._commodity_link_font)
-            except Exception:
-                pass
-            self._theme.register(label)
-            pad_x, pad_y = 4, 1
-            try:
-                label.place(
-                    x=x + pad_x,
-                    y=y + pad_y,
-                    width=max(0, width - pad_x * 2),
-                    height=max(0, height - pad_y * 2),
-                )
-                try:
-                    label.lift()
-                except Exception:
-                    pass
-            except Exception:
-                continue
-            label.bind("<Button-1>", lambda _evt, commodity=commodity: self._inara.open_link(commodity))
-            self._commodity_link_labels[item] = label
-
-        return pending
-
     # ------------------------------------------------------------------
     # Utility helpers
     # ------------------------------------------------------------------
@@ -1954,6 +1880,14 @@ class edmcmaMiningUI:
         if rate is None:
             return ""
         return self._format_rate(rate)
+
+    @staticmethod
+    def _truncate_text(text: str, maximum: int) -> str:
+        if len(text) <= maximum:
+            return text
+        if maximum <= 1:
+            return text[:maximum]
+        return text[: maximum - 1] + "…"
 
     def _make_tph_tooltip(self, commodity: str) -> Optional[str]:
         rate = self._compute_tph(commodity)
@@ -2036,18 +1970,6 @@ class edmcmaMiningUI:
         start = bin_index * size
         end = min(start + size, 100)
         return f"{int(start)}-{int(end)}%"
-
-    def _clear_range_link_labels(self) -> None:
-        for label in self._range_link_labels.values():
-            if label.winfo_exists():
-                label.destroy()
-        self._range_link_labels.clear()
-
-    def _clear_commodity_link_labels(self) -> None:
-        for label in self._commodity_link_labels.values():
-            if label.winfo_exists():
-                label.destroy()
-        self._commodity_link_labels.clear()
 
     def open_histogram_window(self, commodity: str) -> None:
         _hist_open(self, commodity)
