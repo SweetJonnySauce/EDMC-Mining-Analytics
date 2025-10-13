@@ -10,7 +10,7 @@ from typing import Any, Dict, Iterable, Optional, Tuple
 
 from logging_utils import get_logger
 from state import MiningState, compute_percentage_stats, update_rpm
-from integrations.discord import (
+from integrations.discord_summary import (
     build_summary_message,
     build_test_message,
     format_duration,

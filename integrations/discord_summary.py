@@ -10,52 +10,11 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib import error as urlerror, request as urlrequest
 
 from state import MiningState
+from .discord_image_manager import DiscordImageManager
 
 USER_AGENT = "EDMC-Mining-Analytics/0.1"
 EMBED_COLOR = 0x1d9bf0
 TEST_COLOR = 0x95a5a6
-
-
-def _select_discord_image(state: MiningState) -> Optional[str]:
-    entries = getattr(state, "discord_images", None) or []
-    if not entries:
-        return None
-
-    ship_name = (state.current_ship or "").strip().lower()
-    any_key = "__any__"
-
-    matches: List[str] = []
-    any_matches: List[str] = []
-
-    for entry in entries:
-        if not isinstance(entry, (list, tuple)) or len(entry) < 2:
-            continue
-        ship, url = entry[0], entry[1]
-        url_str = (url or "").strip()
-        if not url_str:
-            continue
-        ship_value = (ship or "").strip()
-        if ship_value and ship_value.lower() != "any":
-            if ship_value.lower() == ship_name:
-                matches.append(url_str)
-        else:
-            any_matches.append(url_str)
-
-    def choose(urls: List[str], key: str) -> Optional[str]:
-        if not urls:
-            return None
-        cycle = getattr(state, "discord_image_cycle", None)
-        if cycle is None:
-            cycle = state.discord_image_cycle = {}
-        idx = cycle.get(key, 0)
-        selected = urls[idx % len(urls)]
-        cycle[key] = (idx + 1) % len(urls)
-        return selected
-
-    image = choose(matches, ship_name if ship_name else any_key)
-    if image:
-        return image
-    return choose(any_matches, any_key)
 
 
 def send_webhook(webhook_url: str, payload: Dict[str, Any]) -> Tuple[bool, str]:
@@ -118,81 +77,19 @@ def build_summary_message(
     else:
         location_value = base_location
 
-    duration_seconds = float(meta.get("duration_seconds", 0.0) or 0.0)
-    duration_text = format_duration(duration_seconds)
-
-    overall = meta.get("overall_tph", {})
-    total_tons = overall.get("tons")
-    tph_value = overall.get("tons_per_hour")
-    tph_text = f"{tph_value:.1f} TPH" if isinstance(tph_value, (int, float)) else "-"
-    output_text = f"{total_tons}t @ {tph_text}" if total_tons is not None else tph_text
-
-    prospected = meta.get("prospected", {})
-    content = meta.get("content_summary", {})
-    lost = meta.get("prospectors_lost", max(0, state.prospector_launched_count - state.prospected_count))
-
-    refinement_meta = meta.get("refinement_activity", {})
-    raw_max_rpm = refinement_meta.get("max_rpm", state.max_rpm)
-
-    def _format_rpm(value: Any) -> str:
-        try:
-            numeric = float(value)
-        except (TypeError, ValueError):
-            return "-"
-        return f"{numeric:.1f}"
-
-    rpm_field_value = f"Max {_format_rpm(raw_max_rpm)} RPM"
-
     fields: List[Dict[str, Any]] = [
         {
             "name": "Location",
-            "value": _clamp_text(location_value, 1024),
+            "value": location_value,
             "inline": False,
-        },
-        {
-            "name": "Duration",
-            "value": duration_text,
-            "inline": True,
-        },
-        {
-            "name": "Output",
-            "value": output_text,
-            "inline": True,
-        },
-        {
-            "name": "Refinements",
-            "value": rpm_field_value,
-            "inline": True,
-        },
-        {
-            "name": "Asteroids",
-            "value": (
-                f"{prospected.get('total', 0)} total\n"
-                f"H:{content.get('High', 0)} | M:{content.get('Medium', 0)} | L:{content.get('Low', 0)}"
-            ),
-            "inline": True,
-        },
-        {
-            "name": "Prospectors",
-            "value": (
-                f"Launched {meta.get('prospectors_launched', 0)}\n"
-                f"Lost {lost} | Duplicates {prospected.get('duplicates', 0)}"
-            ),
-            "inline": True,
-        },
-        {
-            "name": "Collectors",
-            "value": (
-                f"Launched {meta.get('collectors_launched', 0)}\n"
-                f"Abandoned {meta.get('collectors_abandoned', 0)} | Limpets left {meta.get('limpets_remaining', 0)}"
-            ),
-            "inline": True,
-        },
+        }
     ]
 
-    location_info = meta.get("location", {})
+    if ring and ring.strip():
+        fields.append({"name": "Ring", "value": ring.strip(), "inline": False})
 
-    top_value = _format_top_commodities(commodities)
+    summary = payload.get("commodities", {})
+    top_value = _format_top_commodities(summary)
     if top_value:
         fields.append({"name": "Top Commodities", "value": top_value, "inline": False})
 
@@ -229,7 +126,8 @@ def build_summary_message(
 
     image_url = embed.get("image", {}).get("url")
     if not image_url:
-        image_url = _select_discord_image(state)
+        manager = DiscordImageManager(state)
+        image_url = manager.select_image(meta.get("ship") or state.current_ship)
         if image_url:
             embed["image"] = {"url": image_url}
 
@@ -319,50 +217,10 @@ def _format_top_commodities(commodities: Dict[str, Any]) -> Optional[str]:
         tons = info.get("gathered", {}).get("tons", 0)
         tph = info.get("tons_per_hour")
         tph_text = f"{tph:.1f} TPH" if isinstance(tph, (int, float)) else "-"
-        avg_fragment = ""
-        stats = info.get("percentage_stats")
-        if isinstance(stats, dict):
-            avg_value = stats.get("avg")
-            if isinstance(avg_value, (int, float)):
-                avg_fragment = f" | Avg Yield {avg_value:.1f}%"
-        lines.append(f"{name}: {tons}t ({tph_text}){avg_fragment}")
-    value = "\n".join(lines)
-    return _clamp_text(value, 1024) if value else None
-
-
-def _format_ring_info(
-    reserve: Optional[Any],
-    ring_type: Optional[Any],
-) -> Optional[str]:
-    reserve_text = reserve.strip() if isinstance(reserve, str) else None
-    ring_text = ring_type.strip() if isinstance(ring_type, str) else None
-    parts = [value for value in (reserve_text, ring_text) if value]
-    if not parts:
-        return None
-    return " ".join(parts)
+        lines.append(f"**{name}** — {tons:.1f} tons ({tph_text})")
+    return "\n".join(lines)
 
 
 def _format_materials(materials: Iterable[Dict[str, Any]]) -> Optional[str]:
-    parts = []
-    for entry in materials:
-        name = entry.get("name")
-        count = entry.get("count")
-        if not name:
-            continue
-        parts.append(f"{name} x{count}")
-    if not parts:
-        return None
-    return _clamp_text(", ".join(parts), 1024)
-
-
-def _materials_snapshot(materials: Counter[str]) -> List[Dict[str, Any]]:
-    snapshot: List[Dict[str, Any]] = []
-    for name, count in sorted(materials.items()):
-        snapshot.append({"name": name.title(), "count": count})
-    return snapshot
-
-
-def _clamp_text(value: str, limit: int) -> str:
-    if len(value) <= limit:
-        return value
-    return value[: limit - 1].rstrip() + "…"
+    if not materials:
+        return Non

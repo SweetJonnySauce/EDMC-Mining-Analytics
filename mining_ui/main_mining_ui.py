@@ -28,6 +28,7 @@ from integrations.spansh_hotspots import (
     RingHotspot,
     SpanshHotspotClient,
 )
+from integrations.discord_image_manager import DiscordImageManager
 from integrations.edmcoverlay import determine_rpm_color
 from preferences import (
     clamp_bin_size,
@@ -84,6 +85,8 @@ class edmcmaMiningUI:
         self._test_webhook_callback = on_test_webhook
         self._on_settings_changed = on_settings_changed
         self._theme = ThemeAdapter()
+
+        self._discord_image_manager = DiscordImageManager(self._state)
 
         self._frame: Optional[tk.Widget] = None
         self._status_var: Optional[tk.StringVar] = None
@@ -946,7 +949,7 @@ class edmcmaMiningUI:
             return
         for item in tree.get_children():
             tree.delete(item)
-        entries = getattr(self._state, "discord_images", []) or []
+        entries = self._discord_image_manager.list_images()
         for idx, (ship, url) in enumerate(entries):
             display_ship = ship if ship else "Any"
             tree.insert("", "end", iid=str(idx), values=(display_ship, url))
@@ -958,14 +961,7 @@ class edmcmaMiningUI:
         if not url:
             return
         ship = self._discord_image_ship_var.get().strip() if self._discord_image_ship_var else ""
-        if ship.lower() == "any":
-            ship = ""
-        self._state.discord_images.append((ship, url))
-        key = ship.lower() if ship else "__any__"
-        cycle = getattr(self._state, "discord_image_cycle", None)
-        if cycle is None:
-            cycle = self._state.discord_image_cycle = {}
-        cycle.pop(key, None)
+        self._discord_image_manager.add_image(ship, url)
         if self._discord_image_ship_var:
             self._discord_image_ship_var.set("")
         if self._discord_image_url_var:
@@ -984,8 +980,7 @@ class edmcmaMiningUI:
         selection = tree.selection()
         if not selection:
             return
-        entries = getattr(self._state, "discord_images", []) or []
-        indices = []
+        indices: List[int] = []
         for item in selection:
             try:
                 indices.append(int(item))
@@ -993,20 +988,7 @@ class edmcmaMiningUI:
                 continue
         if not indices:
             return
-        indices.sort(reverse=True)
-        removed_keys: set[str] = set()
-        for idx in indices:
-            if 0 <= idx < len(entries):
-                ship, _ = entries.pop(idx)
-                ship_value = (ship or "").strip()
-                key = ship_value.lower() if ship_value else "__any__"
-                removed_keys.add(key)
-        cycle = getattr(self._state, "discord_image_cycle", None)
-        if cycle is None:
-            cycle = self._state.discord_image_cycle = {}
-        for key in removed_keys:
-            if not any(((entry[0] or "").strip().lower() if (entry[0] or "").strip() else "__any__") == key for entry in entries):
-                cycle.pop(key, None)
+        self._discord_image_manager.remove_indices(indices)
         self._refresh_discord_image_list()
         if self._on_settings_changed:
             try:
