@@ -30,6 +30,10 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 
 <img width="685" height="228" alt="image" src="https://github.com/user-attachments/assets/00f8e485-5df8-4fe2-a752-7d782dbf3e2d" />
 
+### Nearby Hotspot finder!
+
+<img width="1101" height="597" alt="image" src="https://github.com/user-attachments/assets/89f806a4-bcc3-4ab6-b884-f847c517bf08" />
+
 ### Settings dialog box (admittedly, it needs a re-layout)
 
 <img width="522" height="919" alt="image" src="https://github.com/user-attachments/assets/41c6f1f7-1b54-4f65-aaf6-c8db2b10891d" />
