@@ -509,7 +509,7 @@ class edmcmaMiningUI:
         self._theme.register(total_label)
 
         button_bar = tk.Frame(frame, highlightthickness=0, bd=0)
-        button_bar.grid(row=2, column=2, sticky="e", padx=4, pady=(0, 6))
+        button_bar.grid(row=2, column=0, sticky="e", padx=4, pady=(0, 6))
         self._theme.register(button_bar)
 
         pause_btn = tk.Button(button_bar, text="Pause", command=self._toggle_pause, cursor="hand2")
