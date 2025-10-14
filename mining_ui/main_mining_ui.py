@@ -465,7 +465,6 @@ class edmcmaMiningUI:
         self._commodities_grid = {
             "row": 4,
             "column": 0,
-            "columnspan": 3,
             "sticky": "nsew",
             "padx": 4,
             "pady": (2, 6),
@@ -551,7 +550,6 @@ class edmcmaMiningUI:
         self._materials_grid = {
             "row": 6,
             "column": 0,
-            "columnspan": 3,
             "sticky": "nsew",
             "padx": 4,
             "pady": (2, 6),
@@ -578,7 +576,7 @@ class edmcmaMiningUI:
             self._schedule_header_style(header)
             self._materials_headers.append(header)
 
-        frame.columnconfigure(0, weight=0)
+        frame.columnconfigure(0, weight=1)
         frame.rowconfigure(4, weight=1)
         frame.rowconfigure(6, weight=1)
 
