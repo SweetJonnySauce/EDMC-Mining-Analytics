@@ -67,7 +67,8 @@ NON_METAL_WARNING_TEXT = " (Warning: Non-Metallic ring)"
 class edmcmaMiningUI:
     """Encapsulates widget construction and refresh logic."""
 
-    _DEBUG_DRAW_FRAMES = True
+    # Draws helpful borders around frames for debugging layout issues
+    _DEBUG_DRAW_FRAMES = False
 
     def __init__(
         self,
