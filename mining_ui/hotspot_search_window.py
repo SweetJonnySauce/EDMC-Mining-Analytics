@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import queue
 import threading
+import time
 from dataclasses import dataclass, replace
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -401,6 +402,8 @@ class HotspotSearchWindow:
         self._last_results_count: int = 0
         self._pagination_has_prev: bool = False
         self._pagination_has_next: bool = False
+        self._search_started_at: Optional[float] = None
+        self._last_search_duration: Optional[float] = None
 
         self._build_ui()
         self._schedule_initial_search()
@@ -491,6 +494,8 @@ class HotspotSearchWindow:
         self._last_results_count = 0
         self._pagination_has_prev = False
         self._pagination_has_next = False
+        self._search_started_at = None
+        self._last_search_duration = None
 
     # ------------------------------------------------------------------
     # UI construction
@@ -761,7 +766,8 @@ class HotspotSearchWindow:
     def _schedule_initial_search(self) -> None:
         if not self.is_open:
             return
-        self._status_var.set("Searching for hotspots...")
+        self._last_search_duration = None
+        self._set_search_status("Searching for hotspots...", include_duration=False)
         self._search_job = self._toplevel.after(50, self._perform_search)
 
     @staticmethod
@@ -1125,6 +1131,41 @@ class HotspotSearchWindow:
 
         return min_distance, max_distance, signals, reserves, ring_types, min_hotspots
 
+    def _set_search_status(self, message: str, *, include_duration: bool = True) -> None:
+        if not self._status_var:
+            return
+        if include_duration and self._last_search_duration is not None:
+            formatted = self._format_query_duration(self._last_search_duration)
+            if formatted:
+                message = f"{message} (Query {formatted})" if message else f"Query {formatted}"
+        self._status_var.set(message)
+
+    @staticmethod
+    def _format_query_duration(duration: float) -> str:
+        if duration < 0:
+            duration = 0.0
+        if duration < 1:
+            return f"{duration * 1000:.0f} ms"
+        if duration < 10:
+            return f"{duration:.2f} s"
+        if duration < 60:
+            return f"{duration:.1f} s"
+        minutes = int(duration // 60)
+        seconds = duration - minutes * 60
+        if minutes and seconds >= 1:
+            return f"{minutes}m {seconds:.0f}s"
+        if minutes:
+            return f"{minutes}m"
+        return f"{duration:.1f} s"
+
+    def _finalize_search_duration(self) -> Optional[float]:
+        if self._search_started_at is None:
+            return self._last_search_duration
+        elapsed = max(0.0, time.perf_counter() - self._search_started_at)
+        self._last_search_duration = elapsed
+        self._search_started_at = None
+        return elapsed
+
     def _set_pagination_visible(self, visible: bool) -> None:
         frame = self._pagination_frame
         if not frame:
@@ -1262,7 +1303,7 @@ class HotspotSearchWindow:
         try:
             min_distance, max_distance, signals, reserves, ring_types, min_hotspots = self._collect_selections()
         except ValueError as exc:
-            self._status_var.set(f"Invalid input: {exc}")
+            self._set_search_status(f"Invalid input: {exc}", include_duration=False)
             return
 
         reference_input = self._reference_system_var.get().strip() if self._reference_system_var else ""
@@ -1276,7 +1317,10 @@ class HotspotSearchWindow:
         )
         fallback_system = reference_input or self._controller.get_current_system() or ""
         if not fallback_system:
-            self._status_var.set("Reference system unknown. Enter a system name to search for hotspots.")
+            self._set_search_status(
+                "Reference system unknown. Enter a system name to search for hotspots.",
+                include_duration=False,
+            )
             return
 
         params = HotspotSearchParams(
@@ -1307,13 +1351,15 @@ class HotspotSearchWindow:
         self._hide_reference_suggestions()
 
         result = self._controller.begin_search(params, display_reference)
-        self._status_var.set(result.status)
+        self._last_search_duration = None
+        self._set_search_status(result.status, include_duration=False)
 
         if not result.started:
             self._apply_pagination_button_state()
             return
 
         self._active_search_token = result.token
+        self._search_started_at = time.perf_counter()
 
         tree = self._results_tree
         if tree:
@@ -1451,7 +1497,7 @@ class HotspotSearchWindow:
         self._resize_to_fit_results()
 
         if not entries:
-            self._status_var.set("No hotspots matched the selected filters.")
+            self._set_search_status("No hotspots matched the selected filters.")
             return
 
         status_parts = [f"Displaying {len(entries)} hotspot(s)"]
@@ -1459,7 +1505,7 @@ class HotspotSearchWindow:
             status_parts.append(f"of {result.total_count} total matches")
         if result.reference_system:
             status_parts.append(f"near {result.reference_system}")
-        self._status_var.set("; ".join(status_parts))
+        self._set_search_status("; ".join(status_parts))
 
     def _handle_search_outcome(self, token: int, outcome: tuple[str, object]) -> None:
         if not self.is_open:
@@ -1482,8 +1528,10 @@ class HotspotSearchWindow:
                 result_obj = payload
 
             if result_obj is None:
+                self._finalize_search_duration()
                 _log.warning("Unexpected search payload type: %r", type(payload))
             else:
+                self._finalize_search_duration()
                 if resolved_reference:
                     if (
                         self._reference_system_var
@@ -1496,9 +1544,11 @@ class HotspotSearchWindow:
                 self._render_results(result_obj)
         elif kind in {"value_error", "runtime_error"}:
             message = str(payload) if payload else "An unexpected error occurred while searching for hotspots."
-            self._status_var.set(message)
+            self._finalize_search_duration()
+            self._set_search_status(message)
         else:
-            self._status_var.set("An unexpected error occurred while searching for hotspots.")
+            self._finalize_search_duration()
+            self._set_search_status("An unexpected error occurred while searching for hotspots.")
 
         pending = self._controller.on_search_complete()
         self._active_search_token = None
