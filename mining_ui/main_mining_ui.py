@@ -6,7 +6,6 @@ import logging
 import queue
 import random
 import threading
-import webbrowser
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -46,6 +45,10 @@ from edmc_mining_analytics_version import (
     display_version,
     is_newer_version,
 )
+from mining_ui.components.top_bar import build_top_bar
+from mining_ui.components.details_bar import build_details_bar
+from mining_ui.components.commodities_table import build_commodities_section
+from mining_ui.components.materials_table import build_materials_section
 from mining_ui.theme_adapter import ThemeAdapter
 from mining_ui.preferences import build_preferences as build_preferences_ui
 from mining_ui.histograms import (
@@ -268,225 +271,68 @@ class edmcmaMiningUI:
         self._theme.register(frame)
         frame.columnconfigure(0, weight=1)
 
-        top_bar = tk.Frame(frame, highlightthickness=border, bd=border, relief=relief)
-        top_bar.grid(row=0, column=0, sticky="ew", padx=4, pady=(4, 2))
-        top_bar.columnconfigure(0, weight=1)
-        self._theme.register(top_bar)
-
-        status_container = tk.Frame(top_bar, highlightthickness=border, bd=border, relief=relief)
-        status_container.grid(row=0, column=0, sticky="ew")
-        status_container.columnconfigure(0, weight=1)
-        self._theme.register(status_container)
-
-        self._status_var = tk.StringVar(master=status_container, value="Not mining")
-        status_label = tk.Label(
-            status_container,
-            textvariable=self._status_var,
-            justify="left",
-            anchor="w",
-        )
-        status_label.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 0))
-        status_label.configure(pady=0)
-        self._theme.register(status_label)
-
-        reserve_line = tk.Frame(status_container, highlightthickness=0, bd=0)
-        reserve_line.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 0))
-        self._theme.register(reserve_line)
-        self._reserve_line = reserve_line
-
-        self._reserve_var = tk.StringVar(master=reserve_line, value="")
-        reserve_label = tk.Label(
-            reserve_line,
-            textvariable=self._reserve_var,
-            justify="left",
-            anchor="w",
-        )
-        reserve_label.pack(side="left", anchor="w", pady=0)
-        reserve_label.configure(pady=0)
-        self._theme.register(reserve_label)
-        self._reserve_label = reserve_label
-
-        warning_label = tk.Label(
-            reserve_line,
-            text="",
-            justify="left",
-            anchor="w",
-        )
-        warning_label.pack(side="left", anchor="w", pady=0)
-        warning_label.configure(pady=0)
-        try:
-            base_font = tkfont.nametofont(reserve_label.cget("font"))
-            warning_label.configure(font=base_font)
-        except tk.TclError:
-            pass
-        try:
-            background = reserve_line.cget("background")
-            warning_label.configure(background=background)
-        except tk.TclError:
-            pass
-        warning_label.configure(foreground=NON_METAL_WARNING_COLOR)
-        self._reserve_warning_label = warning_label
-
-        control_cluster = tk.Frame(top_bar, highlightthickness=border, bd=border, relief=relief)
-        control_cluster.grid(row=0, column=1, sticky="e")
-        self._theme.register(control_cluster)
-
         version_text = display_version(PLUGIN_VERSION)
-        version_label = tk.Label(control_cluster, text=version_text, anchor="e", cursor="hand2")
-        try:
-            base_font = tkfont.nametofont(version_label.cget("font"))
-            self._version_font = tkfont.Font(font=base_font)
-            self._version_font.configure(underline=True)
-            version_label.configure(font=self._version_font)
-        except tk.TclError:
-            self._version_font = None
-        version_label.pack(side="left", padx=(4, 4))
-        version_label.bind("<Button-1>", lambda _evt: webbrowser.open(PLUGIN_REPO_URL))
-        self._theme.register(version_label)
-        self._version_label = version_label
-
-        icon_path = None
-        if getattr(self._state, "plugin_dir", None):
-            candidate = Path(self._state.plugin_dir) / "assets" / "platinum_hotspot_icon_20x20.png"
-            if candidate.exists():
-                icon_path = candidate
-        if icon_path is None:
-            try:
-                icon_path = Path(__file__).resolve().parent.parent / "assets" / "platinum_hotspot_icon_20x20.png"
-            except Exception:
-                icon_path = Path("assets/platinum_hotspot_icon_20x20.png")
-
-        try:
-            self._hotspot_icon = tk.PhotoImage(file=str(icon_path))
-        except Exception:
-            self._hotspot_icon = None
-
-        hotspot_button = tk.Button(
-            control_cluster,
-            image=self._hotspot_icon,
-            command=self._handle_hotspot_button,
-            cursor="hand2",
-            width=24,
-            height=24,
+        plugin_dir = (
+            Path(self._state.plugin_dir)
+            if getattr(self._state, "plugin_dir", None)
+            else None
         )
-        if self._hotspot_icon is None:
-            hotspot_button.configure(text="H", width=3)
-        self._theme.style_button(hotspot_button)
-        hotspot_button.pack(side="left", padx=(0, 4))
-        self._hotspot_button = hotspot_button
-        self._hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
-
-        self._details_bar = tk.Frame(frame, highlightthickness=border, bd=border, relief=relief)
-        self._details_bar.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 6))
-        self._details_bar.columnconfigure(0, weight=1)
-        self._theme.register(self._details_bar)
-
-        self._summary_var = tk.StringVar(master=self._details_bar, value="")
-        summary_label = tk.Label(
-            self._details_bar,
-            textvariable=self._summary_var,
-            justify="left",
-            anchor="w",
+        top_widgets = build_top_bar(
+            frame,
+            self._theme,
+            border=border,
+            relief=relief,
+            plugin_dir=plugin_dir,
+            repo_url=PLUGIN_REPO_URL,
+            version_text=version_text,
+            on_hotspot=self._handle_hotspot_button,
+            on_toggle_details=self._toggle_details,
+            warning_color=NON_METAL_WARNING_COLOR,
         )
-        summary_label.grid(row=0, column=0, sticky="ew")
-        self._theme.register(summary_label)
-        self._summary_label = summary_label
-        self._summary_tooltip = WidgetTooltip(
-            summary_label,
+        self._status_var = top_widgets.status_var
+        self._reserve_var = top_widgets.reserve_var
+        self._reserve_label = top_widgets.reserve_label
+        self._reserve_warning_label = top_widgets.reserve_warning_label
+        self._reserve_line = top_widgets.reserve_line
+        self._version_label = top_widgets.version_label
+        self._version_font = top_widgets.version_font
+        self._hotspot_button = top_widgets.hotspot_button
+        self._hotspot_icon = top_widgets.hotspot_icon
+        self._hotspot_tooltip = top_widgets.hotspot_tooltip
+        self._details_toggle = top_widgets.details_toggle
+
+        details_widgets = build_details_bar(
+            frame,
+            self._theme,
+            border=border,
+            relief=relief,
             hover_predicate=self._is_pointer_over_inferred,
         )
+        self._details_bar = details_widgets.frame
+        self._summary_var = details_widgets.summary_var
+        self._summary_label = details_widgets.summary_label
+        self._summary_tooltip = details_widgets.summary_tooltip
+        self._rpm_frame = details_widgets.rpm_frame
+        self._rpm_var = details_widgets.rpm_var
+        self._rpm_label = details_widgets.rpm_label
+        self._rpm_title_label = details_widgets.rpm_title_label
+        self._rpm_tooltip = details_widgets.rpm_tooltip
+        self._rpm_font = details_widgets.rpm_font
 
-        rpm_frame = tk.Frame(self._details_bar, highlightthickness=border, bd=border if border else 0, relief=relief if border else tk.FLAT)
-        rpm_frame.grid(row=0, column=1, sticky="e", padx=(8, 0))
-        self._theme.register(rpm_frame)
-        rpm_frame.columnconfigure(0, weight=1)
-        self._rpm_frame = rpm_frame
-
-        self._rpm_var = tk.StringVar(master=rpm_frame, value="0.0")
-        rpm_value = tk.Label(
-            rpm_frame,
-            textvariable=self._rpm_var,
-            anchor="center",
-            justify="center",
+        commodities_widgets = build_commodities_section(
+            frame,
+            self._theme,
+            columns=self._commodity_columns,
+            on_toggle=self._on_toggle_commodities,
+            header_style=self._schedule_header_style,
+            initial_visible=self._state.show_mined_commodities,
         )
-        try:
-            base_font = tkfont.nametofont(rpm_value.cget("font"))
-            self._rpm_font = tkfont.Font(font=base_font)
-            self._rpm_font.configure(size=max(18, int(base_font.cget("size")) + 8), weight="bold")
-            rpm_value.configure(font=self._rpm_font)
-        except tk.TclError:
-            self._rpm_font = None
-        rpm_value.grid(row=0, column=0, sticky="ew")
-        self._theme.register(rpm_value)
-        self._rpm_label = rpm_value
-
-        rpm_title = tk.Label(rpm_frame, text="RPM", anchor="center")
-        rpm_title.grid(row=1, column=0, sticky="ew", pady=(2, 0))
-        self._theme.register(rpm_title)
-        self._rpm_title_label = rpm_title
-        self._rpm_tooltip = WidgetTooltip(rpm_title)
-
-        self._details_toggle = tk.Button(
-            control_cluster,
-            text="",
-            command=self._toggle_details,
-            cursor="hand2",
-        )
-        self._theme.style_button(self._details_toggle)
-        self._details_toggle.pack(side="left")
-
-        commodities_header = tk.Frame(frame, highlightthickness=0, bd=0)
-        self._commodities_header = commodities_header
-        commodities_header.grid(row=3, column=0, sticky="w", padx=4)
-        self._theme.register(commodities_header)
-
-        commodities_label = tk.Label(
-            commodities_header,
-            text="Mined Commodities",
-            font=(None, 9, "bold"),
-            anchor="w",
-        )
-        commodities_label.pack(side="left")
-        self._theme.register(commodities_label)
-
-        self._show_commodities_var = tk.BooleanVar(
-            master=frame, value=self._state.show_mined_commodities
-        )
-        commodities_toggle = tk.Checkbutton(
-            commodities_header,
-            variable=self._show_commodities_var,
-            command=self._on_toggle_commodities,
-        )
-        commodities_toggle.pack(side="left", padx=(6, 0))
-        self._theme.register(commodities_toggle)
-        self._theme.style_checkbox(commodities_toggle)
-
-        table_frame = tk.Frame(frame, highlightthickness=0, bd=0)
-        self._commodities_frame = table_frame
-        self._commodities_grid = {
-            "row": 4,
-            "column": 0,
-            "sticky": "nsew",
-            "padx": 4,
-            "pady": (2, 6),
-        }
-        table_frame.grid(**self._commodities_grid)
-        self._theme.register(table_frame)
-
-        self._commodities_headers = []
+        self._commodities_header = commodities_widgets.header_frame
+        self._show_commodities_var = commodities_widgets.toggle_var
+        self._commodities_frame = commodities_widgets.table_frame
+        self._commodities_grid = commodities_widgets.grid_config
+        self._commodities_headers = commodities_widgets.headers
         self._commodities_rows = []
-
-        for idx, column in enumerate(self._commodity_columns):
-            table_frame.columnconfigure(idx, weight=column.get("weight", 1))
-            header = tk.Label(
-                table_frame,
-                text=column["label"],
-                anchor=column["anchor"],
-            )
-            header.grid(row=0, column=idx, sticky=column["sticky"], padx=(0, 6), pady=(0, 2))
-            self._theme.register(header)
-            self._schedule_header_style(header)
-            self._commodities_headers.append(header)
 
         total_container = tk.Frame(frame, highlightthickness=0, bd=0)
         total_container.grid(row=2, column=0, sticky="w", padx=4, pady=(0, 6))
@@ -521,61 +367,21 @@ class edmcmaMiningUI:
         self._theme.style_button(reset_btn)
         reset_btn.grid(row=0, column=1, padx=0, pady=0)
 
-        materials_header = tk.Frame(frame, highlightthickness=0, bd=0)
-        self._materials_header = materials_header
-        materials_header.grid(row=5, column=0, sticky="w", padx=4)
-        self._theme.register(materials_header)
-
-        materials_label = tk.Label(
-            materials_header,
-            text="Materials Collected",
-            font=(None, 9, "bold"),
-            anchor="w",
+        materials_widgets = build_materials_section(
+            frame,
+            self._theme,
+            columns=self._materials_columns,
+            on_toggle=self._on_toggle_materials,
+            header_style=self._schedule_header_style,
+            initial_visible=self._state.show_materials_collected,
         )
-        materials_label.pack(side="left")
-        self._theme.register(materials_label)
-
-        self._show_materials_var = tk.BooleanVar(
-            master=frame, value=self._state.show_materials_collected
-        )
-        materials_toggle = tk.Checkbutton(
-            materials_header,
-            variable=self._show_materials_var,
-            command=self._on_toggle_materials,
-        )
-        materials_toggle.pack(side="left", padx=(6, 0))
-        self._theme.register(materials_toggle)
-        self._theme.style_checkbox(materials_toggle)
-
-        self._materials_frame = tk.Frame(frame, highlightthickness=0, bd=0)
-        self._materials_grid = {
-            "row": 6,
-            "column": 0,
-            "sticky": "nsew",
-            "padx": 4,
-            "pady": (2, 6),
-        }
-        self._materials_frame.grid(**self._materials_grid)
-        self._theme.register(self._materials_frame)
-
-        materials_table = tk.Frame(self._materials_frame, highlightthickness=0, bd=0)
-        materials_table.pack(fill="both", expand=True)
-        self._theme.register(materials_table)
-        self._materials_table = materials_table
-
-        self._materials_headers = []
+        self._materials_header = materials_widgets.header_frame
+        self._show_materials_var = materials_widgets.toggle_var
+        self._materials_frame = materials_widgets.frame
+        self._materials_grid = materials_widgets.grid_config
+        self._materials_table = materials_widgets.table
+        self._materials_headers = materials_widgets.headers
         self._materials_rows = []
-        for idx, column in enumerate(self._materials_columns):
-            materials_table.columnconfigure(idx, weight=column.get("weight", 1))
-            header = tk.Label(
-                materials_table,
-                text=column["label"],
-                anchor=column["anchor"],
-            )
-            header.grid(row=0, column=idx, sticky=column["sticky"], padx=(0, 6), pady=(0, 2))
-            self._theme.register(header)
-            self._schedule_header_style(header)
-            self._materials_headers.append(header)
 
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(4, weight=1)
@@ -585,9 +391,9 @@ class edmcmaMiningUI:
             self._details_bar,
             total_container,
             button_bar,
-            commodities_header,
-            table_frame,
-            materials_header,
+            self._commodities_header,
+            self._commodities_frame,
+            self._materials_header,
             self._materials_frame,
         )
 
