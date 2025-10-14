@@ -10,6 +10,7 @@ import requests
 
 from logging_utils import get_logger
 from state import MiningState
+from edmc_mining_analytics_version import PLUGIN_VERSION
 
 _log = get_logger("spansh")
 _plugin_log = get_logger()
@@ -18,6 +19,7 @@ API_BASE = "https://spansh.co.uk/api"
 DEFAULT_TIMEOUT = 10
 MAX_SIGNAL_COUNT = 9999
 DEFAULT_RESULT_SIZE = 50
+USER_AGENT = f"EDMC Mining Analytics/{PLUGIN_VERSION}"
 
 
 @dataclass(frozen=True)
@@ -54,9 +56,19 @@ class HotspotSearchResult:
 class SpanshHotspotClient:
     """Encapsulates Spansh hotspot lookups."""
 
-    def __init__(self, state: MiningState, session: Optional[requests.Session] = None) -> None:
+    def __init__(
+        self,
+        state: MiningState,
+        session: Optional[requests.Session] = None,
+        user_agent: Optional[str] = None,
+    ) -> None:
         self._state = state
         self._session = session or requests.Session()
+        self._user_agent = (user_agent or USER_AGENT).strip() or USER_AGENT
+        try:
+            self._session.headers["User-Agent"] = self._user_agent
+        except Exception:
+            pass
         self._field_cache: Dict[str, List[str]] = {}
 
     # ------------------------------------------------------------------
