@@ -1719,8 +1719,11 @@ class edmcmaMiningUI:
     # ------------------------------------------------------------------
     # Utility helpers
     # ------------------------------------------------------------------
-    @staticmethod
-    def _format_cargo_name(name: str) -> str:
+    def _format_cargo_name(self, name: str) -> str:
+        mapping = getattr(self._state, "commodity_display_names", {})
+        display = mapping.get(name.lower())
+        if display:
+            return display
         return name.replace("_", " ").title()
 
     def _compute_tph(self, commodity: str) -> Optional[float]:

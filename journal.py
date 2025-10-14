@@ -739,12 +739,15 @@ class JournalProcessor:
         for item in inventory:
             if not isinstance(item, dict):
                 continue
-            name = item.get("Name")
+            raw_name = item.get("Name")
             count = item.get("Count")
-            if not isinstance(name, str) or not isinstance(count, int):
+            if not isinstance(raw_name, str) or not isinstance(count, int):
                 continue
-            normalized = name.lower()
+            normalized = raw_name.lower()
             cargo_counts[normalized] = count
+            localized_name = item.get("Name_Localised")
+            display_name = self._select_display_name(localized_name, raw_name)
+            self._state.commodity_display_names[normalized] = display_name
             if normalized == "drones":
                 limpets = count
 
@@ -851,6 +854,10 @@ class JournalProcessor:
 
         self._state.cargo_additions = {k: v for k, v in self._state.cargo_additions.items() if v > 0}
         self._state.cargo_totals = dict(self._state.cargo_additions)
+        valid_keys = set(self._state.cargo_totals)
+        self._state.commodity_display_names = {
+            key: value for key, value in self._state.commodity_display_names.items() if key in valid_keys
+        }
 
         if self._state.limpets_start is not None and self._state.limpets_remaining is not None:
             launched = self._state.prospector_launched_count + self._state.collection_drones_launched - 1
@@ -1354,9 +1361,21 @@ class JournalProcessor:
             return None
         return amount / elapsed_hours
 
+    def _format_cargo_name(self, name: str) -> str:
+        key = str(name or "").lower()
+        display = self._state.commodity_display_names.get(key)
+        if display:
+            return display
+        return str(name or "").replace("_", " ").title()
+
     @staticmethod
-    def _format_cargo_name(name: str) -> str:
-        return name.replace("_", " ").title()
+    def _select_display_name(localized: Any, fallback: str) -> str:
+        if isinstance(localized, str):
+            candidate = localized.strip()
+            if candidate:
+                return candidate
+        text = str(fallback or "")
+        return text.replace("_", " ").title()
 
     @staticmethod
     def _format_bin_label(bin_index: int, size: int) -> str:

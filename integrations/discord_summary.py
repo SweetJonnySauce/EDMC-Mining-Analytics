@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib import error as urlerror, request as urlrequest
 
-from state import MiningState
+from state import MiningState, resolve_commodity_display_name
 from .discord_image_manager import DiscordImageManager
 
 USER_AGENT = "EDMC-Mining-Analytics/0.1"
@@ -242,7 +242,7 @@ def build_test_message(state: MiningState) -> Dict[str, Any]:
             "Medium": state.prospect_content_counts.get("Medium", 0),
             "Low": state.prospect_content_counts.get("Low", 0),
         },
-        "materials": _materials_snapshot(state.materials_collected),
+        "materials": _materials_snapshot(state, state.materials_collected),
         "commander": state.cmdr_name,
         "ring": state.mining_ring,
         "max_rpm": round(state.max_rpm, 2),
@@ -336,7 +336,7 @@ def _format_materials(materials: Iterable[Dict[str, Any]]) -> Optional[str]:
     return ", ".join(formatted)
 
 
-def _materials_snapshot(materials: Counter[str]) -> List[Dict[str, Any]]:
+def _materials_snapshot(state: MiningState, materials: Counter[str]) -> List[Dict[str, Any]]:
     if not materials:
         return []
     if hasattr(materials, "items"):
@@ -357,7 +357,7 @@ def _materials_snapshot(materials: Counter[str]) -> List[Dict[str, Any]]:
             continue
         if count <= 0:
             continue
-        name = _format_name(str(raw_name))
+        name = _format_name(state, str(raw_name))
         snapshot.append({"name": name, "count": count})
     snapshot.sort(key=lambda entry: entry["name"])
     return snapshot
@@ -372,5 +372,5 @@ def _format_ring_info(reserve: Optional[Any], ring_type: Optional[Any]) -> Optio
     return " ".join(parts)
 
 
-def _format_name(value: str) -> str:
-    return value.replace("_", " ").title()
+def _format_name(state: MiningState, value: str) -> str:
+    return resolve_commodity_display_name(state, value)

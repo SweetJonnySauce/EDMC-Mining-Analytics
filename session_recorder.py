@@ -9,7 +9,12 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple
 
 from logging_utils import get_logger
-from state import MiningState, compute_percentage_stats, update_rpm
+from state import (
+    MiningState,
+    compute_percentage_stats,
+    resolve_commodity_display_name,
+    update_rpm,
+)
 from integrations.discord_summary import (
     build_summary_message,
     build_test_message,
@@ -621,9 +626,8 @@ class SessionRecorder:
     def _isoformat(value: datetime) -> str:
         return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
-    @staticmethod
-    def _format_name(value: str) -> str:
-        return value.replace("_", " ").title()
+    def _format_name(self, value: str) -> str:
+        return resolve_commodity_display_name(self._state, value)
 
     @staticmethod
     def _safe_sum(values: Iterable[int]) -> int:

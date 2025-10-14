@@ -42,6 +42,7 @@ class MiningState:
 
     cargo_additions: Dict[str, int] = field(default_factory=dict)
     cargo_totals: Dict[str, int] = field(default_factory=dict)
+    commodity_display_names: Dict[str, str] = field(default_factory=dict)
     harvested_commodities: Set[str] = field(default_factory=set)
     commodity_start_times: Dict[str, datetime] = field(default_factory=dict)
 
@@ -140,6 +141,7 @@ def reset_mining_state(state: MiningState) -> None:
 
     state.cargo_additions.clear()
     state.cargo_totals.clear()
+    state.commodity_display_names.clear()
     state.harvested_commodities.clear()
     state.commodity_start_times.clear()
 
@@ -168,6 +170,17 @@ def reset_mining_state(state: MiningState) -> None:
     state.max_rpm = 0.0
     state.rpm_display_color = "#ffffff"
     state.overlay_refresh_interval_ms = 1000
+
+
+def resolve_commodity_display_name(state: MiningState, commodity: str) -> str:
+    """Return the preferred display name for a commodity."""
+
+    key = str(commodity or "").lower()
+    display = state.commodity_display_names.get(key)
+    if display:
+        return display
+    text = str(commodity or "")
+    return text.replace("_", " ").title()
 
 
 def recompute_histograms(state: MiningState) -> None:
