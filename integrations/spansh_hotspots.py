@@ -11,17 +11,16 @@ import requests
 
 from logging_utils import get_logger
 from state import MiningState
-from edmc_mining_analytics_version import PLUGIN_VERSION
+from http_client import get_shared_session
 
 _log = get_logger("spansh")
 _plugin_log = get_logger()
 
 API_BASE = "https://spansh.co.uk/api"
 DEFAULT_TIMEOUT = 10
-DEFAULT_MIN_INTERVAL = 1.5  #configurable throttling to the Spansh hotspot client so consecutive searches respect a minimum interval.
+DEFAULT_MIN_INTERVAL = 1.5  # configurable throttling to the Spansh hotspot client so consecutive searches respect a minimum interval.
 MAX_SIGNAL_COUNT = 9999
 DEFAULT_RESULT_SIZE = 50
-USER_AGENT = f"EDMC Mining Analytics/{PLUGIN_VERSION}"
 
 
 @dataclass(frozen=True)
@@ -62,16 +61,10 @@ class SpanshHotspotClient:
         self,
         state: MiningState,
         session: Optional[requests.Session] = None,
-        user_agent: Optional[str] = None,
         min_interval_seconds: float = DEFAULT_MIN_INTERVAL,
     ) -> None:
         self._state = state
-        self._session = session or requests.Session()
-        self._user_agent = (user_agent or USER_AGENT).strip() or USER_AGENT
-        try:
-            self._session.headers["User-Agent"] = self._user_agent
-        except Exception:
-            pass
+        self._session = session or get_shared_session()
         self._field_cache: Dict[str, List[str]] = {}
         self._min_interval = max(0.0, float(min_interval_seconds))
         self._last_search_completed_at: float = 0.0

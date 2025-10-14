@@ -14,6 +14,7 @@ import requests
 
 from logging_utils import get_logger
 from edmc_mining_analytics_version import PLUGIN_VERSION, is_newer_version
+from http_client import get_shared_session
 
 BACKUP_COUNT = 3
 DATETIME_FORMAT = "%Y-%m-%d-%H-%M-%S"
@@ -30,6 +31,7 @@ class UpdateManager:
         self,
         plugin_dir: Path,
         on_update_ready: Optional[Callable[[str], None]] = None,
+        session: Optional[requests.Session] = None,
     ) -> None:
         self._log = get_logger("update")
         self._plugin_dir = plugin_dir
@@ -39,6 +41,7 @@ class UpdateManager:
         self._thread: Optional[threading.Thread] = None
         self._on_update_ready = on_update_ready
         self._stop_event = threading.Event()
+        self._session = session or get_shared_session()
 
     def start(self) -> None:
         """Kick off the update check on a background thread."""
@@ -89,9 +92,9 @@ class UpdateManager:
             if self._stop_event.is_set():
                 return
 
-            release = requests.get(RELEASES_URL, timeout=10)
+            release = self._session.get(RELEASES_URL, timeout=10)
             release.raise_for_status()
-        except Exception as exc:
+        except requests.RequestException as exc:
             self._log.debug("Unable to fetch release metadata: %s", exc)
             self._stop_event.set()
             return
@@ -100,7 +103,11 @@ class UpdateManager:
             if self._stop_event.is_set():
                 return
 
-            data = release.json()
+            try:
+                data = release.json()
+            except ValueError:
+                self._log.debug("Latest release metadata response was not valid JSON")
+                return
             tag = str(data.get("tag_name", "")).strip()
             if not tag:
                 return
@@ -163,7 +170,7 @@ class UpdateManager:
         if self._stop_event.is_set():
             return False
         try:
-            with requests.get(url, stream=True, timeout=30) as response:
+            with self._session.get(url, stream=True, timeout=30) as response:
                 response.raise_for_status()
                 with self._download_path.open("wb") as handle:
                     for chunk in response.iter_content(chunk_size=65536):
@@ -171,7 +178,7 @@ class UpdateManager:
                             return False
                         if chunk:
                             handle.write(chunk)
-        except Exception as exc:
+        except requests.RequestException as exc:
             self._log.warning("Failed to download new release", exc_info=exc)
             return False
         return True
