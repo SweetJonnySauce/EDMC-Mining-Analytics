@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
-PLUGIN_LOGGER_NAME = "EDMC Mining Analytics"
+PLUGIN_FOLDER_NAME = Path(__file__).resolve().parent.name
 
 try:  # pragma: no cover - only available when running inside EDMC
     from EDMCLogging import get_plugin_logger  # type: ignore[import]
@@ -12,9 +13,9 @@ except ImportError:  # pragma: no cover
     get_plugin_logger = None  # type: ignore[assignment]
 
 if get_plugin_logger is not None:
-    BASE_LOGGER = get_plugin_logger(PLUGIN_LOGGER_NAME)
+    BASE_LOGGER = get_plugin_logger(PLUGIN_FOLDER_NAME)
 else:
-    BASE_LOGGER = logging.getLogger(PLUGIN_LOGGER_NAME)
+    BASE_LOGGER = logging.getLogger(PLUGIN_FOLDER_NAME)
     BASE_LOGGER.propagate = True
 
 
