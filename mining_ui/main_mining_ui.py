@@ -488,9 +488,13 @@ class edmcmaMiningUI:
             self._schedule_header_style(header)
             self._commodities_headers.append(header)
 
-        self._total_tph_var = tk.StringVar(master=frame, value="Total Tons/hr: -")
+        total_container = tk.Frame(frame, highlightthickness=0, bd=0)
+        total_container.grid(row=2, column=0, sticky="w", padx=4, pady=(0, 6))
+        self._theme.register(total_container)
+
+        self._total_tph_var = tk.StringVar(master=total_container, value="Total Tons/hr: -")
         total_label = tk.Label(
-            frame,
+            total_container,
             textvariable=self._total_tph_var,
             anchor="w",
         )
@@ -501,7 +505,7 @@ class edmcmaMiningUI:
             total_label.configure(font=self._total_tph_font)
         except tk.TclError:
             self._total_tph_font = None
-        total_label.grid(row=2, column=0, sticky="w", padx=4, pady=(0, 6))
+        total_label.pack(side="left")
         self._theme.register(total_label)
 
         button_bar = tk.Frame(frame, highlightthickness=0, bd=0)
@@ -580,7 +584,7 @@ class edmcmaMiningUI:
 
         self._content_widgets = (
             self._details_bar,
-            total_label,
+            total_container,
             button_bar,
             commodities_header,
             table_frame,
