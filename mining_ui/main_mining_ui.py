@@ -21,6 +21,7 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
 from tooltip import WidgetTooltip
+from debugging import apply_frame_debugging, collect_frames
 from state import MiningState, compute_percentage_stats, update_rpm
 from integrations.mining_inara import InaraClient
 from integrations.spansh_hotspots import (
@@ -121,6 +122,7 @@ class edmcmaMiningUI:
         self._content_widgets: Sequence[tk.Widget] = ()
         self._version_label: Optional[tk.Label] = None
         self._version_font: Optional[tkfont.Font] = None
+        self._base_frame_width: int = 0
         self._show_commodities_var: Optional[tk.BooleanVar] = None
         self._show_materials_var: Optional[tk.BooleanVar] = None
         self._commodities_header: Optional[tk.Frame] = None
@@ -272,7 +274,7 @@ class edmcmaMiningUI:
         self._theme.register(top_bar)
 
         status_container = tk.Frame(top_bar, highlightthickness=border, bd=border, relief=relief)
-        status_container.grid(row=0, column=0, sticky="w")
+        status_container.grid(row=0, column=0, sticky="ew")
         status_container.columnconfigure(0, weight=1)
         self._theme.register(status_container)
 
@@ -283,7 +285,7 @@ class edmcmaMiningUI:
             justify="left",
             anchor="w",
         )
-        status_label.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 0))
+        status_label.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 0))
         status_label.configure(pady=0)
         self._theme.register(status_label)
 
@@ -325,8 +327,12 @@ class edmcmaMiningUI:
         warning_label.configure(foreground=NON_METAL_WARNING_COLOR)
         self._reserve_warning_label = warning_label
 
+        control_cluster = tk.Frame(top_bar, highlightthickness=border, bd=border, relief=relief)
+        control_cluster.grid(row=0, column=1, sticky="e")
+        self._theme.register(control_cluster)
+
         version_text = display_version(PLUGIN_VERSION)
-        version_label = tk.Label(top_bar, text=version_text, anchor="e", cursor="hand2")
+        version_label = tk.Label(control_cluster, text=version_text, anchor="e", cursor="hand2")
         try:
             base_font = tkfont.nametofont(version_label.cget("font"))
             self._version_font = tkfont.Font(font=base_font)
@@ -334,7 +340,7 @@ class edmcmaMiningUI:
             version_label.configure(font=self._version_font)
         except tk.TclError:
             self._version_font = None
-        version_label.grid(row=0, column=1, sticky="e", padx=(4, 4))
+        version_label.pack(side="left", padx=(4, 4))
         version_label.bind("<Button-1>", lambda _evt: webbrowser.open(PLUGIN_REPO_URL))
         self._theme.register(version_label)
         self._version_label = version_label
@@ -356,7 +362,7 @@ class edmcmaMiningUI:
             self._hotspot_icon = None
 
         hotspot_button = tk.Button(
-            top_bar,
+            control_cluster,
             image=self._hotspot_icon,
             command=self._handle_hotspot_button,
             cursor="hand2",
@@ -366,13 +372,9 @@ class edmcmaMiningUI:
         if self._hotspot_icon is None:
             hotspot_button.configure(text="H", width=3)
         self._theme.style_button(hotspot_button)
-        hotspot_button.grid(row=0, column=2, sticky="e", padx=(0, 4))
+        hotspot_button.pack(side="left", padx=(0, 4))
         self._hotspot_button = hotspot_button
         self._hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
-
-        self._width_anchor = tk.Frame(frame, height=0, highlightthickness=border, bd=border, relief=relief)
-        self._width_anchor.grid(row=1, column=0, sticky="ew", padx=4)
-        self._theme.register(self._width_anchor)
 
         self._details_bar = tk.Frame(frame, highlightthickness=border, bd=border, relief=relief)
         self._details_bar.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 6))
@@ -386,7 +388,7 @@ class edmcmaMiningUI:
             justify="left",
             anchor="w",
         )
-        summary_label.grid(row=0, column=0, sticky="w")
+        summary_label.grid(row=0, column=0, sticky="ew")
         self._theme.register(summary_label)
         self._summary_label = summary_label
         self._summary_tooltip = WidgetTooltip(
@@ -394,7 +396,7 @@ class edmcmaMiningUI:
             hover_predicate=self._is_pointer_over_inferred,
         )
 
-        rpm_frame = tk.Frame(self._details_bar, highlightthickness=0, bd=0)
+        rpm_frame = tk.Frame(self._details_bar, highlightthickness=border, bd=border if border else 0, relief=relief if border else tk.FLAT)
         rpm_frame.grid(row=0, column=1, sticky="e", padx=(8, 0))
         self._theme.register(rpm_frame)
         rpm_frame.columnconfigure(0, weight=1)
@@ -425,13 +427,13 @@ class edmcmaMiningUI:
         self._rpm_tooltip = WidgetTooltip(rpm_title)
 
         self._details_toggle = tk.Button(
-            top_bar,
+            control_cluster,
             text="",
             command=self._toggle_details,
             cursor="hand2",
         )
         self._theme.style_button(self._details_toggle)
-        self._details_toggle.grid(row=0, column=3, sticky="e")
+        self._details_toggle.pack(side="left")
 
         commodities_header = tk.Frame(frame, highlightthickness=0, bd=0)
         self._commodities_header = commodities_header
@@ -595,6 +597,9 @@ class edmcmaMiningUI:
         self._update_rpm_indicator()
         # Ensure RPM continues to evaluate over time, even without events
         self._schedule_rpm_update()
+        if self._DEBUG_DRAW_FRAMES:
+            frames = collect_frames(frame, include_root=True)
+            frame.after_idle(lambda: apply_frame_debugging(frames))
 
         return frame
 
@@ -1070,12 +1075,6 @@ class edmcmaMiningUI:
                 widget.grid()
             else:
                 widget.grid_remove()
-        anchor = getattr(self, "_width_anchor", None)
-        if anchor is not None:
-            if visible:
-                anchor.grid_remove()
-            else:
-                anchor.grid()
         if visible:
             self._apply_table_visibility()
         if self._details_toggle:
@@ -1518,7 +1517,6 @@ class edmcmaMiningUI:
                 row_labels.append(label)
             self._materials_rows.append(row_labels)
         return self._materials_rows[row_index]
-
     def _apply_label_style(
         self,
         label: tk.Label,
