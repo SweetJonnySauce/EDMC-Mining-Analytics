@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
-from urllib import error, request
 
+import requests
+
+from http_client import get_shared_session
 try:
     import tkinter as tk
     from tkinter import ttk
@@ -448,18 +449,18 @@ class MiningAnalyticsPlugin:
         self._version_thread = None
 
     def _fetch_latest_tag(self) -> Optional[str]:
+        session = get_shared_session()
         try:
-            req = request.Request(
-                GITHUB_TAGS_API,
-                headers={"User-Agent": f"{PLUGIN_NAME}/{PLUGIN_VERSION}"},
-            )
-            with request.urlopen(req, timeout=5) as response:
-                payload = json.load(response)
-        except error.URLError as exc:
+            response = session.get(GITHUB_TAGS_API, timeout=5)
+            response.raise_for_status()
+        except requests.RequestException as exc:
             _log.debug("Tag lookup failed: %s", exc)
             return None
-        except Exception:
-            _log.exception("Unexpected error during tag lookup")
+
+        try:
+            payload = response.json()
+        except ValueError:
+            _log.debug("Tag lookup response was not valid JSON")
             return None
 
         if not isinstance(payload, list) or not payload:
@@ -471,22 +472,13 @@ class MiningAnalyticsPlugin:
         return tag if isinstance(tag, str) else None
 
     def _check_for_updates(self) -> None:
+        session = get_shared_session()
         try:
-            req = request.Request(
-                GITHUB_RELEASES_API,
-                headers={"User-Agent": f"{PLUGIN_NAME}/{PLUGIN_VERSION}"},
-            )
-            with request.urlopen(req, timeout=5) as response:
-                payload = json.load(response)
-
-            latest = payload.get("tag_name") or payload.get("name")
-            if not latest:
-                _log.debug("Version check succeeded but no tag information was found")
-                return
-
-            self._handle_latest_version(latest)
-        except error.HTTPError as exc:
-            if exc.code == 404:
+            response = session.get(GITHUB_RELEASES_API, timeout=5)
+            response.raise_for_status()
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else "unknown"
+            if status == 404:
                 _log.debug("GitHub releases endpoint returned 404; falling back to tags")
                 latest = self._fetch_latest_tag()
                 if latest:
@@ -494,14 +486,24 @@ class MiningAnalyticsPlugin:
                 else:
                     _log.debug("Version check fallback to tags did not return any versions")
                 return
-            _log.debug("Version check failed with HTTP status %s: %s", exc.code, exc)
+            _log.debug("Version check failed with HTTP status %s: %s", status, exc)
             return
-        except error.URLError as exc:
+        except requests.RequestException as exc:
             _log.debug("Version check failed: %s", exc)
             return
-        except Exception:
-            _log.exception("Unexpected error during version check")
-            return
+        else:
+            try:
+                payload = response.json()
+            except ValueError:
+                _log.debug("Version check response was not valid JSON")
+                return
+
+            latest = payload.get("tag_name") or payload.get("name")
+            if not latest:
+                _log.debug("Version check succeeded but no tag information was found")
+                return
+
+            self._handle_latest_version(latest)
         finally:
             self._version_thread = None
 

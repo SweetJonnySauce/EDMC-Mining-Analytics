@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import threading
 from typing import Callable, Optional, Tuple
-from urllib import error as urlerror, parse as urlparse, request as urlrequest
+from urllib import parse as urlparse
 
+import requests
+
+from http_client import get_shared_session
 from logging_utils import get_logger
 from state import MiningState
 
@@ -24,10 +26,12 @@ class EdsmClient:
         on_updated: Callable[[], None],
         *,
         request_timeout: float = 5.0,
+        session: Optional[requests.Session] = None,
     ) -> None:
         self._state = state
         self._on_updated = on_updated
         self._timeout = max(1.0, float(request_timeout))
+        self._session = session or get_shared_session()
         self._lock = threading.Lock()
         self._last_system: Optional[str] = None
         self._last_ring: Optional[Tuple[str, str]] = None
@@ -115,15 +119,17 @@ class EdsmClient:
         )
         _log.debug("Requesting EDSM reserve level: %s", url)
 
+        data = None
         try:
-            with urlrequest.urlopen(url, timeout=self._timeout) as response:
-                data = json.load(response)
-        except urlerror.URLError as exc:
+            response = self._session.get(url, timeout=self._timeout)
+            response.raise_for_status()
+        except requests.RequestException as exc:
             _log.debug("EDSM reserve request failed for %s: %s", system, exc)
-            data = None
-        except Exception:
-            _log.exception("Unexpected failure fetching EDSM reserve for %s", system)
-            data = None
+        else:
+            try:
+                data = response.json()
+            except ValueError:
+                _log.debug("EDSM reserve response for %s was not valid JSON", system)
 
         reserve = None
         if isinstance(data, dict):
@@ -152,15 +158,17 @@ class EdsmClient:
         )
         _log.debug("Requesting EDSM ring data: %s", url)
 
+        data = None
         try:
-            with urlrequest.urlopen(url, timeout=self._timeout) as response:
-                data = json.load(response)
-        except urlerror.URLError as exc:
+            response = self._session.get(url, timeout=self._timeout)
+            response.raise_for_status()
+        except requests.RequestException as exc:
             _log.debug("EDSM ring request failed for %s (%s): %s", system, ring_name, exc)
-            data = None
-        except Exception:
-            _log.exception("Unexpected failure fetching EDSM ring for %s (%s)", system, ring_name)
-            data = None
+        else:
+            try:
+                data = response.json()
+            except ValueError:
+                _log.debug("EDSM ring response for %s (%s) was not valid JSON", system, ring_name)
 
         ring_type = None
         reserve_level = None

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,57 +9,12 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
 
+from http_client import get_shared_session
 from state import MiningState, resolve_commodity_display_name
 from .discord_image_manager import DiscordImageManager
-from edmc_mining_analytics_version import PLUGIN_VERSION
-
-try:  # pragma: no cover - available only inside EDMC
-    from config import config  # type: ignore[import]
-except ImportError:  # pragma: no cover
-    config = None  # type: ignore[assignment]
-
-try:  # pragma: no cover - available only inside EDMC
-    from timeout_session import new_session  # type: ignore[import]
-except ImportError:  # pragma: no cover
-    new_session = None  # type: ignore[assignment]
 
 EMBED_COLOR = 0x1d9bf0
 TEST_COLOR = 0x95a5a6
-_SESSION: Optional[requests.Session] = None
-
-
-def _build_user_agent(existing: Optional[str]) -> str:
-    plugin_identifier = f"EDMC-Mining-Analytics/{PLUGIN_VERSION}"
-
-    if existing:
-        if plugin_identifier in existing:
-            return existing
-        return f"{existing} {plugin_identifier}"
-
-    candidate = None
-    if config is not None:
-        try:
-            candidate = getattr(config, "user_agent", None)
-        except Exception:
-            candidate = None
-
-    if candidate:
-        return f"{candidate} {plugin_identifier}"
-    return plugin_identifier
-
-
-def _get_session() -> requests.Session:
-    global _SESSION
-    if _SESSION is None:
-        if new_session is not None:
-            session = new_session()
-        else:  # pragma: no cover - fallback for tests
-            session = requests.Session()
-        base_agent = session.headers.get("User-Agent")
-        session.headers["User-Agent"] = _build_user_agent(base_agent)
-        session.headers.setdefault("Content-Type", "application/json")
-        _SESSION = session
-    return _SESSION
 
 
 def send_webhook(webhook_url: str, payload: Dict[str, Any]) -> Tuple[bool, str]:
@@ -71,7 +25,7 @@ def send_webhook(webhook_url: str, payload: Dict[str, Any]) -> Tuple[bool, str]:
     if not payload:
         return False, "No payload to send"
 
-    session = _get_session()
+    session = get_shared_session()
     try:
         response = session.post(webhook_url, json=payload, timeout=5)
     except requests.RequestException as exc:
