@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -17,6 +18,7 @@ _plugin_log = get_logger()
 
 API_BASE = "https://spansh.co.uk/api"
 DEFAULT_TIMEOUT = 10
+DEFAULT_MIN_INTERVAL = 1.5  #configurable throttling to the Spansh hotspot client so consecutive searches respect a minimum interval.
 MAX_SIGNAL_COUNT = 9999
 DEFAULT_RESULT_SIZE = 50
 USER_AGENT = f"EDMC Mining Analytics/{PLUGIN_VERSION}"
@@ -61,6 +63,7 @@ class SpanshHotspotClient:
         state: MiningState,
         session: Optional[requests.Session] = None,
         user_agent: Optional[str] = None,
+        min_interval_seconds: float = DEFAULT_MIN_INTERVAL,
     ) -> None:
         self._state = state
         self._session = session or requests.Session()
@@ -70,6 +73,8 @@ class SpanshHotspotClient:
         except Exception:
             pass
         self._field_cache: Dict[str, List[str]] = {}
+        self._min_interval = max(0.0, float(min_interval_seconds))
+        self._last_search_completed_at: float = 0.0
 
     # ------------------------------------------------------------------
     # Field metadata
@@ -283,6 +288,13 @@ class SpanshHotspotClient:
             "page": max(0, int(page)),
         }
 
+        delay = 0.0
+        now = time.monotonic()
+        elapsed = now - self._last_search_completed_at
+        if elapsed < self._min_interval:
+            delay = self._min_interval - elapsed
+            time.sleep(delay)
+
         url = f"{API_BASE}/bodies/search"
         try:
             response = self._session.post(url, json=payload, timeout=DEFAULT_TIMEOUT)
@@ -332,7 +344,9 @@ class SpanshHotspotClient:
                 _plugin_log.debug(
                     "Spansh hotspot search for %s returned %d rows (hotspots=%d, total_count=%d, limit=%d, page=%d) with filters %s",
                     *log_args,
-                )
+        )
+
+        self._last_search_completed_at = time.monotonic()
 
         return HotspotSearchResult(
             total_count=total_count,
