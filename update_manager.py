@@ -38,6 +38,7 @@ class UpdateManager:
         self._download_path = self._updates_dir / DOWNLOAD_FILENAME
         self._thread: Optional[threading.Thread] = None
         self._on_update_ready = on_update_ready
+        self._stop_event = threading.Event()
 
     def start(self) -> None:
         """Kick off the update check on a background thread."""
@@ -57,72 +58,117 @@ class UpdateManager:
                 self._log.warning("Unable to prepare update folders", exc_info=exc)
                 return
 
-        self._thread = threading.Thread(target=self._run_update_check, name="EDMC Mining Auto Update", daemon=True)
+        if self._thread and self._thread.is_alive():
+            self._log.debug("Auto-update check already running")
+            return
+
+        self._stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._run_update_check,
+            name="EDMC Mining Auto Update",
+            daemon=False,
+        )
         self._thread.start()
+
+    def stop(self, *, join: bool = True, timeout: Optional[float] = 5.0) -> None:
+        """Signal the update worker to stop and optionally wait for completion."""
+
+        self._stop_event.set()
+        thread = self._thread
+        if join and thread and thread.is_alive():
+            thread.join(timeout=timeout)
+            if thread.is_alive():
+                self._log.debug("Auto-update worker still running after stop timeout")
+        self._thread = None
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
     def _run_update_check(self) -> None:
         try:
+            if self._stop_event.is_set():
+                return
+
             release = requests.get(RELEASES_URL, timeout=10)
             release.raise_for_status()
         except Exception as exc:
             self._log.debug("Unable to fetch release metadata: %s", exc)
+            self._stop_event.set()
             return
 
-        data = release.json()
-        tag = str(data.get("tag_name", "")).strip()
-        if not tag:
-            return
+        try:
+            if self._stop_event.is_set():
+                return
 
-        remote_version = tag.lstrip("vV")
-        if not is_newer_version(remote_version, PLUGIN_VERSION):
-            if is_newer_version(PLUGIN_VERSION, remote_version):
-                self._log.debug(
-                    "Current version %s is ahead of GitHub release %s",
-                    PLUGIN_VERSION,
-                    remote_version,
-                )
-            else:
-                self._log.debug("Current version %s is up to date", PLUGIN_VERSION)
-            return
+            data = release.json()
+            tag = str(data.get("tag_name", "")).strip()
+            if not tag:
+                return
 
-        assets = data.get("assets") or []
-        download_url = None
-        for asset in assets:
-            url = asset.get("browser_download_url")
-            if url:
-                download_url = url
-                break
-        if not download_url:
-            self._log.debug("No downloadable asset found in latest release")
-            return
+            remote_version = tag.lstrip("vV")
+            if not is_newer_version(remote_version, PLUGIN_VERSION):
+                if is_newer_version(PLUGIN_VERSION, remote_version):
+                    self._log.debug(
+                        "Current version %s is ahead of GitHub release %s",
+                        PLUGIN_VERSION,
+                        remote_version,
+                    )
+                else:
+                    self._log.debug("Current version %s is up to date", PLUGIN_VERSION)
+                return
 
-        self._log.info("New version %s available (current %s)", remote_version, PLUGIN_VERSION)
+            assets = data.get("assets") or []
+            download_url = None
+            for asset in assets:
+                if self._stop_event.is_set():
+                    return
+                url = asset.get("browser_download_url")
+                if url:
+                    download_url = url
+                    break
+            if not download_url:
+                self._log.debug("No downloadable asset found in latest release")
+                return
 
-        if not self._download_asset(download_url):
-            return
+            self._log.info("New version %s available (current %s)", remote_version, PLUGIN_VERSION)
 
-        if not self._create_backup():
-            return
+            if not self._download_asset(download_url):
+                return
 
-        self._prune_backups()
-        if not self._install_update(remote_version):
-            return
+            if self._stop_event.is_set():
+                return
 
-        if self._on_update_ready:
-            try:
-                self._on_update_ready(remote_version)
-            except Exception:
-                self._log.debug("Update ready callback failed", exc_info=True)
+            if not self._create_backup():
+                return
+
+            if self._stop_event.is_set():
+                return
+
+            self._prune_backups()
+            if self._stop_event.is_set():
+                return
+
+            if not self._install_update(remote_version):
+                return
+
+            if self._on_update_ready and not self._stop_event.is_set():
+                try:
+                    self._on_update_ready(remote_version)
+                except Exception:
+                    self._log.debug("Update ready callback failed", exc_info=True)
+        finally:
+            self._stop_event.set()
 
     def _download_asset(self, url: str) -> bool:
+        if self._stop_event.is_set():
+            return False
         try:
             with requests.get(url, stream=True, timeout=30) as response:
                 response.raise_for_status()
                 with self._download_path.open("wb") as handle:
                     for chunk in response.iter_content(chunk_size=65536):
+                        if self._stop_event.is_set():
+                            return False
                         if chunk:
                             handle.write(chunk)
         except Exception as exc:
@@ -131,12 +177,16 @@ class UpdateManager:
         return True
 
     def _create_backup(self) -> bool:
+        if self._stop_event.is_set():
+            return False
         timestamp = datetime.now().strftime(DATETIME_FORMAT)
         backup_path = self._backups_dir / f"{timestamp}.zip"
 
         try:
             with ZipFile(backup_path, "w", compression=ZIP_DEFLATED) as archive:
                 for path in self._plugin_dir.rglob("*"):
+                    if self._stop_event.is_set():
+                        return False
                     if path.is_dir():
                         continue
                     relative = path.relative_to(self._plugin_dir)
@@ -154,12 +204,16 @@ class UpdateManager:
     def _prune_backups(self) -> None:
         backups = sorted(self._backups_dir.glob("*.zip"), key=lambda p: p.stat().st_ctime)
         for old_backup in backups[:-BACKUP_COUNT]:
+            if self._stop_event.is_set():
+                return
             try:
                 old_backup.unlink()
             except Exception:
                 self._log.debug("Unable to remove backup %s", old_backup, exc_info=True)
 
     def _install_update(self, remote_version: str) -> bool:
+        if self._stop_event.is_set():
+            return False
         if not self._download_path.exists():
             self._log.debug("Downloaded update archive missing")
             return False
@@ -171,6 +225,8 @@ class UpdateManager:
         try:
             with ZipFile(self._download_path, "r") as archive:
                 archive.extractall(extract_root)
+                if self._stop_event.is_set():
+                    return False
         except Exception as exc:
             self._log.warning("Failed to extract update archive", exc_info=exc)
             return False
@@ -179,6 +235,8 @@ class UpdateManager:
         source_dir = candidate if candidate.exists() else extract_root
 
         for src in source_dir.rglob("*"):
+            if self._stop_event.is_set():
+                return False
             if src.is_dir():
                 continue
             relative = src.relative_to(source_dir)

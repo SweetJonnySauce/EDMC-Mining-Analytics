@@ -116,6 +116,7 @@ class MiningAnalyticsPlugin:
         self.update_manager: Optional[UpdateManager] = None
         self._overlay_refresh_job: Optional[str] = None
         self._overlay_enabled_last: bool = False
+        self._version_thread: Optional[threading.Thread] = None
         self.ui = edmcmaMiningUI(
             self.state,
             self.inara,
@@ -200,6 +201,12 @@ class MiningAnalyticsPlugin:
 
     def plugin_stop(self) -> None:
         _log.info("Stopping %s", PLUGIN_NAME)
+        if self.update_manager:
+            try:
+                self.update_manager.stop()
+            except Exception:
+                _log.exception("Failed to stop update manager")
+        self._wait_for_version_thread()
         self._persist_preferences()
         self.ui.cancel_rate_update()
         self.ui.close_histogram_windows()
@@ -420,10 +427,25 @@ class MiningAnalyticsPlugin:
     # ------------------------------------------------------------------
     def _ensure_version_check(self) -> None:
         if self._version_check_started:
-            return
+            thread = self._version_thread
+            if thread and thread.is_alive():
+                return
         self._version_check_started = True
-        thread = threading.Thread(target=self._check_for_updates, name="EDMCMiningVersion", daemon=True)
+        thread = threading.Thread(target=self._check_for_updates, name="EDMCMiningVersion", daemon=False)
+        self._version_thread = thread
         thread.start()
+
+    def _wait_for_version_thread(self, timeout: float = 5.0) -> None:
+        thread = self._version_thread
+        if thread and thread.is_alive():
+            try:
+                thread.join(timeout)
+            except Exception:
+                _log.exception("Failed while waiting for version check thread")
+            if thread.is_alive():
+                _log.debug("Version check thread still running after stop timeout")
+                return
+        self._version_thread = None
 
     def _fetch_latest_tag(self) -> Optional[str]:
         try:
@@ -456,6 +478,13 @@ class MiningAnalyticsPlugin:
             )
             with request.urlopen(req, timeout=5) as response:
                 payload = json.load(response)
+
+            latest = payload.get("tag_name") or payload.get("name")
+            if not latest:
+                _log.debug("Version check succeeded but no tag information was found")
+                return
+
+            self._handle_latest_version(latest)
         except error.HTTPError as exc:
             if exc.code == 404:
                 _log.debug("GitHub releases endpoint returned 404; falling back to tags")
@@ -473,13 +502,8 @@ class MiningAnalyticsPlugin:
         except Exception:
             _log.exception("Unexpected error during version check")
             return
-
-        latest = payload.get("tag_name") or payload.get("name")
-        if not latest:
-            _log.debug("Version check succeeded but no tag information was found")
-            return
-
-        self._handle_latest_version(latest)
+        finally:
+            self._version_thread = None
 
     def _log_version_status(self) -> None:
         if not self._latest_version:
