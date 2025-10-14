@@ -122,7 +122,6 @@ class edmcmaMiningUI:
         self._content_widgets: Sequence[tk.Widget] = ()
         self._version_label: Optional[tk.Label] = None
         self._version_font: Optional[tkfont.Font] = None
-        self._base_frame_width: int = 0
         self._show_commodities_var: Optional[tk.BooleanVar] = None
         self._show_materials_var: Optional[tk.BooleanVar] = None
         self._commodities_header: Optional[tk.Frame] = None
@@ -599,7 +598,7 @@ class edmcmaMiningUI:
         self._schedule_rpm_update()
         if self._DEBUG_DRAW_FRAMES:
             frames = collect_frames(frame, include_root=True)
-            frame.after_idle(lambda: apply_frame_debugging(frames))
+            frame.after_idle(lambda fr=frames: apply_frame_debugging(fr))
 
         return frame
 
