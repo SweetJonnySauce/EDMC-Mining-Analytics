@@ -6,7 +6,8 @@ import json
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Tuple
+import threading
+from typing import Any, Dict, Iterable, Optional
 
 from logging_utils import get_logger
 from state import (
@@ -454,6 +455,29 @@ class SessionRecorder:
         }
         self._events.append(payload)
 
+    def _dispatch_webhook(
+        self,
+        url: str,
+        payload: Dict[str, Any],
+        *,
+        thread_name: str,
+        success_message: str,
+        failure_message: str,
+    ) -> None:
+        def worker() -> None:
+            success, detail = send_webhook(url, payload)
+            if success:
+                _log.info(success_message)
+            else:
+                detail_text = f": {detail}" if detail else ""
+                _log.warning(
+                    "%s%s (see prior logs for details)",
+                    failure_message,
+                    detail_text,
+                )
+
+        threading.Thread(target=worker, name=thread_name, daemon=True).start()
+
     def _maybe_send_summary(
         self,
         payload: dict[str, Any],
@@ -482,15 +506,13 @@ class SessionRecorder:
             return
 
         message_payload = build_summary_message(self._state, payload, json_path)
-        success, detail = send_webhook(url, message_payload)
-        if success:
-            _log.info("Posted mining session summary to Discord")
-        else:
-            detail_text = f": {detail}" if detail else ""
-            _log.warning(
-                "Discord session summary delivery failed%s (see prior logs for details)",
-                detail_text,
-            )
+        self._dispatch_webhook(
+            url,
+            message_payload,
+            thread_name="EDMCMA-DiscordSummary",
+            success_message="Posted mining session summary to Discord",
+            failure_message="Discord session summary delivery failed",
+        )
 
     def _render_summary(self, payload: dict[str, Any], json_path: Optional[Path]) -> str:
         meta = payload.get("meta", {})
@@ -609,12 +631,18 @@ class SessionRecorder:
             return None
         return " ".join(parts)
 
-    def send_test_message(self) -> Tuple[bool, str]:
+    def send_test_message(self) -> None:
         url = (self._state.discord_webhook_url or "").strip()
         if not url:
             raise ValueError("Discord webhook URL is not configured")
         payload = build_test_message(self._state)
-        return send_webhook(url, payload)
+        self._dispatch_webhook(
+            url,
+            payload,
+            thread_name="EDMCMA-DiscordTest",
+            success_message="Discord webhook test message sent successfully",
+            failure_message="Discord webhook test message failed",
+        )
 
     @staticmethod
     def _ensure_aware(value: datetime) -> datetime:

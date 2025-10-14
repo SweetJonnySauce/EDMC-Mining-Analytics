@@ -76,20 +76,14 @@ class HotspotSearchController:
     def __init__(self, state: MiningState, client: SpanshHotspotClient) -> None:
         self._state = state
         self._client = client
-
-        self._ring_signal_options = self._sorted_unique(
-            client.list_ring_signals(),
-            self.FALLBACK_RING_SIGNALS,
-        )
-        self._ring_type_options = self._sorted_unique(
-            client.list_ring_types(),
-            self.FALLBACK_RING_TYPES,
-        )
-        self._reserve_level_options = self._sorted_unique(
-            client.list_reserve_levels(),
-            self.FALLBACK_RESERVE_LEVELS,
-            preserve_order=True,
-        )
+        self._ring_signal_options = list(self.FALLBACK_RING_SIGNALS)
+        self._ring_type_options = list(self.FALLBACK_RING_TYPES)
+        self._reserve_level_options = list(self.FALLBACK_RESERVE_LEVELS)
+        self._metadata_callbacks: list[
+            Callable[[Sequence[str], Sequence[str], Sequence[str]], None]
+        ] = []
+        self._metadata_lock = threading.Lock()
+        self._metadata_ready = False
 
         self._search_thread: Optional[threading.Thread] = None
         self._pending_search_params: Optional[HotspotSearchParams] = None
@@ -97,6 +91,8 @@ class HotspotSearchController:
         self._search_result_queue: "queue.Queue[tuple[int, tuple[str, object]]]" = queue.Queue()
         self._reference_suggestion_queue: "queue.Queue[tuple[int, List[str]]]" = queue.Queue()
         self._reference_suggestion_token: int = 0
+
+        self._start_metadata_refresh()
 
 
     # ------------------------------------------------------------------
@@ -117,6 +113,27 @@ class HotspotSearchController:
     @property
     def reserve_level_options(self) -> Sequence[str]:
         return self._reserve_level_options
+
+    def register_metadata_callback(
+        self,
+        callback: Callable[[Sequence[str], Sequence[str], Sequence[str]], None],
+    ) -> None:
+        immediate_payload: Optional[
+            Tuple[Sequence[str], Sequence[str], Sequence[str]]
+        ] = None
+        with self._metadata_lock:
+            self._metadata_callbacks.append(callback)
+            if self._metadata_ready:
+                immediate_payload = (
+                    tuple(self._ring_signal_options),
+                    tuple(self._ring_type_options),
+                    tuple(self._reserve_level_options),
+                )
+        if immediate_payload:
+            try:
+                callback(*immediate_payload)
+            except Exception:
+                _log.exception("Failed to deliver hotspot metadata update callback")
 
     def get_saved_filters(self) -> HotspotSavedFilters:
         return HotspotSavedFilters(
@@ -220,6 +237,56 @@ class HotspotSearchController:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+    def _start_metadata_refresh(self) -> None:
+        threading.Thread(
+            target=self._load_metadata_async,
+            name="EDMC-SpanshMetadata",
+            daemon=True,
+        ).start()
+
+    def _load_metadata_async(self) -> None:
+        try:
+            ring_signals = self._sorted_unique(
+                self._client.list_ring_signals(),
+                self.FALLBACK_RING_SIGNALS,
+            )
+        except Exception:
+            ring_signals = list(self.FALLBACK_RING_SIGNALS)
+
+        try:
+            ring_types = self._sorted_unique(
+                self._client.list_ring_types(),
+                self.FALLBACK_RING_TYPES,
+            )
+        except Exception:
+            ring_types = list(self.FALLBACK_RING_TYPES)
+
+        try:
+            reserve_levels = self._sorted_unique(
+                self._client.list_reserve_levels(),
+                self.FALLBACK_RESERVE_LEVELS,
+                preserve_order=True,
+            )
+        except Exception:
+            reserve_levels = list(self.FALLBACK_RESERVE_LEVELS)
+
+        with self._metadata_lock:
+            self._ring_signal_options = list(ring_signals)
+            self._ring_type_options = list(ring_types)
+            self._reserve_level_options = list(reserve_levels)
+            self._metadata_ready = True
+            callbacks = list(self._metadata_callbacks)
+
+        for callback in callbacks:
+            try:
+                callback(
+                    tuple(self._ring_signal_options),
+                    tuple(self._ring_type_options),
+                    tuple(self._reserve_level_options),
+                )
+            except Exception:
+                _log.exception("Failed to notify hotspot metadata callback")
+
     def _search_worker(self, token: int, params: HotspotSearchParams) -> None:
         reference_text_input = (params.reference_text or "").strip()
         try:
@@ -406,6 +473,7 @@ class HotspotSearchWindow:
         self._last_search_duration: Optional[float] = None
 
         self._build_ui()
+        self._controller.register_metadata_callback(self._handle_metadata_update)
         self._schedule_initial_search()
 
     # ------------------------------------------------------------------
@@ -496,6 +564,29 @@ class HotspotSearchWindow:
         self._pagination_has_next = False
         self._search_started_at = None
         self._last_search_duration = None
+
+    def _handle_metadata_update(
+        self,
+        ring_signals: Sequence[str],
+        ring_types: Sequence[str],
+        reserve_levels: Sequence[str],
+    ) -> None:
+        if not self._toplevel:
+            return
+
+        def apply() -> None:
+            if not self.is_open:
+                return
+            self._apply_metadata_update(
+                list(ring_signals),
+                list(ring_types),
+                list(reserve_levels),
+            )
+
+        try:
+            self._toplevel.after(0, apply)
+        except Exception:
+            apply()
 
     # ------------------------------------------------------------------
     # UI construction
@@ -760,6 +851,107 @@ class HotspotSearchWindow:
         self._reference_system_var.trace_add("write", self._on_filters_changed)
         self._on_filters_changed()
 
+    def _apply_metadata_update(
+        self,
+        ring_signals: Sequence[str],
+        ring_types: Sequence[str],
+        reserve_levels: Sequence[str],
+    ) -> None:
+        ring_signal_values = list(ring_signals) if ring_signals else list(self.FALLBACK_RING_SIGNALS)
+        ring_type_values = list(ring_types) if ring_types else list(self.FALLBACK_RING_TYPES)
+        reserve_values = list(reserve_levels) if reserve_levels else list(self.FALLBACK_RESERVE_LEVELS)
+
+        selection_changed = False
+
+        self._ring_signal_options = ring_signal_values
+        self._ring_type_options = ring_type_values
+        self._reserve_level_options = reserve_values
+
+        if self._signals_listbox and self._signals_listbox.winfo_exists():
+            previous_selection = self._get_listbox_selection(self._signals_listbox)
+            had_selection = bool(previous_selection)
+            filtered_selection = self._filter_defaults(previous_selection, ring_signal_values)
+            self._signals_listbox.delete(0, "end")
+            for option in ring_signal_values:
+                self._signals_listbox.insert("end", option)
+            if filtered_selection:
+                self._apply_listbox_selection(self._signals_listbox, ring_signal_values, filtered_selection)
+            elif not had_selection:
+                self._signals_listbox.selection_clear(0, "end")
+            elif ring_signal_values:
+                fallback_signal = self._resolve_single_default(None, ring_signal_values, self.DEFAULT_SIGNAL)
+                self._apply_listbox_selection(self._signals_listbox, ring_signal_values, [fallback_signal])
+            else:
+                self._signals_listbox.selection_clear(0, "end")
+            if self._get_listbox_selection(self._signals_listbox) != previous_selection:
+                selection_changed = True
+
+        if self._ring_type_listbox and self._ring_type_listbox.winfo_exists():
+            previous_types = self._get_listbox_selection(self._ring_type_listbox)
+            had_type_selection = bool(previous_types)
+            filtered_types = self._filter_defaults(previous_types, ring_type_values)
+            self._ring_type_listbox.delete(0, "end")
+            for option in ring_type_values:
+                self._ring_type_listbox.insert("end", option)
+            if filtered_types:
+                self._apply_listbox_selection(self._ring_type_listbox, ring_type_values, filtered_types)
+            elif not had_type_selection:
+                self._ring_type_listbox.selection_clear(0, "end")
+            elif ring_type_values:
+                fallback_type = self._resolve_single_default(None, ring_type_values, self.DEFAULT_RING_TYPE)
+                self._apply_listbox_selection(self._ring_type_listbox, ring_type_values, [fallback_type])
+            else:
+                self._ring_type_listbox.selection_clear(0, "end")
+            if self._get_listbox_selection(self._ring_type_listbox) != previous_types:
+                selection_changed = True
+
+        if self._reserve_combobox and self._reserve_combobox.winfo_exists() and self._reserve_var:
+            previous_reserve = self._reserve_var.get()
+            try:
+                self._reserve_combobox["values"] = reserve_values
+            except Exception:
+                pass
+
+            if reserve_values:
+                if previous_reserve not in reserve_values:
+                    new_reserve = self._resolve_single_default(
+                        [previous_reserve] if previous_reserve else None,
+                        reserve_values,
+                        self.DEFAULT_RESERVE,
+                    )
+                    if new_reserve not in reserve_values and reserve_values:
+                        new_reserve = reserve_values[0]
+                    if new_reserve in reserve_values:
+                        self._reserve_var.set(new_reserve)
+                        try:
+                            self._reserve_combobox.set(new_reserve)
+                        except Exception:
+                            pass
+                    else:
+                        self._reserve_var.set("")
+                        try:
+                            self._reserve_combobox.set("")
+                        except Exception:
+                            pass
+                    if previous_reserve != self._reserve_var.get():
+                        selection_changed = True
+                else:
+                    try:
+                        self._reserve_combobox.set(previous_reserve)
+                    except Exception:
+                        pass
+            else:
+                self._reserve_var.set("")
+                try:
+                    self._reserve_combobox.set("")
+                except Exception:
+                    pass
+                if previous_reserve:
+                    selection_changed = True
+
+        if selection_changed:
+            self._on_filters_changed()
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
@@ -834,6 +1026,30 @@ class HotspotSearchWindow:
             return f"{float(value):g}"
         except (TypeError, ValueError):
             return fallback
+
+    @staticmethod
+    def _apply_listbox_selection(
+        listbox: tk.Listbox,
+        options: Sequence[str],
+        selection: Sequence[str],
+    ) -> None:
+        try:
+            listbox.selection_clear(0, "end")
+        except Exception:
+            return
+        option_list = list(options)
+        if not option_list:
+            return
+        for value in selection:
+            try:
+                index = option_list.index(value)
+            except ValueError:
+                continue
+            try:
+                listbox.selection_set(index)
+                listbox.see(index)
+            except Exception:
+                continue
 
     @staticmethod
     def _filter_defaults(candidates: Optional[Sequence[str]], options: Sequence[str]) -> List[str]:

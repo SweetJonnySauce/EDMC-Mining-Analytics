@@ -389,15 +389,7 @@ class MiningAnalyticsPlugin:
     def _handle_test_webhook(self) -> None:
         try:
             _log.info("Dispatching Discord webhook test message")
-            success, message = self.session_recorder.send_test_message()
-            if success:
-                _log.info("Discord webhook test message sent successfully")
-            else:
-                detail = f": {message}" if message else ""
-                _log.warning(
-                    "Discord webhook test message failed%s (see prior logs for details)",
-                    detail,
-                )
+            self.session_recorder.send_test_message()
         except ValueError as exc:
             _log.warning("Discord webhook test skipped: %s", exc)
         except Exception:
