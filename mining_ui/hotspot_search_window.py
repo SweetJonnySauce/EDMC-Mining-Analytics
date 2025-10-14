@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import queue
 import threading
-from dataclasses import dataclass
-from typing import Callable, List, Optional, Sequence, Tuple
+from dataclasses import dataclass, replace
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 try:
     import tkinter as tk
@@ -17,6 +17,7 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 from logging_utils import get_logger
 from state import MiningState
 from integrations.spansh_hotspots import (
+    DEFAULT_RESULT_SIZE,
     HotspotSearchResult,
     RingHotspot,
     SpanshHotspotClient,
@@ -35,6 +36,8 @@ class HotspotSearchParams:
     ring_types: Tuple[str, ...]
     min_hotspots: int
     reference_text: str
+    page: int
+    limit: int
 
 
 @dataclass(frozen=True)
@@ -226,6 +229,8 @@ class HotspotSearchController:
                 ring_signals=params.ring_signals,
                 reserve_levels=params.reserve_levels,
                 ring_types=params.ring_types,
+                limit=params.limit,
+                page=params.page,
                 min_hotspots=max(1, int(params.min_hotspots)),
                 reference_system=resolved_reference,
             )
@@ -322,6 +327,7 @@ class HotspotSearchWindow:
     DEFAULT_RESERVE = "Pristine"
     DEFAULT_RING_TYPE = "Metallic"
     DEFAULT_MIN_HOTSPOTS = 1
+    RESULTS_PER_PAGE = DEFAULT_RESULT_SIZE
 
     FALLBACK_RING_SIGNALS = [
         "Platinum",
@@ -384,6 +390,17 @@ class HotspotSearchWindow:
         self._reference_last_query: str = ""
         self._reference_suggestions_suppressed = False
         self._status_var = tk.StringVar(master=self._toplevel, value="")
+        self._pagination_frame: Optional[tk.Frame] = None
+        self._pagination_pack_options: Dict[str, object] = {}
+        self._prev_page_button: Optional[ttk.Button] = None
+        self._next_page_button: Optional[ttk.Button] = None
+        self._page_label_var: Optional[tk.StringVar] = None
+        self._active_params: Optional[HotspotSearchParams] = None
+        self._last_successful_params: Optional[HotspotSearchParams] = None
+        self._last_result_total: int = 0
+        self._last_results_count: int = 0
+        self._pagination_has_prev: bool = False
+        self._pagination_has_next: bool = False
 
         self._build_ui()
         self._schedule_initial_search()
@@ -463,6 +480,17 @@ class HotspotSearchWindow:
         self._reference_suggestions_listbox = None
         self._reference_suggestions_visible = False
         self._reference_suggestions_suppressed = False
+        self._pagination_frame = None
+        self._pagination_pack_options = {}
+        self._prev_page_button = None
+        self._next_page_button = None
+        self._page_label_var = None
+        self._active_params = None
+        self._last_successful_params = None
+        self._last_result_total = 0
+        self._last_results_count = 0
+        self._pagination_has_prev = False
+        self._pagination_has_next = False
 
     # ------------------------------------------------------------------
     # UI construction
@@ -696,6 +724,29 @@ class HotspotSearchWindow:
         tree_scroll.pack(side="right", fill="y")
 
         self._results_tree = tree
+        pagination_frame = tk.Frame(container, highlightthickness=0, bd=0)
+        pagination_frame.pack(fill="x", pady=(6, 0))
+        self._theme.register(pagination_frame)
+        self._pagination_frame = pagination_frame
+        self._pagination_pack_options = {"fill": "x", "pady": (6, 0)}
+
+        self._page_label_var = tk.StringVar(master=self._toplevel, value="")
+        page_label = tk.Label(pagination_frame, textvariable=self._page_label_var, anchor="e")
+        page_label.pack(side="right", padx=(0, 8))
+        self._theme.register(page_label)
+
+        next_button = ttk.Button(pagination_frame, text="Next", command=self._goto_next_page, state="disabled")
+        next_button.pack(side="right")
+        self._theme.register(next_button)
+        self._next_page_button = next_button
+
+        prev_button = ttk.Button(pagination_frame, text="Previous", command=self._goto_previous_page, state="disabled")
+        prev_button.pack(side="right", padx=(0, 4))
+        self._theme.register(prev_button)
+        self._prev_page_button = prev_button
+
+        pagination_frame.pack_forget()
+
         tree.bind("<ButtonRelease-1>", self._handle_result_click, add="+")
         self._schedule_result_poll()
         reserve_combo.bind("<<ComboboxSelected>>", self._on_filters_changed, add="+")
@@ -1074,6 +1125,109 @@ class HotspotSearchWindow:
 
         return min_distance, max_distance, signals, reserves, ring_types, min_hotspots
 
+    def _set_pagination_visible(self, visible: bool) -> None:
+        frame = self._pagination_frame
+        if not frame:
+            return
+        managed = frame.winfo_manager()
+        if visible:
+            options = self._pagination_pack_options or {"fill": "x", "pady": (6, 0)}
+            if managed != "pack":
+                frame.pack(**options)
+        else:
+            if managed:
+                frame.pack_forget()
+            if self._page_label_var:
+                self._page_label_var.set("")
+
+    def _set_pagination_buttons_state(self, prev_enabled: bool, next_enabled: bool) -> None:
+        if self._prev_page_button:
+            self._prev_page_button.configure(state="normal" if prev_enabled else "disabled")
+        if self._next_page_button:
+            self._next_page_button.configure(state="normal" if next_enabled else "disabled")
+
+    def _is_search_in_progress(self) -> bool:
+        return self._active_search_token is not None
+
+    def _apply_pagination_button_state(self) -> None:
+        buttons_enabled = not self._is_search_in_progress()
+        self._set_pagination_buttons_state(
+            self._pagination_has_prev and buttons_enabled,
+            self._pagination_has_next and buttons_enabled,
+        )
+        self._set_pagination_visible(self._pagination_has_prev or self._pagination_has_next)
+
+    def _update_pagination_controls(self, result: HotspotSearchResult) -> None:
+        params = self._active_params or self._last_successful_params
+        if not params:
+            self._pagination_has_prev = False
+            self._pagination_has_next = False
+            self._set_pagination_visible(False)
+            return
+
+        limit = max(1, int(params.limit or self.RESULTS_PER_PAGE))
+        page_index = max(0, int(params.page))
+        entries_count = len(result.entries)
+        total = int(result.total_count or 0)
+
+        self._last_results_count = entries_count
+        self._last_result_total = total
+
+        has_prev = page_index > 0
+        if total > 0:
+            has_next = (page_index + 1) * limit < total
+        else:
+            has_next = entries_count >= limit
+
+        self._pagination_has_prev = has_prev
+        self._pagination_has_next = has_next
+
+        if self._page_label_var:
+            if not (has_prev or has_next):
+                self._page_label_var.set("")
+            elif total > 0:
+                total_pages = max(1, (total + limit - 1) // limit)
+                self._page_label_var.set(f"Page {page_index + 1} of {total_pages}")
+            else:
+                self._page_label_var.set(f"Page {page_index + 1}")
+
+        self._apply_pagination_button_state()
+
+    def _goto_previous_page(self) -> None:
+        if self._is_search_in_progress():
+            return
+        params = self._last_successful_params
+        if not params:
+            return
+        target_page = max(0, int(params.page) - 1)
+        if target_page == params.page:
+            return
+        self._request_page(target_page)
+
+    def _goto_next_page(self) -> None:
+        if self._is_search_in_progress():
+            return
+        params = self._last_successful_params
+        if not params:
+            return
+        limit = max(1, int(params.limit or self.RESULTS_PER_PAGE))
+        total = self._last_result_total
+        entries_count = self._last_results_count
+        next_page = int(params.page) + 1
+        if total > 0 and next_page * limit >= total:
+            return
+        if total <= 0 and entries_count < limit:
+            return
+        self._request_page(next_page)
+
+    def _request_page(self, target_page: int) -> None:
+        params = self._last_successful_params
+        if not params:
+            return
+        target = max(0, target_page)
+        new_params = replace(params, page=target)
+        self._start_search(new_params)
+
     def _on_filters_changed(self, *_: object) -> None:
         distance_min_text = self._distance_min_var.get() if self._distance_min_var else ""
         distance_max_text = self._distance_max_var.get() if self._distance_max_var else ""
@@ -1133,6 +1287,8 @@ class HotspotSearchWindow:
             ring_types=tuple(ring_types),
             min_hotspots=int(min_hotspots),
             reference_text=reference_input,
+            page=0,
+            limit=self.RESULTS_PER_PAGE,
         )
         self._start_search(params)
 
@@ -1140,6 +1296,9 @@ class HotspotSearchWindow:
         if not self.is_open:
             return
 
+        self._active_params = params
+        self._last_results_count = 0
+        self._set_pagination_buttons_state(False, False)
         self._schedule_result_poll()
 
         reference_text = (params.reference_text or "").strip()
@@ -1151,6 +1310,7 @@ class HotspotSearchWindow:
         self._status_var.set(result.status)
 
         if not result.started:
+            self._apply_pagination_button_state()
             return
 
         self._active_search_token = result.token
@@ -1165,11 +1325,16 @@ class HotspotSearchWindow:
                 self._toplevel.update_idletasks()
             except Exception:
                 pass
+        self._apply_pagination_button_state()
 
     def _render_results(self, result: HotspotSearchResult) -> None:
         tree = self._results_tree
         if not tree:
             return
+
+        params = self._active_params
+        if params:
+            self._last_successful_params = params
 
         for item in tree.get_children():
             tree.delete(item)
@@ -1282,6 +1447,7 @@ class HotspotSearchWindow:
             if type_width:
                 _resize_column("type", type_width, "Type")
 
+        self._update_pagination_controls(result)
         self._resize_to_fit_results()
 
         if not entries:
@@ -1336,6 +1502,7 @@ class HotspotSearchWindow:
 
         pending = self._controller.on_search_complete()
         self._active_search_token = None
+        self._apply_pagination_button_state()
         if pending is not None:
             self._start_search(pending)
 
@@ -1371,8 +1538,12 @@ class HotspotSearchWindow:
             current_height = self._toplevel.winfo_height()
             if current_height <= 1:
                 current_height = self._toplevel.winfo_reqheight()
+            desired_height = self._toplevel.winfo_reqheight()
+            if desired_height <= 1:
+                desired_height = current_height
             target_width = max(current_width, int(desired_width))
-            self._toplevel.geometry(f"{target_width}x{current_height}")
+            target_height = max(current_height, int(desired_height))
+            self._toplevel.geometry(f"{target_width}x{target_height}")
         except Exception:
             pass
 
