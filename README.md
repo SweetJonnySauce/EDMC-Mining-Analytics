@@ -24,7 +24,7 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 
 ### Detailed mining metrics while you mine
 
-<img width="596" height="522" alt="image" src="https://github.com/user-attachments/assets/760ca6fc-4281-438f-b925-da5f7aced2b3" />
+<img width="506" height="381" alt="image" src="https://github.com/user-attachments/assets/7106b07b-020f-4bd7-9fec-e8d48b68ce23" />
 
 ### Click on %Range value to see the yield distribution of the asteroids you've prospected
 
