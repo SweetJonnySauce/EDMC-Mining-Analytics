@@ -255,7 +255,7 @@ class HotspotSearchController:
         params: HotspotSearchParams,
     ) -> HotspotSearchResult:
         min_required = max(1, int(params.min_hotspots))
-        if min_required <= 1 or params.ring_signals:
+        if params.ring_signals:
             return result
 
         filtered_entries = tuple(
@@ -266,7 +266,7 @@ class HotspotSearchController:
             return result
 
         return HotspotSearchResult(
-            total_count=len(filtered_entries),
+            total_count=result.total_count,
             reference_system=result.reference_system,
             entries=filtered_entries,
         )
