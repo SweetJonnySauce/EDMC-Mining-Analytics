@@ -118,6 +118,7 @@ class edmcmaMiningUI:
         self._pause_btn: Optional[tk.Button] = None
         self._commodities_headers: list[tk.Label] = []
         self._commodities_rows: list[list[tk.Label]] = []
+        self._commodities_header_tooltips: list[WidgetTooltip] = []
         self._materials_headers: list[tk.Label] = []
         self._materials_rows: list[list[tk.Label]] = []
         self._materials_frame: Optional[tk.Frame] = None
@@ -333,6 +334,7 @@ class edmcmaMiningUI:
         self._commodities_grid = commodities_widgets.grid_config
         self._commodities_headers = commodities_widgets.headers
         self._commodities_rows = []
+        self._initialize_commodities_header_tooltips()
 
         total_container = tk.Frame(frame, highlightthickness=0, bd=0)
         total_container.grid(row=2, column=0, sticky="w", padx=4, pady=(0, 6))
@@ -1390,6 +1392,21 @@ class edmcmaMiningUI:
             label.bind("<<ThemeChanged>>", lambda _e, lbl=label: self._apply_header_style(lbl), add="+")
         except (tk.TclError, ValueError):
             pass
+
+    def _initialize_commodities_header_tooltips(self) -> None:
+        tooltip_texts = {
+            "present": "Number of prospecting samples that reported this commodity during the current session.",
+            "percent": "Percentage of prospected asteroids that contained this commodity.",
+            "total": "Tons of this commodity currently in your cargo hold.",
+            "range": "Observed % yield range from prospecting samples, including minimum, average, and maximum values.",
+            "tph": "Estimated tons per hour mined for this commodity.",
+        }
+        self._commodities_header_tooltips = []
+        for header, column in zip(self._commodities_headers, self._commodity_columns):
+            text = tooltip_texts.get(column.get("key"))
+            if not text:
+                continue
+            self._commodities_header_tooltips.append(WidgetTooltip(header, text=text))
 
     def _populate_commodities_table(self) -> None:
         rows = sorted(
