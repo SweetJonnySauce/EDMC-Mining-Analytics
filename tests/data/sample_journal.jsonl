@@ -1,0 +1,9 @@
+{"timestamp":"3300-01-01T12:00:00Z","event":"LoadGame","Commander":"TestCMDR","Ship":"Krait_MkII","Ship_Localised":"Krait Mk II","GameMode":"Open"}
+{"timestamp":"3300-01-01T12:00:05Z","event":"Location","Docked":false,"StarSystem":"Test System","Body":"Test Body","BodyType":"Planet"}
+{"timestamp":"3300-01-01T12:01:00Z","event":"LaunchDrone","Type":"Prospector"}
+{"timestamp":"3300-01-01T12:01:05Z","event":"Cargo","Inventory":[{"Name":"Platinum","Name_Localised":"Platinum","Count":0},{"Name":"Gold","Name_Localised":"Gold","Count":0},{"Name":"Drones","Name_Localised":"Limpet","Count":50}],"Count":50}
+{"timestamp":"3300-01-01T12:01:20Z","event":"ProspectedAsteroid","Body":"Test Body A Ring","Content":"High","Materials":[{"Name":"Platinum","Name_Localised":"Platinum","Proportion":28.5},{"Name":"Gold","Name_Localised":"Gold","Proportion":14.2}]}
+{"timestamp":"3300-01-01T12:01:30Z","event":"MaterialCollected","Name":"iron","Count":3}
+{"timestamp":"3300-01-01T12:01:35Z","event":"MaterialCollected","Name":"carbon","Count":6}
+{"timestamp":"3300-01-01T12:01:40Z","event":"MaterialCollected","Name":"nickel","Count":9}
+{"timestamp":"3300-01-01T12:02:00Z","event":"Cargo","Inventory":[{"Name":"Platinum","Name_Localised":"Platinum","Count":5},{"Name":"Gold","Name_Localised":"Gold","Count":3},{"Name":"Drones","Name_Localised":"Limpet","Count":48}],"Count":56}

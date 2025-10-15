@@ -21,7 +21,7 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 
 from tooltip import WidgetTooltip
 from debugging import apply_frame_debugging, collect_frames
-from state import MiningState, compute_percentage_stats, update_rpm
+from state import MiningState, compute_percentage_stats, update_rpm, resolve_commodity_display_name
 from integrations.mining_inara import InaraClient
 from integrations.spansh_hotspots import (
     HotspotSearchResult,
@@ -48,7 +48,6 @@ from edmc_mining_analytics_version import (
 from mining_ui.components.top_bar import build_top_bar
 from mining_ui.components.details_bar import build_details_bar
 from mining_ui.components.commodities_table import build_commodities_section
-from mining_ui.components.materials_table import build_materials_section
 from mining_ui.theme_adapter import ThemeAdapter
 from mining_ui.preferences import build_preferences as build_preferences_ui
 from mining_ui.histograms import (
@@ -119,9 +118,9 @@ class edmcmaMiningUI:
         self._commodities_headers: list[tk.Label] = []
         self._commodities_rows: list[list[tk.Label]] = []
         self._commodities_header_tooltips: list[WidgetTooltip] = []
-        self._materials_headers: list[tk.Label] = []
-        self._materials_rows: list[list[tk.Label]] = []
+        self._materials_header: Optional[tk.Frame] = None
         self._materials_frame: Optional[tk.Frame] = None
+        self._materials_text: Optional[tk.Label] = None
         self._total_tph_var: Optional[tk.StringVar] = None
         self._total_tph_font: Optional[tkfont.Font] = None
         self._content_widgets: Sequence[tk.Widget] = ()
@@ -134,7 +133,6 @@ class edmcmaMiningUI:
         self._commodities_frame: Optional[tk.Frame] = None
         self._commodities_grid: Optional[Dict[str, Any]] = None
         self._materials_grid: Optional[Dict[str, Any]] = None
-        self._materials_table: Optional[tk.Frame] = None
         self._commodity_columns: Sequence[Dict[str, Any]] = (
             {
                 "key": "commodity",
@@ -179,22 +177,7 @@ class edmcmaMiningUI:
                 "weight": 1,
             },
         )
-        self._materials_columns: Sequence[Dict[str, Any]] = (
-            {
-                "key": "material",
-                "label": "Material",
-                "anchor": "w",
-                "sticky": "w",
-                "weight": 3,
-            },
-            {
-                "key": "quantity",
-                "label": "Count",
-                "anchor": "e",
-                "sticky": "e",
-                "weight": 1,
-            },
-        )
+        self._materials_columns: Sequence[Dict[str, Any]] = ()
         self._hotspot_controller: Optional[HotspotSearchController] = None
         self._hotspot_window: Optional[HotspotSearchWindow] = None
         self._hotspot_button: Optional[tk.Button] = None
@@ -369,25 +352,11 @@ class edmcmaMiningUI:
         self._theme.style_button(reset_btn)
         reset_btn.grid(row=0, column=1, padx=0, pady=0)
 
-        materials_widgets = build_materials_section(
-            frame,
-            self._theme,
-            columns=self._materials_columns,
-            on_toggle=self._on_toggle_materials,
-            header_style=self._schedule_header_style,
-            initial_visible=self._state.show_materials_collected,
-        )
-        self._materials_header = materials_widgets.header_frame
-        self._show_materials_var = materials_widgets.toggle_var
-        self._materials_frame = materials_widgets.frame
-        self._materials_grid = materials_widgets.grid_config
-        self._materials_table = materials_widgets.table
-        self._materials_headers = materials_widgets.headers
-        self._materials_rows = []
+        self._materials_header = self._build_materials_section(frame)
 
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(4, weight=1)
-        frame.rowconfigure(6, weight=1)
+        frame.rowconfigure(6, weight=0)
 
         self._content_widgets = (
             self._details_bar,
@@ -1250,8 +1219,8 @@ class edmcmaMiningUI:
         if commodities_parent and getattr(commodities_parent, "winfo_exists", lambda: False)():
             self._populate_commodities_table()
 
-        materials_parent = self._materials_table
-        if materials_parent and getattr(materials_parent, "winfo_exists", lambda: False)():
+        materials_label = self._materials_text
+        if materials_label and getattr(materials_label, "winfo_exists", lambda: False)():
             self._populate_materials_table()
 
         if self._total_tph_var is not None:
@@ -1300,33 +1269,6 @@ class edmcmaMiningUI:
             self._commodities_rows.append(row_labels)
         return self._commodities_rows[row_index]
 
-    def _ensure_material_row(self, row_index: int) -> list[tk.Label]:
-        parent = self._materials_table
-        if parent is None or not getattr(parent, "winfo_exists", lambda: False)():
-            raise RuntimeError("Materials table is not available")
-
-        while len(self._materials_rows) <= row_index:
-            grid_row = len(self._materials_rows) + 1
-            row_labels: list[tk.Label] = []
-            for col_index, column in enumerate(self._materials_columns):
-                label = tk.Label(
-                    parent,
-                    text="",
-                    anchor=column["anchor"],
-                    justify=tk.LEFT,
-                )
-                label.grid(
-                    row=grid_row,
-                    column=col_index,
-                    sticky=column["sticky"],
-                    padx=(0, 6),
-                    pady=(0, 1),
-                )
-                label.grid_remove()
-                self._theme.register(label)
-                row_labels.append(label)
-            self._materials_rows.append(row_labels)
-        return self._materials_rows[row_index]
     def _apply_label_style(
         self,
         label: tk.Label,
@@ -1407,6 +1349,52 @@ class edmcmaMiningUI:
             if not text:
                 continue
             self._commodities_header_tooltips.append(WidgetTooltip(header, text=text))
+
+    def _build_materials_section(self, parent: tk.Widget) -> tk.Frame:
+        header_frame = tk.Frame(parent, highlightthickness=0, bd=0)
+        header_frame.grid(row=5, column=0, sticky="w", padx=4)
+        self._theme.register(header_frame)
+
+        title = tk.Label(
+            header_frame,
+            text="Materials Collected",
+            font=(None, 9, "bold"),
+            anchor="w",
+        )
+        title.pack(side="left")
+        self._theme.register(title)
+
+        toggle_var = tk.BooleanVar(master=parent, value=self._state.show_materials_collected)
+        toggle = tk.Checkbutton(
+            header_frame,
+            variable=toggle_var,
+            command=self._on_toggle_materials,
+        )
+        toggle.pack(side="left", padx=(6, 0))
+        self._theme.register(toggle)
+        self._theme.style_checkbox(toggle)
+        self._show_materials_var = toggle_var
+
+        frame = tk.Frame(parent, highlightthickness=0, bd=0)
+        grid_config = {
+            "row": 6,
+            "column": 0,
+            "sticky": "w",
+            "padx": 4,
+            "pady": (2, 6),
+        }
+        frame.grid(**grid_config)
+        self._theme.register(frame)
+
+        text_label = tk.Label(frame, text="", anchor="w", justify=tk.LEFT, wraplength=520)
+        text_label.pack(fill="x")
+        self._theme.register(text_label)
+
+        self._materials_frame = frame
+        self._materials_grid = grid_config
+        self._materials_text = text_label
+
+        return header_frame
 
     def _populate_commodities_table(self) -> None:
         rows = sorted(
@@ -1500,38 +1488,23 @@ class edmcmaMiningUI:
 
         # Display totals row similar to BGS-Tally
     def _populate_materials_table(self) -> None:
-        rows = sorted(self._state.materials_collected.items())
-
-        if not rows:
-            labels = self._ensure_material_row(0)
-            for col_index, label in enumerate(labels):
-                if col_index == 0:
-                    self._apply_label_style(label, text="No materials collected yet")
-                    label.grid()
-                else:
-                    label.grid_remove()
-            for idx in range(1, len(self._materials_rows)):
-                for label in self._materials_rows[idx]:
-                    label.grid_remove()
+        label = self._materials_text
+        if label is None:
             return
 
-        for row_index, (material, quantity) in enumerate(rows):
-            labels = self._ensure_material_row(row_index)
-            for label in labels:
-                label.grid()
+        if not self._state.materials_collected:
+            text = "No materials collected yet"
+        else:
+            parts: list[str] = []
+            for name, count in sorted(self._state.materials_collected.items()):
+                display = resolve_commodity_display_name(self._state, name)
+                parts.append(f"{display} x{count}")
+            text = ", ".join(parts)
 
-            texts = (
-                self._truncate_text(self._format_cargo_name(material), 23),
-                f"{quantity:,}",
-            )
-            for col_index, text in enumerate(texts):
-                label = labels[col_index]
-                label.unbind("<Button-1>")
-                self._apply_label_style(label, text=text, cursor="")
-
-        for idx in range(len(rows), len(self._materials_rows)):
-            for label in self._materials_rows[idx]:
-                label.grid_remove()
+        try:
+            label.configure(text=text)
+        except tk.TclError:
+            pass
 
     # ------------------------------------------------------------------
     # Preference callbacks
