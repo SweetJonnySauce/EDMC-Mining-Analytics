@@ -10,8 +10,8 @@ from typing import Dict, Optional
 
 from urllib.parse import urlencode
 
-from state import MiningState
-from logging_utils import get_logger
+from ..state import MiningState
+from ..logging_utils import get_logger
 
 
 _log = get_logger("inara")

@@ -3,8 +3,8 @@ import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from journal import JournalProcessor
-from state import MiningState
+from ..journal import JournalProcessor
+from ..state import MiningState
 
 
 class JournalSimulationTest(unittest.TestCase):

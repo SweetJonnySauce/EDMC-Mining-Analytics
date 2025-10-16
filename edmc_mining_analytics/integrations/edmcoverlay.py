@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Sequence, Tuple
 
-from logging_utils import get_logger
-from state import MiningState, update_rpm
+from ..logging_utils import get_logger
+from ..state import MiningState, update_rpm
 
 try:  # pragma: no cover - runtime environment provides this module
     from EDMCOverlay import edmcoverlay as _overlay_module  # type: ignore[import]

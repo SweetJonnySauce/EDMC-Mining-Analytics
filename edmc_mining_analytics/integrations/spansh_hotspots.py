@@ -9,9 +9,9 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import requests
 
-from logging_utils import get_logger
-from state import MiningState
-from http_client import get_shared_session
+from ..logging_utils import get_logger
+from ..state import MiningState
+from ..http_client import get_shared_session
 
 _log = get_logger("spansh")
 _plugin_log = get_logger()

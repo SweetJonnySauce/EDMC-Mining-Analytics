@@ -16,7 +16,7 @@ try:
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
-from plugin import MiningAnalyticsPlugin
+from edmc_mining_analytics import MiningAnalyticsPlugin
 
 _plugin = MiningAnalyticsPlugin()
 

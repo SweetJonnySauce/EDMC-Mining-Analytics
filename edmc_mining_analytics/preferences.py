@@ -11,8 +11,8 @@ try:
 except ImportError:  # pragma: no cover - only available inside EDMC
     config = None  # type: ignore[assignment]
 
-from state import MiningState
-from logging_utils import get_logger
+from .state import MiningState
+from .logging_utils import get_logger
 
 
 _log = get_logger("preferences")

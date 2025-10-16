@@ -6,9 +6,10 @@ from typing import Callable, Optional
 
 import tkinter as tk
 import tkinter.font as tkfont
+from tkinter import ttk
 
-from tooltip import WidgetTooltip
-from mining_ui.theme_adapter import ThemeAdapter
+from edmc_mining_analytics.tooltip import WidgetTooltip
+from ..theme_adapter import ThemeAdapter
 
 
 @dataclass
@@ -21,10 +22,10 @@ class TopBarWidgets:
     reserve_warning_label: tk.Label
     version_label: tk.Label
     version_font: Optional[tkfont.Font]
-    hotspot_button: tk.Button
+    hotspot_button: ttk.Button
     hotspot_icon: Optional[tk.PhotoImage]
     hotspot_tooltip: WidgetTooltip
-    details_toggle: tk.Button
+    details_toggle: ttk.Button
 
 
 def build_top_bar(
@@ -99,6 +100,9 @@ def build_top_bar(
 
     control_cluster = tk.Frame(top_bar, highlightthickness=border, bd=border, relief=relief)
     control_cluster.grid(row=0, column=1, sticky="e")
+    control_cluster.columnconfigure(0, weight=0)
+    control_cluster.columnconfigure(1, weight=0)
+    control_cluster.columnconfigure(2, weight=0)
     theme.register(control_cluster)
 
     version_label = tk.Label(control_cluster, text=version_text, anchor="e", cursor="hand2")
@@ -110,33 +114,43 @@ def build_top_bar(
         version_label.configure(font=version_font)
     except tk.TclError:
         version_font = None
-    version_label.pack(side="left", padx=(4, 4))
+    version_label.grid(row=0, column=0, padx=(4, 4), pady=0, sticky="e")
     version_label.bind("<Button-1>", lambda _evt: _open_url(repo_url))
     theme.register(version_label)
 
     hotspot_icon = _load_hotspot_icon(plugin_dir)
-    hotspot_button = tk.Button(
+    hotspot_button = ttk.Button(
         control_cluster,
         image=hotspot_icon,
         command=on_hotspot,
         cursor="hand2",
-        width=24,
-        height=24,
     )
     if hotspot_icon is None:
         hotspot_button.configure(text="H", width=3)
     theme.style_button(hotspot_button)
-    hotspot_button.pack(side="left", padx=(0, 4))
+    hotspot_button.grid(row=0, column=1, padx=(0, 4), pady=0, sticky="e")
+    theme.enable_dark_theme_alternate(
+        hotspot_button,
+        geometry={"row": 0, "column": 1, "padx": (0, 4), "pady": 0, "sticky": "e"},
+        image=hotspot_icon,
+    )
     hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
+    hotspot_alt = theme.get_alternate_button(hotspot_button)
+    if hotspot_alt is not None:
+        WidgetTooltip(hotspot_alt, text="Nearby Hotspots")
 
-    details_toggle = tk.Button(
+    details_toggle = ttk.Button(
         control_cluster,
         text="",
         command=on_toggle_details,
         cursor="hand2",
     )
     theme.style_button(details_toggle)
-    details_toggle.pack(side="left")
+    details_toggle.grid(row=0, column=2, padx=0, pady=0, sticky="e")
+    theme.enable_dark_theme_alternate(
+        details_toggle,
+        geometry={"row": 0, "column": 2, "padx": 0, "pady": 0, "sticky": "e"},
+    )
 
     return TopBarWidgets(
         frame=top_bar,

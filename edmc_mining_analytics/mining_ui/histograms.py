@@ -14,7 +14,7 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
-from state import compute_percentage_stats
+from ..state import compute_percentage_stats
 
 
 def open_histogram_window(ui: "edmcmaMiningUI", commodity: str) -> None:
@@ -182,7 +182,7 @@ def refresh_histogram_windows(ui: "edmcmaMiningUI") -> None:
 
 
 def recompute_histograms(ui: "edmcmaMiningUI") -> None:
-    from state import recompute_histograms as _recompute  # local import to avoid circular deps
+    from ..state import recompute_histograms as _recompute  # local import to avoid circular deps
 
     _recompute(ui._state)
 

@@ -9,8 +9,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
 
-from http_client import get_shared_session
-from state import MiningState, resolve_commodity_display_name
+from ..http_client import get_shared_session
+from ..state import MiningState, resolve_commodity_display_name
 from .discord_image_manager import DiscordImageManager
 
 EMBED_COLOR = 0x1d9bf0

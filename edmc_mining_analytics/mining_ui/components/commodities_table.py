@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Sequence
 
 import tkinter as tk
 
-from mining_ui.theme_adapter import ThemeAdapter
+from ..theme_adapter import ThemeAdapter
 
 
 @dataclass

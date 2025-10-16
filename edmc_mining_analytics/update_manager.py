@@ -12,9 +12,9 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import requests
 
-from logging_utils import get_logger
-from edmc_mining_analytics_version import PLUGIN_VERSION, is_newer_version
-from http_client import get_shared_session
+from .logging_utils import get_logger
+from .edmc_mining_analytics_version import PLUGIN_VERSION, is_newer_version
+from .http_client import get_shared_session
 
 BACKUP_COUNT = 3
 DATETIME_FORMAT = "%Y-%m-%d-%H-%M-%S"

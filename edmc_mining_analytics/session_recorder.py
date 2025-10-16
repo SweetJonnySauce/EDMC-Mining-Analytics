@@ -9,14 +9,14 @@ from pathlib import Path
 import threading
 from typing import Any, Dict, Iterable, Optional
 
-from logging_utils import get_logger
-from state import (
+from .logging_utils import get_logger
+from .state import (
     MiningState,
     compute_percentage_stats,
     resolve_commodity_display_name,
     update_rpm,
 )
-from integrations.discord_summary import (
+from .integrations.discord_summary import (
     build_summary_message,
     build_test_message,
     format_duration,

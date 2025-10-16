@@ -8,9 +8,9 @@ from urllib import parse as urlparse
 
 import requests
 
-from http_client import get_shared_session
-from logging_utils import get_logger
-from state import MiningState
+from ..http_client import get_shared_session
+from ..logging_utils import get_logger
+from ..state import MiningState
 
 
 _log = get_logger("edsm")

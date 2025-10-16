@@ -6,8 +6,8 @@ from typing import Callable, Optional
 import tkinter as tk
 import tkinter.font as tkfont
 
-from tooltip import WidgetTooltip
-from mining_ui.theme_adapter import ThemeAdapter
+from edmc_mining_analytics.tooltip import WidgetTooltip
+from ..theme_adapter import ThemeAdapter
 
 
 @dataclass

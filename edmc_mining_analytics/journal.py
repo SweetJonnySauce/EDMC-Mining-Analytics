@@ -9,16 +9,16 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Callable, Optional, Tuple
 import threading
 
-from state import (
+from .state import (
     MiningState,
     register_refinement,
     recompute_histograms,
     reset_mining_state,
     update_rpm,
 )
-from session_recorder import SessionRecorder
-from logging_utils import get_logger
-from integrations.mining_edsm import EdsmClient
+from .session_recorder import SessionRecorder
+from .logging_utils import get_logger
+from .integrations.mining_edsm import EdsmClient
 
 try:  # pragma: no cover - only available inside EDMC
     from edmc_data import ship_name_map  # type: ignore[import]

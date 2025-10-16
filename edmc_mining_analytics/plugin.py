@@ -10,7 +10,7 @@ from typing import Optional
 
 import requests
 
-from http_client import get_shared_session
+from .http_client import get_shared_session
 try:
     import tkinter as tk
     from tkinter import ttk
@@ -27,22 +27,22 @@ try:
 except ImportError:  # pragma: no cover
     appname = "EDMarketConnector"  # type: ignore[assignment]
 
-from integrations.mining_inara import InaraClient
-from integrations.mining_edsm import EdsmClient
-from integrations.spansh_hotspots import SpanshHotspotClient
-from integrations.edmcoverlay import EdmcOverlayHelper
-from journal import JournalProcessor
-from preferences import PreferencesManager
-from session_recorder import SessionRecorder
-from state import MiningState, reset_mining_state
-from logging_utils import get_logger, set_log_level
-from edmc_mining_analytics_version import (
+from .integrations.mining_inara import InaraClient
+from .integrations.mining_edsm import EdsmClient
+from .integrations.spansh_hotspots import SpanshHotspotClient
+from .integrations.edmcoverlay import EdmcOverlayHelper
+from .journal import JournalProcessor
+from .preferences import PreferencesManager
+from .session_recorder import SessionRecorder
+from .state import MiningState, reset_mining_state
+from .logging_utils import get_logger, set_log_level
+from .edmc_mining_analytics_version import (
     PLUGIN_VERSION,
     is_newer_version,
     normalize_version,
 )
-from mining_analytics_ui import edmcmaMiningUI
-from update_manager import UpdateManager
+from .mining_analytics_ui import edmcmaMiningUI
+from .update_manager import UpdateManager
 
 
 PLUGIN_NAME = "EDMC Mining Analytics"

@@ -6,7 +6,7 @@ from typing import Optional
 
 import requests
 
-from edmc_mining_analytics_version import PLUGIN_VERSION
+from .edmc_mining_analytics_version import PLUGIN_VERSION
 
 try:  # pragma: no cover - only available inside EDMC
     from timeout_session import new_session  # type: ignore[import]

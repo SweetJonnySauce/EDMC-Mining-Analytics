@@ -10,7 +10,7 @@ try:
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
-from integrations.edmcoverlay import is_overlay_available
+from ..integrations.edmcoverlay import is_overlay_available
 
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI

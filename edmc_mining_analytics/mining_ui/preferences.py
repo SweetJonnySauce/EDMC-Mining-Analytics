@@ -14,7 +14,7 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
-from edmc_mining_analytics_version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
+from ..edmc_mining_analytics_version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
 from .preferences_discord import create_discord_section
 from .preferences_inara import create_inara_section
 from .preferences_overlay import create_overlay_section

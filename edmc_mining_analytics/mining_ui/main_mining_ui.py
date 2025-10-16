@@ -19,18 +19,18 @@ try:
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
-from tooltip import WidgetTooltip
-from debugging import apply_frame_debugging, collect_frames
-from state import MiningState, compute_percentage_stats, update_rpm, resolve_commodity_display_name
-from integrations.mining_inara import InaraClient
-from integrations.spansh_hotspots import (
+from edmc_mining_analytics.tooltip import WidgetTooltip
+from edmc_mining_analytics.debugging import apply_frame_debugging, collect_frames
+from ..state import MiningState, compute_percentage_stats, update_rpm, resolve_commodity_display_name
+from ..integrations.mining_inara import InaraClient
+from ..integrations.spansh_hotspots import (
     HotspotSearchResult,
     RingHotspot,
     SpanshHotspotClient,
 )
-from integrations.discord_image_manager import DiscordImageManager
-from integrations.edmcoverlay import determine_rpm_color
-from preferences import (
+from ..integrations.discord_image_manager import DiscordImageManager
+from ..integrations.edmcoverlay import determine_rpm_color
+from ..preferences import (
     clamp_bin_size,
     clamp_positive_int,
     clamp_rate_interval,
@@ -38,19 +38,19 @@ from preferences import (
     clamp_overlay_coordinate,
     clamp_overlay_interval,
 )
-from logging_utils import get_logger
-from edmc_mining_analytics_version import (
+from ..logging_utils import get_logger
+from ..edmc_mining_analytics_version import (
     PLUGIN_VERSION,
     PLUGIN_REPO_URL,
     display_version,
     is_newer_version,
 )
-from mining_ui.components.top_bar import build_top_bar
-from mining_ui.components.details_bar import build_details_bar
-from mining_ui.components.commodities_table import build_commodities_section
-from mining_ui.theme_adapter import ThemeAdapter
-from mining_ui.preferences import build_preferences as build_preferences_ui
-from mining_ui.histograms import (
+from .components.top_bar import build_top_bar
+from .components.details_bar import build_details_bar
+from .components.commodities_table import build_commodities_section
+from .theme_adapter import ThemeAdapter
+from .preferences import build_preferences as build_preferences_ui
+from .histograms import (
     close_histogram_window as _hist_close_window,
     close_histogram_windows as _hist_close_windows,
     draw_histogram as _hist_draw,
@@ -58,7 +58,7 @@ from mining_ui.histograms import (
     recompute_histograms as _hist_recompute,
     refresh_histogram_windows as _hist_refresh,
 )
-from mining_ui.hotspot_search_window import HotspotSearchController, HotspotSearchWindow
+from .hotspot_search_window import HotspotSearchController, HotspotSearchWindow
 
 _log = get_logger("ui")
 
@@ -114,7 +114,7 @@ class edmcmaMiningUI:
         self._rpm_display_value: float = 0.0
         self._rpm_target_value: float = 0.0
         self._rpm_animation_after: Optional[str] = None
-        self._pause_btn: Optional[tk.Button] = None
+        self._pause_btn: Optional[ttk.Button] = None
         self._commodities_headers: list[tk.Label] = []
         self._commodities_rows: list[list[tk.Label]] = []
         self._commodities_header_tooltips: list[WidgetTooltip] = []
@@ -180,7 +180,7 @@ class edmcmaMiningUI:
         self._materials_columns: Sequence[Dict[str, Any]] = ()
         self._hotspot_controller: Optional[HotspotSearchController] = None
         self._hotspot_window: Optional[HotspotSearchWindow] = None
-        self._hotspot_button: Optional[tk.Button] = None
+        self._hotspot_button: Optional[ttk.Button] = None
         self._hotspot_icon: Optional[tk.PhotoImage] = None
 
         self._prefs_bin_var: Optional[tk.IntVar] = None
@@ -343,14 +343,22 @@ class edmcmaMiningUI:
         button_bar.grid(row=2, column=0, sticky="e", padx=4, pady=(0, 6))
         self._theme.register(button_bar)
 
-        pause_btn = tk.Button(button_bar, text="Pause", command=self._toggle_pause, cursor="hand2")
+        pause_btn = ttk.Button(button_bar, text="Pause", command=self._toggle_pause, cursor="hand2")
         self._theme.style_button(pause_btn)
         pause_btn.grid(row=0, column=0, padx=(0, 4), pady=0)
+        self._theme.enable_dark_theme_alternate(
+            pause_btn,
+            geometry={"row": 0, "column": 0, "padx": (0, 4), "pady": 0},
+        )
         self._pause_btn = pause_btn
 
-        reset_btn = tk.Button(button_bar, text="Reset", command=self._on_reset, cursor="hand2")
+        reset_btn = ttk.Button(button_bar, text="Reset", command=self._on_reset, cursor="hand2")
         self._theme.style_button(reset_btn)
         reset_btn.grid(row=0, column=1, padx=0, pady=0)
+        self._theme.enable_dark_theme_alternate(
+            reset_btn,
+            geometry={"row": 0, "column": 1, "padx": 0, "pady": 0},
+        )
 
         self._materials_header = self._build_materials_section(frame)
 
@@ -858,10 +866,7 @@ class edmcmaMiningUI:
             self._apply_table_visibility()
         if self._details_toggle:
             label = "Hide Details" if visible else "Show Details"
-            try:
-                self._details_toggle.configure(text=label)
-            except Exception:
-                pass
+            self._theme.set_button_text(self._details_toggle, label)
 
     def _apply_table_visibility(self) -> None:
         self._apply_commodities_visibility()
@@ -1693,10 +1698,7 @@ class edmcmaMiningUI:
         if not button:
             return
         label = "Resume" if self._state.is_paused else "Pause"
-        try:
-            button.configure(text=label)
-        except tk.TclError:
-            pass
+        self._theme.set_button_text(button, label)
 
     def _on_rate_update_tick(self) -> None:
         self._rate_update_job = None

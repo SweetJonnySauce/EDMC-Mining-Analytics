@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable, List, Optional, Sequence
 
-from state import MiningState
+from ..state import MiningState
 
 
 class DiscordImageManager:

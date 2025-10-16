@@ -15,15 +15,15 @@ try:
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
-from logging_utils import get_logger
-from state import MiningState
-from integrations.spansh_hotspots import (
+from ..logging_utils import get_logger
+from ..state import MiningState
+from ..integrations.spansh_hotspots import (
     DEFAULT_RESULT_SIZE,
     HotspotSearchResult,
     RingHotspot,
     SpanshHotspotClient,
 )
-from mining_ui.theme_adapter import ThemeAdapter
+from .theme_adapter import ThemeAdapter
 
 _log = get_logger("ui")
 
