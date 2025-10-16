@@ -94,6 +94,21 @@ class ThemeAdapter:
                 continue
 
     def default_text_color(self) -> str:
+        """Return the appropriate default text color.
+
+        - On dark theme: use the plugin's fallback text color to ensure
+          readable contrast regardless of EDMC style lookups.
+        - On light/default theme: prefer the ttk style's label foreground or
+          the system text color so we match EDMC's native appearance (black).
+        """
+        if not self._is_dark_theme:
+            try:
+                val = self._style.lookup("TLabel", "foreground")
+            except tk.TclError:
+                val = None
+            if val:
+                return val
+            return "SystemWindowText"
         return self._fallback_text_fg
 
     def treeview_style(self) -> str:

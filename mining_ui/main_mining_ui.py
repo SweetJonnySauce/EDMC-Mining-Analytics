@@ -1284,11 +1284,12 @@ class edmcmaMiningUI:
             label.configure(background=bg)
         except tk.TclError:
             pass
-        if foreground is not None:
-            try:
-                label.configure(foreground=foreground)
-            except tk.TclError:
-                pass
+        # Always set a foreground: use provided color or theme default.
+        effective_fg = foreground if foreground is not None else self._theme.default_text_color()
+        try:
+            label.configure(foreground=effective_fg)
+        except tk.TclError:
+            pass
         if cursor:
             label.configure(cursor=cursor)
         else:
