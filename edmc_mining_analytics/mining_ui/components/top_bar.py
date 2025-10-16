@@ -135,9 +135,6 @@ def build_top_bar(
         image=hotspot_icon,
     )
     hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
-    hotspot_alt = theme.get_alternate_button(hotspot_button)
-    if hotspot_alt is not None:
-        WidgetTooltip(hotspot_alt, text="Nearby Hotspots")
 
     details_toggle = ttk.Button(
         control_cluster,

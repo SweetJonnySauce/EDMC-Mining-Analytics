@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 try:
     import tkinter as tk
@@ -128,16 +128,36 @@ class TreeTooltip:
 class WidgetTooltip:
     """Tooltip helper for standard Tk widgets."""
 
-    def __init__(self, widget: tk.Widget, text: Optional[str] = None, *, hover_predicate: Optional[Callable[[int, int], bool]] = None) -> None:
+    def __init__(
+        self,
+        widget: tk.Widget,
+        text: Optional[str] = None,
+        *,
+        hover_predicate: Optional[Callable[[int, int], bool]] = None,
+    ) -> None:
         self._widget = widget
         self._text: Optional[str] = text
         self._tip: Optional[tk.Toplevel] = None
         self._label: Optional[tk.Label] = None
         self._hover_predicate = hover_predicate
+        self._clones: List["WidgetTooltip"] = []
+        self._source: Optional["WidgetTooltip"] = None
 
         widget.bind("<Enter>", self._on_enter, add="+")
         widget.bind("<Leave>", self._on_leave, add="+")
         widget.bind("<Motion>", self._on_motion, add="+")
+        tooltips: List["WidgetTooltip"] = getattr(widget, "_edmcma_tooltips", [])
+        tooltips.append(self)
+        setattr(widget, "_edmcma_tooltips", tooltips)
+
+        if getattr(self, "_is_clone", False):
+            return
+
+        alternates: Tuple[tk.Widget, ...] = tuple(getattr(widget, "_edmcma_theme_alternates", ()))
+        for alternate in alternates:
+            clone = self._make_clone(alternate)
+            self._clones.append(clone)
+            clone._source = self
 
     def set_text(self, text: Optional[str]) -> None:
         self._text = text or None
@@ -148,6 +168,9 @@ class WidgetTooltip:
                 self._label.configure(text=self._text)
             except tk.TclError:
                 self._hide()
+        if self._source is None:
+            for clone in list(self._clones):
+                clone.set_text(text)
 
     def _on_enter(self, event: tk.Event) -> None:  # type: ignore[override]
         self._maybe_show(event)
@@ -157,6 +180,18 @@ class WidgetTooltip:
 
     def _on_leave(self, _event: tk.Event) -> None:  # type: ignore[override]
         self._hide()
+
+    def clone_to(self, widget: tk.Widget) -> "WidgetTooltip":
+        clone = self._make_clone(widget)
+        clone._source = self
+        self._clones.append(clone)
+        return clone
+
+    def _make_clone(self, widget: tk.Widget) -> "WidgetTooltip":
+        clone = object.__new__(WidgetTooltip)
+        setattr(clone, "_is_clone", True)
+        WidgetTooltip.__init__(clone, widget, text=self._text, hover_predicate=self._hover_predicate)
+        return clone
 
     def _show(self, x: int, y: int) -> None:
         text = self._text
