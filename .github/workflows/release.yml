@@ -29,9 +29,9 @@ jobs:
       - name: Prepare release folder
         run: |
           mkdir -p release/EDMC-Mining-Analytics
-          # Copy tracked (non-ignored) files into the package folder, excluding .github, .gitignore, and Markdown files
+          # Copy tracked (non-ignored) files into the package folder, excluding docs, tooling, and test assets
           git ls-files -z \
-            | python3 -c "import sys; data=sys.stdin.buffer.read().split(b'\0'); files=[f for f in data if f and not f.lower().endswith(b'.md') and not f.startswith(b'.github/') and f != b'.gitignore']; sys.stdout.buffer.write(b''.join(f + b'\0' for f in files))" \
+            | python3 -c "import sys; data=sys.stdin.buffer.read().split(b'\0'); files=[f for f in data if f and not f.lower().endswith(b'.md') and not f.lower().endswith(b'.code-workspace') and not f.startswith(b'.github/') and not f.startswith(b'tests/') and f not in (b'.gitignore', b'tests')]; sys.stdout.buffer.write(b''.join(f + b'\0' for f in files))" \
             | rsync -a --from0 --files-from=- ./ release/EDMC-Mining-Analytics/
 
       - name: Create archive
