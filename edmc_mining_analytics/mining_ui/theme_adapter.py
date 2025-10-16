@@ -61,6 +61,13 @@ class ThemeAdapter:
         self._update_button_alternate_visibility()
 
     def _detect_dark_theme(self) -> bool:
+        if self._theme is not None:
+            active = getattr(self._theme, "active", None)
+            if isinstance(active, int):
+                if active in (1, 2):
+                    return True
+                if active == 0:
+                    return False
         if self._config is None:
             return self._is_dark_theme
         for getter_name in ("get_int", "getint", "get"):
@@ -212,6 +219,7 @@ class ThemeAdapter:
             except Exception:
                 pass
             self._schedule_theme_refresh(button)
+            self._schedule_theme_activation_check(button)
         else:
             self._apply_button_style(button)
 
@@ -275,6 +283,7 @@ class ThemeAdapter:
         self._wrap_button_configure(button)
         self._schedule_theme_refresh(alternate)
         self._schedule_theme_refresh(button)
+        self._schedule_theme_activation_check(button)
         image_arg: Any = image if image is not None else getattr(alternate, "_edmcma_button_image", None)
         if image_arg is not None and not hasattr(image_arg, "configure"):
             image_arg = None
@@ -633,6 +642,23 @@ class ThemeAdapter:
     # ------------------------------------------------------------------
     # Misc utilities
     # ------------------------------------------------------------------
+    def _schedule_theme_activation_check(self, widget: tk.Widget) -> None:
+        if not self._theme or not self._widget_exists(widget):
+            return
+        active = getattr(self._theme, "active", None)
+        if isinstance(active, int):
+            dark_id = getattr(self._theme, "THEME_DARK", 1)
+            transparent_id = getattr(self._theme, "THEME_TRANSPARENT", 2)
+            default_id = getattr(self._theme, "THEME_DEFAULT", 0)
+            if active in (dark_id, transparent_id, default_id):
+                self._ensure_theme_latest(force=True)
+                return
+
+        try:
+            widget.after(100, lambda w=widget: self._schedule_theme_activation_check(w))
+        except tk.TclError:
+            pass
+
     def _apply_alternate_palette(self, alternate: tk.Widget) -> None:
         if not self._is_dark_theme:
             return
