@@ -230,7 +230,14 @@ class ThemeAdapter:
     ) -> None:
         if self._theme is None:
             return
-        if button in self._alternate_buttons:
+        existing = self._alternate_buttons.get(button)
+        if existing is not None:
+            # Refresh any stored geometry/content if caller re-invokes setup.
+            self._synchronize_button_content(button, existing)
+            self._copy_geometry_attributes(button, existing)
+            self._sync_button_state(button, existing)
+            self._schedule_theme_refresh(existing)
+            self._update_button_alternate_visibility()
             return
         try:
             parent = button.nametowidget(button.winfo_parent())
@@ -266,16 +273,13 @@ class ThemeAdapter:
 
         self._alternate_buttons[button] = alternate
         self._wrap_button_configure(button)
-        try:
-            self._theme.update(alternate)
-        except Exception:
-            pass
         self._schedule_theme_refresh(alternate)
         self._schedule_theme_refresh(button)
         image_arg: Any = image if image is not None else getattr(alternate, "_edmcma_button_image", None)
         if image_arg is not None and not hasattr(image_arg, "configure"):
             image_arg = None
         self._theme.button_bind(alternate, lambda _evt, btn=button: self._invoke_button(btn), image=image_arg)
+        self._update_button_alternate_visibility()
 
     def set_button_text(self, button: tk.Widget, text: str) -> None:
         try:
@@ -406,44 +410,32 @@ class ThemeAdapter:
     # ------------------------------------------------------------------
     # Alternate management
     # ------------------------------------------------------------------
-    def _schedule_theme_refresh(self, widget: tk.Widget) -> None:
-        if not self._theme:
-            return
-
-        def _refresh() -> None:
-            if not self._widget_exists(widget):
-                return
-            try:
-                self._theme.update(widget)
-            except Exception:
-                pass
-
-        try:
-            widget.after_idle(_refresh)
-        except tk.TclError:
-            _refresh()
-
     def _update_button_alternate_visibility(self) -> None:
-        if self._theme is not None:
-            return
         for button, alternate in list(self._alternate_buttons.items()):
-            if not self._widget_exists(button) or not self._widget_exists(alternate):
+            if not self._widget_exists(button):
                 self._alternate_buttons.pop(button, None)
                 continue
-            if button.winfo_manager() != "grid" or alternate.winfo_manager() != "grid":
+            if not self._widget_exists(alternate):
+                self._alternate_buttons.pop(button, None)
                 continue
+
             if self._is_dark_theme:
+                # Show alternate label, hide ttk button.
                 try:
                     button.grid_remove()
                 except tk.TclError:
                     pass
                 try:
                     alternate.grid()
-                    self._copy_geometry_attributes(button, alternate)
-                    self._schedule_theme_refresh(alternate)
                 except tk.TclError:
                     pass
+                self._synchronize_button_content(button, alternate)
+                self._copy_geometry_attributes(button, alternate)
+                self._sync_button_state(button, alternate)
+                self._apply_alternate_palette(alternate)
+                self._schedule_theme_refresh(alternate)
             else:
+                # Restore ttk button.
                 try:
                     alternate.grid_remove()
                 except tk.TclError:
@@ -452,6 +444,8 @@ class ThemeAdapter:
                     button.grid()
                 except tk.TclError:
                     pass
+                self._schedule_theme_refresh(button)
+
 
     def _copy_geometry_attributes(self, source: tk.Widget, target: tk.Widget) -> None:
         pad_x, pad_y = self._extract_padding(source)
@@ -605,6 +599,7 @@ class ThemeAdapter:
                     alternate.configure(font=font)
                 except tk.TclError:
                     pass
+        self._apply_alternate_palette(alternate)
         self._schedule_theme_refresh(alternate)
 
 
@@ -638,6 +633,33 @@ class ThemeAdapter:
     # ------------------------------------------------------------------
     # Misc utilities
     # ------------------------------------------------------------------
+    def _apply_alternate_palette(self, alternate: tk.Widget) -> None:
+        if not self._is_dark_theme:
+            return
+        palette: Dict[str, Any] = {}
+        if self._theme is not None:
+            current = getattr(self._theme, "current", None)
+            if isinstance(current, dict):
+                palette = current
+
+        background = palette.get("background", self._fallback_panel_bg)
+        foreground = palette.get("foreground", self._fallback_button_fg)
+        activebackground = palette.get("activebackground", self._fallback_button_active)
+        activeforeground = palette.get("activeforeground", self.highlight_text_color())
+        highlight = palette.get("highlight", self._fallback_button_border)
+
+        try:
+            alternate.configure(
+                background=background,
+                foreground=foreground,
+                activebackground=activebackground,
+                activeforeground=activeforeground,
+                highlightbackground=background,
+                highlightcolor=highlight,
+            )
+        except tk.TclError:
+            pass
+
     def _safe_cget(self, widget: tk.Widget, option: str) -> Any:
         try:
             return widget.cget(option)
