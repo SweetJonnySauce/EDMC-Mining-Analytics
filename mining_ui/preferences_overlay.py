@@ -28,7 +28,6 @@ def create_overlay_section(
     frame = tk.LabelFrame(parent, text="Overlay", font=heading_font)
     frame.columnconfigure(0, weight=0)
     frame.columnconfigure(1, weight=1)
-    ui._theme.register(frame)
 
     ui._prefs_overlay_enabled_var = tk.BooleanVar(
         master=frame,
@@ -41,7 +40,6 @@ def create_overlay_section(
         variable=ui._prefs_overlay_enabled_var,
     )
     overlay_enable_cb.grid(row=0, column=0, columnspan=2, sticky="w", pady=(6, 4))
-    ui._theme.register(overlay_enable_cb)
 
     x_label = tk.Label(
         frame,
@@ -49,7 +47,6 @@ def create_overlay_section(
         anchor="w",
     )
     x_label.grid(row=1, column=1, sticky="w", padx=(8, 0))
-    ui._theme.register(x_label)
 
     ui._prefs_overlay_x_var = tk.IntVar(master=frame, value=ui._state.overlay_anchor_x)
     ui._prefs_overlay_x_var.trace_add("write", ui._on_overlay_anchor_x_change)
@@ -61,7 +58,6 @@ def create_overlay_section(
         width=6,
     )
     overlay_x_spin.grid(row=1, column=0, sticky="w", padx=(0, 8))
-    ui._theme.register(overlay_x_spin)
 
     y_label = tk.Label(
         frame,
@@ -69,7 +65,6 @@ def create_overlay_section(
         anchor="w",
     )
     y_label.grid(row=2, column=1, sticky="w", padx=(8, 0), pady=(0, 2))
-    ui._theme.register(y_label)
 
     ui._prefs_overlay_y_var = tk.IntVar(master=frame, value=ui._state.overlay_anchor_y)
     ui._prefs_overlay_y_var.trace_add("write", ui._on_overlay_anchor_y_change)
@@ -81,7 +76,6 @@ def create_overlay_section(
         width=6,
     )
     overlay_y_spin.grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
-    ui._theme.register(overlay_y_spin)
 
     overlay_hint = tk.Label(
         frame,
@@ -91,7 +85,6 @@ def create_overlay_section(
         wraplength=380,
     )
     overlay_hint.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 4))
-    ui._theme.register(overlay_hint)
 
     interval_label = tk.Label(
         frame,
@@ -99,7 +92,6 @@ def create_overlay_section(
         anchor="w",
     )
     interval_label.grid(row=3, column=1, sticky="w", padx=(8, 0), pady=(0, 2))
-    ui._theme.register(interval_label)
 
     ui._prefs_overlay_interval_var = tk.IntVar(
         master=frame,
@@ -115,7 +107,6 @@ def create_overlay_section(
         width=6,
     )
     overlay_interval_spin.grid(row=3, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
-    ui._theme.register(overlay_interval_spin)
 
     ui._overlay_controls = [overlay_enable_cb, overlay_x_spin, overlay_y_spin, overlay_interval_spin]
     ui._overlay_hint_label = overlay_hint

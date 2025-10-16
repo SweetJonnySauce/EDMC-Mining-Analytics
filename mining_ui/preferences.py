@@ -22,7 +22,6 @@ from .preferences_overlay import create_overlay_section
 
 def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     frame = tk.Frame(parent, highlightthickness=0, bd=0)
-    ui._theme.register(frame)
 
     section_heading_font = tkfont.nametofont("TkDefaultFont").copy()
     section_heading_font.configure(weight="bold")
@@ -30,11 +29,9 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     header = tk.Frame(frame, highlightthickness=0, bd=0)
     header.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 4))
     header.columnconfigure(0, weight=1)
-    ui._theme.register(header)
 
     title = tk.Label(header, text="EDMC Mining Analytics", anchor="w", font=("TkDefaultFont", 10, "bold"))
     title.grid(row=0, column=0, sticky="w")
-    ui._theme.register(title)
 
     version_text = display_version(PLUGIN_VERSION)
     version_label = tk.Label(
@@ -45,7 +42,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         font=("TkDefaultFont", 9, "underline"),
     )
     version_label.grid(row=0, column=1, sticky="e")
-    ui._theme.register(version_label)
     version_label.configure(foreground="#1e90ff")
     version_label.bind("<Button-1>", lambda _evt: webbrowser.open(PLUGIN_REPO_URL))
 
@@ -56,7 +52,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     general_frame.grid(row=1, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))
     general_frame.columnconfigure(0, weight=0)
     general_frame.columnconfigure(1, weight=1)
-    ui._theme.register(general_frame)
 
     ui._prefs_bin_var = tk.IntVar(master=general_frame, value=ui._state.histogram_bin_size)
     ui._prefs_bin_var.trace_add("write", ui._on_histogram_bin_change)
@@ -75,7 +70,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         anchor="w",
     )
     bin_label.grid(row=0, column=0, sticky="w", padx=(80, 0), pady=(4, 2))
-    ui._theme.register(bin_label)
 
     rate_label = tk.Label(
         general_frame,
@@ -83,7 +77,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         anchor="w",
     )
     rate_label.grid(row=1, column=0, sticky="w", padx=(80, 0), pady=(0, 2))
-    ui._theme.register(rate_label)
 
     ui._prefs_rate_var = tk.IntVar(master=general_frame, value=ui._state.rate_interval_seconds)
     ui._prefs_rate_var.trace_add("write", ui._on_rate_interval_change)
@@ -107,7 +100,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         variable=ui._prefs_auto_unpause_var,
     )
     auto_unpause_cb.grid(row=2, column=0, columnspan=2, sticky="w", pady=(8, 4))
-    ui._theme.register(auto_unpause_cb)
 
     ui._prefs_warn_non_metallic_var = tk.BooleanVar(
         master=general_frame,
@@ -120,7 +112,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         variable=ui._prefs_warn_non_metallic_var,
     )
     warn_non_metallic_cb.grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 6))
-    ui._theme.register(warn_non_metallic_cb)
 
     reset_cap_btn = ttk.Button(
         general_frame,
@@ -128,7 +119,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         command=ui._on_reset_inferred_capacities,
     )
     reset_cap_btn.grid(row=4, column=0, sticky="w", pady=(0, 4))
-    ui._theme.register(reset_cap_btn)
     ui._reset_capacities_btn = reset_cap_btn
 
     overlay_frame = create_overlay_section(ui, frame, section_heading_font)
@@ -137,7 +127,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     refinement_frame = tk.LabelFrame(frame, text="Refinement Session Logging", font=section_heading_font)
     refinement_frame.grid(row=2, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))
     refinement_frame.columnconfigure(0, weight=1)
-    ui._theme.register(refinement_frame)
 
     refinement_desc = tk.Label(
         refinement_frame,
@@ -150,7 +139,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         wraplength=400,
     )
     refinement_desc.grid(row=0, column=0, sticky="w", pady=(4, 4))
-    ui._theme.register(refinement_desc)
 
     ui._prefs_refinement_window_var = tk.IntVar(
         master=refinement_frame, value=ui._state.refinement_lookback_seconds
@@ -158,7 +146,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     ui._prefs_refinement_window_var.trace_add("write", ui._on_refinement_window_change)
     refinement_window_container = tk.Frame(refinement_frame, highlightthickness=0, bd=0)
     refinement_window_container.grid(row=1, column=0, sticky="w", pady=(0, 4))
-    ui._theme.register(refinement_window_container)
 
     ttk.Spinbox(
         refinement_window_container,
@@ -175,12 +162,10 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         anchor="w",
     )
     refinement_seconds_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
-    ui._theme.register(refinement_seconds_label)
 
     thresholds_container = tk.Frame(refinement_frame, highlightthickness=0, bd=0)
     thresholds_container.grid(row=2, column=0, sticky="ew", pady=(6, 4))
     thresholds_container.columnconfigure((0, 1, 2), weight=1)
-    ui._theme.register(thresholds_container)
 
     thresholds_desc = tk.Label(
         thresholds_container,
@@ -188,13 +173,11 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         anchor="w",
     )
     thresholds_desc.grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 4))
-    ui._theme.register(thresholds_desc)
 
     ui._prefs_rpm_red_var = tk.IntVar(master=thresholds_container, value=ui._state.rpm_threshold_red)
     ui._prefs_rpm_red_var.trace_add("write", ui._on_rpm_threshold_change)
     red_label = tk.Label(thresholds_container, text="Red threshold")
     red_label.grid(row=1, column=0, sticky="w")
-    ui._theme.register(red_label)
     ttk.Spinbox(
         thresholds_container,
         from_=1,
@@ -207,7 +190,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     ui._prefs_rpm_yellow_var.trace_add("write", ui._on_rpm_threshold_change)
     yellow_label = tk.Label(thresholds_container, text="Yellow threshold")
     yellow_label.grid(row=1, column=1, sticky="w")
-    ui._theme.register(yellow_label)
     ttk.Spinbox(
         thresholds_container,
         from_=1,
@@ -220,7 +202,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     ui._prefs_rpm_green_var.trace_add("write", ui._on_rpm_threshold_change)
     green_label = tk.Label(thresholds_container, text="Green threshold")
     green_label.grid(row=1, column=2, sticky="w")
-    ui._theme.register(green_label)
     ttk.Spinbox(
         thresholds_container,
         from_=1,
@@ -232,7 +213,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     logging_frame = tk.LabelFrame(frame, text="Session Logging", font=section_heading_font)
     logging_frame.grid(row=2, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
     logging_frame.columnconfigure(0, weight=1)
-    ui._theme.register(logging_frame)
 
     logging_desc = tk.Label(
         logging_frame,
@@ -242,7 +222,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         wraplength=400,
     )
     logging_desc.grid(row=0, column=0, sticky="w", pady=(4, 4))
-    ui._theme.register(logging_desc)
 
     ui._prefs_session_logging_var = tk.BooleanVar(
         master=logging_frame,
@@ -255,12 +234,10 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         variable=ui._prefs_session_logging_var,
     )
     session_logging_cb.grid(row=1, column=0, sticky="w", pady=(0, 4))
-    ui._theme.register(session_logging_cb)
     ui._send_summary_cb = session_logging_cb
 
     retention_container = tk.Frame(logging_frame, highlightthickness=0, bd=0)
     retention_container.grid(row=2, column=0, sticky="w", pady=(4, 0))
-    ui._theme.register(retention_container)
 
     ui._prefs_session_retention_var = tk.IntVar(
         master=retention_container, value=ui._state.session_log_retention
@@ -275,15 +252,12 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         textvariable=ui._prefs_session_retention_var,
     )
     retention_spin.grid(row=0, column=0, sticky="w", padx=(0, 8))
-    ui._theme.register(retention_spin)
 
     retention_label = tk.Label(retention_container, text="Sessions to retain")
     retention_label.grid(row=0, column=1, sticky="w")
-    ui._theme.register(retention_label)
 
     session_path_container = tk.Frame(logging_frame, highlightthickness=0, bd=0)
     session_path_container.grid(row=3, column=0, sticky="w", pady=(6, 10))
-    ui._theme.register(session_path_container)
 
     copy_session_path_btn = ttk.Button(
         session_path_container,
@@ -291,7 +265,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         command=ui._copy_session_log_path,
     )
     copy_session_path_btn.grid(row=0, column=0, sticky="w")
-    ui._theme.register(copy_session_path_btn)
 
     ui._session_path_feedback = tk.StringVar(master=session_path_container, value="")
     session_path_feedback_label = tk.Label(
@@ -300,7 +273,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         anchor="w",
     )
     session_path_feedback_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
-    ui._theme.register(session_path_feedback_label)
 
     discord_frame = create_discord_section(ui, frame, section_heading_font)
     discord_frame.grid(row=3, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))

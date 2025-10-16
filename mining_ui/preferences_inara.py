@@ -23,7 +23,6 @@ def create_inara_section(
 
     frame = tk.LabelFrame(parent, text="Inara Links", font=heading_font)
     frame.columnconfigure(0, weight=1)
-    ui._theme.register(frame)
 
     inara_desc = tk.Label(
         frame,
@@ -33,13 +32,11 @@ def create_inara_section(
         wraplength=380,
     )
     inara_desc.grid(row=0, column=0, sticky="w", pady=(4, 6))
-    ui._theme.register(inara_desc)
 
     ui._prefs_inara_mode_var = tk.IntVar(master=frame, value=ui._state.inara_settings.search_mode)
     ui._prefs_inara_mode_var.trace_add("write", ui._on_inara_mode_change)
     mode_container = tk.Frame(frame, highlightthickness=0, bd=0)
     mode_container.grid(row=1, column=0, sticky="w", pady=(0, 6))
-    ui._theme.register(mode_container)
 
     ttk.Radiobutton(
         mode_container,
