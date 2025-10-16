@@ -669,22 +669,69 @@ class ThemeAdapter:
                 palette = current
 
         background = palette.get("background", self._fallback_panel_bg)
-        foreground = palette.get("foreground", self._fallback_button_fg)
         activebackground = palette.get("activebackground", self._fallback_button_active)
-        activeforeground = palette.get("activeforeground", self.highlight_text_color())
         highlight = palette.get("highlight", self._fallback_button_border)
 
         try:
             alternate.configure(
                 background=background,
-                foreground=foreground,
                 activebackground=activebackground,
-                activeforeground=activeforeground,
                 highlightbackground=background,
                 highlightcolor=highlight,
             )
         except tk.TclError:
             pass
+
+        self._apply_alternate_text_colors(alternate, palette)
+
+    def _apply_alternate_text_colors(
+        self,
+        alternate: tk.Widget,
+        palette: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        if not self._is_dark_theme:
+            return
+        if palette is None:
+            palette = {}
+            if self._theme is not None:
+                current = getattr(self._theme, "current", None)
+                if isinstance(current, dict):
+                    palette = current
+
+        foreground, activeforeground, disabledforeground = self._resolve_alternate_text_colors(palette)
+        for option, value in (
+            ("foreground", foreground),
+            ("activeforeground", activeforeground),
+            ("disabledforeground", disabledforeground),
+        ):
+            try:
+                alternate.configure(**{option: value})
+            except tk.TclError:
+                continue
+
+    def _resolve_alternate_text_colors(self, palette: Dict[str, Any]) -> tuple[str, str, str]:
+        fallback = self.button_foreground_color()
+
+        foreground = palette.get("foreground")
+        if not isinstance(foreground, str) or not foreground.strip():
+            foreground = fallback
+
+        activeforeground = palette.get("activeforeground")
+        if not isinstance(activeforeground, str) or not activeforeground.strip():
+            activeforeground = foreground
+
+        disabledforeground = palette.get("disabledforeground")
+        if not isinstance(disabledforeground, str) or not disabledforeground.strip():
+            disabledforeground = foreground
+
+        return foreground, activeforeground, disabledforeground
+
+    def _apply_post_theme_update_adjustments(self, widget: tk.Widget) -> None:
+        if not self._is_dark_theme:
+            return
+        if getattr(widget, "_edmcma_theme_master", None) is None:
+            return
+        self._apply_alternate_text_colors(widget)
 
     def _safe_cget(self, widget: tk.Widget, option: str) -> Any:
         try:
@@ -703,6 +750,8 @@ class ThemeAdapter:
                 self._theme.update(widget)
             except Exception:
                 pass
+            else:
+                self._apply_post_theme_update_adjustments(widget)
 
         try:
             widget.after_idle(_refresh)
