@@ -59,6 +59,9 @@ class ThemeAdapter:
         self._restyle_buttons()
         self._restyle_checkbuttons()
         self._update_button_alternate_visibility()
+        if self._is_dark_theme:
+            self._refresh_alternate_palettes()
+            self._schedule_alternate_palette_refresh()
 
     def _detect_dark_theme(self) -> bool:
         if self._theme is not None:
@@ -455,6 +458,20 @@ class ThemeAdapter:
                     pass
                 self._schedule_theme_refresh(button)
 
+    def _refresh_alternate_palettes(self) -> None:
+        for alternate in list(self._alternate_buttons.values()):
+            if not self._widget_exists(alternate):
+                continue
+            self._apply_alternate_palette(alternate)
+
+    def _schedule_alternate_palette_refresh(self) -> None:
+        for alternate in list(self._alternate_buttons.values()):
+            if not self._widget_exists(alternate):
+                continue
+            try:
+                alternate.after_idle(lambda widget=alternate: self._apply_alternate_palette(widget))
+            except tk.TclError:
+                self._apply_alternate_palette(alternate)
 
     def _copy_geometry_attributes(self, source: tk.Widget, target: tk.Widget) -> None:
         pad_x, pad_y = self._extract_padding(source)
@@ -731,7 +748,7 @@ class ThemeAdapter:
             return
         if getattr(widget, "_edmcma_theme_master", None) is None:
             return
-        self._apply_alternate_text_colors(widget)
+        self._apply_alternate_palette(widget)
 
     def _safe_cget(self, widget: tk.Widget, option: str) -> Any:
         try:
