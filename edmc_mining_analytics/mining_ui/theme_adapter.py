@@ -729,16 +729,22 @@ class ThemeAdapter:
     def _resolve_alternate_text_colors(self, palette: Dict[str, Any]) -> tuple[str, str, str]:
         fallback = self.button_foreground_color()
 
-        foreground = palette.get("foreground")
-        if not isinstance(foreground, str) or not foreground.strip():
+        raw_foreground = palette.get("foreground")
+        if isinstance(raw_foreground, str) and raw_foreground.strip():
+            foreground = raw_foreground.strip()
+        else:
             foreground = fallback
 
-        activeforeground = palette.get("activeforeground")
-        if not isinstance(activeforeground, str) or not activeforeground.strip():
+        raw_active = palette.get("activeforeground")
+        if isinstance(raw_active, str) and raw_active.strip():
+            activeforeground = raw_active.strip()
+        else:
             activeforeground = foreground
 
-        disabledforeground = palette.get("disabledforeground")
-        if not isinstance(disabledforeground, str) or not disabledforeground.strip():
+        raw_disabled = palette.get("disabledforeground")
+        if isinstance(raw_disabled, str) and raw_disabled.strip():
+            disabledforeground = raw_disabled.strip()
+        else:
             disabledforeground = foreground
 
         return foreground, activeforeground, disabledforeground
@@ -749,6 +755,19 @@ class ThemeAdapter:
         if getattr(widget, "_edmcma_theme_master", None) is None:
             return
         self._apply_alternate_palette(widget)
+
+    def _current_theme_color(self, key: str) -> Optional[str]:
+        if self._theme is None:
+            return None
+        current = getattr(self._theme, "current", None)
+        if not isinstance(current, dict):
+            return None
+        value = current.get(key)
+        if isinstance(value, str):
+            stripped = value.strip()
+            if stripped:
+                return stripped
+        return None
 
     def _safe_cget(self, widget: tk.Widget, option: str) -> Any:
         try:
@@ -919,6 +938,19 @@ class ThemeAdapter:
         return self._fallback_button_bg
 
     def button_foreground_color(self) -> str:
+        if self._is_dark_theme:
+            theme_color = self._current_theme_color("foreground")
+            if theme_color:
+                return theme_color
+            if self._config is not None:
+                get_str = getattr(self._config, "get_str", None)
+                if callable(get_str):
+                    try:
+                        value = get_str("dark_text")  # type: ignore[misc]
+                    except Exception:
+                        value = None
+                    if isinstance(value, str) and value.strip():
+                        return value.strip()
         return self._fallback_button_fg
 
     def button_active_background_color(self) -> str:
