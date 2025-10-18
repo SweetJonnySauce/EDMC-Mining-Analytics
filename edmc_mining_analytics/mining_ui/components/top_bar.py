@@ -10,6 +10,7 @@ from tkinter import ttk
 
 from edmc_mining_analytics.tooltip import WidgetTooltip
 from ..theme_adapter import ThemeAdapter
+from .test_button import ButtonCallback, TestButtonWidgets, create_test_button
 
 
 @dataclass
@@ -26,6 +27,7 @@ class TopBarWidgets:
     hotspot_icon: Optional[tk.PhotoImage]
     hotspot_tooltip: WidgetTooltip
     details_toggle: ttk.Button
+    test_button: TestButtonWidgets
 
 
 def build_top_bar(
@@ -39,6 +41,7 @@ def build_top_bar(
     version_text: str,
     on_hotspot: Callable[[], None],
     on_toggle_details: Callable[[], None],
+    on_test: ButtonCallback,
     warning_color: str,
 ) -> TopBarWidgets:
     top_bar = tk.Frame(parent, highlightthickness=border, bd=border, relief=relief)
@@ -103,6 +106,7 @@ def build_top_bar(
     control_cluster.columnconfigure(0, weight=0)
     control_cluster.columnconfigure(1, weight=0)
     control_cluster.columnconfigure(2, weight=0)
+    control_cluster.columnconfigure(3, weight=0)
     theme.register(control_cluster)
 
     version_label = tk.Label(control_cluster, text=version_text, anchor="e", cursor="hand2")
@@ -149,6 +153,12 @@ def build_top_bar(
         geometry={"row": 0, "column": 2, "padx": 0, "pady": 0, "sticky": "e"},
     )
 
+    test_button_widgets = create_test_button(
+        control_cluster,
+        command=on_test,
+    )
+    test_button_widgets.grid(row=0, column=3, padx=(4, 0), pady=0, sticky="e")
+
     return TopBarWidgets(
         frame=top_bar,
         status_var=status_var,
@@ -162,6 +172,7 @@ def build_top_bar(
         hotspot_icon=hotspot_icon,
         hotspot_tooltip=hotspot_tooltip,
         details_toggle=details_toggle,
+        test_button=test_button_widgets,
     )
 
 
