@@ -47,7 +47,6 @@ from ..edmc_mining_analytics_version import (
 )
 from .components.button_factory import ButtonType, create_theme_button
 from .components.top_bar import TopBarWidgets, build_top_bar
-from .components.test_button import TestButtonWidgets
 from .components.details_bar import build_details_bar
 from .components.commodities_table import build_commodities_section
 from .theme_adapter import ThemeAdapter
@@ -184,7 +183,6 @@ class edmcmaMiningUI:
         self._hotspot_window: Optional[HotspotSearchWindow] = None
         self._hotspot_button: Optional[ttk.Button] = None
         self._hotspot_icon: Optional[tk.PhotoImage] = None
-        self._test_button: Optional[TestButtonWidgets] = None
 
         self._prefs_bin_var: Optional[tk.IntVar] = None
         self._prefs_rate_var: Optional[tk.IntVar] = None
@@ -274,7 +272,6 @@ class edmcmaMiningUI:
             version_text=version_text,
             on_hotspot=self._handle_hotspot_button,
             on_toggle_details=self._toggle_details,
-            on_test=self._handle_test_button,
             warning_color=NON_METAL_WARNING_COLOR,
         )
         self._status_var = top_widgets.status_var
@@ -288,7 +285,6 @@ class edmcmaMiningUI:
         self._hotspot_icon = top_widgets.hotspot_icon
         self._hotspot_tooltip = top_widgets.hotspot_tooltip
         self._details_toggle = top_widgets.details_toggle
-        self._test_button = top_widgets.test_button
 
         details_widgets = build_details_bar(
             frame,
@@ -846,9 +842,6 @@ class edmcmaMiningUI:
             controller=self._hotspot_controller,
             on_close=self._on_hotspot_window_closed,
         )
-
-    def _handle_test_button(self, event: Optional[tk.Event] = None) -> None:
-        _log.info("Test button clicked")
 
     def _on_hotspot_window_closed(self, window: HotspotSearchWindow) -> None:
         if self._hotspot_window is window:
