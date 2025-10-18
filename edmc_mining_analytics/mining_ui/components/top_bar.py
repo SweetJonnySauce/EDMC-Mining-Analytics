@@ -135,6 +135,34 @@ def build_top_bar(
         geometry={"row": 0, "column": 1, "padx": (0, 4), "pady": 0, "sticky": "e"},
         image=hotspot_icon,
     )
+    alternate_hotspot = theme.get_alternate_button(hotspot_button)
+    if alternate_hotspot is not None:
+
+        def _apply_hotspot_outline(_evt: Optional[tk.Event] = None) -> None:
+            if theme.is_dark_theme:
+                try:
+                    alternate_hotspot.configure(
+                        highlightthickness=1,
+                        highlightbackground="white",
+                        highlightcolor="white",
+                        bd=1,
+                        relief=tk.SOLID,
+                    )
+                except tk.TclError:
+                    pass
+            else:
+                try:
+                    alternate_hotspot.configure(
+                        highlightthickness=0,
+                        bd=0,
+                        relief=tk.FLAT,
+                    )
+                except tk.TclError:
+                    pass
+
+        alternate_hotspot.bind("<<ThemeChanged>>", _apply_hotspot_outline, add="+")
+        _apply_hotspot_outline()
+
     hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
 
     details_toggle = create_theme_button(
