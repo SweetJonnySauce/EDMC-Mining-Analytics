@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
-import re
-
 from typing import Any, Dict, Optional
 from weakref import WeakSet
 
@@ -65,12 +62,6 @@ class ThemeAdapter:
         if not force and is_dark == self._is_dark_theme:
             return
 
-        _logger.debug(
-            "TEMPDEBUG Theme restyle requested; target_dark=%s force=%s previous_dark=%s",
-            is_dark,
-            force,
-            self._is_dark_theme,
-        )
         self._apply_palette(is_dark)
         self._is_dark_theme = is_dark
 
@@ -125,10 +116,6 @@ class ThemeAdapter:
             self._fallback_button_border = "#ffc266"
             self._fallback_link_fg = "#268bd2"
             self._configure_dark_button_style()
-            _logger.debug(
-                "TEMPDEBUG Applying dark palette; button text color set to %s",
-                self._describe_color(dark_text),
-            )
         else:
             self._fallback_panel_bg = "#0d0d0d"
             self._fallback_text_fg = "#f4bb60"
@@ -142,10 +129,6 @@ class ThemeAdapter:
             self._fallback_button_active = "#ffb84a"
             self._fallback_button_border = "#ffc266"
             self._fallback_link_fg = "#0645ad"
-            _logger.debug(
-                "TEMPDEBUG Applying default palette; button text color set to %s",
-                self._describe_color(self._fallback_button_fg),
-            )
 
     def _resolve_dark_text(self) -> str:
         if self._config is None:
@@ -319,11 +302,6 @@ class ThemeAdapter:
             image_arg = None
         self._theme.button_bind(alternate, lambda _evt, btn=button: self._invoke_button(btn), image=image_arg)
         self._update_button_alternate_visibility()
-        _logger.debug(
-            "TEMPDEBUG Dark-theme alternate bound for button %s (alternate %s)",
-            self._describe_widget(button),
-            self._describe_widget(alternate),
-        )
 
     def set_button_text(self, button: tk.Widget, text: str) -> None:
         try:
@@ -669,9 +647,6 @@ class ThemeAdapter:
                     alternate.configure(font=font)
                 except tk.TclError:
                     pass
-        _logger.debug(
-            "TEMPDEBUG Mirrored options %s to alternate of %s", options, self._describe_widget(button)
-        )
         self._apply_alternate_palette(alternate)
         self._schedule_theme_refresh(alternate)
 
@@ -700,12 +675,7 @@ class ThemeAdapter:
 
     def _log_ignored_option(self, button: tk.Widget, options: Dict[str, Any]) -> None:
         option_names = ", ".join(sorted(options.keys())) if options else "<none>"
-        _logger.debug(
-            "TEMPDEBUG Ignoring unsupported options on button %s (%s) caller=%s",
-            self._describe_widget(button),
-            option_names,
-            self._caller_summary(skip=3),
-        )
+        return
 
 
     def _extract_padding(self, widget: tk.Widget) -> tuple[int, int]:
@@ -778,15 +748,7 @@ class ThemeAdapter:
         except tk.TclError:
             pass
 
-        text_colors = self._apply_alternate_text_colors(alternate, palette)
-        _logger.debug(
-            "TEMPDEBUG Alternate palette applied to %s with background=%s activebackground=%s highlight=%s text=%s",
-            getattr(alternate, "_name", repr(alternate)),
-            self._describe_color(background),
-            self._describe_color(activebackground),
-            self._describe_color(highlight),
-            self._describe_color(text_colors[0]) if text_colors else "Unknown",
-        )
+        self._apply_alternate_text_colors(alternate, palette)
 
     def _apply_alternate_text_colors(
         self,
@@ -827,12 +789,6 @@ class ThemeAdapter:
             foreground = raw_foreground.strip()
         else:
             foreground = fallback
-        _logger.debug(
-            "TEMPDEBUG Alternate button text color resolved to %s for %s",
-            self._describe_color(foreground),
-            self._describe_widget(getattr(self, "_current_button", None)),
-        )
-
         raw_active = palette.get("activeforeground")
         if isinstance(raw_active, str) and raw_active.strip():
             activeforeground = raw_active.strip()
@@ -880,11 +836,6 @@ class ThemeAdapter:
         def _refresh() -> None:
             if not self._widget_exists(widget):
                 return
-            _logger.debug(
-                "TEMPDEBUG _theme.update invoked for %s (requested from %s)",
-                self._describe_widget(widget),
-                self._caller_summary(skip=3),
-            )
             try:
                 self._theme.update(widget)
             except Exception:
@@ -911,18 +862,10 @@ class ThemeAdapter:
             pass
 
     def _restyle_buttons(self) -> None:
-        _logger.debug(
-            "TEMPDEBUG Restyling %d buttons for %s theme",
-            len(self._buttons),
-            "dark" if self._is_dark_theme else "default",
-        )
         for button in list(self._buttons):
             if not self._widget_exists(button):
                 self._buttons.discard(button)
                 continue
-            _logger.debug(
-                "TEMPDEBUG Scheduling restyle for button %s", self._describe_widget(button)
-            )
             if self._theme is not None:
                 self._schedule_theme_refresh(button)
             else:
@@ -1049,29 +992,13 @@ class ThemeAdapter:
         return self._fallback_button_bg
 
     def button_foreground_color(self) -> str:
-        target = self._describe_widget(getattr(self, "_current_button", None))
         if self._is_dark_theme:
             theme_color = self._current_theme_color("foreground")
             if theme_color:
-                _logger.debug(
-                    "TEMPDEBUG button_foreground_color using theme palette color %s for %s",
-                    self._describe_color(theme_color),
-                    target,
-                )
                 return theme_color
             config_color = self._get_config_dark_text()
             if config_color:
-                _logger.debug(
-                    "TEMPDEBUG button_foreground_color using config override color %s for %s",
-                    self._describe_color(config_color),
-                    target,
-                )
                 return config_color
-            _logger.debug(
-                "TEMPDEBUG button_foreground_color falling back to %s for %s",
-                self._describe_color(self._fallback_button_fg),
-                target,
-            )
             return self._fallback_button_fg
         return self._fallback_button_fg
 
@@ -1092,54 +1019,6 @@ class ThemeAdapter:
             return "#000000"
         return "#ffffff"
 
-    def _widget_label(self, widget: Optional[tk.Widget]) -> str:
-        if widget is None:
-            return ""
-        text = self._safe_cget(widget, "text")
-        if isinstance(text, str):
-            stripped = text.strip()
-            if stripped:
-                return stripped
-        textvariable = self._safe_cget(widget, "textvariable")
-        if isinstance(textvariable, str) and textvariable.strip():
-            value: Any = None
-            try:
-                value = widget.getvar(textvariable)
-            except tk.TclError:
-                pass
-            if value is None and hasattr(widget, "tk"):
-                try:
-                    value = widget.tk.globalgetvar(textvariable)
-                except tk.TclError:
-                    value = None
-            if value is not None:
-                value_str = str(value).strip()
-                if value_str:
-                    return value_str
-        return ""
-
-    def _describe_widget(self, widget: Optional[tk.Widget]) -> str:
-        if widget is None:
-            return "<unknown>"
-        label = self._widget_label(widget)
-        name = getattr(widget, "_name", repr(widget))
-        if label and label != name:
-            return f"{label} ({name})"
-        return name
-
-    @staticmethod
-    def _caller_summary(*, skip: int = 2) -> str:
-        try:
-            stack = inspect.stack()
-        except Exception:
-            return "<unknown>"
-        index = skip if len(stack) > skip else -1
-        frame_info = stack[index]
-        module = frame_info.frame.f_globals.get("__name__", "<module>")
-        function = frame_info.function
-        line = frame_info.lineno
-        return f"{module}.{function}:{line}"
-
     def _get_config_dark_text(self) -> Optional[str]:
         if self._config is None:
             return None
@@ -1156,47 +1035,6 @@ class ThemeAdapter:
                 if stripped:
                     return stripped
         return None
-
-    @staticmethod
-    def _describe_color(value: Optional[str]) -> str:
-        if not value:
-            return "Unknown"
-        normalized = value.strip().lower()
-        name_map = {
-            "#ff8000": "Orange",
-            "#f19a29": "Orange",
-            "#ffb84a": "Light Orange",
-            "#f4bb60": "Gold",
-            "#f6e3c0": "Beige",
-            "#f5f5f5": "White",
-            "#ffffff": "White",
-            "systemwindowtext": "System Text",
-            "systembuttonface": "System Button",
-            "systemwindow": "System Window",
-            "systemwindowbodycolor": "System Window",
-            "systemhighlight": "System Highlight",
-            "systemhighlighttext": "System Highlight Text",
-            "#000000": "Black",
-            "#1a1005": "Brown",
-        }
-        if normalized in name_map:
-            return name_map[normalized]
-        if normalized.startswith("#") and re.fullmatch(r"#[0-9a-f]{6}", normalized):
-            r = int(normalized[1:3], 16)
-            g = int(normalized[3:5], 16)
-            b = int(normalized[5:7], 16)
-            if max(r, g, b) == 0:
-                return "Black"
-            if min(r, g, b) > 220:
-                return "White"
-            if r >= g and r >= b:
-                if g >= b:
-                    return "Orange" if r - g < 80 else "Red"
-                return "Red"
-            if g >= r and g >= b:
-                return "Green"
-            return "Blue"
-        return "Unknown"
 
 
 __all__ = ["ThemeAdapter"]
