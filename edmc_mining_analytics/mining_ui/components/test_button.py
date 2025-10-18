@@ -54,13 +54,17 @@ def create_test_button(
 ) -> TestButtonWidgets:
     """Create a test button that mirrors EDMC's update button setup."""
 
-    button = ttk.Button(
-        parent,
-        name="edmcma_test_button",
-        text=text,
-        width=width,
-        cursor="hand2",
-    )
+    button_kwargs: Dict[str, Any] = {
+        "name": "edmcma_test_button",
+        "text": text,
+        "width": width,
+    }
+
+    if edmc_theme is None:
+        # Avoid tripping EDMC's theme updater, which doesn't expect ttk buttons with a custom cursor.
+        button_kwargs["cursor"] = "hand2"
+
+    button = ttk.Button(parent, **button_kwargs)
 
     themed_button = tk.Label(
         parent,
