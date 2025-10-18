@@ -237,16 +237,13 @@ class ThemeAdapter:
             self._apply_button_style(button)
 
     def style_checkbox(self, checkbox: tk.Widget) -> None:
-        """Register the checkbox so EDMC or Tk defaults control its palette."""
-
         self.register(checkbox)
         self._checkbuttons.add(checkbox)
 
-        if self._theme is not None:
-            try:
-                self._theme.register(checkbox)
-            except Exception:
-                pass
+        if isinstance(checkbox, tk.Checkbutton):
+            self._remember_checkbox_defaults(checkbox)
+            checkbox.bind("<<ThemeChanged>>", lambda _e, cb=checkbox: self._apply_checkbox_border_adjustment(cb), add="+")
+            self._apply_checkbox_border_adjustment(checkbox)
 
     def enable_dark_theme_alternate(
         self,
@@ -881,6 +878,9 @@ class ThemeAdapter:
         for checkbox in list(self._checkbuttons):
             if not self._widget_exists(checkbox):
                 self._checkbuttons.discard(checkbox)
+                continue
+            if isinstance(checkbox, tk.Checkbutton):
+                self._apply_checkbox_border_adjustment(checkbox)
 
     def _remember_button_defaults(self, button: tk.Widget) -> None:
         if getattr(button, "_edmcma_button_defaults", None) is not None:
@@ -905,6 +905,17 @@ class ThemeAdapter:
                 continue
         button._edmcma_button_defaults = snapshot  # type: ignore[attr-defined]
 
+    def _remember_checkbox_defaults(self, checkbox: tk.Checkbutton) -> None:
+        if getattr(checkbox, "_edmcma_checkbox_defaults", None) is not None:
+            return
+        snapshot: dict[str, Any] = {}
+        for option in ("highlightthickness", "highlightbackground", "highlightcolor", "bd"):
+            try:
+                snapshot[option] = checkbox.cget(option)
+            except tk.TclError:
+                continue
+        checkbox._edmcma_checkbox_defaults = snapshot  # type: ignore[attr-defined]
+
     @staticmethod
     def _apply_widget_options(widget: tk.Widget, options: dict[str, Any]) -> None:
         for option, value in options.items():
@@ -912,6 +923,26 @@ class ThemeAdapter:
                 widget.configure(**{option: value})
             except tk.TclError:
                 continue
+
+    def _apply_checkbox_border_adjustment(self, checkbox: tk.Checkbutton) -> None:
+        defaults: dict[str, Any] | None = getattr(checkbox, "_edmcma_checkbox_defaults", None)
+        if defaults is None:
+            return
+        if self.is_dark_theme:
+            try:
+                checkbox.configure(highlightthickness=0, bd=0)
+            except tk.TclError:
+                pass
+        else:
+            restore: dict[str, Any] = {}
+            for option in ("highlightthickness", "bd", "highlightbackground", "highlightcolor"):
+                if option in defaults:
+                    restore[option] = defaults[option]
+            if restore:
+                try:
+                    checkbox.configure(**restore)
+                except tk.TclError:
+                    pass
 
     def _invoke_button(self, button: tk.Widget) -> None:
         try:
