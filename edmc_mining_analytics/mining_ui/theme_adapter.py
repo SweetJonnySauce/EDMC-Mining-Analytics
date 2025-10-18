@@ -242,8 +242,8 @@ class ThemeAdapter:
 
         if isinstance(checkbox, tk.Checkbutton):
             self._remember_checkbox_defaults(checkbox)
-            checkbox.bind("<<ThemeChanged>>", lambda _e, cb=checkbox: self._apply_checkbox_border_adjustment(cb), add="+")
-            self._apply_checkbox_border_adjustment(checkbox)
+            checkbox.bind("<<ThemeChanged>>", lambda _e, cb=checkbox: self._apply_checkbox_adjustments(cb), add="+")
+            self._apply_checkbox_adjustments(checkbox)
 
     def enable_dark_theme_alternate(
         self,
@@ -880,7 +880,7 @@ class ThemeAdapter:
                 self._checkbuttons.discard(checkbox)
                 continue
             if isinstance(checkbox, tk.Checkbutton):
-                self._apply_checkbox_border_adjustment(checkbox)
+                self._apply_checkbox_adjustments(checkbox)
 
     def _remember_button_defaults(self, button: tk.Widget) -> None:
         if getattr(button, "_edmcma_button_defaults", None) is not None:
@@ -909,7 +909,7 @@ class ThemeAdapter:
         if getattr(checkbox, "_edmcma_checkbox_defaults", None) is not None:
             return
         snapshot: dict[str, Any] = {}
-        for option in ("highlightthickness", "highlightbackground", "highlightcolor", "bd"):
+        for option in ("highlightthickness", "highlightbackground", "highlightcolor", "bd", "selectcolor"):
             try:
                 snapshot[option] = checkbox.cget(option)
             except tk.TclError:
@@ -924,18 +924,18 @@ class ThemeAdapter:
             except tk.TclError:
                 continue
 
-    def _apply_checkbox_border_adjustment(self, checkbox: tk.Checkbutton) -> None:
+    def _apply_checkbox_adjustments(self, checkbox: tk.Checkbutton) -> None:
         defaults: dict[str, Any] | None = getattr(checkbox, "_edmcma_checkbox_defaults", None)
         if defaults is None:
             return
         if self.is_dark_theme:
             try:
-                checkbox.configure(highlightthickness=0, bd=0)
+                checkbox.configure(highlightthickness=0, bd=0, selectcolor="black")
             except tk.TclError:
                 pass
         else:
             restore: dict[str, Any] = {}
-            for option in ("highlightthickness", "bd", "highlightbackground", "highlightcolor"):
+            for option in ("highlightthickness", "bd", "highlightbackground", "highlightcolor", "selectcolor"):
                 if option in defaults:
                     restore[option] = defaults[option]
             if restore:
