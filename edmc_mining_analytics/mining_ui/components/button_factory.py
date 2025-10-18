@@ -1,8 +1,8 @@
-"""Factory helpers for creating buttons that cooperate with EDMC's theme."""
+"""Factory helpers for creating widgets that cooperate with EDMC's theme."""
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 try:  # pragma: no cover - only available inside EDMC runtime
     import tkinter as tk
@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover
     edmc_theme = None  # type: ignore[assignment]
 
 ButtonType = Union[tk.Button, ttk.Button]
+CheckboxType = Union[tk.Checkbutton, ttk.Checkbutton]
 
 
 def create_theme_button(
@@ -56,4 +57,18 @@ def create_theme_button(
     return button
 
 
-__all__ = ["ButtonType", "create_theme_button"]
+def create_theme_checkbox(parent: tk.Widget, **options: Any) -> CheckboxType:
+    """Create a checkbox that mirrors EDMC's native styling where possible."""
+
+    if edmc_theme is not None:
+        checkbox = tk.Checkbutton(parent, **options)
+        try:
+            edmc_theme.register(checkbox)
+        except Exception:
+            pass
+        return checkbox
+
+    return ttk.Checkbutton(parent, **options)
+
+
+__all__ = ["ButtonType", "CheckboxType", "create_theme_button", "create_theme_checkbox"]

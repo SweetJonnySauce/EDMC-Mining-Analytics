@@ -15,6 +15,8 @@ from ..integrations.edmcoverlay import is_overlay_available
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
+from .components.button_factory import create_theme_checkbox
+
 
 def create_overlay_section(
     ui: "edmcmaMiningUI",
@@ -34,12 +36,13 @@ def create_overlay_section(
         value=ui._state.overlay_enabled,
     )
     ui._prefs_overlay_enabled_var.trace_add("write", ui._on_overlay_enabled_change)
-    overlay_enable_cb = ttk.Checkbutton(
+    overlay_enable_cb = create_theme_checkbox(
         frame,
         text="Enable EDMCOverlay metrics",
         variable=ui._prefs_overlay_enabled_var,
     )
     overlay_enable_cb.grid(row=0, column=0, columnspan=2, sticky="w", pady=(6, 4))
+    ui._theme.style_checkbox(overlay_enable_cb)
 
     x_label = tk.Label(
         frame,

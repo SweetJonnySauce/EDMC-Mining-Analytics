@@ -45,7 +45,12 @@ from ..edmc_mining_analytics_version import (
     display_version,
     is_newer_version,
 )
-from .components.button_factory import ButtonType, create_theme_button
+from .components.button_factory import (
+    ButtonType,
+    CheckboxType,
+    create_theme_button,
+    create_theme_checkbox,
+)
 from .components.top_bar import TopBarWidgets, build_top_bar
 from .components.details_bar import build_details_bar
 from .components.commodities_table import build_commodities_section
@@ -205,8 +210,8 @@ class edmcmaMiningUI:
         self._prefs_overlay_y_var: Optional[tk.IntVar] = None
         self._prefs_overlay_interval_var: Optional[tk.IntVar] = None
         self._reset_capacities_btn: Optional[ttk.Button] = None
-        self._send_summary_cb: Optional[ttk.Checkbutton] = None
-        self._send_reset_summary_cb: Optional[ttk.Checkbutton] = None
+        self._send_summary_cb: Optional[CheckboxType] = None
+        self._send_reset_summary_cb: Optional[CheckboxType] = None
         self._test_webhook_btn: Optional[ttk.Button] = None
         self._session_path_feedback: Optional[tk.StringVar] = None
         self._session_path_feedback_after: Optional[str] = None
@@ -1372,7 +1377,7 @@ class edmcmaMiningUI:
         self._theme.register(title)
 
         toggle_var = tk.BooleanVar(master=parent, value=self._state.show_materials_collected)
-        toggle = tk.Checkbutton(
+        toggle = create_theme_checkbox(
             header_frame,
             variable=toggle_var,
             command=self._on_toggle_materials,

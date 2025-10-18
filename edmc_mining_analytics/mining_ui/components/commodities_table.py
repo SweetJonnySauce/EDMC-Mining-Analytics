@@ -6,13 +6,14 @@ from typing import Any, Callable, Dict, List, Sequence
 import tkinter as tk
 
 from ..theme_adapter import ThemeAdapter
+from .button_factory import CheckboxType, create_theme_checkbox
 
 
 @dataclass
 class CommoditiesWidgets:
     header_frame: tk.Frame
     toggle_var: tk.BooleanVar
-    toggle: tk.Checkbutton
+    toggle: CheckboxType
     table_frame: tk.Frame
     grid_config: Dict[str, Any]
     headers: List[tk.Label] = field(default_factory=list)
@@ -41,7 +42,7 @@ def build_commodities_section(
     theme.register(title)
 
     toggle_var = tk.BooleanVar(master=parent, value=initial_visible)
-    toggle = tk.Checkbutton(
+    toggle = create_theme_checkbox(
         header_frame,
         variable=toggle_var,
         command=on_toggle,

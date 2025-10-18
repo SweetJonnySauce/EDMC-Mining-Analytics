@@ -13,6 +13,8 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
+from .components.button_factory import create_theme_checkbox
+
 
 def create_inara_section(
     ui: "edmcmaMiningUI",
@@ -55,21 +57,25 @@ def create_inara_section(
         master=frame, value=ui._state.inara_settings.include_carriers
     )
     ui._prefs_inara_carriers_var.trace_add("write", ui._on_inara_carriers_change)
-    ttk.Checkbutton(
+    carriers_cb = create_theme_checkbox(
         frame,
         text="Include fleet carriers in results",
         variable=ui._prefs_inara_carriers_var,
-    ).grid(row=2, column=0, sticky="w", pady=(0, 4))
+    )
+    carriers_cb.grid(row=2, column=0, sticky="w", pady=(0, 4))
+    ui._theme.style_checkbox(carriers_cb)
 
     ui._prefs_inara_surface_var = tk.BooleanVar(
         master=frame, value=ui._state.inara_settings.include_surface
     )
     ui._prefs_inara_surface_var.trace_add("write", ui._on_inara_surface_change)
-    ttk.Checkbutton(
+    surface_cb = create_theme_checkbox(
         frame,
         text="Include surface stations in results",
         variable=ui._prefs_inara_surface_var,
-    ).grid(row=3, column=0, sticky="w", pady=(0, 4))
+    )
+    surface_cb.grid(row=3, column=0, sticky="w", pady=(0, 4))
+    ui._theme.style_checkbox(surface_cb)
 
     return frame
 

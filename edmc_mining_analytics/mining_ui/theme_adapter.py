@@ -236,11 +236,17 @@ class ThemeAdapter:
         else:
             self._apply_button_style(button)
 
-    def style_checkbox(self, checkbox: tk.Checkbutton) -> None:
+    def style_checkbox(self, checkbox: tk.Widget) -> None:
+        """Register the checkbox so EDMC or Tk defaults control its palette."""
+
         self.register(checkbox)
         self._checkbuttons.add(checkbox)
-        self._bind_theme_listener(checkbox)
-        self._apply_checkbox_style(checkbox)
+
+        if self._theme is not None:
+            try:
+                self._theme.register(checkbox)
+            except Exception:
+                pass
 
     def enable_dark_theme_alternate(
         self,
@@ -875,11 +881,6 @@ class ThemeAdapter:
         for checkbox in list(self._checkbuttons):
             if not self._widget_exists(checkbox):
                 self._checkbuttons.discard(checkbox)
-                continue
-            if self._theme is not None:
-                self._schedule_theme_refresh(checkbox)
-            else:
-                self._apply_checkbox_style(checkbox)
 
     def _remember_button_defaults(self, button: tk.Widget) -> None:
         if getattr(button, "_edmcma_button_defaults", None) is not None:
