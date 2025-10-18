@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional
 
 try:  # pragma: no cover - only available inside EDMC runtime
     import tkinter as tk
@@ -11,10 +11,7 @@ try:  # pragma: no cover - only available inside EDMC runtime
 except ImportError as exc:  # pragma: no cover
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
-try:  # pragma: no cover - EDMC theme helper is only present in runtime
-    from theme import theme as edmc_theme  # type: ignore[import]
-except ImportError:  # pragma: no cover
-    edmc_theme = None  # type: ignore[assignment]
+from .button_factory import ButtonType, create_theme_button
 
 
 ButtonCallback = Callable[[Optional[tk.Event]], None]
@@ -24,7 +21,7 @@ ButtonCallback = Callable[[Optional[tk.Event]], None]
 class TestButtonWidgets:
     """Container for the test button widget."""
 
-    button: Union[tk.Button, ttk.Button]
+    button: ButtonType
 
     def grid(self, **grid_kwargs: Any) -> None:
         """Grid the underlying widget."""
@@ -41,25 +38,19 @@ def create_test_button(
 ) -> TestButtonWidgets:
     """Create a test button that mirrors EDMC's update button setup."""
 
-    if edmc_theme is not None:
-        button = tk.Button(
-            parent,
-            name="edmcma_test_button",
-            text=text,
-            width=width,
-        )
-        edmc_theme.register(button)
-        button.configure(command=lambda: command(None))
-        return TestButtonWidgets(button=button)
-
-    button = ttk.Button(
+    button = create_theme_button(
         parent,
         name="edmcma_test_button",
         text=text,
         width=width,
+        command=lambda: command(None),
     )
-    # Without EDMC's theme helper we fall back to a plain command binding.
-    button.configure(command=lambda: command(None))
+
+    try:
+        button.bind("<Button-1>", command)
+    except Exception:
+        pass
+
     return TestButtonWidgets(button=button)
 
 

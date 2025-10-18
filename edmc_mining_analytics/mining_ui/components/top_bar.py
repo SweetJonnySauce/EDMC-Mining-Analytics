@@ -10,6 +10,7 @@ from tkinter import ttk
 
 from edmc_mining_analytics.tooltip import WidgetTooltip
 from ..theme_adapter import ThemeAdapter
+from .button_factory import ButtonType, create_theme_button
 from .test_button import ButtonCallback, TestButtonWidgets, create_test_button
 
 
@@ -26,7 +27,7 @@ class TopBarWidgets:
     hotspot_button: ttk.Button
     hotspot_icon: Optional[tk.PhotoImage]
     hotspot_tooltip: WidgetTooltip
-    details_toggle: ttk.Button
+    details_toggle: ButtonType
     test_button: TestButtonWidgets
 
 
@@ -140,18 +141,13 @@ def build_top_bar(
     )
     hotspot_tooltip = WidgetTooltip(hotspot_button, text="Nearby Hotspots")
 
-    details_toggle = ttk.Button(
+    details_toggle = create_theme_button(
         control_cluster,
+        name="edmcma_details_toggle",
         text="",
         command=on_toggle_details,
-        cursor="hand2",
     )
-    theme.style_button(details_toggle)
     details_toggle.grid(row=0, column=2, padx=0, pady=0, sticky="e")
-    theme.enable_dark_theme_alternate(
-        details_toggle,
-        geometry={"row": 0, "column": 2, "padx": 0, "pady": 0, "sticky": "e"},
-    )
 
     test_button_widgets = create_test_button(
         control_cluster,

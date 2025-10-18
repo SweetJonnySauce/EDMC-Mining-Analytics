@@ -45,6 +45,7 @@ from ..edmc_mining_analytics_version import (
     display_version,
     is_newer_version,
 )
+from .components.button_factory import ButtonType, create_theme_button
 from .components.top_bar import TopBarWidgets, build_top_bar
 from .components.test_button import TestButtonWidgets
 from .components.details_bar import build_details_bar
@@ -115,7 +116,7 @@ class edmcmaMiningUI:
         self._rpm_display_value: float = 0.0
         self._rpm_target_value: float = 0.0
         self._rpm_animation_after: Optional[str] = None
-        self._pause_btn: Optional[ttk.Button] = None
+        self._pause_btn: Optional[ButtonType] = None
         self._commodities_headers: list[tk.Label] = []
         self._commodities_rows: list[list[tk.Label]] = []
         self._commodities_header_tooltips: list[WidgetTooltip] = []
@@ -347,22 +348,22 @@ class edmcmaMiningUI:
         button_bar.grid(row=2, column=0, sticky="e", padx=4, pady=(0, 6))
         self._theme.register(button_bar)
 
-        pause_btn = ttk.Button(button_bar, text="Pause", command=self._toggle_pause, cursor="hand2")
-        self._theme.style_button(pause_btn)
-        pause_btn.grid(row=0, column=0, padx=(0, 4), pady=0)
-        self._theme.enable_dark_theme_alternate(
-            pause_btn,
-            geometry={"row": 0, "column": 0, "padx": (0, 4), "pady": 0},
+        pause_btn = create_theme_button(
+            button_bar,
+            name="edmcma_pause_button",
+            text="Pause",
+            command=self._toggle_pause,
         )
+        pause_btn.grid(row=0, column=0, padx=(0, 4), pady=0)
         self._pause_btn = pause_btn
 
-        reset_btn = ttk.Button(button_bar, text="Reset", command=self._on_reset, cursor="hand2")
-        self._theme.style_button(reset_btn)
-        reset_btn.grid(row=0, column=1, padx=0, pady=0)
-        self._theme.enable_dark_theme_alternate(
-            reset_btn,
-            geometry={"row": 0, "column": 1, "padx": 0, "pady": 0},
+        reset_btn = create_theme_button(
+            button_bar,
+            name="edmcma_reset_button",
+            text="Reset",
+            command=self._on_reset,
         )
+        reset_btn.grid(row=0, column=1, padx=0, pady=0)
 
         self._materials_header = self._build_materials_section(frame)
 
