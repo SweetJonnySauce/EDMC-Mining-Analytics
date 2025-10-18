@@ -15,7 +15,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
 from ..edmc_mining_analytics_version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
-from .components.button_factory import create_theme_checkbox
 from .preferences_discord import create_discord_section
 from .preferences_inara import create_inara_section
 from .preferences_overlay import create_overlay_section
@@ -95,26 +94,24 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         master=general_frame, value=ui._state.auto_unpause_on_event
     )
     ui._prefs_auto_unpause_var.trace_add("write", ui._on_auto_unpause_change)
-    auto_unpause_cb = create_theme_checkbox(
+    auto_unpause_cb = ttk.Checkbutton(
         general_frame,
         text="Mining event automatically un-pauses the plugin",
         variable=ui._prefs_auto_unpause_var,
     )
     auto_unpause_cb.grid(row=2, column=0, columnspan=2, sticky="w", pady=(8, 4))
-    ui._theme.style_checkbox(auto_unpause_cb)
 
     ui._prefs_warn_non_metallic_var = tk.BooleanVar(
         master=general_frame,
         value=ui._state.warn_on_non_metallic_ring,
     )
     ui._prefs_warn_non_metallic_var.trace_add("write", ui._on_warn_non_metallic_change)
-    warn_non_metallic_cb = create_theme_checkbox(
+    warn_non_metallic_cb = ttk.Checkbutton(
         general_frame,
         text="Warn on non-metallic rings (helpful when laser mining platinum)",
         variable=ui._prefs_warn_non_metallic_var,
     )
     warn_non_metallic_cb.grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 6))
-    ui._theme.style_checkbox(warn_non_metallic_cb)
 
     reset_cap_btn = ttk.Button(
         general_frame,
@@ -231,13 +228,12 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         value=ui._state.session_logging_enabled,
     )
     ui._prefs_session_logging_var.trace_add("write", ui._on_session_logging_change)
-    session_logging_cb = create_theme_checkbox(
+    session_logging_cb = ttk.Checkbutton(
         logging_frame,
         text="Enable session logging",
         variable=ui._prefs_session_logging_var,
     )
     session_logging_cb.grid(row=1, column=0, sticky="w", pady=(0, 4))
-    ui._theme.style_checkbox(session_logging_cb)
     ui._send_summary_cb = session_logging_cb
 
     retention_container = tk.Frame(logging_frame, highlightthickness=0, bd=0)

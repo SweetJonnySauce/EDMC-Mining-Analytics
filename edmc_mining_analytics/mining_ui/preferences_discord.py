@@ -13,8 +13,6 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
-from .components.button_factory import create_theme_checkbox
-
 
 def create_discord_section(
     ui: "edmcmaMiningUI",
@@ -31,13 +29,12 @@ def create_discord_section(
         value=ui._state.send_summary_to_discord,
     )
     ui._prefs_send_summary_var.trace_add("write", ui._on_send_summary_change)
-    send_summary_cb = create_theme_checkbox(
+    send_summary_cb = ttk.Checkbutton(
         frame,
         text="Send session summary to Discord",
         variable=ui._prefs_send_summary_var,
     )
     send_summary_cb.grid(row=0, column=0, sticky="w", pady=(4, 4))
-    ui._theme.style_checkbox(send_summary_cb)
     ui._send_summary_cb = send_summary_cb
 
     webhook_label = tk.Label(
@@ -121,13 +118,12 @@ def create_discord_section(
         value=ui._state.send_reset_summary,
     )
     ui._prefs_send_reset_summary_var.trace_add("write", ui._on_send_reset_summary_change)
-    send_reset_summary_cb = create_theme_checkbox(
+    send_reset_summary_cb = ttk.Checkbutton(
         frame,
         text="Send Discord summary when resetting session",
         variable=ui._prefs_send_reset_summary_var,
     )
     send_reset_summary_cb.grid(row=5, column=0, sticky="w", pady=(0, 4))
-    ui._theme.style_checkbox(send_reset_summary_cb)
     ui._send_reset_summary_cb = send_reset_summary_cb
 
     test_btn = ttk.Button(
