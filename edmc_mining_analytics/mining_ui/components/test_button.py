@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional
+from dataclasses import dataclass
+from typing import Any, Callable, Optional, Union
 
 try:  # pragma: no cover - only available inside EDMC runtime
     import tkinter as tk
@@ -22,27 +22,14 @@ ButtonCallback = Callable[[Optional[tk.Event]], None]
 
 @dataclass
 class TestButtonWidgets:
-    """Container for the test button and its themed alternate."""
+    """Container for the test button widget."""
 
-    button: ttk.Button
-    themed_button: tk.Label
-    _alternate_registered: bool = field(default=False, init=False, repr=False)
+    button: Union[tk.Button, ttk.Button]
 
     def grid(self, **grid_kwargs: Any) -> None:
-        """Grid both widgets and register the alternate with EDMC's theme helper."""
+        """Grid the underlying widget."""
 
         self.button.grid(**grid_kwargs)
-        if edmc_theme is None:
-            # Fallback environment (e.g. tests) – show only the ttk button.
-            return
-
-        self.themed_button.grid(**grid_kwargs)
-        if not self._alternate_registered:
-            edmc_theme.register_alternate(
-                (self.button, self.themed_button, self.themed_button),
-                dict(grid_kwargs),
-            )
-            self._alternate_registered = True
 
 
 def create_test_button(
@@ -54,36 +41,26 @@ def create_test_button(
 ) -> TestButtonWidgets:
     """Create a test button that mirrors EDMC's update button setup."""
 
-    button_kwargs: Dict[str, Any] = {
-        "name": "edmcma_test_button",
-        "text": text,
-        "width": width,
-    }
+    if edmc_theme is not None:
+        button = tk.Button(
+            parent,
+            name="edmcma_test_button",
+            text=text,
+            width=width,
+        )
+        edmc_theme.register(button)
+        button.configure(command=lambda: command(None))
+        return TestButtonWidgets(button=button)
 
-    if edmc_theme is None:
-        # Avoid tripping EDMC's theme updater, which doesn't expect ttk buttons with a custom cursor.
-        button_kwargs["cursor"] = "hand2"
-
-    button = ttk.Button(parent, **button_kwargs)
-
-    themed_button = tk.Label(
+    button = ttk.Button(
         parent,
-        name="edmcma_themed_test_button",
+        name="edmcma_test_button",
         text=text,
         width=width,
-        cursor="hand2",
     )
-
-    if edmc_theme is not None:
-        edmc_theme.register(button)
-        edmc_theme.register(themed_button)
-        button.bind("<Button-1>", command)
-        edmc_theme.button_bind(themed_button, command)
-    else:
-        # Without EDMC's theme helper we fall back to a plain command binding.
-        button.configure(command=lambda: command(None))
-
-    return TestButtonWidgets(button=button, themed_button=themed_button)
+    # Without EDMC's theme helper we fall back to a plain command binding.
+    button.configure(command=lambda: command(None))
+    return TestButtonWidgets(button=button)
 
 
 __all__ = ["ButtonCallback", "TestButtonWidgets", "create_test_button"]
