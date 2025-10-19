@@ -19,8 +19,8 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 
 ## Screenshots
 ### Minimal display when not mining
-
-<img width="501" height="39" alt="image" src="https://github.com/user-attachments/assets/287fe085-519a-4415-aa5e-4dc55c10cf7c" />
+The orange "hotspot" next to the details button is how you launch the hotspot finder. 
+<img width="502" height="44" alt="image" src="https://github.com/user-attachments/assets/7043d593-b72d-4041-b644-a318b031c80c" />
 
 ### Detailed mining metrics while you mine
 
