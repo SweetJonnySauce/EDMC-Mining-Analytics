@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 import threading
+import queue
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import requests
 
@@ -46,6 +47,7 @@ from .update_manager import UpdateManager
 
 
 PLUGIN_NAME = "EDMC Mining Analytics"
+_DISPATCH_EVENT = "<<EDMCMiningUIDispatch>>"
 GITHUB_RELEASES_API = (
     "https://api.github.com/repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest"
 )
@@ -102,6 +104,66 @@ set_log_level(_resolve_edmc_log_level())
 _log = get_logger()
 
 
+class UIDispatcher:
+    """Ensures UI callbacks run on the Tk main thread."""
+
+    def __init__(self, logger: logging.Logger) -> None:
+        self._logger = logger
+        self._queue: "queue.Queue[Callable[[], None]]" = queue.Queue()
+        self._widget: Optional[tk.Misc] = None
+        self._bind_id: Optional[str] = None
+
+    def attach(self, widget: tk.Misc) -> None:
+        """Bind the dispatcher to a Tk widget owned by the main thread."""
+
+        if widget is None:
+            return
+        if self._widget is widget and self._bind_id:
+            return
+        if self._widget is not None and self._bind_id:
+            try:
+                self._widget.unbind(_DISPATCH_EVENT, self._bind_id)
+            except Exception:
+                pass
+        self._widget = widget
+        try:
+            self._bind_id = widget.bind(_DISPATCH_EVENT, self._process_event, add="+")
+        except Exception:
+            self._bind_id = None
+            self._logger.exception("Failed to bind UI dispatcher event")
+            return
+        self._notify_main()
+
+    def dispatch(self, callback: Callable[[], None]) -> None:
+        """Queue a callback to be executed on the Tk main loop."""
+
+        if callback is None:
+            return
+        self._queue.put(callback)
+        self._notify_main()
+
+    def _notify_main(self) -> None:
+        widget = self._widget
+        if widget is None or not widget.winfo_exists():
+            return
+        try:
+            widget.event_generate(_DISPATCH_EVENT, when="tail")
+        except Exception:
+            # Widget might be destroyed during shutdown; keep the task queued.
+            pass
+
+    def _process_event(self, _event: object) -> None:
+        while True:
+            try:
+                callback = self._queue.get_nowait()
+            except queue.Empty:
+                break
+            try:
+                callback()
+            except Exception:
+                self._logger.exception("UI dispatcher callback failed")
+
+
 class MiningAnalyticsPlugin:
     """Coordinates state, UI, preferences, and journal processing."""
 
@@ -140,6 +202,7 @@ class MiningAnalyticsPlugin:
         )
 
         self.plugin_dir: Optional[Path] = None
+        self._dispatcher = UIDispatcher(get_logger("dispatcher"))
         self._latest_version: Optional[str] = None
         self._update_ready_version: Optional[str] = None
         self._version_check_started = False
@@ -173,6 +236,7 @@ class MiningAnalyticsPlugin:
 
     def plugin_app(self, parent: tk.Widget) -> tk.Frame:
         frame = self.ui.build(parent)
+        self._dispatcher.attach(frame)
         self._refresh_ui_safe()
         self.ui.update_version_label(
             PLUGIN_VERSION,
@@ -319,14 +383,10 @@ class MiningAnalyticsPlugin:
         return False
 
     def _schedule_ui_refresh(self) -> None:
-        frame = self.ui.get_root()
-        if frame is not None and frame.winfo_exists():
-            try:
-                frame.after(0, self._refresh_ui_safe)
-                return
-            except Exception:
-                pass
-        self._refresh_ui_safe()
+        if threading.current_thread() is threading.main_thread():
+            self._refresh_ui_safe()
+            return
+        self._dispatcher.dispatch(self._refresh_ui_safe)
 
     def _persist_preferences(self) -> None:
         try:
@@ -529,16 +589,17 @@ class MiningAnalyticsPlugin:
         self._schedule_version_label_update()
 
     def _schedule_version_label_update(self) -> None:
-        root = self.ui.get_root()
-        if root and getattr(root, "after", None):
-            root.after(
-                0,
-                lambda: self.ui.update_version_label(
-                    PLUGIN_VERSION,
-                    self._latest_version,
-                    self._update_ready_version is not None,
-                ),
+        def _update() -> None:
+            self.ui.update_version_label(
+                PLUGIN_VERSION,
+                self._latest_version,
+                self._update_ready_version is not None,
             )
+
+        if threading.current_thread() is threading.main_thread():
+            _update()
+        else:
+            self._dispatcher.dispatch(_update)
 
     def _handle_latest_version(self, latest: str) -> None:
         latest_value = normalize_version(latest) or latest.strip()
