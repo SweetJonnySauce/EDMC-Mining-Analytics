@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
@@ -25,6 +26,7 @@ RPM_COLOR_YELLOW = "#f7931e"
 RPM_COLOR_GREEN = "#2ecc71"
 DEFAULT_LABEL_COLOR = "#b4b7bf"
 DEFAULT_VALUE_COLOR = "#ffffff"
+PLUGIN_IDENTIFIER = "EDMC-MiningAnalytics"
 _METRIC_ORDER: Sequence[Tuple[str, str]] = (
     ("tons_per_hour", "Tons/hr"),
     ("rpm", "RPM"),
@@ -79,6 +81,8 @@ class EdmcOverlayHelper:
         self._last_failure_logged = False
         self._logger = logging.getLogger("EDMC.MiningAnalytics.Overlay")
         self._preview_until: Optional[datetime] = None
+        self._plugin_kw_strategy: Optional[str] = None
+        self._plugin_warning_emitted = False
 
     # ------------------------------------------------------------------
     # Availability lifecycle
@@ -175,7 +179,8 @@ class EdmcOverlayHelper:
         for index, metric in enumerate(metrics):
             base_y = anchor_y + index * row_height
             try:
-                client.send_message(
+                self._dispatch_overlay_message(
+                    client,
                     f"edmcma.metric.{metric.key}.value",
                     metric.value,
                     metric.color,
@@ -184,7 +189,8 @@ class EdmcOverlayHelper:
                     ttl=ttl,
                     size="large",
                 )
-                client.send_message(
+                self._dispatch_overlay_message(
+                    client,
                     f"edmcma.metric.{metric.key}.label",
                     metric.label,
                     DEFAULT_LABEL_COLOR,
@@ -324,7 +330,8 @@ class EdmcOverlayHelper:
         for index, (key, _label) in enumerate(_METRIC_ORDER):
             base_y = anchor_y + index * row_height
             try:
-                client.send_message(
+                self._dispatch_overlay_message(
+                    client,
                     f"edmcma.metric.{key}.value",
                     "",
                     DEFAULT_VALUE_COLOR,
@@ -333,7 +340,8 @@ class EdmcOverlayHelper:
                     ttl=1,
                     size="large",
                 )
-                client.send_message(
+                self._dispatch_overlay_message(
+                    client,
                     f"edmcma.metric.{key}.label",
                     "",
                     DEFAULT_LABEL_COLOR,
@@ -360,4 +368,158 @@ class EdmcOverlayHelper:
         if now >= self._preview_until:
             self._preview_until = None
             return False
+        return True
+
+    # ------------------------------------------------------------------
+    # Payload helpers
+    # ------------------------------------------------------------------
+    def _dispatch_overlay_message(
+        self,
+        client: object,
+        message_id: str,
+        text: str,
+        colour: str,
+        x: int,
+        y: int,
+        *,
+        ttl: int,
+        size: str,
+        include_plugin: bool = True,
+    ) -> None:
+        payload = self._build_overlay_payload(
+            message_id,
+            text,
+            colour,
+            x,
+            y,
+            ttl=ttl,
+            size=size,
+            include_plugin=include_plugin,
+        )
+        strategy = self._determine_plugin_strategy(client)
+
+        if include_plugin and strategy == "unsupported":
+            if self._try_send_via_raw(client, payload):
+                return
+
+        kwargs = {"ttl": ttl, "size": size}
+        if include_plugin and strategy not in (None, "unsupported"):
+            kwargs.update(self._plugin_kwargs_for_strategy(strategy))
+
+        try:
+            client.send_message(message_id, text, colour, x, y, **kwargs)
+        except TypeError as exc:
+            if include_plugin and self._handle_plugin_send_type_error(exc):
+                if include_plugin and self._try_send_via_raw(client, payload):
+                    return
+                client.send_message(message_id, text, colour, x, y, ttl=ttl, size=size)
+                return
+            raise
+
+    def _build_overlay_payload(
+        self,
+        message_id: str,
+        text: str,
+        colour: str,
+        x: int,
+        y: int,
+        *,
+        ttl: int,
+        size: str,
+        include_plugin: bool,
+    ) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "id": message_id,
+            "text": text,
+            "color": colour,
+            "size": size,
+            "x": x,
+            "y": y,
+            "ttl": ttl,
+        }
+        if include_plugin:
+            payload["plugin"] = PLUGIN_IDENTIFIER
+        return payload
+
+    def _plugin_kwargs_for_strategy(self, strategy: Optional[str]) -> dict[str, object]:
+        if strategy == "direct":
+            return {"plugin": PLUGIN_IDENTIFIER}
+        if strategy in {"meta", "metadata", "payload", "extra", "extras", "context"}:
+            return {strategy: {"plugin": PLUGIN_IDENTIFIER}}
+        return {}
+
+    def _determine_plugin_strategy(self, client: object) -> Optional[str]:
+        if self._plugin_kw_strategy is not None:
+            return self._plugin_kw_strategy
+        strategy = self._inspect_plugin_strategy(client)
+        self._plugin_kw_strategy = strategy
+        if strategy == "unsupported" and not self._plugin_warning_emitted:
+            self._logger.info(
+                "EDMCOverlay client send_message signature lacks plugin metadata support; attempting raw payload injection"
+            )
+            self._plugin_warning_emitted = True
+        return strategy
+
+    def _inspect_plugin_strategy(self, client: object) -> Optional[str]:
+        send_message = getattr(client, "send_message", None)
+        if send_message is None:
+            return "unsupported"
+        try:
+            signature = inspect.signature(send_message)
+        except (TypeError, ValueError):
+            return "direct"
+        params = list(signature.parameters.values())
+        if params and params[0].kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
+            if params[0].name == "self":
+                params = params[1:]
+        has_var_kw = any(param.kind == inspect.Parameter.VAR_KEYWORD for param in params)
+        if "plugin" in signature.parameters:
+            param = signature.parameters["plugin"]
+            if param.kind in (
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+                inspect.Parameter.VAR_KEYWORD,
+            ):
+                return "direct"
+        for candidate in ("meta", "metadata", "payload", "extra", "extras", "context"):
+            if candidate in signature.parameters:
+                return candidate
+        if has_var_kw:
+            return "direct"
+        return "unsupported"
+
+    def _try_send_via_raw(self, client: object, payload: dict[str, object]) -> bool:
+        send_raw = getattr(client, "send_raw", None)
+        if send_raw is None:
+            return False
+
+        ensure_service = getattr(_overlay_module, "ensure_service", None)
+        connect = getattr(client, "connect", None)
+        try:
+            if getattr(client, "connection", None) is None:
+                if ensure_service is not None:
+                    try:
+                        ensure_service(getattr(client, "args", []))
+                    except Exception:  # pragma: no cover - runtime dependent safeguards
+                        self._logger.debug("EDMCOverlay ensure_service raised; continuing with raw send", exc_info=True)
+                if callable(connect):
+                    connect()
+                else:
+                    return False
+            send_raw(payload)
+            return True
+        except Exception:
+            self._logger.exception("Failed to deliver overlay payload via raw channel for %s", payload.get("id"))
+            return False
+
+    def _handle_plugin_send_type_error(self, exc: TypeError) -> bool:
+        message = str(exc)
+        if not any(keyword in message for keyword in ("plugin", "meta", "metadata", "payload", "extra")):
+            return False
+        self._plugin_kw_strategy = "unsupported"
+        if not self._plugin_warning_emitted:
+            self._logger.warning(
+                "EDMCOverlay rejected plugin metadata keyword; falling back to raw payload injection"
+            )
+            self._plugin_warning_emitted = True
         return True
