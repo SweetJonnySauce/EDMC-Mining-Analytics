@@ -51,7 +51,7 @@ The orange "hotspot" next to the details button is how you launch the hotspot fi
 
 
 ## Requirements
-- [Elite Dangerous Market Connector](https://github.com/EDCD/EDMarketConnector) 5.x or newer.
+- [Elite Dangerous Market Connector](https://github.com/EDCD/EDMarketConnector) 6.0.0 or newer (Python 3.13 runtime).
 
 ## Installation
 1. Open EDMC and choose `File → Settings → Plugins`, then click `Open Plugins Folder` to reveal your plugins directory.

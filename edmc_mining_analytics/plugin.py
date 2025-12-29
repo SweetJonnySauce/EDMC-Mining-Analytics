@@ -69,6 +69,27 @@ def _coerce_log_level(value: object) -> Optional[int]:
     return None
 
 
+def _read_config_value(config: object, key: str) -> Optional[object]:
+    getter_int = getattr(config, "get_int", None)
+    if callable(getter_int):
+        try:
+            value = getter_int(key, None)
+        except Exception:
+            value = None
+        if value is not None:
+            return value
+    getter_str = getattr(config, "get_str", None)
+    if callable(getter_str):
+        try:
+            value = getter_str(key, "")
+        except Exception:
+            return None
+        if isinstance(value, str):
+            value = value.strip()
+        return value or None
+    return None
+
+
 def _resolve_edmc_log_level() -> int:
     base_logger = logging.getLogger(appname) if appname else logging.getLogger()
     fallback = base_logger.getEffectiveLevel()
@@ -81,20 +102,11 @@ def _resolve_edmc_log_level() -> int:
         return fallback
 
     candidates = ("loglevel", "log_level", "logging_level")
-    getters = ("getint", "get", "get_str")
-
     for key in candidates:
-        for getter_name in getters:
-            getter = getattr(config, getter_name, None)
-            if getter is None:
-                continue
-            try:
-                raw_value = getter(key)
-            except Exception:
-                continue
-            level = _coerce_log_level(raw_value)
-            if level is not None:
-                return level
+        raw_value = _read_config_value(config, key)
+        level = _coerce_log_level(raw_value)
+        if level is not None:
+            return level
     return fallback
 
 
@@ -143,11 +155,14 @@ class MiningAnalyticsPlugin:
         self._latest_version: Optional[str] = None
         self._update_ready_version: Optional[str] = None
         self._version_check_started = False
+        self._is_stopping = False
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
     # ------------------------------------------------------------------
     def plugin_start(self, plugin_dir: str) -> str:
+        self._is_stopping = False
+        _log.info("Plugin start requested")
         self.plugin_dir = Path(plugin_dir)
         self.state.plugin_dir = self.plugin_dir
         self._sync_logger_level()
@@ -201,7 +216,8 @@ class MiningAnalyticsPlugin:
         return container
 
     def plugin_stop(self) -> None:
-        _log.info("Stopping %s", PLUGIN_NAME)
+        self._is_stopping = True
+        _log.info("Plugin stop requested; shutting down %s", PLUGIN_NAME)
         if self.update_manager:
             try:
                 self.update_manager.stop()
@@ -266,6 +282,9 @@ class MiningAnalyticsPlugin:
             self.ui.refresh()
         except Exception:
             _log.exception("Failed to refresh Mining Analytics UI")
+        if self._is_stopping:
+            _log.debug("Skipping refresh scheduling because plugin is stopping")
+            return
         self._refresh_overlay_now()
         self._schedule_overlay_refresh()
 
@@ -277,6 +296,8 @@ class MiningAnalyticsPlugin:
             _log.exception("Failed to update EDMCOverlay metrics")
 
     def _schedule_overlay_refresh(self) -> None:
+        if self._is_stopping:
+            return
         if self._overlay_refresh_job is not None:
             return
         if not self._should_refresh_overlay():
@@ -319,6 +340,8 @@ class MiningAnalyticsPlugin:
         return False
 
     def _schedule_ui_refresh(self) -> None:
+        if self._is_stopping:
+            return
         frame = self.ui.get_root()
         if frame is not None and frame.winfo_exists():
             try:
@@ -529,6 +552,8 @@ class MiningAnalyticsPlugin:
         self._schedule_version_label_update()
 
     def _schedule_version_label_update(self) -> None:
+        if self._is_stopping:
+            return
         root = self.ui.get_root()
         if root and getattr(root, "after", None):
             root.after(

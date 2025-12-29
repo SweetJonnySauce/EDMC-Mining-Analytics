@@ -73,6 +73,42 @@ class ThemeAdapter:
             self._refresh_alternate_palettes()
             self._schedule_alternate_palette_refresh()
 
+    def _get_config_str(self, key: str) -> Optional[str]:
+        if self._config is None:
+            return None
+        getter = getattr(self._config, "get_str", None)
+        if not callable(getter):
+            return None
+        try:
+            value = getter(key, "")
+        except Exception:
+            return None
+        if isinstance(value, str):
+            value = value.strip()
+        return value or None
+
+    def _get_config_int(self, key: str) -> Optional[int]:
+        if self._config is None:
+            return None
+        getter = getattr(self._config, "get_int", None)
+        if callable(getter):
+            try:
+                value = getter(key, None)
+            except Exception:
+                value = None
+            if value is not None:
+                try:
+                    return int(value)
+                except (TypeError, ValueError):
+                    return None
+        text = self._get_config_str(key)
+        if not text:
+            return None
+        try:
+            return int(text)
+        except ValueError:
+            return None
+
     def _detect_dark_theme(self) -> bool:
         if self._theme is not None:
             active = getattr(self._theme, "active", None)
@@ -83,21 +119,9 @@ class ThemeAdapter:
                     return False
         if self._config is None:
             return self._is_dark_theme
-        for getter_name in ("get_int", "getint", "get"):
-            getter = getattr(self._config, getter_name, None)
-            if getter is None:
-                continue
-            try:
-                value = getter("theme")  # type: ignore[misc]
-            except Exception:
-                continue
-            if isinstance(value, str):
-                try:
-                    value = int(value.strip())
-                except ValueError:
-                    continue
-            if isinstance(value, int):
-                return value == 1
+        value = self._get_config_int("theme")
+        if value is not None:
+            return value == 1
         return self._is_dark_theme
 
     def _apply_palette(self, is_dark: bool) -> None:
@@ -131,19 +155,8 @@ class ThemeAdapter:
             self._fallback_link_fg = "#0645ad"
 
     def _resolve_dark_text(self) -> str:
-        if self._config is None:
-            return "#f5f5f5"
-        for getter_name in ("get_str", "get", "getint"):
-            getter = getattr(self._config, getter_name, None)
-            if getter is None:
-                continue
-            try:
-                value = getter("dark_text")  # type: ignore[misc]
-            except Exception:
-                continue
-            if isinstance(value, str) and value.strip():
-                return value.strip()
-        return "#f5f5f5"
+        value = self._get_config_str("dark_text")
+        return value or "#f5f5f5"
 
     # ------------------------------------------------------------------
     # Registration helpers
@@ -1052,21 +1065,7 @@ class ThemeAdapter:
         return "#ffffff"
 
     def _get_config_dark_text(self) -> Optional[str]:
-        if self._config is None:
-            return None
-        for getter_name in ("get_str", "get"):
-            getter = getattr(self._config, getter_name, None)
-            if getter is None:
-                continue
-            try:
-                value = getter("dark_text")  # type: ignore[misc]
-            except Exception:
-                continue
-            if isinstance(value, str):
-                stripped = value.strip()
-                if stripped:
-                    return stripped
-        return None
+        return self._get_config_str("dark_text")
 
 
 __all__ = ["ThemeAdapter"]
