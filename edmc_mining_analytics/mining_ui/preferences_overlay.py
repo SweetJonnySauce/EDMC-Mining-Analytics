@@ -100,7 +100,7 @@ def create_overlay_section(
     ui._prefs_overlay_interval_var.trace_add("write", ui._on_overlay_interval_change)
     overlay_interval_spin = ttk.Spinbox(
         frame,
-        from_=200,
+        from_=100,
         to=60000,
         increment=100,
         textvariable=ui._prefs_overlay_interval_var,

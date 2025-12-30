@@ -117,7 +117,7 @@ class edmcmaMiningUI:
         self._rpm_tooltip: Optional[WidgetTooltip] = None
         self._rpm_font: Optional[tkfont.Font] = None
         self._rpm_frame: Optional[tk.Frame] = None
-        self._rpm_display_value: float = 0.0
+        self._rpm_display_value: float = self._state.rpm_display_value
         self._rpm_target_value: float = 0.0
         self._rpm_animation_after: Optional[str] = None
         self._pause_btn: Optional[ButtonType] = None
@@ -404,7 +404,7 @@ class edmcmaMiningUI:
         if self._rpm_update_job is not None:
             return
         # Always keep RPM evaluated on a timer so it decays after the window
-        self._rpm_update_job = frame.after(1000, self._on_rpm_update_tick)
+        self._rpm_update_job = frame.after(100, self._on_rpm_update_tick)
 
     def _cancel_rpm_update(self) -> None:
         frame = self._frame
@@ -1213,6 +1213,7 @@ class edmcmaMiningUI:
 
     def _set_rpm_display(self, value: float) -> None:
         self._rpm_display_value = value
+        self._state.rpm_display_value = value
         rpm_var = self._rpm_var
         if rpm_var is not None:
             rpm_var.set(f"{value:.1f}")

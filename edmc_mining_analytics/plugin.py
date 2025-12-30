@@ -128,6 +128,7 @@ class MiningAnalyticsPlugin:
         self.overlay_helper.refresh_availability()
         self.update_manager: Optional[UpdateManager] = None
         self._overlay_refresh_job: Optional[str] = None
+        self._overlay_rpm_refresh_job: Optional[str] = None
         self._overlay_enabled_last: bool = False
         self._version_thread: Optional[threading.Thread] = None
         self.ui = edmcmaMiningUI(
@@ -228,6 +229,7 @@ class MiningAnalyticsPlugin:
         self.ui.cancel_rate_update()
         self.ui.close_histogram_windows()
         self._cancel_overlay_refresh()
+        self._cancel_overlay_rpm_refresh()
         self.overlay_helper.clear_preview()
         reset_mining_state(self.state)
         self._refresh_ui_safe()
@@ -287,6 +289,7 @@ class MiningAnalyticsPlugin:
             return
         self._refresh_overlay_now()
         self._schedule_overlay_refresh()
+        self._schedule_overlay_rpm_refresh()
 
     def _refresh_overlay_now(self) -> None:
         try:
@@ -305,13 +308,25 @@ class MiningAnalyticsPlugin:
         frame = self.ui.get_root()
         if frame is None or not frame.winfo_exists():
             return
-        interval_ms = max(200, int(self.state.overlay_refresh_interval_ms or 1000))
+        interval_ms = max(100, int(self.state.overlay_refresh_interval_ms or 1000))
         delay_ms = interval_ms
         preview_remaining = self.overlay_helper.preview_seconds_remaining()
         if preview_remaining is not None and preview_remaining > 0:
             preview_delay = int(preview_remaining * 1000) + 200
-            delay_ms = min(delay_ms, max(200, preview_delay))
+            delay_ms = min(delay_ms, max(100, preview_delay))
         self._overlay_refresh_job = frame.after(delay_ms, self._overlay_tick)
+
+    def _schedule_overlay_rpm_refresh(self) -> None:
+        if self._is_stopping:
+            return
+        if self._overlay_rpm_refresh_job is not None:
+            return
+        if not self._should_refresh_overlay():
+            return
+        frame = self.ui.get_root()
+        if frame is None or not frame.winfo_exists():
+            return
+        self._overlay_rpm_refresh_job = frame.after(50, self._overlay_rpm_tick)
 
     def _cancel_overlay_refresh(self) -> None:
         if self._overlay_refresh_job is None:
@@ -324,11 +339,33 @@ class MiningAnalyticsPlugin:
                 pass
         self._overlay_refresh_job = None
 
+    def _cancel_overlay_rpm_refresh(self) -> None:
+        if self._overlay_rpm_refresh_job is None:
+            return
+        frame = self.ui.get_root()
+        if frame and frame.winfo_exists():
+            try:
+                frame.after_cancel(self._overlay_rpm_refresh_job)
+            except Exception:
+                pass
+        self._overlay_rpm_refresh_job = None
+
     def _overlay_tick(self) -> None:
         self._overlay_refresh_job = None
         self._refresh_overlay_now()
         if self._should_refresh_overlay():
             self._schedule_overlay_refresh()
+
+    def _overlay_rpm_tick(self) -> None:
+        self._overlay_rpm_refresh_job = None
+        should_refresh = self._should_refresh_overlay()
+        if should_refresh:
+            try:
+                self.overlay_helper.push_rpm_metric()
+            except Exception:
+                _log.exception("Failed to update EDMCOverlay RPM metric")
+        if should_refresh:
+            self._schedule_overlay_rpm_refresh()
 
     def _should_refresh_overlay(self) -> bool:
         if not self.state.overlay_enabled:
@@ -366,19 +403,24 @@ class MiningAnalyticsPlugin:
         elif not self.state.overlay_enabled and was_enabled:
             self.overlay_helper.clear_preview()
         self._cancel_overlay_refresh()
+        self._cancel_overlay_rpm_refresh()
         self._refresh_overlay_now()
         self._schedule_overlay_refresh()
+        self._schedule_overlay_rpm_refresh()
 
     def _on_session_start(self) -> None:
         self.ui.schedule_rate_update()
         self.overlay_helper.clear_preview()
         self._cancel_overlay_refresh()
+        self._cancel_overlay_rpm_refresh()
         self._refresh_overlay_now()
         self._schedule_overlay_refresh()
+        self._schedule_overlay_rpm_refresh()
 
     def _on_session_end(self) -> None:
         self.ui.cancel_rate_update()
         self._cancel_overlay_refresh()
+        self._cancel_overlay_rpm_refresh()
         self._refresh_ui_safe()
         self._persist_inferred_capacities()
 

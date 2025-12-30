@@ -91,6 +91,7 @@ class MiningState:
     recent_refinements: Deque[datetime] = field(default_factory=deque)
     current_rpm: float = 0.0
     max_rpm: float = 0.0
+    rpm_display_value: float = 0.0
 
     edsm_reserve_level: Optional[str] = None
     edsm_ring_type: Optional[str] = None
@@ -168,6 +169,7 @@ def reset_mining_state(state: MiningState) -> None:
     state.recent_refinements.clear()
     state.current_rpm = 0.0
     state.max_rpm = 0.0
+    state.rpm_display_value = 0.0
     state.rpm_display_color = "#ffffff"
     state.overlay_refresh_interval_ms = 1000
 
