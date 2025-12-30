@@ -220,6 +220,7 @@ class edmcmaMiningUI:
         self._discord_images_tree: Optional[ttk.Treeview] = None
         self._discord_image_ship_var: Optional[tk.StringVar] = None
         self._discord_image_url_var: Optional[tk.StringVar] = None
+        self._discord_image_url_entry: Optional[ttk.Entry] = None
 
         self._hotspot_container: Optional[tk.Frame] = None
         self._hotspot_controls_frame: Optional[tk.Frame] = None
@@ -757,6 +758,55 @@ class edmcmaMiningUI:
         for idx, (ship, url) in enumerate(entries):
             display_ship = ship if ship else "Any"
             tree.insert("", "end", iid=str(idx), values=(display_ship, url))
+
+    def _get_selected_discord_image_url(self) -> Optional[str]:
+        tree = self._discord_images_tree
+        if tree is None:
+            return None
+        selection = tree.selection()
+        if not selection:
+            return None
+        values = tree.item(selection[0], "values")
+        if not values or len(values) < 2:
+            return None
+        url = values[1]
+        if not isinstance(url, str):
+            return None
+        return url.strip() or None
+
+    def _set_discord_image_url_field(self, url: str) -> None:
+        if self._discord_image_url_var is None:
+            return
+        self._discord_image_url_var.set(url)
+        entry = self._discord_image_url_entry
+        if entry is not None:
+            try:
+                entry.focus_set()
+                entry.selection_range(0, tk.END)
+            except tk.TclError:
+                pass
+
+    def _on_discord_image_select(self, *_: object) -> None:
+        url = self._get_selected_discord_image_url()
+        if not url:
+            return
+        self._set_discord_image_url_field(url)
+
+    def _copy_discord_image_url(self) -> None:
+        url = self._get_selected_discord_image_url()
+        if not url and self._discord_image_url_var is not None:
+            url = self._discord_image_url_var.get().strip()
+        if not url:
+            return
+        widget = self._discord_image_url_entry or self._discord_images_tree or self._frame
+        if widget is None:
+            return
+        try:
+            widget.clipboard_clear()
+            widget.clipboard_append(url)
+            widget.update_idletasks()
+        except Exception:
+            _log.exception("Failed to copy Discord image URL to clipboard")
 
     def _on_discord_image_add(self) -> None:
         if not self._discord_image_url_var:

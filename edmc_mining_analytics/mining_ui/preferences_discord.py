@@ -82,6 +82,8 @@ def create_discord_section(
     images_tree.column("ship", width=120, anchor="w")
     images_tree.column("url", anchor="w")
     images_tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
+    images_tree.bind("<<TreeviewSelect>>", ui._on_discord_image_select)
+    images_tree.bind("<ButtonRelease-1>", ui._on_discord_image_select)
 
     images_scroll = ttk.Scrollbar(images_container, orient="vertical", command=images_tree.yview)
     images_scroll.grid(row=0, column=3, sticky="ns", padx=(4, 0))
@@ -100,6 +102,7 @@ def create_discord_section(
     url_label.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(4, 0))
     url_entry = ttk.Entry(form, textvariable=ui._discord_image_url_var, width=50)
     url_entry.grid(row=1, column=1, sticky="ew", pady=(4, 0), padx=(0, 8))
+    ui._discord_image_url_entry = url_entry
 
     button_frame = tk.Frame(form, highlightthickness=0, bd=0)
     button_frame.grid(row=0, column=2, rowspan=2, sticky="ns")
@@ -109,6 +112,9 @@ def create_discord_section(
 
     remove_button = ttk.Button(button_frame, text="Delete selected", command=ui._on_discord_image_delete)
     remove_button.grid(row=1, column=0, sticky="ew")
+
+    copy_button = ttk.Button(button_frame, text="Copy URL", command=ui._copy_discord_image_url)
+    copy_button.grid(row=2, column=0, sticky="ew", pady=(4, 0))
 
     ui._discord_images_tree = images_tree
     ui._refresh_discord_image_list()
