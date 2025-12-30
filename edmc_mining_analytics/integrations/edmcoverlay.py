@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Sequence, Tuple
 
 from ..logging_utils import get_logger
-from ..state import MiningState, update_rpm
+from ..state import MiningState
 
 try:  # pragma: no cover - runtime environment provides this module
     from EDMCOverlay import edmcoverlay as _overlay_module  # type: ignore[import]
@@ -27,6 +27,8 @@ RPM_COLOR_GREEN = "#2ecc71"
 DEFAULT_LABEL_COLOR = "#b4b7bf"
 DEFAULT_VALUE_COLOR = "#ffffff"
 PLUGIN_IDENTIFIER = "EDMC-MiningAnalytics"
+OVERLAY_ROW_HEIGHT = 32
+OVERLAY_TEXT_SIZE = "large"
 _METRIC_ORDER: Sequence[Tuple[str, str]] = (
     ("tons_per_hour", "Tons/hr"),
     ("rpm", "RPM"),
@@ -173,31 +175,22 @@ class EdmcOverlayHelper:
         ttl = 5 if (preview_active and not self._state.is_mining) else self._derive_ttl()
         anchor_x = max(0, int(self._state.overlay_anchor_x or 0))
         anchor_y = max(0, int(self._state.overlay_anchor_y or 0))
-        row_height = 58
-        label_offset = 26
+        row_height = OVERLAY_ROW_HEIGHT
 
         for index, metric in enumerate(metrics):
             base_y = anchor_y + index * row_height
+            text = f"{metric.value} {metric.label}".strip()
+            color = metric.color if metric.key == "rpm" else DEFAULT_LABEL_COLOR
             try:
                 self._dispatch_overlay_message(
                     client,
                     f"edmcma.metric.{metric.key}.value",
-                    metric.value,
-                    metric.color,
+                    text,
+                    color,
                     anchor_x,
                     base_y,
                     ttl=ttl,
-                    size="large",
-                )
-                self._dispatch_overlay_message(
-                    client,
-                    f"edmcma.metric.{metric.key}.label",
-                    metric.label,
-                    DEFAULT_LABEL_COLOR,
-                    anchor_x,
-                    base_y + label_offset,
-                    ttl=ttl,
-                    size="normal",
+                    size=OVERLAY_TEXT_SIZE,
                 )
             except Exception:  # pragma: no cover - runtime specific failures
                 self._logger.exception("Failed to send overlay metric payload for %s", metric.key)
@@ -206,6 +199,63 @@ class EdmcOverlayHelper:
                 return
 
         self._last_enabled = True
+
+    def push_rpm_metric(self) -> None:
+        """Emit just the RPM metric to the overlay on a faster cadence."""
+
+        now = datetime.now(timezone.utc)
+        preview_active = self._preview_active(now)
+
+        if not self._state.overlay_enabled:
+            return
+
+        if not self.refresh_availability():
+            return
+
+        if self._state.is_mining:
+            self.clear_preview()
+
+        if not self._state.is_mining and not preview_active:
+            return
+
+        if not self._last_enabled:
+            return
+
+        client = self._resolve_overlay()
+        if client is None:
+            if not self._last_failure_logged:
+                _log.debug("EDMCOverlay helper unavailable; RPM metric not sent")
+                self._last_failure_logged = True
+            return
+
+        self._last_failure_logged = False
+        metric = self._build_rpm_metric()
+        ttl = 5 if (preview_active and not self._state.is_mining) else self._derive_ttl()
+        anchor_x = max(0, int(self._state.overlay_anchor_x or 0))
+        anchor_y = max(0, int(self._state.overlay_anchor_y or 0))
+        row_height = OVERLAY_ROW_HEIGHT
+        rpm_index = next(
+            (index for index, (key, _label) in enumerate(_METRIC_ORDER) if key == "rpm"),
+            0,
+        )
+        base_y = anchor_y + rpm_index * row_height
+        text = f"{metric.value} {metric.label}".strip()
+        try:
+            self._dispatch_overlay_message(
+                client,
+                f"edmcma.metric.{metric.key}.value",
+                text,
+                metric.color,
+                anchor_x,
+                base_y,
+                ttl=ttl,
+                size=OVERLAY_TEXT_SIZE,
+            )
+        except Exception:  # pragma: no cover - runtime specific failures
+            self._logger.exception("Failed to send overlay RPM payload")
+            self.reset()
+            self._state.overlay_available = self.is_supported()
+            return
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -222,6 +272,16 @@ class EdmcOverlayHelper:
             self._overlay = None
         return self._overlay
 
+    def _build_rpm_metric(self) -> _OverlayMetric:
+        rpm = float(self._state.rpm_display_value or 0.0)
+        rpm_color = self._state.rpm_display_color or DEFAULT_VALUE_COLOR
+        return _OverlayMetric(
+            key="rpm",
+            label="RPM",
+            value=f"{rpm:.1f}" if rpm is not None else "--",
+            color=rpm_color,
+        )
+
     def _build_metrics(self) -> Sequence[_OverlayMetric]:
         metrics: list[_OverlayMetric] = []
 
@@ -235,28 +295,13 @@ class EdmcOverlayHelper:
             )
         )
 
-        # Mirror UI behavior: only recompute RPM when actively mining
-        # and not paused; otherwise use last computed value.
-        if self._state.is_mining and not self._state.is_paused:
-            rpm = update_rpm(self._state)
-        else:
-            rpm = float(self._state.current_rpm or 0.0)
-        rpm_color = determine_rpm_color(self._state, rpm, default=self._state.rpm_display_color or DEFAULT_VALUE_COLOR)
-        self._state.rpm_display_color = rpm_color
-        metrics.append(
-            _OverlayMetric(
-                key="rpm",
-                label="RPM",
-                value=f"{rpm:.1f}" if rpm is not None else "--",
-                color=rpm_color,
-            )
-        )
+        metrics.append(self._build_rpm_metric())
 
         percent_full = self._compute_percent_full()
         metrics.append(
             _OverlayMetric(
                 key="percent_full",
-                label="% Full",
+                label="full",
                 value=f"{percent_full:.1f}%" if percent_full is not None else "--",
                 color=DEFAULT_VALUE_COLOR,
             )
@@ -303,7 +348,7 @@ class EdmcOverlayHelper:
             interval_ms = int(interval_ms)
         except (TypeError, ValueError):
             interval_ms = 1000
-        interval_ms = max(200, interval_ms)
+        interval_ms = max(100, interval_ms)
         interval_seconds = interval_ms / 1000.0
         ttl_seconds = max(5.0, min(300.0, interval_seconds * 3 + 5.0))
         return int(ttl_seconds)
@@ -325,8 +370,7 @@ class EdmcOverlayHelper:
             return
         anchor_x = max(0, int(self._state.overlay_anchor_x or 0))
         anchor_y = max(0, int(self._state.overlay_anchor_y or 0))
-        row_height = 58
-        label_offset = 26
+        row_height = OVERLAY_ROW_HEIGHT
         for index, (key, _label) in enumerate(_METRIC_ORDER):
             base_y = anchor_y + index * row_height
             try:
@@ -334,21 +378,11 @@ class EdmcOverlayHelper:
                     client,
                     f"edmcma.metric.{key}.value",
                     "",
-                    DEFAULT_VALUE_COLOR,
+                    DEFAULT_LABEL_COLOR,
                     anchor_x,
                     base_y,
                     ttl=1,
-                    size="large",
-                )
-                self._dispatch_overlay_message(
-                    client,
-                    f"edmcma.metric.{key}.label",
-                    "",
-                    DEFAULT_LABEL_COLOR,
-                    anchor_x,
-                    base_y + label_offset,
-                    ttl=1,
-                    size="normal",
+                    size=OVERLAY_TEXT_SIZE,
                 )
             except Exception:  # pragma: no cover
                 self._logger.exception("Failed to clear overlay message %s", key)

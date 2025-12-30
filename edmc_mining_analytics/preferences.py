@@ -63,7 +63,7 @@ def clamp_overlay_interval(value: int, default: int) -> int:
         result = int(value)
     except (TypeError, ValueError):
         result = default
-    return max(200, min(60_000, result))
+    return max(100, min(60_000, result))
 
 
 class PreferencesManager:

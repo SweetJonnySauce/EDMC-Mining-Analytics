@@ -69,6 +69,27 @@ def _coerce_log_level(value: object) -> Optional[int]:
     return None
 
 
+def _read_config_value(config: object, key: str) -> Optional[object]:
+    getter_int = getattr(config, "get_int", None)
+    if callable(getter_int):
+        try:
+            value = getter_int(key, None)
+        except Exception:
+            value = None
+        if value is not None:
+            return value
+    getter_str = getattr(config, "get_str", None)
+    if callable(getter_str):
+        try:
+            value = getter_str(key, "")
+        except Exception:
+            return None
+        if isinstance(value, str):
+            value = value.strip()
+        return value or None
+    return None
+
+
 def _resolve_edmc_log_level() -> int:
     base_logger = logging.getLogger(appname) if appname else logging.getLogger()
     fallback = base_logger.getEffectiveLevel()
@@ -81,20 +102,11 @@ def _resolve_edmc_log_level() -> int:
         return fallback
 
     candidates = ("loglevel", "log_level", "logging_level")
-    getters = ("getint", "get", "get_str")
-
     for key in candidates:
-        for getter_name in getters:
-            getter = getattr(config, getter_name, None)
-            if getter is None:
-                continue
-            try:
-                raw_value = getter(key)
-            except Exception:
-                continue
-            level = _coerce_log_level(raw_value)
-            if level is not None:
-                return level
+        raw_value = _read_config_value(config, key)
+        level = _coerce_log_level(raw_value)
+        if level is not None:
+            return level
     return fallback
 
 
@@ -116,6 +128,7 @@ class MiningAnalyticsPlugin:
         self.overlay_helper.refresh_availability()
         self.update_manager: Optional[UpdateManager] = None
         self._overlay_refresh_job: Optional[str] = None
+        self._overlay_rpm_refresh_job: Optional[str] = None
         self._overlay_enabled_last: bool = False
         self._version_thread: Optional[threading.Thread] = None
         self.ui = edmcmaMiningUI(
@@ -143,11 +156,14 @@ class MiningAnalyticsPlugin:
         self._latest_version: Optional[str] = None
         self._update_ready_version: Optional[str] = None
         self._version_check_started = False
+        self._is_stopping = False
 
     # ------------------------------------------------------------------
     # EDMC lifecycle hooks
     # ------------------------------------------------------------------
     def plugin_start(self, plugin_dir: str) -> str:
+        self._is_stopping = False
+        _log.info("Plugin start requested")
         self.plugin_dir = Path(plugin_dir)
         self.state.plugin_dir = self.plugin_dir
         self._sync_logger_level()
@@ -201,7 +217,8 @@ class MiningAnalyticsPlugin:
         return container
 
     def plugin_stop(self) -> None:
-        _log.info("Stopping %s", PLUGIN_NAME)
+        self._is_stopping = True
+        _log.info("Plugin stop requested; shutting down %s", PLUGIN_NAME)
         if self.update_manager:
             try:
                 self.update_manager.stop()
@@ -212,6 +229,7 @@ class MiningAnalyticsPlugin:
         self.ui.cancel_rate_update()
         self.ui.close_histogram_windows()
         self._cancel_overlay_refresh()
+        self._cancel_overlay_rpm_refresh()
         self.overlay_helper.clear_preview()
         reset_mining_state(self.state)
         self._refresh_ui_safe()
@@ -266,8 +284,12 @@ class MiningAnalyticsPlugin:
             self.ui.refresh()
         except Exception:
             _log.exception("Failed to refresh Mining Analytics UI")
+        if self._is_stopping:
+            _log.debug("Skipping refresh scheduling because plugin is stopping")
+            return
         self._refresh_overlay_now()
         self._schedule_overlay_refresh()
+        self._schedule_overlay_rpm_refresh()
 
     def _refresh_overlay_now(self) -> None:
         try:
@@ -277,6 +299,8 @@ class MiningAnalyticsPlugin:
             _log.exception("Failed to update EDMCOverlay metrics")
 
     def _schedule_overlay_refresh(self) -> None:
+        if self._is_stopping:
+            return
         if self._overlay_refresh_job is not None:
             return
         if not self._should_refresh_overlay():
@@ -284,13 +308,25 @@ class MiningAnalyticsPlugin:
         frame = self.ui.get_root()
         if frame is None or not frame.winfo_exists():
             return
-        interval_ms = max(200, int(self.state.overlay_refresh_interval_ms or 1000))
+        interval_ms = max(100, int(self.state.overlay_refresh_interval_ms or 1000))
         delay_ms = interval_ms
         preview_remaining = self.overlay_helper.preview_seconds_remaining()
         if preview_remaining is not None and preview_remaining > 0:
             preview_delay = int(preview_remaining * 1000) + 200
-            delay_ms = min(delay_ms, max(200, preview_delay))
+            delay_ms = min(delay_ms, max(100, preview_delay))
         self._overlay_refresh_job = frame.after(delay_ms, self._overlay_tick)
+
+    def _schedule_overlay_rpm_refresh(self) -> None:
+        if self._is_stopping:
+            return
+        if self._overlay_rpm_refresh_job is not None:
+            return
+        if not self._should_refresh_overlay():
+            return
+        frame = self.ui.get_root()
+        if frame is None or not frame.winfo_exists():
+            return
+        self._overlay_rpm_refresh_job = frame.after(50, self._overlay_rpm_tick)
 
     def _cancel_overlay_refresh(self) -> None:
         if self._overlay_refresh_job is None:
@@ -303,11 +339,33 @@ class MiningAnalyticsPlugin:
                 pass
         self._overlay_refresh_job = None
 
+    def _cancel_overlay_rpm_refresh(self) -> None:
+        if self._overlay_rpm_refresh_job is None:
+            return
+        frame = self.ui.get_root()
+        if frame and frame.winfo_exists():
+            try:
+                frame.after_cancel(self._overlay_rpm_refresh_job)
+            except Exception:
+                pass
+        self._overlay_rpm_refresh_job = None
+
     def _overlay_tick(self) -> None:
         self._overlay_refresh_job = None
         self._refresh_overlay_now()
         if self._should_refresh_overlay():
             self._schedule_overlay_refresh()
+
+    def _overlay_rpm_tick(self) -> None:
+        self._overlay_rpm_refresh_job = None
+        should_refresh = self._should_refresh_overlay()
+        if should_refresh:
+            try:
+                self.overlay_helper.push_rpm_metric()
+            except Exception:
+                _log.exception("Failed to update EDMCOverlay RPM metric")
+        if should_refresh:
+            self._schedule_overlay_rpm_refresh()
 
     def _should_refresh_overlay(self) -> bool:
         if not self.state.overlay_enabled:
@@ -319,6 +377,8 @@ class MiningAnalyticsPlugin:
         return False
 
     def _schedule_ui_refresh(self) -> None:
+        if self._is_stopping:
+            return
         frame = self.ui.get_root()
         if frame is not None and frame.winfo_exists():
             try:
@@ -343,19 +403,24 @@ class MiningAnalyticsPlugin:
         elif not self.state.overlay_enabled and was_enabled:
             self.overlay_helper.clear_preview()
         self._cancel_overlay_refresh()
+        self._cancel_overlay_rpm_refresh()
         self._refresh_overlay_now()
         self._schedule_overlay_refresh()
+        self._schedule_overlay_rpm_refresh()
 
     def _on_session_start(self) -> None:
         self.ui.schedule_rate_update()
         self.overlay_helper.clear_preview()
         self._cancel_overlay_refresh()
+        self._cancel_overlay_rpm_refresh()
         self._refresh_overlay_now()
         self._schedule_overlay_refresh()
+        self._schedule_overlay_rpm_refresh()
 
     def _on_session_end(self) -> None:
         self.ui.cancel_rate_update()
         self._cancel_overlay_refresh()
+        self._cancel_overlay_rpm_refresh()
         self._refresh_ui_safe()
         self._persist_inferred_capacities()
 
@@ -529,6 +594,8 @@ class MiningAnalyticsPlugin:
         self._schedule_version_label_update()
 
     def _schedule_version_label_update(self) -> None:
+        if self._is_stopping:
+            return
         root = self.ui.get_root()
         if root and getattr(root, "after", None):
             root.after(
