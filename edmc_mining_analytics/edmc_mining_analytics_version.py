@@ -32,6 +32,8 @@ _version = _load_version_module()
 
 PLUGIN_VERSION: str = _version.PLUGIN_VERSION
 PLUGIN_REPO_URL: str = _version.PLUGIN_REPO_URL
+VERSION: str = _version.VERSION
+__version__: str = _version.__version__
 
 display_version = _version.display_version
 normalize_version = _version.normalize_version
@@ -41,6 +43,8 @@ is_newer_version = _version.is_newer_version
 __all__ = [
     "PLUGIN_VERSION",
     "PLUGIN_REPO_URL",
+    "VERSION",
+    "__version__",
     "display_version",
     "normalize_version",
     "is_newer_version",
