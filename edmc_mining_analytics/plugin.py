@@ -35,7 +35,7 @@ from .journal import JournalProcessor
 from .preferences import PreferencesManager
 from .session_recorder import SessionRecorder
 from .state import MiningState, reset_mining_state
-from .logging_utils import get_logger, set_log_level
+from .logging_utils import get_logger, install_exception_logging, set_log_level
 from .edmc_mining_analytics_version import (
     PLUGIN_VERSION,
     is_newer_version,
@@ -163,6 +163,7 @@ class MiningAnalyticsPlugin:
     # ------------------------------------------------------------------
     def plugin_start(self, plugin_dir: str) -> str:
         self._is_stopping = False
+        install_exception_logging()
         _log.info("Plugin start requested")
         self.plugin_dir = Path(plugin_dir)
         self.state.plugin_dir = self.plugin_dir
