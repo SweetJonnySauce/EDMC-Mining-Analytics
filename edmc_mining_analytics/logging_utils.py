@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+import threading
 
 PLUGIN_FOLDER_NAME = Path(__file__).resolve().parent.name
 
@@ -19,6 +20,28 @@ else:
     BASE_LOGGER.propagate = True
 
 
+class _MissingLogFieldsFilter(logging.Filter):
+    """Backfill EDMC log fields expected by formatters."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not hasattr(record, "osthreadid"):
+            try:
+                record.osthreadid = threading.get_native_id()
+            except Exception:
+                record.osthreadid = getattr(record, "thread", 0)
+        if not hasattr(record, "qualname"):
+            record.qualname = record.name
+        return True
+
+
+def _ensure_log_filter(logger: logging.Logger) -> None:
+    if not any(isinstance(flt, _MissingLogFieldsFilter) for flt in logger.filters):
+        logger.addFilter(_MissingLogFieldsFilter())
+
+
+_ensure_log_filter(BASE_LOGGER)
+
+
 def get_logger(suffix: str | None = None) -> logging.Logger:
     """Return the shared plugin logger or one of its children."""
 
@@ -27,6 +50,7 @@ def get_logger(suffix: str | None = None) -> logging.Logger:
     logger = BASE_LOGGER.getChild(suffix)
     logger.propagate = True
     logger.setLevel(logging.NOTSET)
+    _ensure_log_filter(logger)
     return logger
 
 
