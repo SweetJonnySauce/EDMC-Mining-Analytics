@@ -43,6 +43,7 @@ class MiningState:
     cargo_additions: Dict[str, int] = field(default_factory=dict)
     cargo_totals: Dict[str, int] = field(default_factory=dict)
     commodity_display_names: Dict[str, str] = field(default_factory=dict)
+    commodity_canonical_names: Dict[str, str] = field(default_factory=dict)
     harvested_commodities: Set[str] = field(default_factory=set)
     commodity_start_times: Dict[str, datetime] = field(default_factory=dict)
 
@@ -108,6 +109,17 @@ class MiningState:
     spansh_last_reserve_levels: Optional[List[str]] = None
     spansh_last_ring_types: Optional[List[str]] = None
     spansh_last_min_hotspots: Optional[int] = None
+    market_search_has_large_pad: Optional[bool] = None
+    market_search_sort_mode: str = "best_price"
+    market_search_min_demand: int = 1000
+    market_search_age_days: int = 30
+    market_search_distance_ly: float = 100.0
+    market_sell_prices: Dict[str, float] = field(default_factory=dict)
+    market_sell_details: Dict[str, Dict[str, object]] = field(default_factory=dict)
+    market_sell_totals: Dict[str, float] = field(default_factory=dict)
+    market_sell_total: float = 0.0
+    market_search_attempted: Set[str] = field(default_factory=set)
+    market_search_inflight: Set[str] = field(default_factory=set)
 
 
 def compute_percentage_stats(samples: Iterable[float]) -> Optional[Tuple[float, float, float]]:
@@ -143,6 +155,7 @@ def reset_mining_state(state: MiningState) -> None:
     state.cargo_additions.clear()
     state.cargo_totals.clear()
     state.commodity_display_names.clear()
+    state.commodity_canonical_names.clear()
     state.harvested_commodities.clear()
     state.commodity_start_times.clear()
 
@@ -172,6 +185,12 @@ def reset_mining_state(state: MiningState) -> None:
     state.rpm_display_value = 0.0
     state.rpm_display_color = "#ffffff"
     state.overlay_refresh_interval_ms = 1000
+    state.market_sell_prices.clear()
+    state.market_sell_details.clear()
+    state.market_sell_totals.clear()
+    state.market_sell_total = 0.0
+    state.market_search_attempted.clear()
+    state.market_search_inflight.clear()
 
 
 def resolve_commodity_display_name(state: MiningState, commodity: str) -> str:
@@ -204,6 +223,25 @@ def recompute_histograms(state: MiningState) -> None:
             bin_index = int(clamped // size)
             counter[bin_index] += 1
     state.prospected_histogram = histogram
+
+
+def recompute_market_sell_totals(state: MiningState) -> None:
+    """Recalculate estimated sell totals based on cached prices and cargo totals."""
+
+    totals: Dict[str, float] = {}
+    grand_total = 0.0
+    for commodity, tons in state.cargo_totals.items():
+        price = state.market_sell_prices.get(commodity)
+        if price is None:
+            continue
+        try:
+            total_value = float(price) * float(tons)
+        except (TypeError, ValueError):
+            continue
+        totals[commodity] = total_value
+        grand_total += total_value
+    state.market_sell_totals = totals
+    state.market_sell_total = grand_total
 
 
 def register_refinement(state: MiningState, timestamp: datetime) -> None:

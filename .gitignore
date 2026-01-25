@@ -14,3 +14,6 @@ backups/**
 
 updates/
 updates/**
+
+.venv/
+.venv/**

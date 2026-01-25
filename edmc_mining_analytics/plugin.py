@@ -29,6 +29,7 @@ except ImportError:  # pragma: no cover
 
 from .integrations.mining_inara import InaraClient
 from .integrations.mining_edsm import EdsmClient
+from .integrations.market_search import MarketSearchService
 from .integrations.spansh_hotspots import SpanshHotspotClient
 from .integrations.edmcoverlay import EdmcOverlayHelper
 from .journal import JournalProcessor
@@ -125,6 +126,7 @@ class MiningAnalyticsPlugin:
         self.edsm = EdsmClient(self.state, self._schedule_ui_refresh)
         self.session_recorder = SessionRecorder(self.state)
         self.overlay_helper = EdmcOverlayHelper(self.state)
+        self.market_search = MarketSearchService(self.state, self._schedule_ui_refresh)
         self.overlay_helper.refresh_availability()
         self.update_manager: Optional[UpdateManager] = None
         self._overlay_refresh_job: Optional[str] = None
@@ -150,6 +152,7 @@ class MiningAnalyticsPlugin:
             notify_mining_activity=self._handle_mining_activity,
             session_recorder=self.session_recorder,
             edsm_client=self.edsm,
+            market_search_service=self.market_search,
         )
 
         self.plugin_dir: Optional[Path] = None

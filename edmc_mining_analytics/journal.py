@@ -6,19 +6,23 @@ import logging
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 import threading
 
 from .state import (
     MiningState,
     register_refinement,
     recompute_histograms,
+    recompute_market_sell_totals,
     reset_mining_state,
     update_rpm,
 )
 from .session_recorder import SessionRecorder
 from .logging_utils import get_logger
 from .integrations.mining_edsm import EdsmClient
+
+if TYPE_CHECKING:
+    from .integrations.market_search import MarketSearchService
 
 try:  # pragma: no cover - only available inside EDMC
     from edmc_data import ship_name_map  # type: ignore[import]
@@ -61,6 +65,7 @@ class JournalProcessor:
         notify_mining_activity: Optional[Callable[[str], None]] = None,
         session_recorder: Optional[SessionRecorder] = None,
         edsm_client: Optional[EdsmClient] = None,
+        market_search_service: Optional["MarketSearchService"] = None,
     ) -> None:
         self._state = state
         self._refresh_ui = refresh_ui
@@ -73,6 +78,7 @@ class JournalProcessor:
         self._pending_timeout_timer: Optional[threading.Timer] = None
         self._session_recorder = session_recorder
         self._edsm = edsm_client
+        self._market_search = market_search_service
 
     # ------------------------------------------------------------------
     # Public API
@@ -748,6 +754,9 @@ class JournalProcessor:
             localized_name = item.get("Name_Localised")
             display_name = self._select_display_name(localized_name, raw_name)
             self._state.commodity_display_names[normalized] = display_name
+            canonical_name = raw_name.strip()
+            if canonical_name:
+                self._state.commodity_canonical_names[normalized] = canonical_name
             if normalized == "drones":
                 limpets = count
 
@@ -851,6 +860,8 @@ class JournalProcessor:
                 if name not in self._state.commodity_start_times:
                     timestamp = self._parse_timestamp(entry.get("timestamp"))
                     self._state.commodity_start_times[name] = timestamp or datetime.now(timezone.utc)
+                if self._market_search is not None:
+                    self._market_search.request_price(name)
 
         self._state.cargo_additions = {k: v for k, v in self._state.cargo_additions.items() if v > 0}
         self._state.cargo_totals = dict(self._state.cargo_additions)
@@ -858,6 +869,11 @@ class JournalProcessor:
         self._state.commodity_display_names = {
             key: value for key, value in self._state.commodity_display_names.items() if key in valid_keys
         }
+        self._state.commodity_canonical_names = {
+            key: value for key, value in self._state.commodity_canonical_names.items() if key in valid_keys
+        }
+        if additions_made:
+            recompute_market_sell_totals(self._state)
 
         if self._state.limpets_start is not None and self._state.limpets_remaining is not None:
             launched = self._state.prospector_launched_count + self._state.collection_drones_launched - 1

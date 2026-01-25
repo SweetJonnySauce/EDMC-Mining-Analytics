@@ -1,0 +1,11 @@
+{
+  "commodity": "Platinum",
+  "has_large_pad": null,
+  "has_market": true,
+  "sort_mode": "best_price",
+  "min_demand": 1000,
+  "market_age_days": 30,
+  "reference_system": "Col 285 Sector LB-O c6-3",
+  "distance_ly": 100,
+  "distance_to_arrival_ls": 5000
+}
