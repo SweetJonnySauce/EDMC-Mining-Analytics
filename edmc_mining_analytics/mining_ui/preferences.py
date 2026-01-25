@@ -18,6 +18,7 @@ from ..edmc_mining_analytics_version import PLUGIN_REPO_URL, PLUGIN_VERSION, dis
 from .preferences_discord import create_discord_section
 from .preferences_inara import create_inara_section
 from .preferences_overlay import create_overlay_section
+from .preferences_market_search import create_market_search_section
 
 
 def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
@@ -46,10 +47,28 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     version_label.bind("<Button-1>", lambda _evt: webbrowser.open(PLUGIN_REPO_URL))
 
     frame.columnconfigure(0, weight=1)
-    frame.columnconfigure(1, weight=1)
+    frame.rowconfigure(1, weight=1)
 
-    general_frame = tk.LabelFrame(frame, text="General", font=section_heading_font)
-    general_frame.grid(row=1, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))
+    notebook = ttk.Notebook(frame)
+    notebook.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+
+    general_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
+    overlay_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
+    discord_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
+    inara_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
+    market_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
+
+    for tab in (general_tab, overlay_tab, discord_tab, inara_tab, market_tab):
+        tab.columnconfigure(0, weight=1)
+
+    notebook.add(general_tab, text="General")
+    notebook.add(overlay_tab, text="Overlay")
+    notebook.add(discord_tab, text="Discord")
+    notebook.add(inara_tab, text="Inara")
+    notebook.add(market_tab, text="Market search")
+
+    general_frame = tk.LabelFrame(general_tab, text="General", font=section_heading_font)
+    general_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 8))
     general_frame.columnconfigure(0, weight=0)
     general_frame.columnconfigure(1, weight=1)
 
@@ -121,11 +140,11 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     reset_cap_btn.grid(row=4, column=0, sticky="w", pady=(0, 4))
     ui._reset_capacities_btn = reset_cap_btn
 
-    overlay_frame = create_overlay_section(ui, frame, section_heading_font)
-    overlay_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
+    overlay_frame = create_overlay_section(ui, overlay_tab, section_heading_font)
+    overlay_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 8))
 
-    refinement_frame = tk.LabelFrame(frame, text="Refinement Session Logging", font=section_heading_font)
-    refinement_frame.grid(row=2, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))
+    refinement_frame = tk.LabelFrame(general_tab, text="Refinement Session Logging", font=section_heading_font)
+    refinement_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 8))
     refinement_frame.columnconfigure(0, weight=1)
 
     refinement_desc = tk.Label(
@@ -210,8 +229,8 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
         width=6,
     ).grid(row=2, column=2, sticky="w")
 
-    logging_frame = tk.LabelFrame(frame, text="Session Logging", font=section_heading_font)
-    logging_frame.grid(row=2, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
+    logging_frame = tk.LabelFrame(general_tab, text="Session Logging", font=section_heading_font)
+    logging_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
     logging_frame.columnconfigure(0, weight=1)
 
     logging_desc = tk.Label(
@@ -274,11 +293,14 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     )
     session_path_feedback_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
 
-    discord_frame = create_discord_section(ui, frame, section_heading_font)
-    discord_frame.grid(row=3, column=0, sticky="nsew", padx=(10, 5), pady=(0, 10))
+    discord_frame = create_discord_section(ui, discord_tab, section_heading_font)
+    discord_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10, 10))
 
-    inara_frame = create_inara_section(ui, frame, section_heading_font)
-    inara_frame.grid(row=3, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
+    inara_frame = create_inara_section(ui, inara_tab, section_heading_font)
+    inara_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10, 10))
+
+    market_frame = create_market_search_section(ui, market_tab, section_heading_font)
+    market_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 10))
 
     return frame
 

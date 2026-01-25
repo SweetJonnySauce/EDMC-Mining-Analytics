@@ -11,6 +11,7 @@ import requests
 
 from ..http_client import get_shared_session
 from ..state import MiningState, resolve_commodity_display_name
+from ..formatting import format_compact_number
 from .discord_image_manager import DiscordImageManager
 
 EMBED_COLOR = 0x1d9bf0
@@ -157,6 +158,10 @@ def build_summary_message(
     top_value = _format_top_commodities(summary)
     if top_value:
         fields.append({"name": "Top Commodities", "value": top_value, "inline": False})
+
+    estimated_value = _format_estimated_sell_values(state)
+    if estimated_value:
+        fields.append({"name": "Estimated Sell (Est. CR)", "value": estimated_value, "inline": False})
 
     materials = meta.get("materials", [])
     materials_value = _format_materials(materials)
@@ -328,6 +333,30 @@ def _format_materials(materials: Iterable[Dict[str, Any]]) -> Optional[str]:
     if remaining > 0:
         formatted.append(f"+{remaining} more")
     return ", ".join(formatted)
+
+
+def _format_estimated_sell_values(state: MiningState) -> Optional[str]:
+    totals = state.market_sell_totals
+    if not totals:
+        return None
+    entries: List[Tuple[str, float]] = []
+    for commodity, total in totals.items():
+        try:
+            value = float(total)
+        except (TypeError, ValueError):
+            continue
+        entries.append((commodity, value))
+    if not entries:
+        return None
+    entries.sort(key=lambda item: item[1], reverse=True)
+    lines: List[str] = []
+    for commodity, total in entries:
+        name = resolve_commodity_display_name(state, commodity)
+        lines.append(f"**{name}** — {format_compact_number(total)}")
+    total_value = state.market_sell_total if entries else None
+    if total_value is not None:
+        lines.append(f"Total — {format_compact_number(total_value)}")
+    return "\n".join(lines)
 
 
 def _materials_snapshot(state: MiningState, materials: Counter[str]) -> List[Dict[str, Any]]:

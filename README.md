@@ -13,6 +13,7 @@ Please report issues on [GitHub](https://github.com/SweetJonnySauce/EDMC-Mining-
 - Automated session management that starts, pauses, and resets analytics in response to journal events or user input, with optional auto-resume when activity resumes.
 - Prospecting intelligence with duplicate detection, commodity histograms, and quick-glance content summaries for each asteroid.
 - Integrations that help you act on the data, including Inara commodity lookups for nearest/best price (click on the commodity name in the table), EDSM lookup for reserve level and ring type, and Discord webhook summaries of completed runs.
+- Optional market search for estimated sell prices with overlay and Discord summary support.
 - No in-game configurations needed. Simply install it as an EDMC plugin and restart EDMC.
 - Optional warning that you are in a non-metallic ring (for those laser platinum miners)
 - Configurable experience covering update cadence, histogram bin size, cargo capacity inference, logging retention, and alert thresholds.
@@ -66,6 +67,7 @@ _To update, replace the contents of the `EDMC-Mining-Analytics` folder with the 
 - Use the plugin preferences (within EDMC's Plugins tab) to adjust histogram bin size, refresh cadence, and refinement per minute (RPM) thresholds.
 - Toggle automatic unpause behaviour, enable session logging, and define how many session files to retain.
 - Configure Inara search mode and filters (carriers, surface ports) for one-click commodity lookups.
+- Use the Market search tab to set Spansh filters for estimated sell prices (pad size, distance, demand, freshness).
 - Provide an optional Discord webhook URL and image links to deliver session summaries, and use the built-in test button to confirm connectivity.
 
 ## Using the Plugin

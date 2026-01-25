@@ -92,6 +92,11 @@ class PreferencesManager:
             state.overlay_anchor_x = 40
             state.overlay_anchor_y = 120
             state.overlay_refresh_interval_ms = 1000
+            state.market_search_has_large_pad = None
+            state.market_search_sort_mode = "best_price"
+            state.market_search_min_demand = 1000
+            state.market_search_age_days = 30
+            state.market_search_distance_ly = 100.0
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
@@ -179,6 +184,22 @@ class PreferencesManager:
         state.spansh_last_reserve_levels = self._load_string_list("edmc_mining_spansh_reserve_levels")
         state.spansh_last_ring_types = self._load_string_list("edmc_mining_spansh_ring_types")
         state.spansh_last_min_hotspots = self._get_optional_int("edmc_mining_spansh_min_hotspots")
+
+        market_large_pad_raw = self._get_optional_str("edmc_mining_market_large_pad")
+        if market_large_pad_raw is not None and market_large_pad_raw.strip().lower() in ("1", "true", "yes"):
+            state.market_search_has_large_pad = True
+        else:
+            state.market_search_has_large_pad = None
+        raw_sort = self._get_str("edmc_mining_market_sort", state.market_search_sort_mode).strip().lower()
+        state.market_search_sort_mode = "nearest" if raw_sort == "nearest" else "best_price"
+        min_demand = self._get_int("edmc_mining_market_min_demand", state.market_search_min_demand)
+        state.market_search_min_demand = max(0, min_demand)
+        age_days = self._get_int("edmc_mining_market_age_days", state.market_search_age_days)
+        state.market_search_age_days = max(0, age_days)
+        distance = self._get_float("edmc_mining_market_distance_ly", None)
+        if distance is None or distance <= 0:
+            distance = state.market_search_distance_ly
+        state.market_search_distance_ly = float(distance)
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -373,6 +394,32 @@ class PreferencesManager:
             config.set("edmc_mining_spansh_min_hotspots", value)
         except Exception:
             _log.exception("Failed to persist Spansh minimum hotspots")
+
+        try:
+            value = "1" if state.market_search_has_large_pad else ""
+            config.set("edmc_mining_market_large_pad", value)
+        except Exception:
+            _log.exception("Failed to persist market search large pad preference")
+
+        try:
+            config.set("edmc_mining_market_sort", state.market_search_sort_mode or "best_price")
+        except Exception:
+            _log.exception("Failed to persist market search sort preference")
+
+        try:
+            config.set("edmc_mining_market_min_demand", int(state.market_search_min_demand))
+        except Exception:
+            _log.exception("Failed to persist market search min demand")
+
+        try:
+            config.set("edmc_mining_market_age_days", int(state.market_search_age_days))
+        except Exception:
+            _log.exception("Failed to persist market search age days")
+
+        try:
+            config.set("edmc_mining_market_distance_ly", str(float(state.market_search_distance_ly)))
+        except Exception:
+            _log.exception("Failed to persist market search distance")
 
 
     @staticmethod

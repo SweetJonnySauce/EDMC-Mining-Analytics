@@ -10,6 +10,7 @@ from typing import Optional, Sequence, Tuple
 
 from ..logging_utils import get_logger
 from ..state import MiningState
+from ..formatting import format_compact_number
 
 try:  # pragma: no cover - runtime environment provides this module
     from EDMCOverlay import edmcoverlay as _overlay_module  # type: ignore[import]
@@ -34,6 +35,7 @@ _METRIC_ORDER: Sequence[Tuple[str, str]] = (
     ("rpm", "RPM"),
     ("percent_full", "% Full"),
     ("limpets", "Limpets"),
+    ("est_cr", "Est. CR"),
 )
 
 
@@ -314,6 +316,18 @@ class EdmcOverlayHelper:
                 key="limpets",
                 label="Limpets Remaining",
                 value=limpets_label,
+                color=DEFAULT_VALUE_COLOR,
+            )
+        )
+
+        total_est = None
+        if self._state.market_sell_totals:
+            total_est = self._state.market_sell_total
+        metrics.append(
+            _OverlayMetric(
+                key="est_cr",
+                label="Est. CR",
+                value=format_compact_number(total_est),
                 color=DEFAULT_VALUE_COLOR,
             )
         )

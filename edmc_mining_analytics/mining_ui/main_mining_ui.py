@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import queue
 import random
 import threading
@@ -18,6 +19,11 @@ try:
     import tkinter.font as tkfont
 except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
+
+try:  # pragma: no cover - only available inside EDMC
+    from config import number_from_string  # type: ignore[import]
+except ImportError:  # pragma: no cover - fallback when not running inside EDMC
+    number_from_string = None  # type: ignore[assignment]
 
 from edmc_mining_analytics.tooltip import WidgetTooltip
 from edmc_mining_analytics.debugging import apply_frame_debugging, collect_frames
@@ -209,6 +215,11 @@ class edmcmaMiningUI:
         self._prefs_overlay_x_var: Optional[tk.IntVar] = None
         self._prefs_overlay_y_var: Optional[tk.IntVar] = None
         self._prefs_overlay_interval_var: Optional[tk.IntVar] = None
+        self._prefs_market_has_large_pad_var: Optional[tk.BooleanVar] = None
+        self._prefs_market_sort_var: Optional[tk.StringVar] = None
+        self._prefs_market_min_demand_var: Optional[tk.StringVar] = None
+        self._prefs_market_age_days_var: Optional[tk.StringVar] = None
+        self._prefs_market_distance_var: Optional[tk.StringVar] = None
         self._reset_capacities_btn: Optional[ttk.Button] = None
         self._send_summary_cb: Optional[CheckboxType] = None
         self._send_reset_summary_cb: Optional[CheckboxType] = None
@@ -242,6 +253,7 @@ class edmcmaMiningUI:
         self._updating_overlay_x_var = False
         self._updating_overlay_y_var = False
         self._updating_overlay_interval_var = False
+        self._updating_market_sort_var = False
 
         self._rate_update_job: Optional[str] = None
         self._content_collapsed = False
@@ -534,6 +546,86 @@ class edmcmaMiningUI:
         self._updating_overlay_interval_var = True
         self._prefs_overlay_interval_var.set(clamped)
         self._updating_overlay_interval_var = False
+        self._notify_settings_changed()
+
+    def _on_market_has_large_pad_change(self, *_: object) -> None:
+        if self._prefs_market_has_large_pad_var is None:
+            return
+        try:
+            value = bool(self._prefs_market_has_large_pad_var.get())
+        except (tk.TclError, ValueError):
+            return
+        desired = True if value else None
+        if desired == self._state.market_search_has_large_pad:
+            return
+        self._state.market_search_has_large_pad = desired
+        self._notify_settings_changed()
+
+    def _on_market_sort_change(self, *_: object) -> None:
+        if self._prefs_market_sort_var is None or self._updating_market_sort_var:
+            return
+        label = self._prefs_market_sort_var.get()
+        value = self._market_sort_value_from_label(label)
+        if value is None:
+            self._set_market_sort_label(self._state.market_search_sort_mode)
+            return
+        if value == self._state.market_search_sort_mode:
+            return
+        self._state.market_search_sort_mode = value
+        self._notify_settings_changed()
+
+    def _on_market_min_demand_commit(self, *_: object) -> None:
+        var = self._prefs_market_min_demand_var
+        if var is None:
+            return
+        parsed = self._parse_market_number(var.get())
+        if parsed is None:
+            var.set(str(int(self._state.market_search_min_demand)))
+            return
+        value = int(parsed)
+        if value < 0:
+            var.set(str(int(self._state.market_search_min_demand)))
+            return
+        if value == self._state.market_search_min_demand:
+            return
+        self._state.market_search_min_demand = value
+        var.set(str(value))
+        self._notify_settings_changed()
+
+    def _on_market_age_days_commit(self, *_: object) -> None:
+        var = self._prefs_market_age_days_var
+        if var is None:
+            return
+        parsed = self._parse_market_number(var.get())
+        if parsed is None:
+            var.set(str(int(self._state.market_search_age_days)))
+            return
+        value = int(parsed)
+        if value < 0:
+            var.set(str(int(self._state.market_search_age_days)))
+            return
+        if value == self._state.market_search_age_days:
+            return
+        self._state.market_search_age_days = value
+        var.set(str(value))
+        self._notify_settings_changed()
+
+    def _on_market_distance_commit(self, *_: object) -> None:
+        var = self._prefs_market_distance_var
+        if var is None:
+            return
+        parsed = self._parse_market_number(var.get())
+        if parsed is None:
+            var.set(self._format_market_distance(self._state.market_search_distance_ly))
+            return
+        value = float(parsed)
+        if value <= 0:
+            var.set(self._format_market_distance(self._state.market_search_distance_ly))
+            return
+        if value == self._state.market_search_distance_ly:
+            return
+        self._state.market_search_distance_ly = value
+        var.set(self._format_market_distance(value))
         self._notify_settings_changed()
 
     def _update_overlay_controls(self) -> None:
@@ -991,6 +1083,61 @@ class edmcmaMiningUI:
             return bool(var.get())
         except (tk.TclError, ValueError):
             return default
+
+    @staticmethod
+    def _market_sort_value_from_label(label: str) -> Optional[str]:
+        candidate = (label or "").strip().lower()
+        if candidate in ("nearest", "nearest station"):
+            return "nearest"
+        if candidate in ("best price", "best_price"):
+            return "best_price"
+        return None
+
+    def _set_market_sort_label(self, mode: str) -> None:
+        var = self._prefs_market_sort_var
+        if var is None:
+            return
+        self._updating_market_sort_var = True
+        var.set(self._format_market_sort_label(mode))
+        self._updating_market_sort_var = False
+
+    @staticmethod
+    def _format_market_sort_label(mode: str) -> str:
+        candidate = (mode or "").strip().lower()
+        return "Nearest station" if candidate == "nearest" else "Best price"
+
+    def _parse_market_number(self, raw: object) -> Optional[float]:
+        text = str(raw or "").strip()
+        if not text:
+            return None
+        parsed = None
+        if number_from_string is not None:
+            try:
+                parsed = number_from_string(text)
+            except Exception:
+                parsed = None
+        if parsed is None:
+            try:
+                parsed = float(text)
+            except (TypeError, ValueError):
+                return None
+        try:
+            value = float(parsed)
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(value):
+            return None
+        return value
+
+    @staticmethod
+    def _format_market_distance(value: float) -> str:
+        try:
+            distance = float(value)
+        except (TypeError, ValueError):
+            return "0"
+        if distance.is_integer():
+            return str(int(distance))
+        return str(distance)
 
     def build_preferences(self, parent: tk.Widget) -> tk.Widget:
         return build_preferences_ui(self, parent)

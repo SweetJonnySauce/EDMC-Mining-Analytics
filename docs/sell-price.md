@@ -124,9 +124,9 @@ yes.
 | Phase | Description | Status |
 | --- | --- | --- |
 | Phase 1 | Market search core + state scaffolding | Completed |
-| Phase 2 | Preferences UI (tabbed) + validation | Planned |
-| Phase 3 | Overlay + Discord integration | Planned |
-| Phase 4 | Hardening + tests + docs | Planned |
+| Phase 2 | Preferences UI (tabbed) + validation | Completed |
+| Phase 3 | Overlay + Discord integration | Completed |
+| Phase 4 | Hardening + tests + docs | Completed |
 
 ## Phase Details
 
@@ -167,10 +167,16 @@ Phase 1 results
 
 | Stage | Description | Status |
 | --- | --- | --- |
-| 2.1 | Add new preferences fields to `MiningState` and config load/save | Planned |
-| 2.2 | Refactor preferences UI into notebook layout | Planned |
-| 2.3 | Add “Market search” tab controls + validation handlers | Planned |
-| 2.4 | Ensure tab settings round-trip and update state correctly | Planned |
+| 2.1 | Add new preferences fields to `MiningState` and config load/save | Completed |
+| 2.2 | Refactor preferences UI into notebook layout | Completed |
+| 2.3 | Add “Market search” tab controls + validation handlers | Completed |
+| 2.4 | Ensure tab settings round-trip and update state correctly | Completed |
+
+Phase 2 results
+- Preferences pane converted to a tabbed notebook with dedicated Market search tab.
+- Market search settings are persisted (has large pad, sort mode, min demand, age days, distance).
+- Numeric fields validate on blur/enter and silently revert on invalid input using locale-aware parsing when available.
+- Tests: not run (not requested).
 
 ### Phase 3: Overlay + Discord integration
 - Goal: Display total estimated credits in overlay; include per-commodity and total in Discord summary.
@@ -181,9 +187,15 @@ Phase 1 results
 
 | Stage | Description | Status |
 | --- | --- | --- |
-| 3.1 | Add compact currency formatter utility | Planned |
-| 3.2 | Add overlay metric for total estimated CR | Planned |
-| 3.3 | Extend Discord summary with per-commodity estimated CR and total | Planned |
+| 3.1 | Add compact currency formatter utility | Completed |
+| 3.2 | Add overlay metric for total estimated CR | Completed |
+| 3.3 | Extend Discord summary with per-commodity estimated CR and total | Completed |
+
+Phase 3 results
+- Added compact number formatter for credits (e.g., 4.3M) used by overlay and Discord.
+- Overlay now shows an `Est. CR` row when market estimates are available.
+- Discord summary now lists per-commodity estimated sell values and a total line.
+- Tests: not run (not requested).
 
 ### Phase 4: Hardening + tests + docs
 - Goal: Stabilize behavior, add test coverage for helpers, and update docs.
@@ -194,6 +206,11 @@ Phase 1 results
 
 | Stage | Description | Status |
 | --- | --- | --- |
-| 4.1 | Add tests for market search payload creation and formatting | Planned |
-| 4.2 | Add tests for estimated value calculations | Planned |
-| 4.3 | Update docs/README with new feature summary | Planned |
+| 4.1 | Add tests for market search payload creation and formatting | Completed |
+| 4.2 | Add tests for estimated value calculations | Completed |
+| 4.3 | Update docs/README with new feature summary | Completed |
+
+Phase 4 results
+- Added tests for compact number formatting, market sell total computation, and Spansh payload creation.
+- Updated README to mention market search preferences and estimated sell price support.
+- Tests: not run (not requested).
