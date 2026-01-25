@@ -27,6 +27,7 @@ except ImportError:  # pragma: no cover - fallback when not running inside EDMC
 
 from edmc_mining_analytics.tooltip import WidgetTooltip
 from edmc_mining_analytics.debugging import apply_frame_debugging, collect_frames
+from ..formatting import format_compact_number
 from ..state import MiningState, compute_percentage_stats, update_rpm, resolve_commodity_display_name
 from ..integrations.mining_inara import InaraClient
 from ..integrations.spansh_hotspots import (
@@ -170,6 +171,13 @@ class edmcmaMiningUI:
             {
                 "key": "total",
                 "label": "Total",
+                "anchor": "e",
+                "sticky": "e",
+                "weight": 1,
+            },
+            {
+                "key": "est_cr",
+                "label": "Est. CR",
                 "anchor": "e",
                 "sticky": "e",
                 "weight": 1,
@@ -1550,6 +1558,7 @@ class edmcmaMiningUI:
             "present": "Number of prospecting samples that reported this commodity during the current session.",
             "percent": "Percentage of prospected asteroids that contained this commodity.",
             "total": "Tons of this commodity currently in your cargo hold.",
+            "est_cr": "Estimated sell value for your current cargo total.",
             "range": "Observed % yield range from prospecting samples, including minimum, average, and maximum values.",
             "tph": "Estimated tons per hour mined for this commodity.",
         }
@@ -1644,6 +1653,8 @@ class edmcmaMiningUI:
             percent = (present / total_asteroids) * 100 if total_asteroids else 0.0
             range_label = self._format_range_label(commodity)
             tph = self._format_tph(commodity)
+            est_total = self._state.market_sell_totals.get(commodity)
+            est_label = format_compact_number(est_total, default="-")
 
             total_amount = self._state.cargo_totals.get(commodity, 0)
             values = (
@@ -1651,6 +1662,7 @@ class edmcmaMiningUI:
                 f"{present:,d}" if present else "0",
                 f"{percent:.1f}%",
                 f"{total_amount:,}t" if total_amount else "0t",
+                est_label,
                 range_label,
                 tph if tph else "-",
             )
@@ -1976,12 +1988,12 @@ class edmcmaMiningUI:
         if not numeric_samples:
             return ""
         if len(numeric_samples) == 1:
-            return f"{numeric_samples[0]:.1f}%"
+            return f"{numeric_samples[0]:.0f}%"
         stats = compute_percentage_stats(numeric_samples)
         if not stats:
             return ""
         low, avg, high = stats
-        return f"{low:.1f}%-{avg:.1f}%-{high:.1f}%"
+        return f"{low:.0f}%-{avg:.0f}%-{high:.0f}%"
 
     def _compute_total_tph(self) -> Optional[float]:
         if not self._state.mining_start:

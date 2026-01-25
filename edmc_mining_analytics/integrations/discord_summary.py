@@ -339,6 +339,7 @@ def _format_estimated_sell_values(state: MiningState) -> Optional[str]:
     totals = state.market_sell_totals
     if not totals:
         return None
+    details = state.market_sell_details
     entries: List[Tuple[str, float]] = []
     for commodity, total in totals.items():
         try:
@@ -352,7 +353,22 @@ def _format_estimated_sell_values(state: MiningState) -> Optional[str]:
     lines: List[str] = []
     for commodity, total in entries:
         name = resolve_commodity_display_name(state, commodity)
-        lines.append(f"**{name}** — {format_compact_number(total)}")
+        detail = details.get(commodity, {})
+        system_name = detail.get("system_name") if isinstance(detail, dict) else None
+        station_name = detail.get("station_name") if isinstance(detail, dict) else None
+        system = str(system_name).strip() if system_name else ""
+        station = str(station_name).strip() if station_name else ""
+        location = ""
+        if system and station:
+            location = f"{system} / {station}"
+        elif system:
+            location = system
+        elif station:
+            location = station
+        if location:
+            lines.append(f"**{name}** — {format_compact_number(total)} ({location})")
+        else:
+            lines.append(f"**{name}** — {format_compact_number(total)}")
     total_value = state.market_sell_total if entries else None
     if total_value is not None:
         lines.append(f"Total — {format_compact_number(total_value)}")

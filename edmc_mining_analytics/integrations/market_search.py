@@ -95,6 +95,7 @@ class MarketSearchService:
                 break
 
         should_refresh = False
+        applied_estimate = None
         with self._lock:
             if key not in self._state.market_search_inflight:
                 return
@@ -105,6 +106,17 @@ class MarketSearchService:
                 self._state.market_sell_details[key] = estimate.to_dict()
                 recompute_market_sell_totals(self._state)
                 should_refresh = True
+                applied_estimate = estimate
+
+        if applied_estimate is not None:
+            _log.debug(
+                "Market search price set: commodity=%s (key=%s) system=%s station=%s sell_price=%s",
+                applied_estimate.commodity,
+                key,
+                applied_estimate.system_name,
+                applied_estimate.station_name,
+                applied_estimate.sell_price,
+            )
 
         if should_refresh:
             try:
