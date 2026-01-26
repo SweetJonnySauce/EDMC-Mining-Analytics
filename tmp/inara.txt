@@ -26,3 +26,20 @@ Include surface stations in results (already in inara search)
 
 
 Add distance arrival to star to both inara and spansh SearchRescue_Count
+
+## Marketplace filtering 
+"Type" values in Spansh along with my categorization to be used in our searches.
+Asteroid Base: Station
+Coriolis Starport: Station
+Dockable Planet station: Surface
+Dodec Starport: Station
+Drake-Class carrier: Carrier
+Mega ship: Station
+Ocellus Starport: Station
+Orbis Starport: Station
+Outpost: Surface
+Planetary Construction Depot: Surface
+Planetary Port: Surface
+Settlement: Surface
+Space Construction Depot: Station
+Surface Settlement: Surface

@@ -217,17 +217,110 @@ Phase 4 results
 
 
 ## Modification to combine searches on inara and spansh for consistency
+Currently we have settings for Inara searches based on commodity and for Spansh marketplace searches. I want to combine all the search parameters into one tab (we'll use Market search) and then we will be able to use these settings for both inara and spansh. Here are some details. 
+
+
+### Requirements
+- Combine the search parameters on the inara tab into the Market Search tab and remove the Inara tab. the market search parameters will drive both Inara and Spansh searches
+
+- Add Distance to Arrival (Ls) as an option to the market search tab. Default to 5000
+- Wire Distance to Arrival (Ls) into the spansh searches. You can look a the code in the tmp directory to see how to do this, but don't directly use the code (we are throwing it away once we are done)
+- Wire Distance to Arrival (Ls) into Inara searchs (see Inara URL params below)
+
+- Merge Best price search and distance search from the Inara tab to the Market search tab. Keep the market search drop-down in favor of the radio buttons.
+- Move Include Fleet carriers in results to the Market Search tab. this is already wired into Inara searches but we need to wire this into spansh searches. When checked, use the Type field and add Carrier categorization to the Spansh search. I've mapped Type values to carriers categorization for your reference below in the Marketplace filtering.
+- Similarly, move Include Surface Stations in Results to the market Search tab. This is already wired into Inara searches but we now need to wire it into Spansh searches. Use the marketplace filtering below where categorization = Surface
+- Update the spansh search to only search for Station category (see Marketplace filtering below) unless "Include Carriers" and/or "Include Surface Station" checkboxes are checked.
+
+- Add max distance to the inara searches per the inara URL parameter list below. This is Distance LY
+- Add min landing pad to the inara searches per the inara URL parameter list below. This is "Has Large landing pad". if checked, set pi3 to 3, if unchecked. don't include it at all.
+- Order by should already be implemented for both inara and spansh. This is "Sort by" on the settings.
+- Add min demand to the inara searches per the inara URL parameter list below. This is Minimum Demand
+- Add max price age to the inara searches per the inara URL parameter list below. This is "Age of market data (days). You'll need to convert this value to hours for inara.
+- THe label on the market search tab says "Configure Spansh market..." remove Spansh and just say "Configure market..."
+
+### Questions
+- UI control: “Keep the market search drop-down in favor of the radio buttons” is ambiguous. Which control do you want in the Market search tab: the existing Sort by dropdown, radio buttons, or both?
+Keep the "Sort by" drop down on market search. Remove the Best price and Distance radio button from the inara tab
+- Defaults/migration: should we migrate existing Inara settings into the new Market search settings (so users keep their preferences), or reset to new defaults?
+Reset to new defaults. Note this in the release notes (create a new RELEASE_NOTES.md file for this. New version will be 0.6.0)
+- Spansh category filtering: when “Include Carriers” and/or “Include Surface Stations” is checked, should the search include those in addition to Station, or switch to only those categories?
+In addition to Station
+- Carrier mapping: where is the “Type → carriers categorization” mapping you referenced? Point me to the exact mapping table or file.
+See the table in "Marketplace filtering". It's ordered by Type: Category. Type is the value in the spansh query we want to make.
+- Distance to Arrival (Ls): confirm this is a max distance filter (≤ value) for both Spansh and Inara, and should it be applied when the field is empty/0?
+yes, max distance (in Light seconds). If it's empty, do not include it. Make it null or empty
+- Inara URL parameters: provide the exact parameter names and expected values for max distance (LY), min landing pad (pi3 = 3 when checked, omit otherwise), min demand, max price age (hours), and distance to arrival (Ls).
+The first value (e.g. pi11) is the URL param. I've updated the table. Does this answer the question?
+- Age conversion: when converting “Age of market data (days)” to hours for Inara, should we round (ceil/floor) or allow fractional hours?
+The setting should be a integer in # of days. Multiply that value times 24 to get hours. No fractions needed.
+- Validation: should the new “Distance to Arrival (Ls)” follow the same validation UX as the other numeric fields (validate on blur/enter, revert silently)?
+yes.
+- Distance to Arrival (Ls) vs validation: you want it nullable (omit filter when empty), but also “validate/revert silently.” Should an empty field be allowed (stored as None/blank), or should it revert to the previous value/default?
+Empty field is allowed.
+- Sort by mapping: confirm the exact dropdown options and mapping to Inara pi10 (e.g., best_price → 1, nearest → 2). Any additional options?
+Your mapping is correct
+- Spansh category filter shape: do you want a single type filter with a list of Type values (Station + optional Carrier/Surface), or some other filter structure?
+For stations, you'll need to provide a list to the search query. When you add in Carrier or Surface, you'll need to add those Type values to the search query list also.
+- Versioning: besides creating RELEASE_NOTES.md, should I bump PLUGIN_VERSION (and any packaging metadata) to 0.6.0?
+yes
+
 
 ### additional inara URL parameters we will need:
-- pi11 = Max distance integer
+- pi11 = Max distance (integer)
 - pi3 = landing pad (1=small, 2=medium, 3=large)
 - pi10 = order by (1=Best price, 2=Distance)
-- pi7 = min demand 
+- pi7 = min demand (integer)
 - pi5 = max price age (in hours)
-- pi9 = max station distance (in Ls)
+- pi9 = max station distance (in Ls) (integer). This is Distance to Arrival (Ls)
 
+## Marketplace filtering 
+"Type" values in Spansh along with my categorization to be used in our searches.
+Asteroid Base: Station
+Coriolis Starport: Station
+Dockable Planet station: Surface
+Dodec Starport: Station
+Drake-Class carrier: Carrier
+Mega ship: Station
+Ocellus Starport: Station
+Orbis Starport: Station
+Outpost: Surface
+Planetary Construction Depot: Surface
+Planetary Port: Surface
+Settlement: Surface
+Space Construction Depot: Station
+Surface Settlement: Surface
 
-- Add Distance to Arrival (Ls) as an option to the market search
-- Wire Distance to Arrival (Ls) into the spansh searches. You can look a the code in the tmp directory to see how to do this, but don't directly use the code (we are throwing it away once we are done)
-- Combine the search parameters on the inara tab into the Market Search tab and remove the Inara tab. the market search parameters will drive both Inara and Spansh searches
-- THe label on the market search tab says "Configure Spansh market..." remove Spansh and just say "Configure market..."
+## Phase 5: Unified market search settings (planned)
+High-level plan to merge Inara + Spansh search parameters into a single Market search tab, wire new filters, and ship a 0.6.0 release.
+
+| Stage | Description | Status |
+| --- | --- | --- |
+| 5.1 | Consolidate preferences: move Inara settings into Market search, remove Inara tab, add Distance to Arrival (Ls), update label copy | Pending |
+| 5.2 | Wire settings into Spansh search payload: type list (Station + optional Carrier/Surface), distance-to-arrival, carrier/surface inclusion | Pending |
+| 5.3 | Wire settings into Inara URL params: max distance (LY), landing pad, order by, min demand, max price age (hours), distance-to-arrival (Ls) | Pending |
+| 5.4 | Update versioning + release notes: bump to 0.6.0, add RELEASE_NOTES.md, document defaults reset | Pending |
+| 5.5 | Validate + test: preference validation (incl. nullable distance), payload/URL tests, doc updates | Pending |
+
+### Phase 5 Details
+- Goal: unify Inara + Spansh search settings into one Market search tab, add new filters, and align both search backends with the same parameters.
+- Behaviors that must remain unchanged: mining session lifecycle, cargo tracking, market search threading model, overlay/Discord formatting, and existing search defaults unless explicitly updated.
+- Edge cases/invariants: distance-to-arrival can be empty (omit filter); include carriers/surface means add to Station list (not replace); localized names still try first; Inara hours = days * 24.
+- Risks: UI regressions when removing Inara tab, miswired settings leading to wrong searches, stale config values after reset, or unexpected filtering when type list changes.
+- Mitigations: centralized settings mapping, explicit filter construction helpers, validation on blur/enter with silent revert, and tests for payload/URL composition.
+
+Implementation plan (Phase 5)
+- Consolidate preference state: introduce Distance to Arrival (Ls), move Inara settings into Market search, and remove Inara tab/widgets.
+- Reset defaults on upgrade: new defaults applied, previous Inara-only settings ignored, and release notes document the reset.
+- Spansh search wiring: build a type list starting with Station types; append Carrier/Surface type values when enabled; include max distance, min demand, landing pad, and distance-to-arrival where applicable.
+- Inara search wiring: add params pi11, pi3, pi10, pi7, pi5, pi9 with correct mappings; omit nullable parameters when empty.
+- Update labels/copy: change “Configure Spansh market…” to “Configure market…”.
+- Tests + docs: update/extend tests for payload and URL builders; update README and release notes.
+
+| Stage | Description | Status |
+| --- | --- | --- |
+| 5.1 | Preferences + config: add Distance to Arrival (Ls), move Inara controls into Market search, remove Inara tab, update label copy | Pending |
+| 5.2 | Spansh filtering: build type list (Station + optional Carrier/Surface), wire distance-to-arrival and carrier/surface filters | Pending |
+| 5.3 | Inara URL params: add max distance (LY), landing pad, order by, min demand, max price age (hours), distance-to-arrival (Ls) | Pending |
+| 5.4 | Versioning + release notes: bump to 0.6.0, add RELEASE_NOTES.md, note defaults reset | Pending |
+| 5.5 | Validation + tests + docs: nullable distance handling, payload/URL tests, README/doc updates | Pending |
