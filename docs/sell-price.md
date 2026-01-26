@@ -214,3 +214,20 @@ Phase 4 results
 - Added tests for compact number formatting, market sell total computation, and Spansh payload creation.
 - Updated README to mention market search preferences and estimated sell price support.
 - Tests: not run (not requested).
+
+
+## Modification to combine searches on inara and spansh for consistency
+
+### additional inara URL parameters we will need:
+- pi11 = Max distance integer
+- pi3 = landing pad (1=small, 2=medium, 3=large)
+- pi10 = order by (1=Best price, 2=Distance)
+- pi7 = min demand 
+- pi5 = max price age (in hours)
+- pi9 = max station distance (in Ls)
+
+
+- Add Distance to Arrival (Ls) as an option to the market search
+- Wire Distance to Arrival (Ls) into the spansh searches. You can look a the code in the tmp directory to see how to do this, but don't directly use the code (we are throwing it away once we are done)
+- Combine the search parameters on the inara tab into the Market Search tab and remove the Inara tab. the market search parameters will drive both Inara and Spansh searches
+- THe label on the market search tab says "Configure Spansh market..." remove Spansh and just say "Configure market..."

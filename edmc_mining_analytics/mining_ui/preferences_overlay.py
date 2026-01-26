@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import webbrowser
 from typing import TYPE_CHECKING
 
 try:
@@ -36,7 +37,7 @@ def create_overlay_section(
     ui._prefs_overlay_enabled_var.trace_add("write", ui._on_overlay_enabled_change)
     overlay_enable_cb = ttk.Checkbutton(
         frame,
-        text="Enable EDMCOverlay metrics",
+        text="Enable overlay metrics",
         variable=ui._prefs_overlay_enabled_var,
     )
     overlay_enable_cb.grid(row=0, column=0, columnspan=2, sticky="w", pady=(6, 4))
@@ -107,6 +108,27 @@ def create_overlay_section(
         width=6,
     )
     overlay_interval_spin.grid(row=3, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
+
+    modern_overlay_url = "https://github.com/SweetJonnySauce/EDMCModernOverlay"
+    modern_overlay_row = tk.Frame(frame, highlightthickness=0, bd=0)
+    modern_overlay_row.grid(row=5, column=0, columnspan=2, sticky="w", pady=(0, 6))
+
+    modern_overlay_intro = tk.Label(modern_overlay_row, text="Check out ", anchor="w")
+    modern_overlay_intro.grid(row=0, column=0, sticky="w")
+
+    modern_overlay_link = tk.Label(
+        modern_overlay_row,
+        text="EDMCModernOverlay",
+        anchor="w",
+        cursor="hand2",
+        font=("TkDefaultFont", 9, "underline"),
+    )
+    modern_overlay_link.grid(row=0, column=1, sticky="w")
+    modern_overlay_link.configure(foreground=ui._theme.link_color())
+    modern_overlay_link.bind("<Button-1>", lambda _evt: webbrowser.open(modern_overlay_url))
+
+    modern_overlay_suffix = tk.Label(modern_overlay_row, text="!", anchor="w")
+    modern_overlay_suffix.grid(row=0, column=2, sticky="w")
 
     ui._overlay_controls = [overlay_enable_cb, overlay_x_spin, overlay_y_spin, overlay_interval_spin]
     ui._overlay_hint_label = overlay_hint

@@ -85,3 +85,11 @@ Questions, ideas, or bugs? Open an issue on [GitHub](https://github.com/SweetJon
 - Big thanks to [Aussig of BGS-Tally](https://github.com/aussig/BGS-Tally) fame for auto-update functionality examples and other bits.
 - Thanks to [FCDN](https://github.com/aweeri/FCDN) for the Discord integration ideas.
 - Thanks to [Leerensucher](https://github.com/Leerensucher) for the idea of having multiple images for the discord summary.
+
+## Network access disclosure
+EDMC Mining Analytics connects to these internet services.
+- Inara for commodity searches
+- Spansh for hotspot and market price searches
+- Discord for sending mining summaries only if you configure the option by providnig a Discord webhook in settings
+- Image hosting services (like imgur.com) only if you configure Discord images in settings
+- Github to confirm the lastest version of EDMC Mining Analytics is available
