@@ -13,15 +13,6 @@ ProspectKey = Tuple[str, Tuple[Tuple[str, float], ...]]
 
 
 @dataclass
-class InaraSettings:
-    """User-configurable settings that influence Inara lookups."""
-
-    search_mode: int = 1  # 1=Best price, 3=Distance
-    include_carriers: bool = True
-    include_surface: bool = True
-
-
-@dataclass
 class MiningState:
     """Represents the mutable mining session state shared across subsystems."""
 
@@ -68,7 +59,6 @@ class MiningState:
     prospected_samples: Dict[str, List[float]] = field(default_factory=lambda: defaultdict(list))
     prospected_histogram: Dict[str, Counter[int]] = field(default_factory=lambda: defaultdict(Counter))
 
-    inara_settings: InaraSettings = field(default_factory=InaraSettings)
     cargo_capacity: Optional[int] = None
     cargo_capacity_is_inferred: bool = False
     current_cargo_tonnage: int = 0
@@ -111,9 +101,12 @@ class MiningState:
     spansh_last_min_hotspots: Optional[int] = None
     market_search_has_large_pad: Optional[bool] = None
     market_search_sort_mode: str = "best_price"
+    market_search_include_carriers: bool = True
+    market_search_include_surface: bool = True
     market_search_min_demand: int = 1000
     market_search_age_days: int = 30
     market_search_distance_ly: float = 100.0
+    market_search_distance_ls: Optional[float] = 5000.0
     market_sell_prices: Dict[str, float] = field(default_factory=dict)
     market_sell_details: Dict[str, Dict[str, object]] = field(default_factory=dict)
     market_sell_totals: Dict[str, float] = field(default_factory=dict)

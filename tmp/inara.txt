@@ -29,7 +29,7 @@ Add distance arrival to star to both inara and spansh SearchRescue_Count
 
 ## Marketplace filtering 
 "Type" values in Spansh along with my categorization to be used in our searches.
-Asteroid Base: Station
+Asteroid base: Station
 Coriolis Starport: Station
 Dockable Planet station: Surface
 Dodec Starport: Station
@@ -43,3 +43,9 @@ Planetary Port: Surface
 Settlement: Surface
 Space Construction Depot: Station
 Surface Settlement: Surface
+
+
+step 1: Get ref system X/Y/Z
+step 2: do a system search with X, Y, and Z set to +/- 100 from reference system
+step 3: Search spansh markets with distance = 100 * sqrt(3)
+step 4: Only use systems from market search that are also in the system search

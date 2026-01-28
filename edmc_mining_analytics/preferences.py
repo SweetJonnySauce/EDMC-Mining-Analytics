@@ -73,9 +73,6 @@ class PreferencesManager:
         if config is None:
             state.histogram_bin_size = 10
             state.rate_interval_seconds = 30
-            state.inara_settings.search_mode = 1
-            state.inara_settings.include_carriers = True
-            state.inara_settings.include_surface = True
             state.inferred_capacity_map = {}
             state.auto_unpause_on_event = True
             state.session_logging_enabled = False
@@ -94,22 +91,16 @@ class PreferencesManager:
             state.overlay_refresh_interval_ms = 1000
             state.market_search_has_large_pad = None
             state.market_search_sort_mode = "best_price"
+            state.market_search_include_carriers = True
+            state.market_search_include_surface = True
             state.market_search_min_demand = 1000
             state.market_search_age_days = 30
             state.market_search_distance_ly = 100.0
+            state.market_search_distance_ls = 5000.0
             return
 
         state.histogram_bin_size = clamp_bin_size(self._get_int("edmc_mining_histogram_bin", 10))
         state.rate_interval_seconds = clamp_rate_interval(self._get_int("edmc_mining_rate_interval", 30))
-
-        search_mode = self._get_int("edmc_mining_inara_search_mode", 1)
-        state.inara_settings.search_mode = 3 if search_mode == 3 else 1
-
-        include_carriers = self._get_int("edmc_mining_inara_include_carriers", 1)
-        state.inara_settings.include_carriers = bool(include_carriers)
-
-        include_surface = self._get_int("edmc_mining_inara_include_surface", 1)
-        state.inara_settings.include_surface = bool(include_surface)
 
         state.inferred_capacity_map = self._load_inferred_capacities()
         state.auto_unpause_on_event = bool(self._get_int("edmc_mining_auto_unpause", 1))
@@ -192,6 +183,12 @@ class PreferencesManager:
             state.market_search_has_large_pad = None
         raw_sort = self._get_str("edmc_mining_market_sort", state.market_search_sort_mode).strip().lower()
         state.market_search_sort_mode = "nearest" if raw_sort == "nearest" else "best_price"
+        state.market_search_include_carriers = bool(
+            self._get_int("edmc_mining_market_include_carriers", int(state.market_search_include_carriers))
+        )
+        state.market_search_include_surface = bool(
+            self._get_int("edmc_mining_market_include_surface", int(state.market_search_include_surface))
+        )
         min_demand = self._get_int("edmc_mining_market_min_demand", state.market_search_min_demand)
         state.market_search_min_demand = max(0, min_demand)
         age_days = self._get_int("edmc_mining_market_age_days", state.market_search_age_days)
@@ -200,6 +197,28 @@ class PreferencesManager:
         if distance is None or distance <= 0:
             distance = state.market_search_distance_ly
         state.market_search_distance_ly = float(distance)
+        distance_ls = None
+        if config is not None:
+            try:
+                raw_distance_ls = config.get_str(key="edmc_mining_market_distance_ls")  # type: ignore[arg-type]
+            except Exception:
+                raw_distance_ls = None
+            if raw_distance_ls is None:
+                distance_ls = 5000.0
+            else:
+                text = str(raw_distance_ls).strip()
+                if text:
+                    try:
+                        parsed = float(text)
+                    except (TypeError, ValueError):
+                        parsed = None
+                    if parsed and parsed > 0:
+                        distance_ls = parsed
+                else:
+                    distance_ls = None
+        if distance_ls is None and config is None:
+            distance_ls = 5000.0
+        state.market_search_distance_ls = distance_ls
 
     def save(self, state: MiningState) -> None:
         if config is None:
@@ -214,21 +233,6 @@ class PreferencesManager:
             config.set("edmc_mining_rate_interval", state.rate_interval_seconds)
         except Exception:
             _log.exception("Failed to persist rate update interval")
-
-        try:
-            config.set("edmc_mining_inara_search_mode", state.inara_settings.search_mode)
-        except Exception:
-            _log.exception("Failed to persist Inara search mode preference")
-
-        try:
-            config.set("edmc_mining_inara_include_carriers", int(state.inara_settings.include_carriers))
-        except Exception:
-            _log.exception("Failed to persist Inara carrier preference")
-
-        try:
-            config.set("edmc_mining_inara_include_surface", int(state.inara_settings.include_surface))
-        except Exception:
-            _log.exception("Failed to persist Inara surface preference")
 
         self.save_inferred_capacities(state)
 
@@ -407,6 +411,16 @@ class PreferencesManager:
             _log.exception("Failed to persist market search sort preference")
 
         try:
+            config.set("edmc_mining_market_include_carriers", int(state.market_search_include_carriers))
+        except Exception:
+            _log.exception("Failed to persist market search carriers preference")
+
+        try:
+            config.set("edmc_mining_market_include_surface", int(state.market_search_include_surface))
+        except Exception:
+            _log.exception("Failed to persist market search surface preference")
+
+        try:
             config.set("edmc_mining_market_min_demand", int(state.market_search_min_demand))
         except Exception:
             _log.exception("Failed to persist market search min demand")
@@ -420,6 +434,12 @@ class PreferencesManager:
             config.set("edmc_mining_market_distance_ly", str(float(state.market_search_distance_ly)))
         except Exception:
             _log.exception("Failed to persist market search distance")
+
+        try:
+            value = "" if state.market_search_distance_ls is None else str(float(state.market_search_distance_ls))
+            config.set("edmc_mining_market_distance_ls", value)
+        except Exception:
+            _log.exception("Failed to persist market search distance to arrival")
 
 
     @staticmethod

@@ -66,8 +66,7 @@ _To update, replace the contents of the `EDMC-Mining-Analytics` folder with the 
 - The plugin panel opens automatically in EDMC to view live metrics. The interface follows the active EDMC theme automatically with some noticable gaps that I have not been able to fix yet.
 - Use the plugin preferences (within EDMC's Plugins tab) to adjust histogram bin size, refresh cadence, and refinement per minute (RPM) thresholds.
 - Toggle automatic unpause behaviour, enable session logging, and define how many session files to retain.
-- Configure Inara search mode and filters (carriers, surface ports) for one-click commodity lookups.
-- Use the Market search tab to set Spansh filters for estimated sell prices (pad size, distance, demand, freshness).
+- Use the Market search tab to set filters for both Inara lookups and Spansh estimated sell prices (pad size, distance, demand, freshness, distance to arrival, carriers/surface).
 - Provide an optional Discord webhook URL and image links to deliver session summaries, and use the built-in test button to confirm connectivity.
 
 ## Using the Plugin

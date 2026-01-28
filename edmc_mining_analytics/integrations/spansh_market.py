@@ -16,8 +16,27 @@ _log = get_logger("spansh_market")
 
 API_BASE = "https://spansh.co.uk/api"
 DEFAULT_TIMEOUT = 15
-DEFAULT_RESULT_SIZE = 25
+DEFAULT_RESULT_SIZE = 10
 MAX_RANGE_VALUE = 1_000_000_000
+
+STATION_TYPES: tuple[str, ...] = (
+    "Asteroid base",
+    "Coriolis Starport",
+    "Dodec Starport",
+    "Mega ship",
+    "Ocellus Starport",
+    "Orbis Starport",
+    "Space Construction Depot",
+)
+SURFACE_TYPES: tuple[str, ...] = (
+    "Dockable Planet Station",
+    "Outpost",
+    "Planetary Construction Depot",
+    "Planetary Port",
+    "Settlement",
+    "Surface Settlement",
+)
+CARRIER_TYPES: tuple[str, ...] = ("Drake-Class carrier",)
 
 
 @dataclass(frozen=True)
@@ -26,7 +45,10 @@ class MarketSearchPreferences:
     min_demand: int
     age_days: int
     distance_ly: Optional[float]
+    distance_to_arrival_ls: Optional[float]
     sort_mode: str  # best_price | nearest
+    include_carriers: bool
+    include_surface: bool
 
 
 @dataclass(frozen=True)
@@ -98,8 +120,10 @@ class SpanshMarketClient:
         if not commodity_name or not reference:
             return None
 
+        now = datetime.now(timezone.utc)
         payload = self._build_payload(commodity_name, reference, prefs)
         url = f"{API_BASE}/stations/search"
+        _log.debug("Spansh market search request: url=%s payload=%s", url, payload)
         try:
             response = self._session.post(url, json=payload, timeout=DEFAULT_TIMEOUT)
         except requests.RequestException as exc:
@@ -117,14 +141,22 @@ class SpanshMarketClient:
             return None
 
         results = data.get("results") or []
+        search_reference = data.get("search_reference")
+        search_url = _format_search_reference_url(search_reference)
+        _log.debug(
+            "Spansh market search response: search_reference_url=%s result_count=%s",
+            search_url,
+            len(results) if isinstance(results, list) else "unknown",
+        )
         if not isinstance(results, list):
             return None
 
         cutoff = None
         if prefs.age_days and prefs.age_days > 0:
-            cutoff = datetime.now(timezone.utc) - timedelta(days=prefs.age_days)
+            cutoff = now - timedelta(days=prefs.age_days)
 
-        for entry in self._filter_recent(results, cutoff):
+        filtered_results = self._filter_distance_to_arrival(results, prefs.distance_to_arrival_ls)
+        for entry in self._filter_recent(filtered_results, cutoff):
             estimate = self._extract_estimate(entry, commodity_name)
             if estimate is not None:
                 return estimate
@@ -138,11 +170,11 @@ class SpanshMarketClient:
     ) -> Dict[str, object]:
         filters: Dict[str, object] = {
             "has_market": {"value": True},
+            "type": {"value": _build_station_types(prefs)},
             "market": [
                 {
                     "name": commodity,
                     "demand": {"comparison": "<=>", "value": [prefs.min_demand, MAX_RANGE_VALUE]},
-                    "supply": {"comparison": "<=>", "value": [0, MAX_RANGE_VALUE]},
                 }
             ],
         }
@@ -153,11 +185,18 @@ class SpanshMarketClient:
         if prefs.distance_ly is not None:
             filters["distance"] = {"min": 0.0, "max": float(prefs.distance_ly)}
 
+        if prefs.distance_to_arrival_ls is not None:
+            filters["distance_to_arrival"] = {
+                "comparison": "<=>",
+                "value": [0, float(prefs.distance_to_arrival_ls)],
+            }
+
         if prefs.age_days and prefs.age_days > 0:
-            now = datetime.now(timezone.utc)
-            start_date = (now - timedelta(days=prefs.age_days)).date().isoformat()
-            end_date = now.date().isoformat()
-            filters["market_updated_at"] = {"comparison": "<=>", "value": [start_date, end_date]}
+            days = max(0, int(prefs.age_days))
+            filters["market_updated_at"] = {
+                "comparison": "<=>",
+                "value": [f"now-{days}d", "now"],
+            }
 
         sort_mode = _normalise_sort_mode(prefs.sort_mode)
         if sort_mode == "best_price":
@@ -191,6 +230,42 @@ class SpanshMarketClient:
             updated_at = _parse_market_updated_at(item.get("market_updated_at"))
             if updated_at and updated_at >= cutoff:
                 filtered.append(item)
+        return filtered
+
+    def _filter_distance_to_arrival(
+        self,
+        results: Iterable[Dict[str, object]],
+        max_distance: Optional[float],
+    ) -> List[Dict[str, object]]:
+        if max_distance is None:
+            return [item for item in results if isinstance(item, dict)]
+        try:
+            max_value = float(max_distance)
+        except (TypeError, ValueError):
+            return [item for item in results if isinstance(item, dict)]
+
+        filtered: List[Dict[str, object]] = []
+        dropped = 0
+        for item in results:
+            if not isinstance(item, dict):
+                continue
+            value = item.get("distance_to_arrival")
+            if value is None:
+                filtered.append(item)
+                continue
+            try:
+                if float(value) <= max_value:
+                    filtered.append(item)
+                else:
+                    dropped += 1
+            except (TypeError, ValueError):
+                filtered.append(item)
+        if dropped:
+            _log.debug(
+                "Spansh market search filtered %s station(s) beyond distance_to_arrival=%s",
+                dropped,
+                max_value,
+            )
         return filtered
 
     def _extract_estimate(
@@ -239,6 +314,24 @@ def _safe_float(value: object) -> Optional[float]:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _format_search_reference_url(value: object) -> Optional[str]:
+    if not value:
+        return None
+    candidate = str(value).strip()
+    if not candidate:
+        return None
+    return f"https://spansh.co.uk/stations/search/{candidate}/1"
+
+
+def _build_station_types(prefs: MarketSearchPreferences) -> List[str]:
+    values: List[str] = list(STATION_TYPES)
+    if prefs.include_carriers:
+        values.extend(CARRIER_TYPES)
+    if prefs.include_surface:
+        values.extend(SURFACE_TYPES)
+    return values
 
 
 __all__ = ["MarketSearchPreferences", "MarketPriceEstimate", "SpanshMarketClient"]

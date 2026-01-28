@@ -205,9 +205,6 @@ class edmcmaMiningUI:
 
         self._prefs_bin_var: Optional[tk.IntVar] = None
         self._prefs_rate_var: Optional[tk.IntVar] = None
-        self._prefs_inara_mode_var: Optional[tk.IntVar] = None
-        self._prefs_inara_carriers_var: Optional[tk.BooleanVar] = None
-        self._prefs_inara_surface_var: Optional[tk.BooleanVar] = None
         self._prefs_auto_unpause_var: Optional[tk.BooleanVar] = None
         self._prefs_session_logging_var: Optional[tk.BooleanVar] = None
         self._prefs_session_retention_var: Optional[tk.IntVar] = None
@@ -225,9 +222,12 @@ class edmcmaMiningUI:
         self._prefs_overlay_interval_var: Optional[tk.IntVar] = None
         self._prefs_market_has_large_pad_var: Optional[tk.BooleanVar] = None
         self._prefs_market_sort_var: Optional[tk.StringVar] = None
+        self._prefs_market_include_carriers_var: Optional[tk.BooleanVar] = None
+        self._prefs_market_include_surface_var: Optional[tk.BooleanVar] = None
         self._prefs_market_min_demand_var: Optional[tk.StringVar] = None
         self._prefs_market_age_days_var: Optional[tk.StringVar] = None
         self._prefs_market_distance_var: Optional[tk.StringVar] = None
+        self._prefs_market_distance_ls_var: Optional[tk.StringVar] = None
         self._reset_capacities_btn: Optional[ttk.Button] = None
         self._send_summary_cb: Optional[CheckboxType] = None
         self._send_reset_summary_cb: Optional[CheckboxType] = None
@@ -236,6 +236,8 @@ class edmcmaMiningUI:
         self._session_path_feedback_after: Optional[str] = None
         self._overlay_controls: list[tk.Widget] = []
         self._overlay_hint_label: Optional[tk.Label] = None
+        self._total_tph_var: Optional[tk.StringVar] = None
+        self._total_estimated_cr_var: Optional[tk.StringVar] = None
         self._discord_images_tree: Optional[ttk.Treeview] = None
         self._discord_image_ship_var: Optional[tk.StringVar] = None
         self._discord_image_url_var: Optional[tk.StringVar] = None
@@ -246,9 +248,6 @@ class edmcmaMiningUI:
         self._results_frame: Optional[tk.Frame] = None
         self._updating_bin_var = False
         self._updating_rate_var = False
-        self._updating_inara_mode_var = False
-        self._updating_inara_carriers_var = False
-        self._updating_inara_surface_var = False
         self._updating_session_logging_var = False
         self._updating_session_retention_var = False
         self._updating_refinement_window_var = False
@@ -363,8 +362,22 @@ class edmcmaMiningUI:
             total_label.configure(font=self._total_tph_font)
         except tk.TclError:
             self._total_tph_font = None
-        total_label.pack(side="left")
+        total_label.grid(row=0, column=0, sticky="w")
         self._theme.register(total_label)
+
+        self._total_estimated_cr_var = tk.StringVar(
+            master=total_container,
+            value="Total Estimated Credits: -",
+        )
+        total_estimated_label = tk.Label(
+            total_container,
+            textvariable=self._total_estimated_cr_var,
+            anchor="w",
+        )
+        if self._total_tph_font is not None:
+            total_estimated_label.configure(font=self._total_tph_font)
+        total_estimated_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
+        self._theme.register(total_estimated_label)
 
         button_bar = tk.Frame(frame, highlightthickness=0, bd=0)
         button_bar.grid(row=2, column=0, sticky="e", padx=4, pady=(0, 6))
@@ -582,6 +595,30 @@ class edmcmaMiningUI:
         self._state.market_search_sort_mode = value
         self._notify_settings_changed()
 
+    def _on_market_include_carriers_change(self, *_: object) -> None:
+        if self._prefs_market_include_carriers_var is None:
+            return
+        try:
+            value = bool(self._prefs_market_include_carriers_var.get())
+        except (tk.TclError, ValueError):
+            return
+        if value == self._state.market_search_include_carriers:
+            return
+        self._state.market_search_include_carriers = value
+        self._notify_settings_changed()
+
+    def _on_market_include_surface_change(self, *_: object) -> None:
+        if self._prefs_market_include_surface_var is None:
+            return
+        try:
+            value = bool(self._prefs_market_include_surface_var.get())
+        except (tk.TclError, ValueError):
+            return
+        if value == self._state.market_search_include_surface:
+            return
+        self._state.market_search_include_surface = value
+        self._notify_settings_changed()
+
     def _on_market_min_demand_commit(self, *_: object) -> None:
         var = self._prefs_market_min_demand_var
         if var is None:
@@ -633,6 +670,37 @@ class edmcmaMiningUI:
         if value == self._state.market_search_distance_ly:
             return
         self._state.market_search_distance_ly = value
+        var.set(self._format_market_distance(value))
+        self._notify_settings_changed()
+
+    def _on_market_distance_ls_commit(self, *_: object) -> None:
+        var = self._prefs_market_distance_ls_var
+        if var is None:
+            return
+        raw_text = str(var.get() or "")
+        parsed = self._parse_market_number(raw_text)
+        if parsed is None:
+            if not raw_text.strip():
+                if self._state.market_search_distance_ls is not None:
+                    self._state.market_search_distance_ls = None
+                    self._notify_settings_changed()
+                var.set("")
+                return
+            if self._state.market_search_distance_ls is None:
+                var.set("")
+            else:
+                var.set(self._format_market_distance(self._state.market_search_distance_ls))
+            return
+        value = float(parsed)
+        if value <= 0:
+            if self._state.market_search_distance_ls is None:
+                var.set("")
+            else:
+                var.set(self._format_market_distance(self._state.market_search_distance_ls))
+            return
+        if self._state.market_search_distance_ls == value:
+            return
+        self._state.market_search_distance_ls = value
         var.set(self._format_market_distance(value))
         self._notify_settings_changed()
 
@@ -1456,6 +1524,14 @@ class edmcmaMiningUI:
                     f"Total Tons/hr: {self._format_rate(total_rate)} ({total_amount}t over {duration_str})"
                 )
 
+        if self._total_estimated_cr_var is not None:
+            total_value = self._state.market_sell_total
+            if self._state.market_sell_totals:
+                display_value = format_compact_number(total_value, default="-")
+            else:
+                display_value = "-"
+            self._total_estimated_cr_var.set(f"Total Estimated Credits: {display_value}")
+
         self._refresh_histogram_windows()
 
     def _ensure_commodity_row(self, row_index: int) -> list[tk.Label]:
@@ -1829,48 +1905,6 @@ class edmcmaMiningUI:
 
         if changed:
             self._update_rpm_indicator()
-
-    def _on_inara_mode_change(self, *_: object) -> None:
-        if self._prefs_inara_mode_var is None or self._updating_inara_mode_var:
-            return
-        try:
-            value = int(self._prefs_inara_mode_var.get())
-        except (TypeError, ValueError, tk.TclError):
-            return
-        self._inara.set_search_mode(value)
-        if self._prefs_inara_mode_var.get() != self._state.inara_settings.search_mode:
-            self._updating_inara_mode_var = True
-            self._prefs_inara_mode_var.set(self._state.inara_settings.search_mode)
-            self._updating_inara_mode_var = False
-        self._populate_tables()
-
-    def _on_inara_carriers_change(self, *_: object) -> None:
-        if self._prefs_inara_carriers_var is None or self._updating_inara_carriers_var:
-            return
-        try:
-            value = bool(self._prefs_inara_carriers_var.get())
-        except (tk.TclError, ValueError):
-            return
-        self._inara.set_include_carriers(value)
-        if bool(self._prefs_inara_carriers_var.get()) != self._state.inara_settings.include_carriers:
-            self._updating_inara_carriers_var = True
-            self._prefs_inara_carriers_var.set(self._state.inara_settings.include_carriers)
-            self._updating_inara_carriers_var = False
-        self._populate_tables()
-
-    def _on_inara_surface_change(self, *_: object) -> None:
-        if self._prefs_inara_surface_var is None or self._updating_inara_surface_var:
-            return
-        try:
-            value = bool(self._prefs_inara_surface_var.get())
-        except (tk.TclError, ValueError):
-            return
-        self._inara.set_include_surface(value)
-        if bool(self._prefs_inara_surface_var.get()) != self._state.inara_settings.include_surface:
-            self._updating_inara_surface_var = True
-            self._prefs_inara_surface_var.set(self._state.inara_settings.include_surface)
-            self._updating_inara_surface_var = False
-        self._populate_tables()
 
     # ------------------------------------------------------------------
     # Event handlers

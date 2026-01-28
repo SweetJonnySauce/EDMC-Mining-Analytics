@@ -16,7 +16,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 from ..edmc_mining_analytics_version import PLUGIN_REPO_URL, PLUGIN_VERSION, display_version
 from .preferences_discord import create_discord_section
-from .preferences_inara import create_inara_section
 from .preferences_overlay import create_overlay_section
 from .preferences_market_search import create_market_search_section
 
@@ -55,16 +54,14 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     general_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
     overlay_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
     discord_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
-    inara_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
     market_tab = tk.Frame(notebook, highlightthickness=0, bd=0)
 
-    for tab in (general_tab, overlay_tab, discord_tab, inara_tab, market_tab):
+    for tab in (general_tab, overlay_tab, discord_tab, market_tab):
         tab.columnconfigure(0, weight=1)
 
     notebook.add(general_tab, text="General")
     notebook.add(overlay_tab, text="Overlay")
     notebook.add(discord_tab, text="Discord")
-    notebook.add(inara_tab, text="Inara")
     notebook.add(market_tab, text="Market search")
 
     general_frame = tk.LabelFrame(general_tab, text="General", font=section_heading_font)
@@ -295,9 +292,6 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
 
     discord_frame = create_discord_section(ui, discord_tab, section_heading_font)
     discord_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10, 10))
-
-    inara_frame = create_inara_section(ui, inara_tab, section_heading_font)
-    inara_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10, 10))
 
     market_frame = create_market_search_section(ui, market_tab, section_heading_font)
     market_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 10))

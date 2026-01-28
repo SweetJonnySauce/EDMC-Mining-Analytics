@@ -69,6 +69,8 @@ class MarketSearchService:
         age_days = max(0, age_days)
         distance = _coerce_float(self._state.market_search_distance_ly)
         distance_ly = distance if distance and distance > 0 else None
+        distance_ls = _coerce_float(self._state.market_search_distance_ls)
+        distance_to_arrival_ls = distance_ls if distance_ls and distance_ls > 0 else None
         sort_mode = (self._state.market_search_sort_mode or "best_price").strip().lower()
 
         return MarketSearchPreferences(
@@ -76,7 +78,10 @@ class MarketSearchService:
             min_demand=min_demand,
             age_days=age_days,
             distance_ly=distance_ly,
+            distance_to_arrival_ls=distance_to_arrival_ls,
             sort_mode=sort_mode,
+            include_carriers=bool(self._state.market_search_include_carriers),
+            include_surface=bool(self._state.market_search_include_surface),
         )
 
     def _lookup_price(

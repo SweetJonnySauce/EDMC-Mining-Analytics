@@ -127,6 +127,7 @@ yes.
 | Phase 2 | Preferences UI (tabbed) + validation | Completed |
 | Phase 3 | Overlay + Discord integration | Completed |
 | Phase 4 | Hardening + tests + docs | Completed |
+| Phase 5 | Unified market search settings (Inara + Spansh) | Completed |
 
 ## Phase Details
 
@@ -276,7 +277,7 @@ yes
 
 ## Marketplace filtering 
 "Type" values in Spansh along with my categorization to be used in our searches.
-Asteroid Base: Station
+Asteroid base: Station
 Coriolis Starport: Station
 Dockable Planet station: Surface
 Dodec Starport: Station
@@ -296,11 +297,11 @@ High-level plan to merge Inara + Spansh search parameters into a single Market s
 
 | Stage | Description | Status |
 | --- | --- | --- |
-| 5.1 | Consolidate preferences: move Inara settings into Market search, remove Inara tab, add Distance to Arrival (Ls), update label copy | Pending |
-| 5.2 | Wire settings into Spansh search payload: type list (Station + optional Carrier/Surface), distance-to-arrival, carrier/surface inclusion | Pending |
-| 5.3 | Wire settings into Inara URL params: max distance (LY), landing pad, order by, min demand, max price age (hours), distance-to-arrival (Ls) | Pending |
-| 5.4 | Update versioning + release notes: bump to 0.6.0, add RELEASE_NOTES.md, document defaults reset | Pending |
-| 5.5 | Validate + test: preference validation (incl. nullable distance), payload/URL tests, doc updates | Pending |
+| 5.1 | Consolidate preferences: move Inara settings into Market search, remove Inara tab, add Distance to Arrival (Ls), update label copy | Completed |
+| 5.2 | Wire settings into Spansh search payload: type list (Station + optional Carrier/Surface), distance-to-arrival, carrier/surface inclusion | Completed |
+| 5.3 | Wire settings into Inara URL params: max distance (LY), landing pad, order by, min demand, max price age (hours), distance-to-arrival (Ls) | Completed |
+| 5.4 | Update versioning + release notes: bump to 0.6.0, add RELEASE_NOTES.md, document defaults reset | Completed |
+| 5.5 | Validate + test: preference validation (incl. nullable distance), payload/URL tests, doc updates | Completed |
 
 ### Phase 5 Details
 - Goal: unify Inara + Spansh search settings into one Market search tab, add new filters, and align both search backends with the same parameters.
@@ -319,8 +320,16 @@ Implementation plan (Phase 5)
 
 | Stage | Description | Status |
 | --- | --- | --- |
-| 5.1 | Preferences + config: add Distance to Arrival (Ls), move Inara controls into Market search, remove Inara tab, update label copy | Pending |
-| 5.2 | Spansh filtering: build type list (Station + optional Carrier/Surface), wire distance-to-arrival and carrier/surface filters | Pending |
-| 5.3 | Inara URL params: add max distance (LY), landing pad, order by, min demand, max price age (hours), distance-to-arrival (Ls) | Pending |
-| 5.4 | Versioning + release notes: bump to 0.6.0, add RELEASE_NOTES.md, note defaults reset | Pending |
-| 5.5 | Validation + tests + docs: nullable distance handling, payload/URL tests, README/doc updates | Pending |
+| 5.1 | Preferences + config: add Distance to Arrival (Ls), move Inara controls into Market search, remove Inara tab, update label copy | Completed |
+| 5.2 | Spansh filtering: build type list (Station + optional Carrier/Surface), wire distance-to-arrival and carrier/surface filters | Completed |
+| 5.3 | Inara URL params: add max distance (LY), landing pad, order by, min demand, max price age (hours), distance-to-arrival (Ls) | Completed |
+| 5.4 | Versioning + release notes: bump to 0.6.0, add RELEASE_NOTES.md, note defaults reset | Completed |
+| 5.5 | Validation + tests + docs: nullable distance handling, payload/URL tests, README/doc updates | Completed |
+
+Phase 5 results
+- Unified search settings under Market search and removed the Inara tab.
+- Added Distance to Arrival (Ls) with nullable handling and new carrier/surface options.
+- Spansh searches now filter by station types (Station + optional Carrier/Surface) and distance-to-arrival.
+- Inara URLs now respect market search filters for distance, pad size, demand, and data age.
+- Version bumped to 0.6.0 with RELEASE_NOTES.md documenting default reset.
+- Tests: not run (not requested).

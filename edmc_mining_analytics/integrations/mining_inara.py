@@ -59,18 +59,6 @@ class InaraClient:
         self._commodity_map = processed
 
     # ------------------------------------------------------------------
-    # Settings management
-    # ------------------------------------------------------------------
-    def set_search_mode(self, mode: int) -> None:
-        self._state.inara_settings.search_mode = 3 if mode == 3 else 1
-
-    def set_include_carriers(self, include: bool) -> None:
-        self._state.inara_settings.include_carriers = bool(include)
-
-    def set_include_surface(self, include: bool) -> None:
-        self._state.inara_settings.include_surface = bool(include)
-
-    # ------------------------------------------------------------------
     # URL helpers
     # ------------------------------------------------------------------
     def build_url(self, commodity: str) -> Optional[str]:
@@ -83,28 +71,43 @@ class InaraClient:
             _log.debug("Cannot build Inara link for %s: system unknown", commodity)
             return None
 
-        include_carriers = "0" if self._state.inara_settings.include_carriers else "1"
-        include_surface = "0" if self._state.inara_settings.include_surface else "1"
-        search_mode = "3" if self._state.inara_settings.search_mode == 3 else "1"
+        include_carriers = "0" if self._state.market_search_include_carriers else "1"
+        include_surface = "0" if self._state.market_search_include_surface else "1"
+        sort_mode = (self._state.market_search_sort_mode or "best_price").strip().lower()
+        search_mode = "3" if sort_mode == "nearest" else "1"
 
-        query = {
+        query: Dict[str, object] = {
             "formbrief": "1",
             "pi1": "2",
             "pa1[]": [str(commodity_id)],
             "ps1": system_name,
             "pi10": search_mode,
-            "pi11": "0",
-            "pi3": "3",
-            "pi9": "0",
             "pi4": include_surface,
             "pi8": include_carriers,
             "pi13": "0",
-            "pi5": "720",
             "pi12": "0",
-            "pi7": "500",
             "pi14": "0",
             "ps3": "",
         }
+
+        distance_ly = self._state.market_search_distance_ly
+        if distance_ly and distance_ly > 0:
+            query["pi11"] = str(int(distance_ly))
+
+        if self._state.market_search_has_large_pad:
+            query["pi3"] = "3"
+
+        distance_ls = self._state.market_search_distance_ls
+        if distance_ls and distance_ls > 0:
+            query["pi9"] = str(int(distance_ls))
+
+        min_demand = self._state.market_search_min_demand
+        if min_demand and min_demand > 0:
+            query["pi7"] = str(int(min_demand))
+
+        age_days = self._state.market_search_age_days
+        if age_days and age_days > 0:
+            query["pi5"] = str(int(age_days) * 24)
 
         try:
             return "https://inara.cz/elite/commodities/?" + urlencode(query, doseq=True)
@@ -117,7 +120,7 @@ class InaraClient:
         if not url:
             return
         try:
-            if not webbrowser.open_new(url):
+            if not webbrowser.open(url, new=2):
                 webbrowser.open(url)
         except Exception:
             _log.exception("Failed to open browser for commodity %s", commodity)
