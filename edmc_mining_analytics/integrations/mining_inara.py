@@ -48,15 +48,28 @@ class InaraClient:
             return
 
         processed: Dict[str, int] = {}
+        abbreviations: Dict[str, str] = {}
         for key, value in raw.items():
             if not isinstance(key, str):
                 continue
+            normalized_key = key.strip().lower()
+            if isinstance(value, dict):
+                raw_id = value.get("id") or value.get("inara_id")
+                try:
+                    processed[normalized_key] = int(raw_id)
+                except (TypeError, ValueError):
+                    _log.debug("Skipping commodity mapping with non-int id: %s=%r", key, raw_id)
+                abbr = value.get("abbr") or value.get("abbreviation")
+                if isinstance(abbr, str) and abbr.strip():
+                    abbreviations[normalized_key] = abbr.strip()
+                continue
             try:
-                processed[key.strip().lower()] = int(value)
+                processed[normalized_key] = int(value)
             except (TypeError, ValueError):
                 _log.debug("Skipping commodity mapping with non-int value: %s=%r", key, value)
 
         self._commodity_map = processed
+        self._state.commodity_abbreviations = abbreviations
 
     # ------------------------------------------------------------------
     # URL helpers

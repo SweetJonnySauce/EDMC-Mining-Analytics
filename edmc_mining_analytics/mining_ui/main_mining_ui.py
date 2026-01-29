@@ -222,6 +222,8 @@ class edmcmaMiningUI:
         self._prefs_overlay_x_var: Optional[tk.IntVar] = None
         self._prefs_overlay_y_var: Optional[tk.IntVar] = None
         self._prefs_overlay_interval_var: Optional[tk.IntVar] = None
+        self._prefs_overlay_show_bars_var: Optional[tk.BooleanVar] = None
+        self._prefs_overlay_bars_max_rows_var: Optional[tk.IntVar] = None
         self._prefs_market_has_large_pad_var: Optional[tk.BooleanVar] = None
         self._prefs_market_sort_var: Optional[tk.StringVar] = None
         self._prefs_market_include_carriers_var: Optional[tk.BooleanVar] = None
@@ -262,6 +264,8 @@ class edmcmaMiningUI:
         self._updating_overlay_x_var = False
         self._updating_overlay_y_var = False
         self._updating_overlay_interval_var = False
+        self._updating_overlay_show_bars_var = False
+        self._updating_overlay_bars_max_rows_var = False
         self._updating_market_sort_var = False
 
         self._rate_update_job: Optional[str] = None
@@ -571,6 +575,41 @@ class edmcmaMiningUI:
         self._updating_overlay_interval_var = False
         self._notify_settings_changed()
 
+    def _on_overlay_show_bars_change(self, *_: object) -> None:
+        if (
+            self._prefs_overlay_show_bars_var is None
+            or self._updating_overlay_show_bars_var
+        ):
+            return
+        try:
+            value = bool(self._prefs_overlay_show_bars_var.get())
+        except (tk.TclError, ValueError):
+            return
+        if value == self._state.overlay_show_bars:
+            return
+        self._state.overlay_show_bars = value
+        self._notify_settings_changed()
+
+    def _on_overlay_bars_max_rows_change(self, *_: object) -> None:
+        if (
+            self._prefs_overlay_bars_max_rows_var is None
+            or self._updating_overlay_bars_max_rows_var
+        ):
+            return
+        try:
+            raw_value = int(self._prefs_overlay_bars_max_rows_var.get())
+        except (tk.TclError, TypeError, ValueError):
+            return
+        clamped = clamp_positive_int(raw_value, self._state.overlay_bars_max_rows, maximum=50)
+        if clamped == self._state.overlay_bars_max_rows:
+            return
+        self._state.overlay_bars_max_rows = clamped
+        self._updating_overlay_bars_max_rows_var = True
+        self._prefs_overlay_bars_max_rows_var.set(clamped)
+        self._updating_overlay_bars_max_rows_var = False
+        self._notify_settings_changed()
+
+
     def _on_market_has_large_pad_change(self, *_: object) -> None:
         if self._prefs_market_has_large_pad_var is None:
             return
@@ -727,7 +766,7 @@ class edmcmaMiningUI:
                     hint.configure(
                         text="EDMCOverlay plugin not detected. Install it to enable in-game metrics."
                     )
-                    hint.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 4))
+                    hint.grid(row=6, column=0, columnspan=2, sticky="w", pady=(6, 4))
             except tk.TclError:
                 pass
 

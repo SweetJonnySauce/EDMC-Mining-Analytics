@@ -12,6 +12,7 @@ Requirements
 - All the bars should be justified with the 0% on the bar being at the same X value.
 - The overall length of all the bars (if they would all be 100%) are the same
 - bar color is Elite dangerous orange
+  - Chosen color: #FF6F00 (derived from EDHM_UI wiki "official Elite orange" RGB(1, 0.4352, 0))
 - Provide a setting option on the overlay pref pane to show/hide the bars
 
 ## Questions to Answer
@@ -41,6 +42,15 @@ existing tracked state
 hide entirely
 - Any rule for ordering ties (same percent), or just stable order?
 alphabetized
+
+## Implementation Notes
+- Overlay bars render via EDMCModernOverlay `send_shape` rects under the Est. CR row.
+- Bar labels use normal text size; bars are half-height rows.
+- Bars show mined commodities from `cargo_totals` filtered by `harvested_commodities`, plus a Limpets row.
+- Percentages are based on total cargo capacity; if capacity is missing/0, bars are hidden.
+- Sorting: percent desc, then alphabetized label; capped to `overlay_bars_max_rows`.
+- Settings live in Overlay prefs: `overlay_show_bars` and `overlay_bars_max_rows` (default 10).
+- Optional abbreviations loaded from `commodity_links.json` are used automatically when available.
 
 
 
@@ -91,30 +101,30 @@ alphabetized
 
 | Phase | Description | Status |
 | --- | --- | --- |
-| Phase 1 | Discover touchpoints + data flow for overlay bars | Planned |
-| Phase 2 | Implement overlay bar rendering + preferences wiring | Planned |
-| Phase 3 | QA, tests, and documentation update | Planned |
+| Phase 1 | Discover touchpoints + data flow for overlay bars | Completed |
+| Phase 2 | Implement overlay bar rendering + preferences wiring | Completed |
+| Phase 3 | QA, tests, and documentation update | In Progress |
 
 ### Phase 1 Stages
 
 | Stage | Description | Status |
 | --- | --- | --- |
-| 1.1 | Identify overlay UI module + placement under est. CR overlay | Planned |
-| 1.2 | Identify existing tracked state for refined commodities + cargo inventory access | Planned |
-| 1.3 | Decide color source (web research) and confirm any theme reuse | Planned |
+| 1.1 | Identify overlay UI module + placement under est. CR overlay | Completed |
+| 1.2 | Identify existing tracked state for refined commodities + cargo inventory access | Completed |
+| 1.3 | Decide color source (web research) and confirm any theme reuse | Completed |
 
 ### Phase 2 Stages
 
 | Stage | Description | Status |
 | --- | --- | --- |
-| 2.1 | Add preferences: `overlay_show_bars`, `overlay_bars_max_rows` to overlay prefs UI | Planned |
-| 2.2 | Add data prep helper for overlay bar rows (filter refined + limpets, % of capacity, sort desc, tie alpha) | Planned |
-| 2.3 | Render bars under est. CR overlay with fixed width, aligned baseline, ED orange | Planned |
-| 2.4 | Wire show/hide + max rows settings to overlay rendering | Planned |
+| 2.1 | Add preferences: `overlay_show_bars`, `overlay_bars_max_rows` to overlay prefs UI | Completed |
+| 2.2 | Add data prep helper for overlay bar rows (filter refined + limpets, % of capacity, sort desc, tie alpha) | Completed |
+| 2.3 | Render bars under est. CR overlay with fixed width, aligned baseline, ED orange | Completed |
+| 2.4 | Wire show/hide + max rows settings to overlay rendering | Completed |
 
 ### Phase 3 Stages
 
 | Stage | Description | Status |
 | --- | --- | --- |
-| 3.1 | Add/update tests for data prep helper (headless) | Planned |
-| 3.2 | Manual overlay sanity check and doc update for new settings | Planned |
+| 3.1 | Add/update tests for data prep helper (headless) | Completed |
+| 3.2 | Manual overlay sanity check and doc update for new settings | Pending |

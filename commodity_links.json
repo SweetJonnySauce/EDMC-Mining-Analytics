@@ -2,11 +2,14 @@
   "platinum": 81,
   "gallite": 56,
   "gold": 42,
-  "hydrogenperoxide": 138,
+  "hydrogenperoxide": {"id":138,"abbr":"H2O2"},
   "indite": 57,
   "lithiumhydroxide": 147,
   "osmium": 72,
-  "methanolmonohydratecrystals": 146,
+  "methanolmonohydratecrystals": {
+    "id": 146,
+    "abbr": "M.M.Crystals"
+  },
   "palladium": 45,
   "samarium": 142,
   "silver": 46,

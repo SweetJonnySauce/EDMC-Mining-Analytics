@@ -85,7 +85,7 @@ def create_overlay_section(
         justify="left",
         wraplength=380,
     )
-    overlay_hint.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 4))
+    overlay_hint.grid(row=6, column=0, columnspan=2, sticky="w", pady=(6, 4))
 
     interval_label = tk.Label(
         frame,
@@ -109,9 +109,42 @@ def create_overlay_section(
     )
     overlay_interval_spin.grid(row=3, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
 
+    ui._prefs_overlay_show_bars_var = tk.BooleanVar(
+        master=frame,
+        value=ui._state.overlay_show_bars,
+    )
+    ui._prefs_overlay_show_bars_var.trace_add("write", ui._on_overlay_show_bars_change)
+    overlay_bars_cb = ttk.Checkbutton(
+        frame,
+        text="Show commodity bars",
+        variable=ui._prefs_overlay_show_bars_var,
+    )
+    overlay_bars_cb.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 2))
+
+    overlay_bars_rows_label = tk.Label(
+        frame,
+        text="Max bar rows",
+        anchor="w",
+    )
+    overlay_bars_rows_label.grid(row=5, column=1, sticky="w", padx=(8, 0), pady=(0, 2))
+
+    ui._prefs_overlay_bars_max_rows_var = tk.IntVar(
+        master=frame,
+        value=ui._state.overlay_bars_max_rows,
+    )
+    ui._prefs_overlay_bars_max_rows_var.trace_add("write", ui._on_overlay_bars_max_rows_change)
+    overlay_bars_rows_spin = ttk.Spinbox(
+        frame,
+        from_=1,
+        to=50,
+        textvariable=ui._prefs_overlay_bars_max_rows_var,
+        width=6,
+    )
+    overlay_bars_rows_spin.grid(row=5, column=0, sticky="w", padx=(0, 8), pady=(0, 2))
+
     modern_overlay_url = "https://github.com/SweetJonnySauce/EDMCModernOverlay"
     modern_overlay_row = tk.Frame(frame, highlightthickness=0, bd=0)
-    modern_overlay_row.grid(row=5, column=0, columnspan=2, sticky="w", pady=(0, 6))
+    modern_overlay_row.grid(row=7, column=0, columnspan=2, sticky="w", pady=(0, 6))
 
     modern_overlay_intro = tk.Label(modern_overlay_row, text="Check out ", anchor="w")
     modern_overlay_intro.grid(row=0, column=0, sticky="w")
@@ -130,7 +163,14 @@ def create_overlay_section(
     modern_overlay_suffix = tk.Label(modern_overlay_row, text="!", anchor="w")
     modern_overlay_suffix.grid(row=0, column=2, sticky="w")
 
-    ui._overlay_controls = [overlay_enable_cb, overlay_x_spin, overlay_y_spin, overlay_interval_spin]
+    ui._overlay_controls = [
+        overlay_enable_cb,
+        overlay_x_spin,
+        overlay_y_spin,
+        overlay_interval_spin,
+        overlay_bars_cb,
+        overlay_bars_rows_spin,
+    ]
     ui._overlay_hint_label = overlay_hint
     ui._update_overlay_controls()
 

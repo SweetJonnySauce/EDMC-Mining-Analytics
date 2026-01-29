@@ -169,6 +169,12 @@ class PreferencesManager:
             self._get_int("edmc_mining_overlay_refresh_ms", state.overlay_refresh_interval_ms),
             state.overlay_refresh_interval_ms,
         )
+        state.overlay_show_bars = bool(self._get_int("overlay_show_bars", int(state.overlay_show_bars)))
+        state.overlay_bars_max_rows = clamp_positive_int(
+            self._get_int("overlay_bars_max_rows", state.overlay_bars_max_rows),
+            state.overlay_bars_max_rows,
+            maximum=50,
+        )
         state.spansh_last_distance_min = self._get_float("edmc_mining_spansh_distance_min", None)
         state.spansh_last_distance_max = self._get_float("edmc_mining_spansh_distance_max", None)
         state.spansh_last_ring_signals = self._load_string_list("edmc_mining_spansh_ring_signals")
@@ -355,6 +361,20 @@ class PreferencesManager:
             )
         except Exception:
             _log.exception("Failed to persist overlay refresh interval preference")
+
+        try:
+            config.set("overlay_show_bars", int(state.overlay_show_bars))
+        except Exception:
+            _log.exception("Failed to persist overlay show bars preference")
+
+        try:
+            config.set(
+                "overlay_bars_max_rows",
+                clamp_positive_int(state.overlay_bars_max_rows, 10, maximum=50),
+            )
+        except Exception:
+            _log.exception("Failed to persist overlay bars max rows preference")
+
 
         try:
             value = "" if state.spansh_last_distance_min is None else str(float(state.spansh_last_distance_min))

@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Sequence, Tuple
 
 from ..logging_utils import get_logger
-from ..state import MiningState
+from ..state import MiningState, resolve_commodity_display_name
 from ..formatting import format_compact_number
 
 try:  # pragma: no cover - runtime environment provides this module
@@ -27,9 +27,16 @@ RPM_COLOR_YELLOW = "#f7931e"
 RPM_COLOR_GREEN = "#2ecc71"
 DEFAULT_LABEL_COLOR = "#b4b7bf"
 DEFAULT_VALUE_COLOR = "#ffffff"
+ED_ORANGE = "#ff6f00"
 PLUGIN_IDENTIFIER = "EDMC-MiningAnalytics"
 OVERLAY_ROW_HEIGHT = 32
+OVERLAY_BAR_ROW_HEIGHT = 16
+OVERLAY_BAR_START_OFFSET = 140
+OVERLAY_BAR_MAX_WIDTH = 160
+OVERLAY_BAR_HEIGHT = 8
 OVERLAY_TEXT_SIZE = "large"
+OVERLAY_BAR_TEXT_SIZE = "normal"
+OVERLAY_BAR_TOP_PADDING = 0
 _METRIC_ORDER: Sequence[Tuple[str, str]] = (
     ("tons_per_hour", "Tons/hr"),
     ("rpm", "RPM"),
@@ -75,6 +82,13 @@ class _OverlayMetric:
     color: str
 
 
+@dataclass
+class _OverlayBar:
+    label: str
+    percent: float
+    amount: float
+
+
 class EdmcOverlayHelper:
     """Coordinates EDMCOverlay availability checks and payload broadcasting."""
 
@@ -87,6 +101,7 @@ class EdmcOverlayHelper:
         self._preview_until: Optional[datetime] = None
         self._plugin_kw_strategy: Optional[str] = None
         self._plugin_warning_emitted = False
+        self._last_bar_count = 0
 
     # ------------------------------------------------------------------
     # Availability lifecycle
@@ -199,6 +214,19 @@ class EdmcOverlayHelper:
                 self.reset()
                 self._state.overlay_available = self.is_supported()
                 return
+
+        bars = self._build_overlay_bars()
+        if bars:
+            self._dispatch_overlay_bars(
+                client,
+                bars,
+                anchor_x=anchor_x,
+                anchor_y=anchor_y,
+                ttl=ttl,
+                metrics_count=len(metrics),
+            )
+        elif self._last_bar_count > 0:
+            self._clear_overlay_bars(anchor_x=anchor_x, anchor_y=anchor_y)
 
         self._last_enabled = True
 
@@ -334,6 +362,43 @@ class EdmcOverlayHelper:
 
         return metrics
 
+    def _build_overlay_bars(self) -> list[_OverlayBar]:
+        if not self._state.overlay_show_bars:
+            return []
+        capacity = self._state.cargo_capacity
+        if capacity is None or capacity <= 0:
+            return []
+        max_rows = max(1, int(self._state.overlay_bars_max_rows or 0))
+
+        items: list[_OverlayBar] = []
+        harvested = self._state.harvested_commodities
+        for commodity, amount in self._state.cargo_totals.items():
+            if amount <= 0:
+                continue
+            if commodity not in harvested:
+                continue
+            label = self._resolve_bar_label(commodity)
+            percent = (float(amount) / float(capacity)) * 100.0
+            if percent <= 0:
+                continue
+            items.append(_OverlayBar(label=label, percent=percent, amount=float(amount)))
+
+        limpets = self._state.limpets_remaining or 0
+        if limpets > 0:
+            percent = (float(limpets) / float(capacity)) * 100.0
+            if percent > 0:
+                items.append(_OverlayBar(label="Limpets", percent=percent, amount=float(limpets)))
+
+        items.sort(key=lambda item: (-item.percent, item.label.casefold()))
+        return items[:max_rows]
+
+    def _resolve_bar_label(self, commodity: str) -> str:
+        key = str(commodity or "").strip().lower()
+        abbr = self._state.commodity_abbreviations.get(key)
+        if abbr:
+            return abbr
+        return resolve_commodity_display_name(self._state, commodity)
+
     def _compute_total_tph(self) -> Optional[float]:
         if not self._state.mining_start:
             return None
@@ -377,6 +442,189 @@ class EdmcOverlayHelper:
             return f"{rate:.1f}"
         return f"{rate:.2f}"
 
+    def _bar_width(self, percent: float) -> int:
+        if percent <= 0:
+            return 0
+        capped = min(100.0, percent)
+        width = int(round((capped / 100.0) * OVERLAY_BAR_MAX_WIDTH))
+        return max(1, width)
+
+    def _dispatch_overlay_rect(
+        self,
+        client: object,
+        message_id: str,
+        *,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        color: str,
+        fill: str,
+        ttl: int,
+        include_plugin: bool = True,
+    ) -> None:
+        payload = {
+            "shapeid": message_id,
+            "shape": "rect",
+            "x": x,
+            "y": y,
+            "w": width,
+            "h": height,
+            "color": color,
+            "fill": fill,
+            "ttl": ttl,
+        }
+        if include_plugin:
+            payload["plugin"] = PLUGIN_IDENTIFIER
+
+        send_shape = getattr(client, "send_shape", None)
+        if callable(send_shape):
+            try:
+                send_shape(
+                    shapeid=message_id,
+                    shape="rect",
+                    x=x,
+                    y=y,
+                    w=width,
+                    h=height,
+                    color=color,
+                    fill=fill,
+                    ttl=ttl,
+                )
+                return
+            except TypeError:
+                try:
+                    send_shape(message_id, "rect", color, fill, x, y, width, height, ttl)
+                    return
+                except TypeError:
+                    pass
+        if not self._try_send_via_raw(client, payload):
+            raise RuntimeError("Overlay client does not support shape payloads")
+
+    def _dispatch_overlay_bars(
+        self,
+        client: object,
+        bars: Sequence[_OverlayBar],
+        *,
+        anchor_x: int,
+        anchor_y: int,
+        ttl: int,
+        metrics_count: int,
+    ) -> None:
+        base_y = anchor_y + (metrics_count * OVERLAY_ROW_HEIGHT) + OVERLAY_BAR_TOP_PADDING
+        for index, bar in enumerate(bars):
+            y = base_y + (index * OVERLAY_BAR_ROW_HEIGHT)
+            label_id = f"edmcma.bar.{index}.label"
+            bar_id = f"edmcma.bar.{index}.bar"
+            try:
+                self._dispatch_overlay_message(
+                    client,
+                    label_id,
+                    bar.label,
+                    DEFAULT_LABEL_COLOR,
+                    anchor_x,
+                    y,
+                    ttl=ttl,
+                    size=OVERLAY_BAR_TEXT_SIZE,
+                )
+                width = self._bar_width(bar.percent)
+                if width <= 0:
+                    continue
+                bar_x = anchor_x + OVERLAY_BAR_START_OFFSET
+                bar_y = y + max(0, (OVERLAY_BAR_ROW_HEIGHT - OVERLAY_BAR_HEIGHT) // 2)
+                self._dispatch_overlay_rect(
+                    client,
+                    bar_id,
+                    x=bar_x,
+                    y=bar_y,
+                    width=width,
+                    height=OVERLAY_BAR_HEIGHT,
+                    color=ED_ORANGE,
+                    fill=ED_ORANGE,
+                    ttl=ttl,
+                )
+            except Exception:  # pragma: no cover - runtime specific failures
+                self._logger.exception("Failed to send overlay bar payload for %s", bar.label)
+                break
+        if len(bars) < self._last_bar_count:
+            for index in range(len(bars), self._last_bar_count):
+                y = base_y + (index * OVERLAY_BAR_ROW_HEIGHT)
+                for suffix in ("label", "bar"):
+                    message_id = f"edmcma.bar.{index}.{suffix}"
+                    x = anchor_x if suffix == "label" else anchor_x + OVERLAY_BAR_START_OFFSET
+                    try:
+                        if suffix == "label":
+                            self._dispatch_overlay_message(
+                                client,
+                                message_id,
+                                "",
+                                DEFAULT_LABEL_COLOR,
+                                x,
+                                y,
+                                ttl=1,
+                                size=OVERLAY_BAR_TEXT_SIZE,
+                            )
+                        else:
+                            self._dispatch_overlay_rect(
+                                client,
+                                message_id,
+                                x=x,
+                                y=y,
+                                width=0,
+                                height=0,
+                                color=ED_ORANGE,
+                                fill=ED_ORANGE,
+                                ttl=1,
+                            )
+                    except Exception:  # pragma: no cover
+                        self._logger.exception("Failed to clear overlay bar message %s", message_id)
+                        break
+        self._last_bar_count = len(bars)
+
+    def _clear_overlay_bars(self, *, anchor_x: int, anchor_y: int) -> None:
+        client = self._resolve_overlay()
+        if client is None:
+            self._last_bar_count = 0
+            return
+        max_rows = max(self._last_bar_count, int(self._state.overlay_bars_max_rows or 0), 0)
+        if max_rows <= 0:
+            self._last_bar_count = 0
+            return
+        base_y = anchor_y + (len(_METRIC_ORDER) * OVERLAY_ROW_HEIGHT) + OVERLAY_BAR_TOP_PADDING
+        for index in range(max_rows):
+            y = base_y + (index * OVERLAY_BAR_ROW_HEIGHT)
+            for suffix in ("label", "bar"):
+                message_id = f"edmcma.bar.{index}.{suffix}"
+                x = anchor_x if suffix == "label" else anchor_x + OVERLAY_BAR_START_OFFSET
+                try:
+                    if suffix == "label":
+                        self._dispatch_overlay_message(
+                            client,
+                            message_id,
+                            "",
+                            DEFAULT_LABEL_COLOR,
+                            x,
+                            y,
+                            ttl=1,
+                            size=OVERLAY_BAR_TEXT_SIZE,
+                        )
+                    else:
+                        self._dispatch_overlay_rect(
+                            client,
+                            message_id,
+                            x=x,
+                            y=y,
+                            width=0,
+                            height=0,
+                            color=ED_ORANGE,
+                            fill=ED_ORANGE,
+                            ttl=1,
+                        )
+                except Exception:  # pragma: no cover
+                    self._logger.exception("Failed to clear overlay bar message %s", message_id)
+                    break
+        self._last_bar_count = 0
+
     def _clear_overlay(self) -> None:
         client = self._resolve_overlay()
         if client is None:
@@ -401,6 +649,7 @@ class EdmcOverlayHelper:
             except Exception:  # pragma: no cover
                 self._logger.exception("Failed to clear overlay message %s", key)
                 break
+        self._clear_overlay_bars(anchor_x=anchor_x, anchor_y=anchor_y)
         self._last_enabled = False
         self.clear_preview()
 

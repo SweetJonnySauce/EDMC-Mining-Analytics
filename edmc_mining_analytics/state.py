@@ -35,6 +35,7 @@ class MiningState:
     cargo_totals: Dict[str, int] = field(default_factory=dict)
     commodity_display_names: Dict[str, str] = field(default_factory=dict)
     commodity_canonical_names: Dict[str, str] = field(default_factory=dict)
+    commodity_abbreviations: Dict[str, str] = field(default_factory=dict)
     harvested_commodities: Set[str] = field(default_factory=set)
     commodity_start_times: Dict[str, datetime] = field(default_factory=dict)
 
@@ -93,6 +94,8 @@ class MiningState:
     overlay_available: bool = False
     rpm_display_color: str = "#ffffff"
     overlay_refresh_interval_ms: int = 1000
+    overlay_show_bars: bool = False
+    overlay_bars_max_rows: int = 10
     spansh_last_distance_min: Optional[float] = None
     spansh_last_distance_max: Optional[float] = None
     spansh_last_ring_signals: Optional[List[str]] = None

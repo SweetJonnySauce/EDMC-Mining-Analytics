@@ -27,6 +27,12 @@ try:
 except ImportError:  # pragma: no cover
     appname = "EDMarketConnector"  # type: ignore[assignment]
 
+try:  # pragma: no cover - optional dependency when Modern Overlay is installed
+    from overlay_plugin.overlay_api import define_plugin_group, PluginGroupingError  # type: ignore[import]
+except ImportError:  # pragma: no cover
+    define_plugin_group = None  # type: ignore[assignment]
+    PluginGroupingError = Exception  # type: ignore[assignment]
+
 from .integrations.mining_inara import InaraClient
 from .integrations.mining_edsm import EdsmClient
 from .integrations.market_search import MarketSearchService
@@ -174,6 +180,19 @@ class MiningAnalyticsPlugin:
         _log.info("Starting %s v%s", PLUGIN_NAME, PLUGIN_VERSION)
         self.preferences.load(self.state)
         self.overlay_helper.refresh_availability()
+        if define_plugin_group is not None:
+            try:
+                define_plugin_group(
+                    plugin_group="EDMC-Mining-Analytics",
+                    matching_prefixes=["edmcma"],
+                    id_prefix_group="EDMC-Mining-Analytics",
+                    id_prefixes=["edmcma.metric.", "edmcma.bar."],
+                    id_prefix_group_anchor="nw",
+                    marker_label_position="below",
+                    controller_preview_box_mode="last",
+                )
+            except PluginGroupingError as exc:  # pragma: no cover - runtime specific
+                _log.debug("Could not register overlay grouping: %s", exc)
         self._overlay_enabled_last = self.state.overlay_enabled
         if self.state.overlay_enabled:
             self.overlay_helper.trigger_preview(duration_seconds=5)
