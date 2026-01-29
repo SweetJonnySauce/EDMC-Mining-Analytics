@@ -21,6 +21,10 @@ https://inara.cz/elite/commodities/?formbrief=1&pi1=2&pa1%5B%5D=72&ps1=Col+285+S
 
 https://inara.cz/elite/commodities/?formbrief=1&pi1=2&pa1%5B%5D=72&ps1=Col+285+Sector+LB-O+c6-3&pi10=3&pi11=0&pi3=1&pi9=0&pi4=1&pi8=1&pi13=0&pi5=4320&pi12=0&pi7=0&pi14=0&ps3=
 
+https://inara.cz/elite/commodities/?formbrief=1&pi1=1&pa1%5B%5D=147&ps1=Col+285+Sector+LB-O+c6-3&pi10=3&pi11=0&pi3=2&pi9=0&pi4=0&pi8=0&pi13=0&pi5=720&pi12=0&pi7=500&pi14=0&ps3=
+https://inara.cz/elite/commodities/?formbrief=1&pi1=1&pa1%5B%5D=10249&ps1=Col+285+Sector+LB-O+c6-3&pi10=3&pi11=0&pi3=2&pi9=0&pi4=0&pi8=0&pi13=0&pi5=720&pi12=0&pi7=500&pi14=0&ps3=
+
+
 Include Fleet carrier in results (already in inara search)
 Include surface stations in results (already in inara search)
 
