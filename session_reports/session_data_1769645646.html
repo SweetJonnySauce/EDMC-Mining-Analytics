@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mining Session Report</title>
+    <style>
+        :root {
+            --ink: #e9f1f3;
+            --muted: #aac0c5;
+            --panel: rgba(14, 28, 36, 0.68);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --accent: #f6b042;
+            --accent-2: #f38a36;
+            --accent-3: #3bd3c6;
+            --shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Garamond", serif;
+            color: var(--ink);
+            background: radial-gradient(circle at top, #172b35 0%, #0b1b24 55%, #071018 100%);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -20% 0 auto 0;
+            height: 60%;
+            background: radial-gradient(circle at 20% 20%, rgba(59, 211, 198, 0.25), transparent 55%),
+                        radial-gradient(circle at 80% 10%, rgba(246, 176, 66, 0.25), transparent 45%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            padding: 40px 6vw 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .title {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 1.1rem;
+        }
+
+        .meta-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 18px;
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
+            animation: rise 0.6s ease both;
+        }
+
+        .card h2 {
+            margin: 0 0 12px 0;
+            font-size: 1.1rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .kpi {
+            font-size: 1.6rem;
+            margin-bottom: 6px;
+        }
+
+        .kpi-label {
+            color: var(--muted);
+            font-size: 0.85rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns: 1fr 3fr auto;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .bar-track {
+            position: relative;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            border-radius: 999px;
+            box-shadow: 0 0 12px rgba(246, 176, 66, 0.5);
+        }
+
+        .bar-value {
+            color: var(--muted);
+            font-size: 0.9rem;
+            min-width: 70px;
+            text-align: right;
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1.6fr repeat(3, 1fr);
+            gap: 6px 12px;
+            font-size: 0.9rem;
+        }
+
+        .stat-header {
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+        }
+
+        .stat-row {
+            display: contents;
+        }
+
+        .stat-label {
+            color: var(--ink);
+        }
+
+        .stat-value {
+            color: var(--muted);
+            text-align: right;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 720px) {
+            .bar-row {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            .bar-value {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="hero">
+            <div class="title">Mining Session Report</div>
+            <div class="subtitle">Col 285 Sector LB-O c6-3 / Col 285 Sector LB-O c6-3 A 8 / Col 285 Sector LB-O c6-3 A 8 B Ring</div>
+            <div class="meta-strip">
+                <div>Commander: sweetjonnysauce</div>
+                <div>Ship: Type-11 Prospector</div>
+                <div>Start: 2026-01-29 00:11:58 UTC</div>
+                <div>End: 2026-01-29 00:14:06 UTC</div>
+                <div>Source: session_data_1769645646.json</div>
+            </div>
+        </header>
+
+        <section class="grid">
+            <div class="card" style="animation-delay: 0.05s;">
+                <div class="kpi">12.0</div>
+                <div class="kpi-label">Total Tons</div>
+            </div>
+            <div class="card" style="animation-delay: 0.1s;">
+                <div class="kpi">336.15</div>
+                <div class="kpi-label">Tons Per Hour</div>
+            </div>
+            <div class="card" style="animation-delay: 0.15s;">
+                <div class="kpi">2m 9s</div>
+                <div class="kpi-label">Session Duration</div>
+            </div>
+            <div class="card" style="animation-delay: 0.2s;">
+                <div class="kpi">94.0 / 256.0 t</div>
+                <div class="kpi-label">Cargo Load</div>
+            </div>
+            <div class="card" style="animation-delay: 0.25s;">
+                <div class="kpi">148</div>
+                <div class="kpi-label">Limpets Remaining</div>
+            </div>
+            <div class="card" style="animation-delay: 0.3s;">
+                <div class="kpi">60.0</div>
+                <div class="kpi-label">Max RPM</div>
+            </div>
+        </section>
+
+        <section class="split">
+            <div class="card" style="animation-delay: 0.35s;">
+                <h2>Commodity Yield</h2>
+                
+            <div class="bar-row">
+                <div class="bar-label">Methanol Monohydrate Crystals</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:50.0%"></div>
+                </div>
+                <div class="bar-value">6.0 t</div>
+            </div>
+            
+
+            <div class="bar-row">
+                <div class="bar-label">Water</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:50.0%"></div>
+                </div>
+                <div class="bar-value">6.0 t</div>
+            </div>
+            
+            </div>
+            <div class="card" style="animation-delay: 0.4s;">
+                <h2>Prospecting Content</h2>
+                
+            <div class="bar-row">
+                <div class="bar-label">High</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:0.0%"></div>
+                </div>
+                <div class="bar-value">0.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+                <div class="bar-label">Medium</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:0.0%"></div>
+                </div>
+                <div class="bar-value">0.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+                <div class="bar-label">Low</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:100.0%"></div>
+                </div>
+                <div class="bar-value">1.00</div>
+            </div>
+            
+                <div class="muted" style="margin-top: 12px;">
+                    Prospected: 1.0 |
+                    Duplicates: 0.0 |
+                    Already mined: 0.0
+                </div>
+            </div>
+        </section>
+
+        <section class="split">
+            <div class="card" style="animation-delay: 0.45s;">
+                <h2>Event Activity</h2>
+                
+            <div class="bar-row">
+                <div class="bar-label">Mining Refined</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:48.0%"></div>
+                </div>
+                <div class="bar-value">12.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+                <div class="bar-label">Cargo</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:32.0%"></div>
+                </div>
+                <div class="bar-value">8.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+                <div class="bar-label">Launch Drone</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:8.0%"></div>
+                </div>
+                <div class="bar-value">2.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+                <div class="bar-label">Mining Session Started</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:4.0%"></div>
+                </div>
+                <div class="bar-value">1.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+                <div class="bar-label">Prospected Asteroid</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:4.0%"></div>
+                </div>
+                <div class="bar-value">1.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+                <div class="bar-label">Mining Session Stopped</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:4.0%"></div>
+                </div>
+                <div class="bar-value">1.00</div>
+            </div>
+            
+            </div>
+            <div class="card" style="animation-delay: 0.5s;">
+                <h2>Prospecting Quality</h2>
+                <div class="stat-grid">
+                    <div class="stat-header">Commodity</div>
+                    <div class="stat-header" style="text-align:right;">Min %</div>
+                    <div class="stat-header" style="text-align:right;">Avg %</div>
+                    <div class="stat-header" style="text-align:right;">Max %</div>
+                    
+            <div class="stat-row">
+                <div class="stat-label">Methanol Monohydrate Crystals</div>
+                <div class="stat-value">6.544</div>
+                <div class="stat-value">6.544</div>
+                <div class="stat-value">6.544</div>
+            </div>
+            
+            <div class="stat-row">
+                <div class="stat-label">Water</div>
+                <div class="stat-value">7.020</div>
+                <div class="stat-value">7.020</div>
+                <div class="stat-value">7.020</div>
+            </div>
+            
+                </div>
+            </div>
+        </section>
+
+        <section class="split">
+            <div class="card" style="animation-delay: 0.55s;">
+                <h2>Operational Notes</h2>
+                <div class="muted">Collectors launched: 1</div>
+                <div class="muted">Collectors abandoned: 0</div>
+                <div class="muted">Prospectors launched: 1</div>
+                <div class="muted">Prospectors lost: 0</div>
+                <div class="muted">Materials: -</div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
