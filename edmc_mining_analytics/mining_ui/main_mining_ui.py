@@ -77,6 +77,8 @@ _log = get_logger("ui")
 
 NON_METAL_WARNING_COLOR = "#ff4d4d"
 NON_METAL_WARNING_TEXT = " (Warning: Non-Metallic ring)"
+DETAILS_ICON_EXPANDED = "🔼"
+DETAILS_ICON_COLLAPSED = "🔽"
 
 
 class edmcmaMiningUI:
@@ -380,7 +382,7 @@ class edmcmaMiningUI:
         self._theme.register(total_estimated_label)
 
         button_bar = tk.Frame(frame, highlightthickness=0, bd=0)
-        button_bar.grid(row=2, column=0, sticky="e", padx=4, pady=(0, 6))
+        button_bar.grid(row=2, column=0, sticky="e", padx=(4, 0), pady=(0, 6))
         self._theme.register(button_bar)
 
         pause_btn = create_theme_button(
@@ -1089,7 +1091,7 @@ class edmcmaMiningUI:
         if visible:
             self._apply_table_visibility()
         if self._details_toggle:
-            label = "Hide Details" if visible else "Show Details"
+            label = DETAILS_ICON_EXPANDED if visible else DETAILS_ICON_COLLAPSED
             self._theme.set_button_text(self._details_toggle, label)
 
     def _apply_table_visibility(self) -> None:

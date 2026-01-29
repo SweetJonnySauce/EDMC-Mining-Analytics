@@ -43,7 +43,7 @@ def build_top_bar(
     warning_color: str,
 ) -> TopBarWidgets:
     top_bar = tk.Frame(parent, highlightthickness=border, bd=border, relief=relief)
-    top_bar.grid(row=0, column=0, sticky="ew", padx=4, pady=(4, 2))
+    top_bar.grid(row=0, column=0, sticky="ew", padx=(4, 0), pady=(4, 2))
     top_bar.columnconfigure(0, weight=1)
     theme.register(top_bar)
 
@@ -168,7 +168,7 @@ def build_top_bar(
     details_toggle = create_theme_button(
         control_cluster,
         name="edmcma_details_toggle",
-        text="",
+        text="🔼",
         command=on_toggle_details,
     )
     details_toggle.grid(row=0, column=2, padx=0, pady=0, sticky="e")
