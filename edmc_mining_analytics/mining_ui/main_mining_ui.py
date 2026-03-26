@@ -7,6 +7,9 @@ import math
 import queue
 import random
 import threading
+import webbrowser
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -275,6 +278,9 @@ class edmcmaMiningUI:
         self._details_visible = False
         self._last_is_mining: Optional[bool] = None
         self._rpm_update_job: Optional[str] = None
+        self._local_web_server: Optional[ThreadingHTTPServer] = None
+        self._local_web_server_thread: Optional[threading.Thread] = None
+        self._local_web_server_root: Optional[Path] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -405,6 +411,14 @@ class edmcmaMiningUI:
             command=self._on_reset,
         )
         reset_btn.grid(row=0, column=1, padx=0, pady=0)
+
+        open_web_btn = create_theme_button(
+            button_bar,
+            name="edmcma_open_web_button",
+            text="Analysis",
+            command=self._open_local_web_page,
+        )
+        open_web_btn.grid(row=0, column=2, padx=(4, 0), pady=0)
 
         self._materials_header = self._build_materials_section(frame)
 
@@ -1267,6 +1281,19 @@ class edmcmaMiningUI:
         if close_histograms:
             self.close_histogram_windows()
 
+    def close_local_web_server(self) -> None:
+        server = self._local_web_server
+        if server is None:
+            return
+        try:
+            server.shutdown()
+            server.server_close()
+        except Exception:
+            _log.debug("Failed to close local web server", exc_info=True)
+        self._local_web_server = None
+        self._local_web_server_thread = None
+        self._local_web_server_root = None
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
@@ -1952,6 +1979,76 @@ class edmcmaMiningUI:
     # ------------------------------------------------------------------
     def _on_reset(self) -> None:
         self._on_reset()
+
+    def _open_local_web_page(self) -> None:
+        plugin_dir = self._state.plugin_dir
+        if plugin_dir is None:
+            if self._status_var is not None:
+                self._status_var.set("Plugin directory is unavailable.")
+            return
+
+        page_path = (plugin_dir / "web" / "index.html").resolve()
+        if not page_path.exists():
+            if self._status_var is not None:
+                self._status_var.set(f"Missing local page: {page_path.name}")
+            return
+
+        port = self._ensure_local_web_server(plugin_dir)
+        if port is None:
+            if self._status_var is not None:
+                self._status_var.set("Unable to start local web server.")
+            return
+
+        url = f"http://127.0.0.1:{port}/web/index.html"
+        try:
+            webbrowser.open(url, new=2)
+            if self._status_var is not None:
+                self._status_var.set(f"Opened local page: {url}")
+        except Exception:
+            _log.exception("Failed to open local web page: %s", url)
+
+    def _ensure_local_web_server(self, plugin_dir: Path) -> Optional[int]:
+        server = self._local_web_server
+        thread = self._local_web_server_thread
+        if (
+            server is not None
+            and thread is not None
+            and thread.is_alive()
+            and self._local_web_server_root == plugin_dir
+        ):
+            return int(server.server_port)
+
+        if server is not None:
+            try:
+                server.shutdown()
+                server.server_close()
+            except Exception:
+                pass
+            self._local_web_server = None
+            self._local_web_server_thread = None
+            self._local_web_server_root = None
+
+        class _LocalHandler(SimpleHTTPRequestHandler):
+            def log_message(self, format: str, *args: object) -> None:  # noqa: A003
+                return
+
+        try:
+            handler = partial(_LocalHandler, directory=str(plugin_dir))
+            server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+            thread = threading.Thread(
+                target=server.serve_forever,
+                name="edmcma-local-web",
+                daemon=True,
+            )
+            thread.start()
+        except Exception:
+            _log.exception("Failed to start local web server for %s", plugin_dir)
+            return None
+
+        self._local_web_server = server
+        self._local_web_server_thread = thread
+        self._local_web_server_root = plugin_dir
+        return int(server.server_port)
 
     def _toggle_pause(self) -> None:
         self.set_paused(not self._state.is_paused, source="manual")

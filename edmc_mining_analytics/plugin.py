@@ -251,6 +251,7 @@ class MiningAnalyticsPlugin:
         self._persist_preferences()
         self.ui.cancel_rate_update()
         self.ui.close_histogram_windows()
+        self.ui.close_local_web_server()
         self._cancel_overlay_refresh()
         self._cancel_overlay_rpm_refresh()
         self.overlay_helper.clear_preview()
