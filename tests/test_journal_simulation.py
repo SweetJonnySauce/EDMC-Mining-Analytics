@@ -3,8 +3,8 @@ import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from ..journal import JournalProcessor
-from ..state import MiningState
+from edmc_mining_analytics.journal import JournalProcessor
+from edmc_mining_analytics.state import MiningState
 
 
 class JournalSimulationTest(unittest.TestCase):
@@ -119,13 +119,16 @@ class JournalSimulationTest(unittest.TestCase):
     def test_replay_sample_journal(self) -> None:
         """Replay a captured journal slice to mirror EDMC runtime behaviour."""
 
-        journal_path = Path(__file__).resolve().parent / "data" / "sample_journal.jsonl"
+        journal_path = Path(__file__).resolve().parent / "config" / "journal_events.json"
         self.assertTrue(journal_path.exists(), "Sample journal file missing")
 
         with journal_path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                payload = json.loads(line.strip())
-                self.processor.handle_entry(payload, shared_state=None)
+            payload = json.load(handle)
+
+        sequence = payload.get("sample_mining_session", [])
+        self.assertIsInstance(sequence, list, "sample_mining_session must be a list")
+        for entry in sequence:
+            self.processor.handle_entry(entry, shared_state=None)
 
         # Expectations after replaying the sample:
         self.assertTrue(self._session_started)
