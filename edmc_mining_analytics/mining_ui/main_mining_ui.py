@@ -7,14 +7,13 @@ import math
 import queue
 import random
 import threading
-import webbrowser
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 try:
     import tkinter as tk
@@ -55,6 +54,7 @@ from ..edmc_mining_analytics_version import (
     display_version,
     is_newer_version,
 )
+from ..browser_utils import did_open, open_analysis_url
 from .components.button_factory import (
     ButtonType,
     CheckboxType,
@@ -78,6 +78,9 @@ from .hotspot_search_window import HotspotSearchController, HotspotSearchWindow
 
 _log = get_logger("ui")
 
+if TYPE_CHECKING:
+    from ..capabilities import CapabilityService
+
 NON_METAL_WARNING_COLOR = "#ff4d4d"
 NON_METAL_WARNING_TEXT = " (Warning: Non-Metallic ring)"
 DETAILS_ICON_EXPANDED = "🔼"
@@ -100,6 +103,7 @@ class edmcmaMiningUI:
         on_reset_inferred_capacities: Optional[Callable[[], None]] = None,
         on_test_webhook: Optional[Callable[[], None]] = None,
         on_settings_changed: Optional[Callable[[], None]] = None,
+        capability_service: Optional["CapabilityService"] = None,
     ) -> None:
         self._state = state
         self._inara = inara
@@ -109,6 +113,7 @@ class edmcmaMiningUI:
         self._reset_capacities_callback = on_reset_inferred_capacities
         self._test_webhook_callback = on_test_webhook
         self._on_settings_changed = on_settings_changed
+        self._capability_service = capability_service
         self._theme = ThemeAdapter()
 
         self._discord_image_manager = DiscordImageManager(self._state)
@@ -2001,11 +2006,23 @@ class edmcmaMiningUI:
 
         url = f"http://127.0.0.1:{port}/web/index.html"
         try:
-            webbrowser.open(url, new=2)
+            result = open_analysis_url(self._capability_service, url)
+            if did_open(result):
+                if result.status != "success":
+                    _log.debug(
+                        "Local page open was degraded: provider=%s reason=%s",
+                        result.provider,
+                        result.reason_code,
+                    )
+                return
             if self._status_var is not None:
-                self._status_var.set(f"Opened local page: {url}")
+                self._status_var.set(result.message or "Unable to open local page in browser.")
         except Exception:
+            # Browser capability facade is defensive and returns structured
+            # results. Keep this as a final runtime guard.
             _log.exception("Failed to open local web page: %s", url)
+            if self._status_var is not None:
+                self._status_var.set("Unable to open local page in browser.")
 
     def _ensure_local_web_server(self, plugin_dir: Path) -> Optional[int]:
         server = self._local_web_server

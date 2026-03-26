@@ -71,5 +71,18 @@
       You can replace this file with your own local web app.
     </p>
   </main>
+  <script>
+    (function () {
+      try {
+        const params = new URLSearchParams(window.location.search || "");
+        const token = (params.get("edmcma_focus_token") || "").trim();
+        if (token) {
+          document.title = `${document.title} [${token}]`;
+        }
+      } catch (_err) {
+        // Keep default title if URL parsing fails.
+      }
+    })();
+  </script>
 </body>
 </html>

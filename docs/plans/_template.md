@@ -10,6 +10,7 @@ If something is unclear, capture it under `Open Questions`.
 - <required behavior/outcome #1>
 - <required behavior/outcome #2>
 - <required behavior/outcome #3>
+- If implementing OS-specific functionality, route platform-dependent behavior through the capability subsystem rather than adding platform branches in feature/UI call sites.
 - Keep `load.py` minimal: new feature/business logic should be implemented in helper modules/services, with `load.py` limited to orchestration/wiring and thin delegating methods.
 
 ## Vendored Paths Guardrail (Required)
