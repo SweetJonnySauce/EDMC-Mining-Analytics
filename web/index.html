@@ -2486,35 +2486,59 @@
       }
 
       function computeHighestRefinedYieldCommodity(sessionData) {
-        const source = sessionData && typeof sessionData === "object" ? (sessionData.commodities || {}) : {};
-        const rows = Object.entries(source).map(([name, details]) => {
-          const payload = details && typeof details === "object" ? details : {};
-          const gathered = payload.gathered && typeof payload.gathered === "object" ? payload.gathered : {};
-          const tons = Number(gathered.tons);
-          return {
-            name: String(name || "").trim(),
-            tons: Number.isFinite(tons) && tons > 0 ? tons : 0
-          };
-        }).filter((row) => row.name && row.tons > 0);
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const refinedCommodityNames = new Set();
+        events.forEach((event) => {
+          if (!event || event.type !== "mining_refined") {
+            return;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          const localized = typeof details.type_localised === "string" ? details.type_localised.trim() : "";
+          if (localized) {
+            refinedCommodityNames.add(normalizeCommodityName(localized));
+          }
+        });
 
-        if (!rows.length) {
+        const candidates = [];
+        events.forEach((event) => {
+          if (!event || event.type !== "prospected_asteroid") {
+            return;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          const materials = Array.isArray(details.materials) ? details.materials : [];
+          materials.forEach((material) => {
+            if (!material || typeof material !== "object") {
+              return;
+            }
+            const name = typeof material.name === "string" ? material.name.trim() : "";
+            const percent = Number(material.percentage);
+            if (!name || !Number.isFinite(percent)) {
+              return;
+            }
+            const normalized = normalizeCommodityName(name);
+            const isRefined = refinedCommodityNames.size === 0 || refinedCommodityNames.has(normalized);
+            candidates.push({
+              name,
+              percent,
+              isRefined
+            });
+          });
+        });
+
+        const filtered = candidates.filter((item) => item.isRefined);
+        const pool = filtered.length ? filtered : candidates;
+        if (!pool.length) {
           return "--";
         }
 
-        const totalTons = rows.reduce((sum, row) => sum + row.tons, 0);
-        if (!Number.isFinite(totalTons) || totalTons <= 0) {
-          return "--";
-        }
-
-        rows.sort((left, right) => {
-          if (right.tons !== left.tons) {
-            return right.tons - left.tons;
+        pool.sort((left, right) => {
+          if (right.percent !== left.percent) {
+            return right.percent - left.percent;
           }
           return left.name.localeCompare(right.name);
         });
-        const top = rows[0];
-        const percent = (top.tons / totalTons) * 100;
-        return `${top.name} (${percent.toFixed(2)}%)`;
+        const top = pool[0];
+        return `${top.name} (${top.percent.toFixed(2)}%)`;
       }
 
       function buildSummary(sessionData, filename, overrides) {
