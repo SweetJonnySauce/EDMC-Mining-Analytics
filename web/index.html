@@ -13,6 +13,12 @@
       --accent: #ff8a00;
       --card: #171d25;
       --line: color-mix(in srgb, var(--accent) 30%, transparent);
+      --cool-1: #67d4ff;
+      --cool-2: #3b8cec;
+      --cool-3: #4ab6f2;
+      --cool-4: #3d90f0;
+      --cool-text: #cfe8ff;
+      --cool-glow: transparent;
       --ok: #45d483;
       --warn: #f7c948;
       --bad: #f25f5c;
@@ -26,6 +32,62 @@
         --accent: #c45a00;
         --card: #ffffff;
       }
+    }
+
+    :root[data-theme="blue-light"] {
+      --bg: #edf2f8;
+      --fg: #1f2937;
+      --muted: #4b5563;
+      --accent: #3f87d4;
+      --card: #ffffff;
+    }
+
+    :root[data-theme="blue-dark"] {
+      --bg: #0b1017;
+      --fg: #f2f7ff;
+      --muted: #97a8bc;
+      --accent: #3f87d4;
+      --card: #131d2a;
+    }
+
+    :root[data-theme="orange-dark"] {
+      --bg: #130e09;
+      --fg: #fff4e8;
+      --muted: #d4b89c;
+      --accent: #d36f00;
+      --card: #21180f;
+      --cool-1: #ff9f1a;
+      --cool-2: #e67e22;
+      --cool-3: #8a4b08;
+      --cool-4: #4a2a05;
+      --cool-text: #ffdcb3;
+      --cool-glow: color-mix(in srgb, #ff9f1a 38%, transparent);
+    }
+
+    :root[data-theme="green-light"] {
+      --bg: #f4f9f2;
+      --fg: #1a2f17;
+      --muted: #4c6348;
+      --accent: #3c8223;
+      --card: #ffffff;
+      --cool-1: #d8909f;
+      --cool-2: #b56576;
+      --cool-3: #ce7f90;
+      --cool-4: #b56576;
+      --cool-text: #7b2f40;
+    }
+
+    :root[data-theme="green-dark"] {
+      --bg: #1a2a29;
+      --fg: #edf6ef;
+      --muted: #b5c7bc;
+      --accent: #d1d93b;
+      --card: #243836;
+      --cool-1: #dd9aaa;
+      --cool-2: #b56576;
+      --cool-3: #d28798;
+      --cool-4: #b56576;
+      --cool-text: #f0d1d8;
     }
 
     * {
@@ -53,13 +115,96 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     }
 
-    .title {
+    .title-row {
       margin: 0 0 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .title {
+      margin: 0;
       font-size: clamp(1.25rem, 2vw, 1.8rem);
     }
 
     .title strong {
       color: var(--accent);
+    }
+
+    .theme-control {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .theme-toggle {
+      border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--card) 88%, #000);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+
+    .theme-toggle:hover {
+      border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+    }
+
+    .theme-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 190px;
+      display: none;
+      gap: 4px;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--card) 95%, #000);
+      padding: 6px;
+      z-index: 40;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .theme-menu.theme-menu--open {
+      display: grid;
+    }
+
+    .theme-option {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.82rem;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+
+    .theme-option:hover {
+      background: color-mix(in srgb, var(--fg) 6%, transparent);
+      border-color: color-mix(in srgb, var(--fg) 16%, transparent);
+    }
+
+    .theme-option.theme-option--active {
+      border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+
+    .theme-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, var(--swatch-bg, #111), var(--swatch-accent, #999));
     }
 
     .session-toolbar {
@@ -223,13 +368,13 @@
     }
 
     #refinement-filters .event-filter-item {
-      border-color: color-mix(in srgb, #67d4ff 45%, transparent);
-      background: color-mix(in srgb, #3b8cec 18%, transparent);
-      color: color-mix(in srgb, #cfe8ff 90%, #fff);
+      border-color: color-mix(in srgb, var(--cool-1) 45%, transparent);
+      background: color-mix(in srgb, var(--cool-2) 18%, transparent);
+      color: color-mix(in srgb, var(--cool-text) 90%, #fff);
     }
 
     #refinement-filters .event-filter-item input {
-      accent-color: #3b8cec;
+      accent-color: var(--cool-2);
     }
 
     .event-journal-wrap {
@@ -337,7 +482,8 @@
     }
 
     .bar-fill.cool {
-      background: linear-gradient(90deg, #4ab6f2, #3d90f0);
+      background: linear-gradient(90deg, var(--cool-3), var(--cool-4));
+      box-shadow: 0 0 8px var(--cool-glow);
     }
 
     .mix-layout {
@@ -451,7 +597,8 @@
     }
 
     .timeline-bar.cool {
-      background: linear-gradient(180deg, #67d4ff, #3b8cec);
+      background: linear-gradient(180deg, var(--cool-1), var(--cool-2));
+      box-shadow: 0 0 6px var(--cool-glow);
     }
 
     .timeline-bar.timeline-bar--linked {
@@ -469,11 +616,48 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .panel-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 1.45rem;
+    }
+
+    .panel-header-controls {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .cumulative-layout {
       height: 100%;
       display: grid;
       grid-template-rows: 1fr auto auto;
       gap: 8px;
+    }
+
+    .cumulative-render-mode {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.2;
+      user-select: none;
+    }
+
+    .cumulative-render-mode input {
+      margin: 0;
+      width: 12px;
+      height: 12px;
+      accent-color: var(--accent);
     }
 
     .cumulative-plot {
@@ -589,7 +773,8 @@
       width: 100%;
       border-radius: 3px 3px 0 0;
       min-height: 2px;
-      background: linear-gradient(180deg, #86d9ff, #3d90f0);
+      background: linear-gradient(180deg, var(--cool-1), var(--cool-4));
+      box-shadow: 0 0 6px var(--cool-glow);
       opacity: 0.92;
     }
 
@@ -678,12 +863,36 @@
       .mix-layout {
         grid-template-columns: 1fr;
       }
+
+      .title-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .theme-control {
+        align-self: flex-end;
+      }
+
+      .panel-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .panel-header-controls {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
   <main class="app">
-    <h1 class="title"><strong>EDMC Mining Analytics</strong> Session Analysis</h1>
+    <header class="title-row">
+      <h1 class="title"><strong>EDMC Mining Analytics</strong> Session Analysis</h1>
+      <div class="theme-control">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-haspopup="true" aria-expanded="false">Theme</button>
+        <div id="theme-menu" class="theme-menu" aria-hidden="true"></div>
+      </div>
+    </header>
 
     <section class="session-toolbar">
       <label for="session-select">Session to analyze</label>
@@ -720,7 +929,10 @@
           <div id="refinement-filters" class="event-filters"></div>
         </article>
         <article class="chart-card chart-card--full">
-          <h2>Cumulative Commodities</h2>
+          <div class="panel-header-row">
+            <h2>Cumulative Commodities</h2>
+            <div id="cumulative-header-controls" class="panel-header-controls"></div>
+          </div>
           <div id="chart-cumulative-commodities" class="chart-body"></div>
         </article>
         <article class="chart-card chart-card--full">
@@ -749,17 +961,32 @@
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
       const chartCumulativeCommodities = document.getElementById("chart-cumulative-commodities");
+      const cumulativeHeaderControls = document.getElementById("cumulative-header-controls");
       const commodityHistogramFilters = document.getElementById("commodity-histogram-filters");
       const refinementFilters = document.getElementById("refinement-filters");
       const eventFilters = document.getElementById("event-filters");
       const eventJournal = document.getElementById("event-journal");
+      const rootElement = document.documentElement;
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeMenu = document.getElementById("theme-menu");
+      const THEME_STORAGE_KEY = "edmcma.analysis.theme";
+      const DEFAULT_THEME_ID = "orange-dark";
+      const themeOptions = [
+        { id: "blue-light", label: "Blue (light)", swatchBg: "#edf2f8", swatchAccent: "#3f87d4" },
+        { id: "blue-dark", label: "Blue (dark)", swatchBg: "#0b1017", swatchAccent: "#3f87d4" },
+        { id: "orange-dark", label: "Orange (dark)", swatchBg: "#130e09", swatchAccent: "#ff9f1a" },
+        { id: "green-light", label: "Green (light)", swatchBg: "#f4f9f2", swatchAccent: "#b56576" },
+        { id: "green-dark", label: "Green (dark)", swatchBg: "#1a2a29", swatchAccent: "#d35400" }
+      ];
       let cursorTooltip = null;
       let runtimeAnalysisSettings = {};
+      let activeThemeId = DEFAULT_THEME_ID;
       let selectedHistogramCommodity = "";
       let allRefinementEntries = [];
       let refinementTimelineOptions = null;
       let refinementSelection = {};
       let cumulativeCommoditySelection = {};
+      let cumulativeRenderMode = "line";
       let allEventEntries = [];
       let eventTimelineOptions = null;
       let eventTypeSelection = {};
@@ -779,6 +1006,114 @@
         } catch (_err) {
           // Keep default title if URL parsing fails.
         }
+      }
+
+      function getThemeOption(themeId) {
+        return themeOptions.find((option) => option.id === themeId) || null;
+      }
+
+      function setThemeMenuOpen(open) {
+        if (!themeToggle || !themeMenu) {
+          return;
+        }
+        const isOpen = !!open;
+        themeToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        themeMenu.setAttribute("aria-hidden", isOpen ? "false" : "true");
+        themeMenu.classList.toggle("theme-menu--open", isOpen);
+      }
+
+      function syncThemeControls() {
+        if (!themeToggle || !themeMenu) {
+          return;
+        }
+        const option = getThemeOption(activeThemeId) || getThemeOption(DEFAULT_THEME_ID);
+        themeToggle.textContent = option ? `${option.label} ▾` : "Theme ▾";
+        const buttons = themeMenu.querySelectorAll(".theme-option[data-theme-id]");
+        buttons.forEach((button) => {
+          const isActive = button.getAttribute("data-theme-id") === activeThemeId;
+          button.classList.toggle("theme-option--active", isActive);
+          button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+
+      function applyTheme(themeId, persist) {
+        const option = getThemeOption(themeId) || getThemeOption(DEFAULT_THEME_ID);
+        if (!option) {
+          return;
+        }
+        activeThemeId = option.id;
+        rootElement.setAttribute("data-theme", option.id);
+        syncThemeControls();
+        if (persist !== false) {
+          try {
+            window.localStorage.setItem(THEME_STORAGE_KEY, option.id);
+          } catch (_err) {
+            // Ignore storage errors.
+          }
+        }
+      }
+
+      function renderThemeMenu() {
+        if (!themeMenu) {
+          return;
+        }
+        themeMenu.innerHTML = "";
+        themeOptions.forEach((option) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "theme-option";
+          button.setAttribute("data-theme-id", option.id);
+
+          const swatch = document.createElement("span");
+          swatch.className = "theme-swatch";
+          swatch.style.setProperty("--swatch-bg", option.swatchBg);
+          swatch.style.setProperty("--swatch-accent", option.swatchAccent);
+
+          const label = document.createElement("span");
+          label.textContent = option.label;
+
+          button.appendChild(swatch);
+          button.appendChild(label);
+          button.addEventListener("click", () => {
+            applyTheme(option.id);
+            setThemeMenuOpen(false);
+          });
+          themeMenu.appendChild(button);
+        });
+      }
+
+      function initializeThemeControl() {
+        if (!themeToggle || !themeMenu) {
+          return;
+        }
+        renderThemeMenu();
+        let initialThemeId = DEFAULT_THEME_ID;
+        try {
+          const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+          if (stored && getThemeOption(stored)) {
+            initialThemeId = stored;
+          }
+        } catch (_err) {
+          // Keep default theme.
+        }
+        applyTheme(initialThemeId, false);
+
+        themeToggle.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const isOpen = themeMenu.classList.contains("theme-menu--open");
+          setThemeMenuOpen(!isOpen);
+        });
+        themeMenu.addEventListener("click", (event) => {
+          event.stopPropagation();
+        });
+        document.addEventListener("click", () => {
+          setThemeMenuOpen(false);
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            setThemeMenuOpen(false);
+          }
+        });
       }
 
       function setStatus(target, text, level) {
@@ -947,6 +1282,9 @@
         }
         if (eventJournal) {
           eventJournal.innerHTML = "";
+        }
+        if (cumulativeHeaderControls) {
+          cumulativeHeaderControls.innerHTML = "";
         }
         selectedHistogramCommodity = "";
         allRefinementEntries = [];
@@ -1441,6 +1779,9 @@
 
       function renderCumulativeCommodities(sessionData) {
         chartCumulativeCommodities.innerHTML = "";
+        if (cumulativeHeaderControls) {
+          cumulativeHeaderControls.innerHTML = "";
+        }
         const model = buildCumulativeCommoditySeries(sessionData);
         if (!model || !Array.isArray(model.series) || !model.series.length) {
           const note = document.createElement("p");
@@ -1461,16 +1802,27 @@
         });
         cumulativeCommoditySelection = nextSelection;
 
-        const palette = [
-          "#67d4ff",
-          "#3b8cec",
-          "#8be37f",
-          "#f7c948",
-          "#ff9f43",
-          "#d0a5ff",
-          "#ff6f91",
-          "#4dd0b5"
-        ];
+        const palette = (activeThemeId === "green-light" || activeThemeId === "green-dark")
+          ? [
+              "#d08a9a",
+              "#d35400",
+              "#8be37f",
+              "#f7c948",
+              "#ff9f43",
+              "#d0a5ff",
+              "#ff6f91",
+              "#4dd0b5"
+            ]
+          : [
+              "#67d4ff",
+              "#3b8cec",
+              "#8be37f",
+              "#f7c948",
+              "#ff9f43",
+              "#d0a5ff",
+              "#ff6f91",
+              "#4dd0b5"
+            ];
 
         const layout = document.createElement("div");
         layout.className = "cumulative-layout";
@@ -1548,11 +1900,61 @@
           legend.appendChild(legendItem);
         });
 
+        const renderModes = [
+          { value: "line", label: "Lines" },
+          { value: "stacked-area", label: "Stacked Area" }
+        ];
+        if (cumulativeRenderMode !== "line" && cumulativeRenderMode !== "stacked-area") {
+          cumulativeRenderMode = "line";
+        }
+        renderModes.forEach((mode) => {
+          const option = document.createElement("label");
+          option.className = "cumulative-render-mode";
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "cumulative-render-mode";
+          input.value = mode.value;
+          input.checked = cumulativeRenderMode === mode.value;
+          input.addEventListener("change", () => {
+            if (!input.checked) {
+              return;
+            }
+            cumulativeRenderMode = mode.value;
+            renderSelectedSeries();
+          });
+          const text = document.createElement("span");
+          text.textContent = mode.label;
+          option.appendChild(input);
+          option.appendChild(text);
+          if (cumulativeHeaderControls) {
+            cumulativeHeaderControls.appendChild(option);
+          }
+        });
+
         function renderSelectedSeries() {
           hideCursorTooltip();
           const selectedSeries = series.filter((item) => cumulativeCommoditySelection[item.name]);
-          const values = selectedSeries.flatMap((item) => item.points.map((point) => point.value));
-          const peak = Math.max(...values, 0);
+          const stackedSeries = [...selectedSeries].sort((left, right) => {
+            const leftIsLimpets = String(left && left.name || "").trim().toLowerCase() === "limpets";
+            const rightIsLimpets = String(right && right.name || "").trim().toLowerCase() === "limpets";
+            if (leftIsLimpets === rightIsLimpets) {
+              return 0;
+            }
+            return leftIsLimpets ? 1 : -1;
+          });
+          const pointCount = selectedSeries.length
+            ? Math.min(...selectedSeries.map((item) => item.points.length))
+            : 0;
+          const values = selectedSeries.flatMap((item) => item.points.slice(0, pointCount).map((point) => point.value));
+          const stackedTotals = pointCount > 0
+            ? new Array(pointCount).fill(0).map((_, pointIndex) => selectedSeries.reduce(
+              (sum, item) => sum + asNumber(item.points[pointIndex] && item.points[pointIndex].value),
+              0
+            ))
+            : [];
+          const peak = cumulativeRenderMode === "stacked-area"
+            ? Math.max(...stackedTotals, 0)
+            : Math.max(...values, 0);
           const yMax = Math.max(1, peak);
 
           yAxis.innerHTML = "";
@@ -1607,44 +2009,102 @@
             const ratio = yMax <= 0 ? 0 : (value / yMax);
             return topPad + (drawHeight * (1 - ratio));
           };
+          if (cumulativeRenderMode === "stacked-area") {
+            const lower = new Array(pointCount).fill(0);
+            stackedSeries.forEach((item) => {
+              if (!item.points.length || pointCount === 0) {
+                return;
+              }
+              const index = seriesIndexByName.get(item.name) || 0;
+              const color = palette[index % palette.length];
+              const upper = item.points.slice(0, pointCount).map((point, pointIndex) => lower[pointIndex] + asNumber(point.value));
+              const topCommands = item.points.slice(0, pointCount).map((point, pointIndex) => {
+                const x = toX(point.ms);
+                const y = toY(upper[pointIndex]);
+                return `${pointIndex === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
+              });
+              const bottomCommands = item.points.slice(0, pointCount).map((point, pointIndex) => {
+                const reverseIndex = pointCount - pointIndex - 1;
+                const reversePoint = item.points[reverseIndex];
+                const x = toX(reversePoint.ms);
+                const y = toY(lower[reverseIndex]);
+                return `L${x.toFixed(2)} ${y.toFixed(2)}`;
+              });
+              const areaPath = document.createElementNS(ns, "path");
+              areaPath.setAttribute("d", `${topCommands.join(" ")} ${bottomCommands.join(" ")} Z`);
+              areaPath.setAttribute("fill", color);
+              areaPath.setAttribute("fill-opacity", "0.24");
+              svg.appendChild(areaPath);
 
-          selectedSeries.forEach((item) => {
-            if (!item.points.length) {
-              return;
-            }
-            const index = seriesIndexByName.get(item.name) || 0;
-            const color = palette[index % palette.length];
-            const path = document.createElementNS(ns, "path");
-            const commands = item.points.map((point, pointIndex) => {
-              const x = toX(point.ms);
-              const y = toY(point.value);
-              return `${pointIndex === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
-            }).join(" ");
-            path.setAttribute("d", commands);
-            path.setAttribute("stroke", color);
-            path.setAttribute("class", "cumulative-line");
-            svg.appendChild(path);
+              const outline = document.createElementNS(ns, "path");
+              outline.setAttribute("d", topCommands.join(" "));
+              outline.setAttribute("stroke", color);
+              outline.setAttribute("class", "cumulative-line");
+              svg.appendChild(outline);
 
-            item.points.forEach((point) => {
-              const marker = document.createElementNS(ns, "circle");
-              marker.setAttribute("cx", toX(point.ms).toFixed(2));
-              marker.setAttribute("cy", toY(point.value).toFixed(2));
-              marker.setAttribute("r", "3");
-              marker.setAttribute("fill", color);
-              marker.setAttribute("class", "cumulative-point");
-              const detail = `${item.name}: ${formatNumber(point.value, 0)} t\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
-              marker.addEventListener("mouseenter", (event) => {
-                showCursorTooltip(detail, event);
+              item.points.slice(0, pointCount).forEach((point, pointIndex) => {
+                const marker = document.createElementNS(ns, "circle");
+                marker.setAttribute("cx", toX(point.ms).toFixed(2));
+                marker.setAttribute("cy", toY(upper[pointIndex]).toFixed(2));
+                marker.setAttribute("r", "3");
+                marker.setAttribute("fill", color);
+                marker.setAttribute("class", "cumulative-point");
+                const detail = `${item.name}: ${formatNumber(point.value, 0)} t\nStacked: ${formatNumber(upper[pointIndex], 0)} t\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
+                marker.addEventListener("mouseenter", (event) => {
+                  showCursorTooltip(detail, event);
+                });
+                marker.addEventListener("mousemove", (event) => {
+                  showCursorTooltip(detail, event);
+                });
+                marker.addEventListener("mouseleave", () => {
+                  hideCursorTooltip();
+                });
+                svg.appendChild(marker);
               });
-              marker.addEventListener("mousemove", (event) => {
-                showCursorTooltip(detail, event);
+
+              upper.forEach((value, pointIndex) => {
+                lower[pointIndex] = value;
               });
-              marker.addEventListener("mouseleave", () => {
-                hideCursorTooltip();
-              });
-              svg.appendChild(marker);
             });
-          });
+          } else {
+            selectedSeries.forEach((item) => {
+              if (!item.points.length) {
+                return;
+              }
+              const index = seriesIndexByName.get(item.name) || 0;
+              const color = palette[index % palette.length];
+              const path = document.createElementNS(ns, "path");
+              const commands = item.points.slice(0, pointCount).map((point, pointIndex) => {
+                const x = toX(point.ms);
+                const y = toY(point.value);
+                return `${pointIndex === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
+              }).join(" ");
+              path.setAttribute("d", commands);
+              path.setAttribute("stroke", color);
+              path.setAttribute("class", "cumulative-line");
+              svg.appendChild(path);
+
+              item.points.slice(0, pointCount).forEach((point) => {
+                const marker = document.createElementNS(ns, "circle");
+                marker.setAttribute("cx", toX(point.ms).toFixed(2));
+                marker.setAttribute("cy", toY(point.value).toFixed(2));
+                marker.setAttribute("r", "3");
+                marker.setAttribute("fill", color);
+                marker.setAttribute("class", "cumulative-point");
+                const detail = `${item.name}: ${formatNumber(point.value, 0)} t\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
+                marker.addEventListener("mouseenter", (event) => {
+                  showCursorTooltip(detail, event);
+                });
+                marker.addEventListener("mousemove", (event) => {
+                  showCursorTooltip(detail, event);
+                });
+                marker.addEventListener("mouseleave", () => {
+                  hideCursorTooltip();
+                });
+                svg.appendChild(marker);
+              });
+            });
+          }
 
           surface.appendChild(svg);
         }
@@ -2291,13 +2751,14 @@
 
       function renderCharts(sessionData) {
         const rows = buildCommodityRows(sessionData).sort((a, b) => b.tons - a.tons);
+        const useCoolThroughputFill = activeThemeId !== "orange-dark";
         renderBarChart(chartCommodityTons, rows, (row) => row.tons, (value) => `${formatNumber(value, 0)} t`, false);
         renderBarChart(
           chartCommodityTph,
           [...rows].sort((a, b) => b.tph - a.tph),
           (row) => row.tph,
           (value) => `${formatNumber(value, 1)} TPH`,
-          true
+          useCoolThroughputFill
         );
         renderContentMix(sessionData);
         renderProspectHistogram(sessionData);
@@ -2695,6 +3156,7 @@
       });
 
       applyFocusTokenToTitle();
+      initializeThemeControl();
       clearCharts("Loading chart data...");
       void loadSessionList();
     })();
