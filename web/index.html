@@ -3,85 +3,2676 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EDMC Mining Analytics Web Page</title>
+  <title>EDMC Mining Analytics Analysis</title>
   <style>
     :root {
       color-scheme: light dark;
-      --bg: #0f1216;
-      --fg: #f1f5f9;
+      --bg: #0e1217;
+      --fg: #f3f7fc;
+      --muted: #9aabc0;
       --accent: #ff8a00;
-      --muted: #9aa4b2;
-      --card: #1a1f27;
+      --card: #171d25;
+      --line: color-mix(in srgb, var(--accent) 30%, transparent);
+      --ok: #45d483;
+      --warn: #f7c948;
+      --bad: #f25f5c;
     }
 
     @media (prefers-color-scheme: light) {
       :root {
-        --bg: #f5f7fb;
+        --bg: #edf2f8;
         --fg: #1f2937;
-        --accent: #c45a00;
         --muted: #4b5563;
+        --accent: #c45a00;
         --card: #ffffff;
       }
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
       min-height: 100vh;
       font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      background: radial-gradient(1200px 700px at 90% -20%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 60%), var(--bg);
+      background:
+        radial-gradient(1200px 700px at 90% -20%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%),
+        var(--bg);
       color: var(--fg);
-      display: grid;
-      place-items: center;
       padding: 24px;
     }
 
-    .card {
-      width: min(760px, 100%);
+    .app {
+      width: min(980px, 100%);
+      margin: 0 auto;
       background: var(--card);
-      border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+      border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     }
 
-    h1 {
-      margin: 0 0 8px;
-      font-size: clamp(1.4rem, 2vw, 2rem);
+    .title {
+      margin: 0 0 12px;
+      font-size: clamp(1.25rem, 2vw, 1.8rem);
     }
 
-    p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .accent {
+    .title strong {
       color: var(--accent);
-      font-weight: 700;
+    }
+
+    .session-toolbar {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .session-toolbar label {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .session-toolbar select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+      background: color-mix(in srgb, var(--card) 88%, #000);
+      color: var(--fg);
+      font: inherit;
+    }
+
+    .status {
+      min-height: 1.2em;
+      color: var(--muted);
+      margin: 0;
+      font-size: 0.92rem;
+    }
+
+    #analysis-status {
+      min-height: 0;
+      margin-bottom: 4px;
+    }
+
+    #analysis-status:empty {
+      display: none;
+      margin-bottom: 0;
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .status.warn {
+      color: var(--warn);
+    }
+
+    .status.bad {
+      color: var(--bad);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 2px;
+      margin-bottom: 10px;
+    }
+
+    .metric {
+      grid-column: span 4;
+      border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+      border-radius: 7px;
+      padding: 6px 8px;
+      background: color-mix(in srgb, var(--card) 92%, #000);
+      min-width: 0;
+    }
+
+    .metric--s {
+      grid-column: span 2;
+    }
+
+    .metric--m {
+      grid-column: span 3;
+    }
+
+    .metric--l {
+      grid-column: span 4;
+    }
+
+    .metric--xl {
+      grid-column: span 6;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 0.74rem;
+      margin-bottom: 2px;
+      line-height: 1.15;
+    }
+
+    .metric .value {
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .chart-card {
+      border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+      border-radius: 10px;
+      padding: 12px;
+      background: color-mix(in srgb, var(--card) 92%, #000);
+      min-height: 260px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+    }
+
+    .chart-card--full {
+      grid-column: 1 / -1;
+    }
+
+    .chart-card h2 {
+      margin: 0;
+      font-size: 0.97rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .event-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      min-height: 24px;
+    }
+
+    .event-filter-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.2;
+      user-select: none;
+    }
+
+    .event-filter-item input {
+      margin: 0;
+      width: 12px;
+      height: 12px;
+      accent-color: var(--accent);
+    }
+
+    #refinement-filters .event-filter-item {
+      border-color: color-mix(in srgb, #67d4ff 45%, transparent);
+      background: color-mix(in srgb, #3b8cec 18%, transparent);
+      color: color-mix(in srgb, #cfe8ff 90%, #fff);
+    }
+
+    #refinement-filters .event-filter-item input {
+      accent-color: #3b8cec;
+    }
+
+    .event-journal-wrap {
+      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--fg) 2%, transparent);
+      padding: 8px;
+    }
+
+    .event-journal {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 220px;
+      overflow: auto;
+      display: grid;
+      gap: 4px;
+    }
+
+    .event-journal-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: baseline;
+      font-size: 0.8rem;
+      line-height: 1.3;
+      padding: 2px 0;
+      border-bottom: 1px dashed color-mix(in srgb, var(--fg) 9%, transparent);
+    }
+
+    .event-journal-item:last-child {
+      border-bottom: none;
+    }
+
+    .event-journal-item.event-journal-item--active {
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      border-radius: 6px;
+      border-bottom-color: transparent;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+
+    .event-journal-time {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .event-journal-text {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .chart-body {
+      min-height: 0;
+    }
+
+    .chart-empty {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 0;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bar-row {
+      display: grid;
+      gap: 3px;
+    }
+
+    .bar-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 0.86rem;
+    }
+
+    .bar-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-value {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--fg) 10%, transparent);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 65%, #fff), var(--accent));
+    }
+
+    .bar-fill.cool {
+      background: linear-gradient(90deg, #4ab6f2, #3d90f0);
+    }
+
+    .mix-layout {
+      display: grid;
+      grid-template-columns: minmax(120px, 170px) 1fr;
+      gap: 14px;
+      align-items: center;
+      height: 100%;
+    }
+
+    .mix-ring {
+      width: min(36vw, 160px);
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      margin: 0 auto;
+      position: relative;
+      background: color-mix(in srgb, var(--fg) 15%, transparent);
+    }
+
+    .mix-ring::after {
+      content: "";
+      position: absolute;
+      inset: 24%;
+      border-radius: 50%;
+      background: var(--card);
+      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+    }
+
+    .mix-legend {
+      display: grid;
+      gap: 7px;
+      align-content: start;
+    }
+
+    .mix-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .mix-item .left {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .mix-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+
+    .mix-count {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .timeline {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 8px;
+    }
+
+    .timeline-plot {
+      min-height: 170px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .timeline-y-axis {
+      width: 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      padding: 2px 0;
+      user-select: none;
+    }
+
+    .timeline-bars {
+      min-height: 170px;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      align-items: end;
+      gap: 3px;
+      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border-radius: 8px;
+      padding: 8px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+    }
+
+    .timeline-bar {
+      width: 100%;
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 75%, #fff), var(--accent));
+      opacity: 0.9;
+    }
+
+    .timeline-bar.cool {
+      background: linear-gradient(180deg, #67d4ff, #3b8cec);
+    }
+
+    .timeline-bar.timeline-bar--linked {
+      outline: 2px solid color-mix(in srgb, var(--fg) 75%, var(--accent));
+      outline-offset: 1px;
+      opacity: 1;
+    }
+
+    .timeline-axis {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cumulative-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto auto;
+      gap: 8px;
+    }
+
+    .cumulative-plot {
+      min-height: 190px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .cumulative-surface {
+      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      overflow: hidden;
+    }
+
+    .cumulative-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .cumulative-grid-line {
+      stroke: color-mix(in srgb, var(--fg) 14%, transparent);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .cumulative-line {
+      fill: none;
+      stroke-width: 2.2;
+      vector-effect: non-scaling-stroke;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .cumulative-point {
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.08s ease-out;
+    }
+
+    .cumulative-point:hover {
+      opacity: 1;
+    }
+
+    .cumulative-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .cumulative-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.2;
+    }
+
+    .cumulative-legend-item input {
+      margin: 0;
+      width: 12px;
+      height: 12px;
+    }
+
+    .cumulative-legend-item.cumulative-legend-item--off {
+      opacity: 0.55;
+    }
+
+    .cumulative-legend-swatch {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .histogram-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto auto;
+      gap: 8px;
+    }
+
+    .histogram-plot {
+      min-height: 170px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .histogram-bars {
+      min-height: 170px;
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      align-items: end;
+      gap: 3px;
+      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border-radius: 8px;
+      padding: 8px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+    }
+
+    .histogram-bar {
+      width: 100%;
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      background: linear-gradient(180deg, #86d9ff, #3d90f0);
+      opacity: 0.92;
+    }
+
+    .histogram-bin-labels {
+      display: grid;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .histogram-label-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .histogram-label-spacer {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .histogram-bin-label {
+      text-align: center;
+      white-space: pre-line;
+      overflow: visible;
+      text-overflow: unset;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-height: 2.1em;
+    }
+
+    .cursor-tooltip {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      max-width: 280px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+      background: color-mix(in srgb, var(--card) 94%, #000);
+      color: var(--fg);
+      font-size: 0.8rem;
+      line-height: 1.35;
+      white-space: pre-line;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transform: translateY(2px);
+      transition: opacity 0.08s ease-out, transform 0.08s ease-out;
+    }
+
+    .cursor-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 12px;
+      }
+
+      .app {
+        padding: 14px;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .metric--s {
+        grid-column: span 3;
+      }
+
+      .metric--m,
+      .metric--l,
+      .metric--xl {
+        grid-column: span 6;
+      }
+
+      .charts {
+        grid-template-columns: 1fr;
+      }
+
+      .mix-layout {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1><span class="accent">EDMC Mining Analytics</span> local web page</h1>
-    <p>
-      This page is opened by the new <strong>Open Web</strong> button in the plugin UI.
-      You can replace this file with your own local web app.
-    </p>
+  <main class="app">
+    <h1 class="title"><strong>EDMC Mining Analytics</strong> Session Analysis</h1>
+
+    <section class="session-toolbar">
+      <label for="session-select">Session to analyze</label>
+      <select id="session-select" disabled>
+        <option>Loading sessions...</option>
+      </select>
+      <p id="session-status" class="status">Preparing session list...</p>
+    </section>
+
+    <section>
+      <p id="analysis-status" class="status">No session selected.</p>
+      <div id="analysis-metrics" class="metrics"></div>
+      <div class="charts">
+        <article class="chart-card">
+          <h2>Commodity Yield (Tons)</h2>
+          <div id="chart-commodity-tons" class="chart-body"></div>
+        </article>
+        <article class="chart-card">
+          <h2>Commodity Throughput (TPH)</h2>
+          <div id="chart-commodity-tph" class="chart-body"></div>
+        </article>
+        <article class="chart-card">
+          <h2>Asteroid Material Mix</h2>
+          <div id="chart-content-mix" class="chart-body"></div>
+        </article>
+        <article class="chart-card">
+          <h2>Asteroid Percentage Histogram</h2>
+          <div id="chart-prospect-histogram" class="chart-body"></div>
+          <div id="commodity-histogram-filters" class="event-filters"></div>
+        </article>
+        <article class="chart-card chart-card--full">
+          <h2>Refinements Per Minute Bins</h2>
+          <div id="chart-refinements" class="chart-body"></div>
+          <div id="refinement-filters" class="event-filters"></div>
+        </article>
+        <article class="chart-card chart-card--full">
+          <h2>Cumulative Commodities</h2>
+          <div id="chart-cumulative-commodities" class="chart-body"></div>
+        </article>
+        <article class="chart-card chart-card--full">
+          <h2>Event Timeline Density</h2>
+          <div id="chart-events" class="chart-body"></div>
+          <div id="event-filters" class="event-filters"></div>
+          <div class="event-journal-wrap">
+            <h2>Event Journal</h2>
+            <ul id="event-journal" class="event-journal"></ul>
+          </div>
+        </article>
+      </div>
+    </section>
   </main>
+
   <script>
     (function () {
-      try {
-        const params = new URLSearchParams(window.location.search || "");
-        const token = (params.get("edmcma_focus_token") || "").trim();
-        if (token) {
-          document.title = `${document.title} [${token}]`;
+      const sessionSelect = document.getElementById("session-select");
+      const sessionStatus = document.getElementById("session-status");
+      const analysisStatus = document.getElementById("analysis-status");
+      const analysisMetrics = document.getElementById("analysis-metrics");
+      const chartCommodityTons = document.getElementById("chart-commodity-tons");
+      const chartCommodityTph = document.getElementById("chart-commodity-tph");
+      const chartContentMix = document.getElementById("chart-content-mix");
+      const chartProspectHistogram = document.getElementById("chart-prospect-histogram");
+      const chartEvents = document.getElementById("chart-events");
+      const chartRefinements = document.getElementById("chart-refinements");
+      const chartCumulativeCommodities = document.getElementById("chart-cumulative-commodities");
+      const commodityHistogramFilters = document.getElementById("commodity-histogram-filters");
+      const refinementFilters = document.getElementById("refinement-filters");
+      const eventFilters = document.getElementById("event-filters");
+      const eventJournal = document.getElementById("event-journal");
+      let cursorTooltip = null;
+      let runtimeAnalysisSettings = {};
+      let selectedHistogramCommodity = "";
+      let allRefinementEntries = [];
+      let refinementTimelineOptions = null;
+      let refinementSelection = {};
+      let cumulativeCommoditySelection = {};
+      let allEventEntries = [];
+      let eventTimelineOptions = null;
+      let eventTypeSelection = {};
+      let eventTimelineContext = null;
+      let eventJournalFirstRowByBin = new Map();
+      let eventJournalFirstTimeByBin = new Map();
+      let activeJournalRow = null;
+      let activeTimelineBar = null;
+
+      function applyFocusTokenToTitle() {
+        try {
+          const params = new URLSearchParams(window.location.search || "");
+          const token = (params.get("edmcma_focus_token") || "").trim();
+          if (token) {
+            document.title = `${document.title} [${token}]`;
+          }
+        } catch (_err) {
+          // Keep default title if URL parsing fails.
         }
-      } catch (_err) {
-        // Keep default title if URL parsing fails.
       }
+
+      function setStatus(target, text, level) {
+        target.textContent = text;
+        target.classList.remove("ok", "warn", "bad");
+        if (level) {
+          target.classList.add(level);
+        }
+      }
+
+      function ensureCursorTooltip() {
+        if (cursorTooltip && document.body.contains(cursorTooltip)) {
+          return cursorTooltip;
+        }
+        const node = document.createElement("div");
+        node.className = "cursor-tooltip";
+        document.body.appendChild(node);
+        cursorTooltip = node;
+        return node;
+      }
+
+      function showCursorTooltip(text, event) {
+        const node = ensureCursorTooltip();
+        node.textContent = text;
+
+        const offset = 14;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1280;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 720;
+        const rect = node.getBoundingClientRect();
+
+        let x = event.clientX + offset;
+        let y = event.clientY + offset;
+
+        if (x + rect.width > viewportWidth - 8) {
+          x = Math.max(8, event.clientX - rect.width - offset);
+        }
+        if (y + rect.height > viewportHeight - 8) {
+          y = Math.max(8, event.clientY - rect.height - offset);
+        }
+
+        node.style.left = `${Math.round(x)}px`;
+        node.style.top = `${Math.round(y)}px`;
+        node.classList.add("visible");
+      }
+
+      function hideCursorTooltip() {
+        if (!cursorTooltip) {
+          return;
+        }
+        cursorTooltip.classList.remove("visible");
+      }
+
+      async function refreshAnalysisSettings() {
+        try {
+          const response = await fetch("/analysis_settings.json", { cache: "no-store" });
+          if (!response.ok) {
+            return;
+          }
+          const payload = await response.json();
+          if (!payload || typeof payload !== "object") {
+            return;
+          }
+          runtimeAnalysisSettings = payload;
+        } catch (_error) {
+          // Keep defaults when settings endpoint is unavailable.
+        }
+      }
+
+      function formatTimestampFromFilename(filename) {
+        const match = /^session_data_(\d+)\.json$/.exec(filename || "");
+        if (!match) {
+          return filename || "Unknown session";
+        }
+        const epochSeconds = Number(match[1]);
+        if (!Number.isFinite(epochSeconds)) {
+          return filename;
+        }
+        const stamp = new Date(epochSeconds * 1000);
+        return `${stamp.toLocaleString()} (${filename})`;
+      }
+
+      function pickFilename(href) {
+        if (!href) {
+          return null;
+        }
+        const clean = href.split("?")[0].split("#")[0];
+        const file = clean.split("/").pop() || "";
+        if (/^session_data_\d+\.json$/.test(file)) {
+          return file;
+        }
+        return null;
+      }
+
+      function renderMetrics(entries) {
+        analysisMetrics.innerHTML = "";
+
+        const metricSizeByLabel = {
+          file: "l",
+          start: "l",
+          end: "l",
+          ship: "l",
+          system: "l",
+          "body/ring": "l",
+          tons: "s",
+          "duration (hours)": "s",
+          "tons/hour": "s",
+          "max rpm": "s",
+          prospected: "s",
+          "prospectors launched": "s",
+          "duplicate prospectors": "s",
+          "limpet dumps": "s",
+          "highest yield (refined)": "l",
+          "commodity types": "s",
+          "commodities ignored": "s"
+        };
+        const metricTooltipByLabel = {
+          "limpet dumps": "Limpet dump count based on configured threshold."
+        };
+
+        for (const [label, value, tooltipOverride] of entries) {
+          const normalizedLabel = String(label || "").trim().toLowerCase();
+          const size = metricSizeByLabel[normalizedLabel] || "m";
+          const metricTooltip = String(tooltipOverride || metricTooltipByLabel[normalizedLabel] || "");
+          const card = document.createElement("article");
+          card.className = `metric metric--${size}`;
+          if (metricTooltip) {
+            card.title = metricTooltip;
+          }
+
+          const heading = document.createElement("div");
+          heading.className = "label";
+          heading.textContent = label;
+          heading.title = metricTooltip || String(label);
+
+          const body = document.createElement("div");
+          body.className = "value";
+          const valueText = String(value ?? "--");
+          body.textContent = valueText;
+          body.title = metricTooltip ? `${valueText}\n${metricTooltip}` : valueText;
+
+          card.appendChild(heading);
+          card.appendChild(body);
+          analysisMetrics.appendChild(card);
+        }
+      }
+
+      function asNumber(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) {
+          return 0;
+        }
+        return number;
+      }
+
+      function clearCharts(message) {
+        hideCursorTooltip();
+        const text = message || "No chart data available.";
+        if (eventFilters) {
+          eventFilters.innerHTML = "";
+        }
+        if (commodityHistogramFilters) {
+          commodityHistogramFilters.innerHTML = "";
+        }
+        if (refinementFilters) {
+          refinementFilters.innerHTML = "";
+        }
+        if (eventJournal) {
+          eventJournal.innerHTML = "";
+        }
+        selectedHistogramCommodity = "";
+        allRefinementEntries = [];
+        refinementTimelineOptions = null;
+        refinementSelection = {};
+        cumulativeCommoditySelection = {};
+        allEventEntries = [];
+        eventTimelineOptions = null;
+        eventTypeSelection = {};
+        eventTimelineContext = null;
+        eventJournalFirstRowByBin = new Map();
+        eventJournalFirstTimeByBin = new Map();
+        activeJournalRow = null;
+        activeTimelineBar = null;
+        [chartCommodityTons, chartCommodityTph, chartContentMix, chartProspectHistogram, chartRefinements, chartCumulativeCommodities, chartEvents].forEach((container) => {
+          container.innerHTML = "";
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = text;
+          container.appendChild(note);
+        });
+      }
+
+      function formatNumber(value, decimals) {
+        const amount = asNumber(value);
+        return amount.toLocaleString(undefined, {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        });
+      }
+
+      function formatLocalClock(ms) {
+        if (!Number.isFinite(ms)) {
+          return "--";
+        }
+        return new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+
+      function formatLocalDateTime(value) {
+        if (typeof value !== "string" || !value.trim()) {
+          return "--";
+        }
+        const stamp = Date.parse(value);
+        if (!Number.isFinite(stamp)) {
+          return value;
+        }
+        return new Date(stamp).toLocaleString([], {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+      }
+
+      function buildCommodityRows(sessionData) {
+        const source = sessionData && typeof sessionData === "object" ? (sessionData.commodities || {}) : {};
+        return Object.entries(source).map(([name, details]) => {
+          const payload = details && typeof details === "object" ? details : {};
+          const gathered = payload.gathered && typeof payload.gathered === "object" ? payload.gathered : {};
+          return {
+            name: String(name),
+            tons: asNumber(gathered.tons),
+            tph: asNumber(payload.tons_per_hour),
+            asteroids: asNumber(payload.asteroids_prospected)
+          };
+        }).filter((row) => row.tons > 0 || row.tph > 0 || row.asteroids > 0);
+      }
+
+      function renderBarChart(container, rows, getValue, formatValue, coolColors) {
+        container.innerHTML = "";
+        if (!rows.length) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "No commodity data in this session.";
+          container.appendChild(note);
+          return;
+        }
+
+        const maxValue = Math.max(...rows.map((row) => Math.max(0, getValue(row))), 0);
+        if (maxValue <= 0) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "Values are zero for this chart.";
+          container.appendChild(note);
+          return;
+        }
+
+        const list = document.createElement("div");
+        list.className = "bar-list";
+
+        rows.forEach((row) => {
+          const value = Math.max(0, getValue(row));
+          const ratio = maxValue > 0 ? value / maxValue : 0;
+
+          const rowEl = document.createElement("div");
+          rowEl.className = "bar-row";
+
+          const meta = document.createElement("div");
+          meta.className = "bar-meta";
+
+          const label = document.createElement("span");
+          label.className = "bar-label";
+          label.textContent = row.name;
+          label.title = row.name;
+
+          const valueEl = document.createElement("span");
+          valueEl.className = "bar-value";
+          valueEl.textContent = formatValue(value);
+
+          meta.appendChild(label);
+          meta.appendChild(valueEl);
+
+          const track = document.createElement("div");
+          track.className = "bar-track";
+
+          const fill = document.createElement("div");
+          fill.className = coolColors ? "bar-fill cool" : "bar-fill";
+          fill.style.width = `${Math.max(2, ratio * 100)}%`;
+          fill.title = `${row.name}: ${formatValue(value)}`;
+
+          track.appendChild(fill);
+          rowEl.appendChild(meta);
+          rowEl.appendChild(track);
+          list.appendChild(rowEl);
+        });
+
+        container.appendChild(list);
+      }
+
+      function renderContentMix(sessionData) {
+        chartContentMix.innerHTML = "";
+        const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const summary = meta.content_summary && typeof meta.content_summary === "object" ? meta.content_summary : {};
+        const entries = [
+          { name: "High", color: "#2ecc71", count: asNumber(summary.High) },
+          { name: "Medium", color: "#f7c948", count: asNumber(summary.Medium) },
+          { name: "Low", color: "#f25f5c", count: asNumber(summary.Low) }
+        ];
+        const total = entries.reduce((sum, item) => sum + item.count, 0);
+
+        if (total <= 0) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "No content summary found in this session.";
+          chartContentMix.appendChild(note);
+          return;
+        }
+
+        let offset = 0;
+        const segments = entries.map((entry) => {
+          const ratio = entry.count / total;
+          const start = (offset * 360);
+          offset += ratio;
+          const end = (offset * 360);
+          return `${entry.color} ${start.toFixed(1)}deg ${end.toFixed(1)}deg`;
+        });
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "mix-layout";
+
+        const ring = document.createElement("div");
+        ring.className = "mix-ring";
+        ring.style.background = `conic-gradient(${segments.join(", ")})`;
+        ring.title = `Total prospected: ${total.toLocaleString()}`;
+
+        const legend = document.createElement("div");
+        legend.className = "mix-legend";
+
+        entries.forEach((entry) => {
+          const ratio = total > 0 ? (entry.count / total) * 100 : 0;
+          const row = document.createElement("div");
+          row.className = "mix-item";
+
+          const left = document.createElement("span");
+          left.className = "left";
+
+          const dot = document.createElement("span");
+          dot.className = "mix-dot";
+          dot.style.background = entry.color;
+
+          const label = document.createElement("span");
+          label.textContent = `${entry.name} (${ratio.toFixed(1)}%)`;
+
+          left.appendChild(dot);
+          left.appendChild(label);
+
+          const count = document.createElement("span");
+          count.className = "mix-count";
+          count.textContent = entry.count.toLocaleString();
+
+          row.appendChild(left);
+          row.appendChild(count);
+          legend.appendChild(row);
+        });
+
+        wrapper.appendChild(ring);
+        wrapper.appendChild(legend);
+        chartContentMix.appendChild(wrapper);
+      }
+
+      function normalizeHistogramBinSize(value) {
+        const raw = Number(value);
+        if (!Number.isFinite(raw)) {
+          return 10;
+        }
+        const rounded = Math.floor(raw);
+        return Math.max(1, Math.min(100, rounded));
+      }
+
+      function buildProspectHistogramModel(sessionData) {
+        const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const configuredBinSize = (
+          meta.histogram_bin_size
+          ?? (runtimeAnalysisSettings && runtimeAnalysisSettings.histogram_bin_size)
+        );
+        const binSize = normalizeHistogramBinSize(configuredBinSize);
+        const bins = Math.max(1, Math.ceil(100 / binSize));
+        const source = sessionData && typeof sessionData === "object" ? (sessionData.commodities || {}) : {};
+        const result = [];
+        Object.entries(source).forEach(([name, details]) => {
+          const payload = details && typeof details === "object" ? details : {};
+          const breakdown = Array.isArray(payload.percentage_breakdown) ? payload.percentage_breakdown : [];
+          const counts = new Array(bins).fill(0);
+          let total = 0;
+          breakdown.forEach((entry) => {
+            if (!entry || typeof entry !== "object") {
+              return;
+            }
+            const pctRaw = Number(entry.percentage);
+            if (!Number.isFinite(pctRaw)) {
+              return;
+            }
+            const qtyRaw = Number(entry.count);
+            const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? Math.floor(qtyRaw) : 1;
+            const pct = Math.max(0, Math.min(100, pctRaw));
+            let index = pct >= 100 ? (bins - 1) : Math.floor(pct / binSize);
+            if (index < 0) {
+              index = 0;
+            } else if (index >= bins) {
+              index = bins - 1;
+            }
+            counts[index] += qty;
+            total += qty;
+          });
+          if (total > 0) {
+            result.push({ name, counts, total });
+          }
+        });
+        result.sort((left, right) => {
+          if (right.total !== left.total) {
+            return right.total - left.total;
+          }
+          return left.name.localeCompare(right.name);
+        });
+        return {
+          commodities: result,
+          binSize,
+          bins
+        };
+      }
+
+      function renderProspectHistogram(sessionData) {
+        chartProspectHistogram.innerHTML = "";
+        if (commodityHistogramFilters) {
+          commodityHistogramFilters.innerHTML = "";
+        }
+        const model = buildProspectHistogramModel(sessionData);
+        if (!model || !Array.isArray(model.commodities) || !model.commodities.length) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "No prospect percentage breakdown data in this session.";
+          chartProspectHistogram.appendChild(note);
+          if (commodityHistogramFilters) {
+            const filterNote = document.createElement("span");
+            filterNote.className = "chart-empty";
+            filterNote.textContent = "No commodity options available.";
+            commodityHistogramFilters.appendChild(filterNote);
+          }
+          return;
+        }
+        const commodities = model.commodities;
+        const binSize = model.binSize;
+
+        if (!commodities.some((item) => item.name === selectedHistogramCommodity)) {
+          selectedHistogramCommodity = commodities[0].name;
+        }
+
+        const renderSelected = () => {
+          chartProspectHistogram.innerHTML = "";
+          const selected = commodities.find((item) => item.name === selectedHistogramCommodity) || commodities[0];
+          if (!selected) {
+            return;
+          }
+
+          const peak = Math.max(...selected.counts, 1);
+          const layout = document.createElement("div");
+          layout.className = "histogram-layout";
+          const plot = document.createElement("div");
+          plot.className = "histogram-plot";
+
+          const yAxis = document.createElement("div");
+          yAxis.className = "timeline-y-axis";
+          const mid = Math.round(peak / 2);
+          const yTicks = [peak, mid, 0].filter((value, index, values) => values.indexOf(value) === index);
+          yTicks.forEach((value) => {
+            const tick = document.createElement("span");
+            tick.textContent = String(value);
+            yAxis.appendChild(tick);
+          });
+
+          const bars = document.createElement("div");
+          bars.className = "histogram-bars";
+          bars.style.gridTemplateColumns = `repeat(${selected.counts.length}, minmax(0, 1fr))`;
+          selected.counts.forEach((count, index) => {
+            const bar = document.createElement("div");
+            bar.className = "histogram-bar";
+            const ratio = peak > 0 ? (count / peak) : 0;
+            bar.style.height = `${Math.max(2, ratio * 100)}%`;
+            const rangeStart = index * binSize;
+            const rangeEnd = Math.min(100, rangeStart + binSize);
+            const detail = `${selected.name}\n${rangeStart}% - ${rangeEnd}%: ${count} prospects`;
+            bar.addEventListener("mouseenter", (event) => {
+              showCursorTooltip(detail, event);
+            });
+            bar.addEventListener("mousemove", (event) => {
+              showCursorTooltip(detail, event);
+            });
+            bar.addEventListener("mouseleave", () => {
+              hideCursorTooltip();
+            });
+            bars.appendChild(bar);
+          });
+          bars.addEventListener("mouseleave", hideCursorTooltip);
+
+          const labels = document.createElement("div");
+          labels.className = "histogram-bin-labels";
+          labels.style.gridTemplateColumns = `repeat(${selected.counts.length}, minmax(0, 1fr))`;
+          const maxVisibleLabels = 10;
+          const labelStep = Math.max(1, Math.ceil(selected.counts.length / maxVisibleLabels));
+          selected.counts.forEach((_count, index) => {
+            const label = document.createElement("span");
+            label.className = "histogram-bin-label";
+            const rangeStart = index * binSize;
+            const rangeEnd = Math.min(100, rangeStart + binSize);
+            if ((index % labelStep) === 0 || index === selected.counts.length - 1) {
+              label.textContent = `${rangeStart}-\n${rangeEnd}%`;
+            } else {
+              label.textContent = "";
+            }
+            labels.appendChild(label);
+          });
+          const labelsRow = document.createElement("div");
+          labelsRow.className = "histogram-label-row";
+          const spacer = document.createElement("div");
+          spacer.className = "timeline-y-axis histogram-label-spacer";
+          labelsRow.appendChild(spacer);
+          labelsRow.appendChild(labels);
+
+          const axis = document.createElement("div");
+          axis.className = "timeline-axis";
+          axis.innerHTML = "<span>0%</span><span>100%</span>";
+
+          plot.appendChild(yAxis);
+          plot.appendChild(bars);
+          layout.appendChild(plot);
+          layout.appendChild(labelsRow);
+          layout.appendChild(axis);
+          chartProspectHistogram.appendChild(layout);
+        };
+
+        if (commodityHistogramFilters) {
+          commodities.forEach((item, index) => {
+            const wrapper = document.createElement("label");
+            wrapper.className = "event-filter-item";
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.name = "commodity-histogram";
+            radio.id = `commodity-histogram-${index}`;
+            radio.checked = item.name === selectedHistogramCommodity;
+            radio.addEventListener("change", () => {
+              if (!radio.checked) {
+                return;
+              }
+              selectedHistogramCommodity = item.name;
+              renderSelected();
+            });
+
+            const text = document.createElement("span");
+            text.textContent = `${item.name} (${item.total})`;
+
+            wrapper.appendChild(radio);
+            wrapper.appendChild(text);
+            commodityHistogramFilters.appendChild(wrapper);
+          });
+        }
+
+        renderSelected();
+      }
+
+      function buildCumulativeCommoditySeries(sessionData) {
+        const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const readCargoLimpetCount = (details, inventory) => {
+          const directLimpets = Number(details && details.limpets);
+          if (Number.isFinite(directLimpets) && directLimpets >= 0) {
+            return directLimpets;
+          }
+          const source = inventory && typeof inventory === "object" ? inventory : {};
+          const inventoryLimpets = Number(
+            source.Limpets ?? source.limpets ?? source.Drones ?? source.drones
+          );
+          if (Number.isFinite(inventoryLimpets) && inventoryLimpets >= 0) {
+            return inventoryLimpets;
+          }
+          return null;
+        };
+        const cargoSnapshots = events
+          .map((event, index) => {
+            if (!event || event.type !== "cargo") {
+              return null;
+            }
+            const timestamp = typeof event.timestamp === "string" ? event.timestamp : "";
+            const ms = Date.parse(timestamp);
+            if (!Number.isFinite(ms)) {
+              return null;
+            }
+            const details = event.details && typeof event.details === "object" ? event.details : {};
+            const inventory = details.inventory;
+            if (!inventory || typeof inventory !== "object" || Array.isArray(inventory)) {
+              return null;
+            }
+            const limpetCount = readCargoLimpetCount(details, inventory);
+            return { ms, inventory, index, limpetCount };
+          })
+          .filter((snapshot) => !!snapshot)
+          .sort((left, right) => {
+            if (left.ms !== right.ms) {
+              return left.ms - right.ms;
+            }
+            return left.index - right.index;
+          });
+
+        if (!cargoSnapshots.length) {
+          return null;
+        }
+
+        const excluded = new Set(["drones", "limpets"]);
+        const commodityNames = new Set();
+        cargoSnapshots.forEach((snapshot) => {
+          Object.keys(snapshot.inventory).forEach((name) => {
+            const clean = typeof name === "string" ? name.trim() : "";
+            if (!clean || excluded.has(clean.toLowerCase())) {
+              return;
+            }
+            commodityNames.add(clean);
+          });
+          if (Number.isFinite(snapshot.limpetCount) && snapshot.limpetCount >= 0) {
+            commodityNames.add("Limpets");
+          }
+        });
+
+        if (!commodityNames.size) {
+          return null;
+        }
+
+        const names = Array.from(commodityNames).sort((left, right) => left.localeCompare(right));
+        const metaStartMs = Date.parse(meta.start_time || "");
+        const metaEndMs = Date.parse(meta.end_time || "");
+        const startMs = Number.isFinite(metaStartMs) ? metaStartMs : cargoSnapshots[0].ms;
+        const endCandidate = Number.isFinite(metaEndMs) ? metaEndMs : cargoSnapshots[cargoSnapshots.length - 1].ms;
+        const endMs = endCandidate > startMs ? endCandidate : (startMs + 1);
+
+        const series = names.map((name) => {
+          const points = cargoSnapshots.map((snapshot) => {
+            const rawValue = name === "Limpets"
+              ? Number(snapshot.limpetCount)
+              : Number(snapshot.inventory[name]);
+            const value = Number.isFinite(rawValue) && rawValue >= 0 ? rawValue : 0;
+            return { ms: snapshot.ms, value };
+          });
+          const lastPoint = points[points.length - 1] || null;
+          if (lastPoint && lastPoint.ms < endMs) {
+            points.push({ ms: endMs, value: lastPoint.value });
+          }
+          return { name, points };
+        });
+
+        return { startMs, endMs, series };
+      }
+
+      function renderCumulativeCommodities(sessionData) {
+        chartCumulativeCommodities.innerHTML = "";
+        const model = buildCumulativeCommoditySeries(sessionData);
+        if (!model || !Array.isArray(model.series) || !model.series.length) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "No cargo inventory snapshots found in this session.";
+          chartCumulativeCommodities.appendChild(note);
+          return;
+        }
+
+        const { startMs, endMs, series } = model;
+        const duration = Math.max(1, endMs - startMs);
+        const seriesIndexByName = new Map(series.map((item, index) => [item.name, index]));
+        const nextSelection = {};
+        series.forEach((item) => {
+          nextSelection[item.name] = Object.prototype.hasOwnProperty.call(cumulativeCommoditySelection, item.name)
+            ? !!cumulativeCommoditySelection[item.name]
+            : true;
+        });
+        cumulativeCommoditySelection = nextSelection;
+
+        const palette = [
+          "#67d4ff",
+          "#3b8cec",
+          "#8be37f",
+          "#f7c948",
+          "#ff9f43",
+          "#d0a5ff",
+          "#ff6f91",
+          "#4dd0b5"
+        ];
+
+        const layout = document.createElement("div");
+        layout.className = "cumulative-layout";
+
+        const plot = document.createElement("div");
+        plot.className = "cumulative-plot";
+
+        const yAxis = document.createElement("div");
+        yAxis.className = "timeline-y-axis";
+
+        const surface = document.createElement("div");
+        surface.className = "cumulative-surface";
+
+        const legend = document.createElement("div");
+        legend.className = "cumulative-legend";
+
+        const legendRows = new Map();
+        const allItem = document.createElement("label");
+        allItem.className = "cumulative-legend-item";
+        const allCheckbox = document.createElement("input");
+        allCheckbox.type = "checkbox";
+        allCheckbox.checked = true;
+        const allText = document.createElement("span");
+        allText.textContent = "All";
+        allItem.appendChild(allCheckbox);
+        allItem.appendChild(allText);
+        legend.appendChild(allItem);
+
+        const syncAllCheckboxState = () => {
+          const selectedCount = series.reduce(
+            (sum, item) => sum + (cumulativeCommoditySelection[item.name] ? 1 : 0),
+            0
+          );
+          allCheckbox.checked = selectedCount === series.length;
+          allCheckbox.indeterminate = selectedCount > 0 && selectedCount < series.length;
+        };
+
+        allCheckbox.addEventListener("change", () => {
+          const checked = allCheckbox.checked;
+          allCheckbox.indeterminate = false;
+          series.forEach((item) => {
+            cumulativeCommoditySelection[item.name] = checked;
+            const row = legendRows.get(item.name);
+            if (row && row.checkbox) {
+              row.checkbox.checked = checked;
+            }
+          });
+          renderSelectedSeries();
+        });
+
+        series.forEach((item) => {
+          const index = seriesIndexByName.get(item.name) || 0;
+          const color = palette[index % palette.length];
+          const legendItem = document.createElement("label");
+          legendItem.className = "cumulative-legend-item";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = !!cumulativeCommoditySelection[item.name];
+          checkbox.style.accentColor = color;
+          checkbox.addEventListener("change", () => {
+            cumulativeCommoditySelection[item.name] = checkbox.checked;
+            syncAllCheckboxState();
+            renderSelectedSeries();
+          });
+          const swatch = document.createElement("span");
+          swatch.className = "cumulative-legend-swatch";
+          swatch.style.background = color;
+          const latest = item.points[item.points.length - 1];
+          const text = document.createElement("span");
+          text.textContent = `${item.name} (${formatNumber(latest ? latest.value : 0, 0)} t)`;
+          legendItem.appendChild(checkbox);
+          legendItem.appendChild(swatch);
+          legendItem.appendChild(text);
+          legendRows.set(item.name, { item: legendItem, checkbox });
+          legend.appendChild(legendItem);
+        });
+
+        function renderSelectedSeries() {
+          hideCursorTooltip();
+          const selectedSeries = series.filter((item) => cumulativeCommoditySelection[item.name]);
+          const values = selectedSeries.flatMap((item) => item.points.map((point) => point.value));
+          const peak = Math.max(...values, 0);
+          const yMax = Math.max(1, peak);
+
+          yAxis.innerHTML = "";
+          const mid = Math.round(yMax / 2);
+          [yMax, mid, 0].forEach((value) => {
+            const tick = document.createElement("span");
+            tick.textContent = String(value);
+            yAxis.appendChild(tick);
+          });
+
+          legendRows.forEach(({ item, checkbox }) => {
+            item.classList.toggle("cumulative-legend-item--off", !checkbox.checked);
+          });
+
+          surface.innerHTML = "";
+          if (!selectedSeries.length) {
+            const note = document.createElement("p");
+            note.className = "chart-empty";
+            note.style.padding = "8px";
+            note.textContent = "No commodities selected.";
+            surface.appendChild(note);
+            return;
+          }
+
+          const width = 1000;
+          const height = 220;
+          const topPad = 10;
+          const bottomPad = 14;
+          const sidePad = 12;
+          const drawHeight = height - topPad - bottomPad;
+          const drawWidth = Math.max(1, width - (sidePad * 2));
+          const ns = "http://www.w3.org/2000/svg";
+          const svg = document.createElementNS(ns, "svg");
+          svg.classList.add("cumulative-svg");
+          svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+          svg.setAttribute("preserveAspectRatio", "none");
+
+          const yRatios = [0, 0.5, 1];
+          yRatios.forEach((ratio) => {
+            const y = topPad + (drawHeight * ratio);
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", sidePad.toFixed(2));
+            line.setAttribute("y1", y.toFixed(2));
+            line.setAttribute("x2", (width - sidePad).toFixed(2));
+            line.setAttribute("y2", y.toFixed(2));
+            line.setAttribute("class", "cumulative-grid-line");
+            svg.appendChild(line);
+          });
+
+          const toX = (ms) => sidePad + (((ms - startMs) / duration) * drawWidth);
+          const toY = (value) => {
+            const ratio = yMax <= 0 ? 0 : (value / yMax);
+            return topPad + (drawHeight * (1 - ratio));
+          };
+
+          selectedSeries.forEach((item) => {
+            if (!item.points.length) {
+              return;
+            }
+            const index = seriesIndexByName.get(item.name) || 0;
+            const color = palette[index % palette.length];
+            const path = document.createElementNS(ns, "path");
+            const commands = item.points.map((point, pointIndex) => {
+              const x = toX(point.ms);
+              const y = toY(point.value);
+              return `${pointIndex === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
+            }).join(" ");
+            path.setAttribute("d", commands);
+            path.setAttribute("stroke", color);
+            path.setAttribute("class", "cumulative-line");
+            svg.appendChild(path);
+
+            item.points.forEach((point) => {
+              const marker = document.createElementNS(ns, "circle");
+              marker.setAttribute("cx", toX(point.ms).toFixed(2));
+              marker.setAttribute("cy", toY(point.value).toFixed(2));
+              marker.setAttribute("r", "3");
+              marker.setAttribute("fill", color);
+              marker.setAttribute("class", "cumulative-point");
+              const detail = `${item.name}: ${formatNumber(point.value, 0)} t\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
+              marker.addEventListener("mouseenter", (event) => {
+                showCursorTooltip(detail, event);
+              });
+              marker.addEventListener("mousemove", (event) => {
+                showCursorTooltip(detail, event);
+              });
+              marker.addEventListener("mouseleave", () => {
+                hideCursorTooltip();
+              });
+              svg.appendChild(marker);
+            });
+          });
+
+          surface.appendChild(svg);
+        }
+
+        syncAllCheckboxState();
+        renderSelectedSeries();
+        plot.appendChild(yAxis);
+        plot.appendChild(surface);
+
+        const axis = document.createElement("div");
+        axis.className = "timeline-axis";
+        axis.innerHTML = `<span>${formatLocalClock(startMs)}</span><span>${formatLocalClock(endMs)}</span>`;
+
+        layout.appendChild(plot);
+        layout.appendChild(axis);
+        layout.appendChild(legend);
+        chartCumulativeCommodities.appendChild(layout);
+      }
+
+      function normalizeTimelinePoints(points) {
+        if (!Array.isArray(points) || points.length === 0) {
+          return [];
+        }
+        return points
+          .map((point) => {
+            if (typeof point === "string") {
+              const ms = Date.parse(point);
+              if (!Number.isFinite(ms)) {
+                return null;
+              }
+              return { ms, label: "event" };
+            }
+            if (!point || typeof point !== "object") {
+              return null;
+            }
+            const stamp = point.timestamp;
+            if (typeof stamp !== "string") {
+              return null;
+            }
+            const ms = Date.parse(stamp);
+            if (!Number.isFinite(ms)) {
+              return null;
+            }
+            const label = typeof point.label === "string" && point.label.trim()
+              ? point.label.trim()
+              : "event";
+            return { ms, label };
+          })
+          .filter((point) => !!point)
+          .sort((a, b) => a.ms - b.ms);
+      }
+
+      function buildTimelineBins(validPoints, options) {
+        if (!Array.isArray(validPoints) || validPoints.length === 0) {
+          return null;
+        }
+        const start = Number.isFinite(options.startMs) ? options.startMs : validPoints[0].ms;
+        const end = Number.isFinite(options.endMs) && options.endMs > start ? options.endMs : validPoints[validPoints.length - 1].ms;
+        const duration = Math.max(1, end - start);
+        const bins = Math.max(8, Math.min(36, options.bins || 24));
+        const binsData = new Array(bins).fill(null).map(() => ({
+          count: 0,
+          labels: new Map()
+        }));
+
+        validPoints.forEach((point) => {
+          let index = Math.floor(((point.ms - start) / duration) * bins);
+          if (index < 0) {
+            index = 0;
+          }
+          if (index >= bins) {
+            index = bins - 1;
+          }
+          const binData = binsData[index];
+          binData.count += 1;
+          binData.labels.set(point.label, (binData.labels.get(point.label) || 0) + 1);
+        });
+
+        const counts = binsData.map((binData) => binData.count);
+        const peak = Math.max(...counts, 0);
+        return {
+          start,
+          end,
+          duration,
+          bins,
+          binsData,
+          counts,
+          peak
+        };
+      }
+
+      function computeTimelinePeak(points, options) {
+        const validPoints = normalizeTimelinePoints(points);
+        if (!validPoints.length) {
+          return 0;
+        }
+        const timelineData = buildTimelineBins(validPoints, options);
+        return timelineData ? timelineData.peak : 0;
+      }
+
+      function formatEventTypeLabel(value) {
+        const text = String(value || "").trim();
+        if (!text) {
+          return "Unknown";
+        }
+        return text
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+      }
+
+      function renderFilteredEventTimeline() {
+        if (!eventTimelineOptions) {
+          return;
+        }
+        const selectedTypes = new Set(
+          Object.keys(eventTypeSelection).filter((eventType) => eventTypeSelection[eventType])
+        );
+        if (!selectedTypes.size) {
+          chartEvents.innerHTML = "";
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "No event types selected.";
+          chartEvents.appendChild(note);
+          eventTimelineContext = null;
+          clearEventJournalLinkHighlight();
+          if (eventJournal) {
+            eventJournal.innerHTML = "";
+          }
+          return;
+        }
+        const filteredEntries = allEventEntries.filter((entry) => selectedTypes.has(entry.label));
+        const sortedEntries = [...filteredEntries].sort((left, right) => {
+          const leftMs = Date.parse(left && left.timestamp ? left.timestamp : "");
+          const rightMs = Date.parse(right && right.timestamp ? right.timestamp : "");
+          if (!Number.isFinite(leftMs) && !Number.isFinite(rightMs)) {
+            return 0;
+          }
+          if (!Number.isFinite(leftMs)) {
+            return 1;
+          }
+          if (!Number.isFinite(rightMs)) {
+            return -1;
+          }
+          return leftMs - rightMs;
+        });
+        const filteredPoints = sortedEntries.map((entry) => ({
+          timestamp: entry.timestamp,
+          label: entry.label
+        }));
+        eventTimelineContext = renderTimelineChart(chartEvents, filteredPoints, eventTimelineOptions);
+        eventJournalFirstRowByBin = new Map();
+        eventJournalFirstTimeByBin = new Map();
+        clearEventJournalLinkHighlight();
+        renderEventJournal(sortedEntries);
+        bindEventTimelineJournalClicks();
+      }
+
+      function clearEventJournalLinkHighlight() {
+        if (activeJournalRow) {
+          activeJournalRow.classList.remove("event-journal-item--active");
+        }
+        if (activeTimelineBar) {
+          activeTimelineBar.classList.remove("timeline-bar--linked");
+        }
+        activeJournalRow = null;
+        activeTimelineBar = null;
+      }
+
+      function computeTimelineBinIndex(timestamp, context) {
+        if (!context) {
+          return null;
+        }
+        const ms = Date.parse(timestamp || "");
+        if (!Number.isFinite(ms)) {
+          return null;
+        }
+        const duration = Math.max(1, context.duration || 1);
+        let index = Math.floor(((ms - context.start) / duration) * context.bins);
+        if (index < 0) {
+          index = 0;
+        }
+        if (index >= context.bins) {
+          index = context.bins - 1;
+        }
+        return index;
+      }
+
+      function highlightJournalLink(row, timestamp) {
+        clearEventJournalLinkHighlight();
+        row.classList.add("event-journal-item--active");
+        activeJournalRow = row;
+        if (!eventTimelineContext || !Array.isArray(eventTimelineContext.barElements)) {
+          return;
+        }
+        const index = computeTimelineBinIndex(timestamp, eventTimelineContext);
+        if (index === null) {
+          return;
+        }
+        const bar = eventTimelineContext.barElements[index];
+        if (!bar) {
+          return;
+        }
+        bar.classList.add("timeline-bar--linked");
+        activeTimelineBar = bar;
+      }
+
+      function summarizeEventDetails(details, eventType) {
+        if (!details || typeof details !== "object") {
+          return "";
+        }
+        if (eventType === "mining_refined") {
+          const localized = typeof details.type_localised === "string" ? details.type_localised.trim() : "";
+          const rawType = typeof details.type === "string" ? details.type.trim() : "";
+          const commodity = localized || rawType;
+          return commodity || "";
+        }
+        if (eventType === "prospected_asteroid") {
+          const parts = [];
+          const content = typeof details.content === "string" ? details.content.trim() : "";
+          if (content) {
+            parts.push(`Content: ${content}`);
+          }
+
+          const remainingRaw = details.remaining_percent;
+          const remaining = Number(remainingRaw);
+          if (Number.isFinite(remaining) && remaining < 100) {
+            const remainingText = Number.isInteger(remaining)
+              ? String(remaining)
+              : remaining.toFixed(2).replace(/\.?0+$/, "");
+            parts.push(`% remaining: ${remainingText}%`);
+          }
+
+          const materials = Array.isArray(details.materials) ? details.materials : [];
+          materials.forEach((material) => {
+            if (!material || typeof material !== "object") {
+              return;
+            }
+            const name = typeof material.name === "string" ? material.name.trim() : "";
+            const percentRaw = Number(material.percentage);
+            if (!name || !Number.isFinite(percentRaw)) {
+              return;
+            }
+            const percentText = Number.isInteger(percentRaw)
+              ? String(percentRaw)
+              : percentRaw.toFixed(2).replace(/\.?0+$/, "");
+            parts.push(`${name} ${percentText}%`);
+          });
+
+          return parts.join(" | ");
+        }
+        const parts = [];
+        Object.entries(details).forEach(([key, value]) => {
+          if (parts.length >= 2) {
+            return;
+          }
+          if (
+            typeof value === "string"
+            || typeof value === "number"
+            || typeof value === "boolean"
+          ) {
+            const compact = String(value).trim();
+            if (!compact) {
+              return;
+            }
+            parts.push(`${key}: ${compact}`);
+          }
+        });
+        return parts.join(" | ");
+      }
+
+      function renderEventJournal(entries) {
+        if (!eventJournal) {
+          return;
+        }
+        eventJournal.innerHTML = "";
+        if (!Array.isArray(entries) || entries.length === 0) {
+          const item = document.createElement("li");
+          item.className = "event-journal-item";
+          const text = document.createElement("span");
+          text.className = "event-journal-text";
+          text.textContent = "No events for current filters.";
+          item.appendChild(text);
+          eventJournal.appendChild(item);
+          return;
+        }
+
+        entries.forEach((entry) => {
+          const item = document.createElement("li");
+          item.className = "event-journal-item";
+          item.dataset.timestamp = entry.timestamp;
+          item.addEventListener("mouseenter", () => {
+            highlightJournalLink(item, entry.timestamp);
+          });
+          item.addEventListener("mouseleave", () => {
+            clearEventJournalLinkHighlight();
+          });
+
+          const time = document.createElement("span");
+          time.className = "event-journal-time";
+          time.textContent = formatLocalDateTime(entry.timestamp);
+
+          const text = document.createElement("span");
+          text.className = "event-journal-text";
+          const detailSummary = summarizeEventDetails(entry.details, entry.label);
+          const eventLabel = formatEventTypeLabel(entry.label);
+          text.textContent = detailSummary ? `${eventLabel} | ${detailSummary}` : eventLabel;
+
+          item.appendChild(time);
+          item.appendChild(text);
+          eventJournal.appendChild(item);
+
+          const binIndex = computeTimelineBinIndex(entry.timestamp, eventTimelineContext);
+          if (binIndex !== null) {
+            const stamp = Date.parse(entry.timestamp || "");
+            const currentFirst = eventJournalFirstTimeByBin.get(binIndex);
+            if (!Number.isFinite(stamp)) {
+              if (!eventJournalFirstRowByBin.has(binIndex)) {
+                eventJournalFirstRowByBin.set(binIndex, item);
+              }
+            } else if (currentFirst === undefined || stamp < currentFirst) {
+              eventJournalFirstTimeByBin.set(binIndex, stamp);
+              eventJournalFirstRowByBin.set(binIndex, item);
+            }
+          }
+        });
+      }
+
+      function bindEventTimelineJournalClicks() {
+        if (!eventTimelineContext || !Array.isArray(eventTimelineContext.barElements)) {
+          return;
+        }
+        eventTimelineContext.barElements.forEach((bar, binIndex) => {
+          bar.addEventListener("click", () => {
+            const row = eventJournalFirstRowByBin.get(binIndex);
+            if (!row || !eventJournal) {
+              return;
+            }
+            const timestamp = typeof row.dataset.timestamp === "string" ? row.dataset.timestamp : "";
+            highlightJournalLink(row, timestamp);
+            const journalRect = eventJournal.getBoundingClientRect();
+            const rowRect = row.getBoundingClientRect();
+            const targetTop = eventJournal.scrollTop + (rowRect.top - journalRect.top) - 6;
+            eventJournal.scrollTo({
+              top: Math.max(0, targetTop),
+              behavior: "smooth"
+            });
+          });
+        });
+      }
+
+      function setupEventTypeFilters(eventEntries, options) {
+        allEventEntries = Array.isArray(eventEntries) ? eventEntries : [];
+        eventTimelineOptions = options || null;
+        eventTypeSelection = {};
+        if (!eventFilters) {
+          renderFilteredEventTimeline();
+          return;
+        }
+
+        eventFilters.innerHTML = "";
+        if (!allEventEntries.length) {
+          const note = document.createElement("span");
+          note.className = "chart-empty";
+          note.textContent = "No event filters available.";
+          eventFilters.appendChild(note);
+          renderFilteredEventTimeline();
+          return;
+        }
+
+        const counts = new Map();
+        allEventEntries.forEach((entry) => {
+          counts.set(entry.label, (counts.get(entry.label) || 0) + 1);
+        });
+        const sortedTypes = Array.from(counts.keys()).sort((left, right) => {
+          const delta = (counts.get(right) || 0) - (counts.get(left) || 0);
+          if (delta !== 0) {
+            return delta;
+          }
+          return left.localeCompare(right);
+        });
+        const itemCheckboxes = [];
+
+        const allWrapper = document.createElement("label");
+        allWrapper.className = "event-filter-item";
+        const allCheckbox = document.createElement("input");
+        allCheckbox.type = "checkbox";
+        allCheckbox.checked = true;
+        allCheckbox.id = "event-filter-all";
+        const allText = document.createElement("span");
+        allText.textContent = "All";
+        allWrapper.appendChild(allCheckbox);
+        allWrapper.appendChild(allText);
+        eventFilters.appendChild(allWrapper);
+
+        const syncAllCheckboxState = () => {
+          const selectedCount = sortedTypes.reduce(
+            (sum, eventType) => sum + (eventTypeSelection[eventType] ? 1 : 0),
+            0
+          );
+          allCheckbox.checked = selectedCount === sortedTypes.length;
+          allCheckbox.indeterminate = selectedCount > 0 && selectedCount < sortedTypes.length;
+        };
+
+        allCheckbox.addEventListener("change", () => {
+          const checked = allCheckbox.checked;
+          allCheckbox.indeterminate = false;
+          sortedTypes.forEach((eventType) => {
+            eventTypeSelection[eventType] = checked;
+          });
+          itemCheckboxes.forEach((checkbox) => {
+            checkbox.checked = checked;
+          });
+          renderFilteredEventTimeline();
+        });
+
+        sortedTypes.forEach((eventType, index) => {
+          eventTypeSelection[eventType] = true;
+          const wrapper = document.createElement("label");
+          wrapper.className = "event-filter-item";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = true;
+          checkbox.id = `event-filter-${index}`;
+          checkbox.addEventListener("change", () => {
+            eventTypeSelection[eventType] = checkbox.checked;
+            syncAllCheckboxState();
+            renderFilteredEventTimeline();
+          });
+          itemCheckboxes.push(checkbox);
+
+          const text = document.createElement("span");
+          text.textContent = `${formatEventTypeLabel(eventType)} (${counts.get(eventType) || 0})`;
+
+          wrapper.appendChild(checkbox);
+          wrapper.appendChild(text);
+          eventFilters.appendChild(wrapper);
+        });
+
+        syncAllCheckboxState();
+        renderFilteredEventTimeline();
+      }
+
+      function renderFilteredRefinementTimeline() {
+        if (!refinementTimelineOptions) {
+          return;
+        }
+        const selectedCommodities = new Set(
+          Object.keys(refinementSelection).filter((commodity) => refinementSelection[commodity])
+        );
+        if (!selectedCommodities.size) {
+          chartRefinements.innerHTML = "";
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "No commodities selected.";
+          chartRefinements.appendChild(note);
+          return;
+        }
+        const filteredPoints = allRefinementEntries.filter((entry) => selectedCommodities.has(entry.label));
+        renderTimelineChart(chartRefinements, filteredPoints, refinementTimelineOptions);
+      }
+
+      function setupRefinementCommodityFilters(refinementEntries, options) {
+        allRefinementEntries = Array.isArray(refinementEntries) ? refinementEntries : [];
+        refinementTimelineOptions = options || null;
+        refinementSelection = {};
+        if (!refinementFilters) {
+          renderFilteredRefinementTimeline();
+          return;
+        }
+
+        refinementFilters.innerHTML = "";
+        if (!allRefinementEntries.length) {
+          const note = document.createElement("span");
+          note.className = "chart-empty";
+          note.textContent = "No refinement commodity filters available.";
+          refinementFilters.appendChild(note);
+          renderFilteredRefinementTimeline();
+          return;
+        }
+
+        const counts = new Map();
+        allRefinementEntries.forEach((entry) => {
+          counts.set(entry.label, (counts.get(entry.label) || 0) + 1);
+        });
+        const sortedCommodities = Array.from(counts.keys()).sort((left, right) => {
+          const delta = (counts.get(right) || 0) - (counts.get(left) || 0);
+          if (delta !== 0) {
+            return delta;
+          }
+          return left.localeCompare(right);
+        });
+        const itemCheckboxes = [];
+
+        const allWrapper = document.createElement("label");
+        allWrapper.className = "event-filter-item";
+        const allCheckbox = document.createElement("input");
+        allCheckbox.type = "checkbox";
+        allCheckbox.checked = true;
+        allCheckbox.id = "refinement-filter-all";
+        const allText = document.createElement("span");
+        allText.textContent = "All";
+        allWrapper.appendChild(allCheckbox);
+        allWrapper.appendChild(allText);
+        refinementFilters.appendChild(allWrapper);
+
+        const syncAllCheckboxState = () => {
+          const selectedCount = sortedCommodities.reduce(
+            (sum, commodity) => sum + (refinementSelection[commodity] ? 1 : 0),
+            0
+          );
+          allCheckbox.checked = selectedCount === sortedCommodities.length;
+          allCheckbox.indeterminate = selectedCount > 0 && selectedCount < sortedCommodities.length;
+        };
+
+        allCheckbox.addEventListener("change", () => {
+          const checked = allCheckbox.checked;
+          allCheckbox.indeterminate = false;
+          sortedCommodities.forEach((commodity) => {
+            refinementSelection[commodity] = checked;
+          });
+          itemCheckboxes.forEach((checkbox) => {
+            checkbox.checked = checked;
+          });
+          renderFilteredRefinementTimeline();
+        });
+
+        sortedCommodities.forEach((commodity, index) => {
+          refinementSelection[commodity] = true;
+          const wrapper = document.createElement("label");
+          wrapper.className = "event-filter-item";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = true;
+          checkbox.id = `refinement-filter-${index}`;
+          checkbox.addEventListener("change", () => {
+            refinementSelection[commodity] = checkbox.checked;
+            syncAllCheckboxState();
+            renderFilteredRefinementTimeline();
+          });
+          itemCheckboxes.push(checkbox);
+
+          const text = document.createElement("span");
+          text.textContent = `${commodity} (${counts.get(commodity) || 0})`;
+
+          wrapper.appendChild(checkbox);
+          wrapper.appendChild(text);
+          refinementFilters.appendChild(wrapper);
+        });
+
+        syncAllCheckboxState();
+        renderFilteredRefinementTimeline();
+      }
+
+      function renderTimelineChart(container, points, options) {
+        container.innerHTML = "";
+        const validPoints = normalizeTimelinePoints(points);
+        if (!validPoints.length) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "No timeline events in this session.";
+          container.appendChild(note);
+          return null;
+        }
+        const timelineData = buildTimelineBins(validPoints, options);
+        if (!timelineData) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = "Timeline data could not be prepared.";
+          container.appendChild(note);
+          return null;
+        }
+
+        const start = timelineData.start;
+        const end = timelineData.end;
+        const duration = timelineData.duration;
+        const bins = timelineData.bins;
+        const binsData = timelineData.binsData;
+        const counts = timelineData.counts;
+        const peak = Math.max(1, timelineData.peak);
+        const timeline = document.createElement("div");
+        timeline.className = "timeline";
+
+        const plot = document.createElement("div");
+        plot.className = "timeline-plot";
+
+        const yAxis = document.createElement("div");
+        yAxis.className = "timeline-y-axis";
+        const mid = Math.round(peak / 2);
+        [peak, mid, 0].forEach((value) => {
+          const tick = document.createElement("span");
+          tick.textContent = String(value);
+          yAxis.appendChild(tick);
+        });
+
+        const bars = document.createElement("div");
+        bars.className = "timeline-bars";
+        const barElements = [];
+
+        counts.forEach((count, index) => {
+          const bar = document.createElement("div");
+          bar.className = options.cool ? "timeline-bar cool" : "timeline-bar";
+          const height = Math.max(2, (count / peak) * 100);
+          bar.style.height = `${height}%`;
+
+          const binStart = start + (duration * index / bins);
+          const binEnd = start + (duration * (index + 1) / bins);
+          const binData = binsData[index];
+          const countLabel = options.countLabel || "Count";
+          const breakdown = Array.from(binData.labels.entries())
+            .sort((left, right) => right[1] - left[1])
+            .map(([label, qty]) => `${label} x${qty}`);
+          const breakdownText = breakdown.length ? `\n${breakdown.join("\n")}` : "";
+          const detail = `${formatLocalClock(binStart)} - ${formatLocalClock(binEnd)} | ${countLabel}: ${count}${breakdownText}`;
+          bar.addEventListener("mouseenter", (event) => {
+            showCursorTooltip(detail, event);
+          });
+          bar.addEventListener("mousemove", (event) => {
+            showCursorTooltip(detail, event);
+          });
+          bar.addEventListener("mouseleave", () => {
+            hideCursorTooltip();
+          });
+          bars.appendChild(bar);
+          barElements.push(bar);
+        });
+
+        const axis = document.createElement("div");
+        axis.className = "timeline-axis";
+        axis.innerHTML = `<span>${formatLocalClock(start)}</span><span>${formatLocalClock(end)}</span>`;
+
+        plot.appendChild(yAxis);
+        plot.appendChild(bars);
+        plot.addEventListener("mouseleave", hideCursorTooltip);
+        timeline.appendChild(plot);
+        timeline.appendChild(axis);
+        container.appendChild(timeline);
+        return {
+          start,
+          duration,
+          bins,
+          barElements
+        };
+      }
+
+      function renderCharts(sessionData) {
+        const rows = buildCommodityRows(sessionData).sort((a, b) => b.tons - a.tons);
+        renderBarChart(chartCommodityTons, rows, (row) => row.tons, (value) => `${formatNumber(value, 0)} t`, false);
+        renderBarChart(
+          chartCommodityTph,
+          [...rows].sort((a, b) => b.tph - a.tph),
+          (row) => row.tph,
+          (value) => `${formatNumber(value, 1)} TPH`,
+          true
+        );
+        renderContentMix(sessionData);
+        renderProspectHistogram(sessionData);
+        renderCumulativeCommodities(sessionData);
+
+        const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const startMs = Date.parse(meta.start_time || "");
+        const endMs = Date.parse(meta.end_time || "");
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const eventEntries = events
+          .map((event) => {
+            if (!event || typeof event !== "object") {
+              return null;
+            }
+            const timestamp = event.timestamp;
+            if (typeof timestamp !== "string") {
+              return null;
+            }
+            const eventType = typeof event.type === "string" && event.type.trim()
+              ? event.type.trim()
+              : "unknown";
+            const details = event.details && typeof event.details === "object" ? event.details : {};
+            return { timestamp, label: eventType, details };
+          })
+          .filter((entry) => !!entry);
+        setupEventTypeFilters(eventEntries, {
+          startMs,
+          endMs,
+          bins: 24,
+          cool: false,
+          countLabel: "Events"
+        });
+
+        const refinementPoints = events
+          .filter((event) => event && event.type === "mining_refined")
+          .map((event) => {
+            const timestamp = typeof event.timestamp === "string" ? event.timestamp : null;
+            if (!timestamp) {
+              return null;
+            }
+            const details = event.details && typeof event.details === "object" ? event.details : {};
+            const typeLocalised = typeof details.type_localised === "string" ? details.type_localised.trim() : "";
+            const typeName = typeof details.type === "string" ? details.type.trim() : "";
+            const label = typeLocalised || typeName || "refined";
+            return { timestamp, label };
+          })
+          .filter((point) => !!point);
+        setupRefinementCommodityFilters(refinementPoints, {
+          startMs,
+          endMs,
+          bins: 24,
+          cool: true,
+          countLabel: "Refinements"
+        });
+
+        return {
+          maxRpm: computeTimelinePeak(refinementPoints, {
+            startMs,
+            endMs,
+            bins: 24
+          })
+        };
+      }
+
+      function normalizeCommodityName(value) {
+        if (typeof value !== "string") {
+          return "";
+        }
+        return value.trim().toLowerCase();
+      }
+
+      function computeIgnoredProspectedCommodities(sessionData) {
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const prospectedCommodities = new Set();
+        for (const event of events) {
+          if (!event || event.type !== "prospected_asteroid") {
+            continue;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          const materials = Array.isArray(details.materials) ? details.materials : [];
+          for (const material of materials) {
+            const name = normalizeCommodityName(material && material.name);
+            if (name) {
+              prospectedCommodities.add(name);
+            }
+          }
+        }
+
+        const refinedCommodities = new Set();
+        events.forEach((event) => {
+          if (!event || event.type !== "mining_refined") {
+            return;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          const localized = normalizeCommodityName(details.type_localised);
+          if (localized) {
+            refinedCommodities.add(localized);
+            return;
+          }
+
+          const rawType = typeof details.type === "string" ? details.type.trim() : "";
+          if (!rawType) {
+            return;
+          }
+          const cleaned = normalizeCommodityName(
+            rawType
+              .replace(/^\$/, "")
+              .replace(/;$/, "")
+              .replace(/_name$/i, "")
+              .replace(/_/g, " ")
+          );
+          if (cleaned) {
+            refinedCommodities.add(cleaned);
+          }
+        });
+
+        let ignoredCount = 0;
+        prospectedCommodities.forEach((name) => {
+          if (!refinedCommodities.has(name)) {
+            ignoredCount += 1;
+          }
+        });
+        return ignoredCount;
+      }
+
+      function computeLimpetDumpCount(sessionData, threshold) {
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const dumpThresholdRaw = Number(threshold);
+        const dumpThreshold = Number.isFinite(dumpThresholdRaw) ? Math.max(0, Math.floor(dumpThresholdRaw)) : 5;
+        const readCargoLimpetCount = (details, inventory) => {
+          const directLimpets = Number(details && details.limpets);
+          if (Number.isFinite(directLimpets) && directLimpets >= 0) {
+            return directLimpets;
+          }
+          const source = inventory && typeof inventory === "object" ? inventory : {};
+          const inventoryLimpets = Number(
+            source.Limpets ?? source.limpets ?? source.Drones ?? source.drones
+          );
+          if (Number.isFinite(inventoryLimpets) && inventoryLimpets >= 0) {
+            return inventoryLimpets;
+          }
+          return null;
+        };
+        const cargoLimpetPoints = events
+          .map((event, index) => {
+            if (!event || event.type !== "cargo") {
+              return null;
+            }
+            const details = event.details && typeof event.details === "object" ? event.details : {};
+            const inventory = details.inventory;
+            if (!inventory || typeof inventory !== "object" || Array.isArray(inventory)) {
+              return null;
+            }
+            const limpetCount = readCargoLimpetCount(details, inventory);
+            if (!Number.isFinite(limpetCount)) {
+              return null;
+            }
+            const ms = Date.parse(typeof event.timestamp === "string" ? event.timestamp : "");
+            return { ms, index, limpetCount };
+          })
+          .filter((point) => !!point)
+          .sort((left, right) => {
+            const leftValid = Number.isFinite(left.ms);
+            const rightValid = Number.isFinite(right.ms);
+            if (leftValid && rightValid && left.ms !== right.ms) {
+              return left.ms - right.ms;
+            }
+            if (leftValid && !rightValid) {
+              return -1;
+            }
+            if (!leftValid && rightValid) {
+              return 1;
+            }
+            return left.index - right.index;
+          });
+
+        let dumps = 0;
+        for (let i = 1; i < cargoLimpetPoints.length; i += 1) {
+          const previous = cargoLimpetPoints[i - 1].limpetCount;
+          const current = cargoLimpetPoints[i].limpetCount;
+          if ((previous - current) > dumpThreshold) {
+            dumps += 1;
+          }
+        }
+        return dumps;
+      }
+
+      function computeHighestRefinedYieldCommodity(sessionData) {
+        const source = sessionData && typeof sessionData === "object" ? (sessionData.commodities || {}) : {};
+        const rows = Object.entries(source).map(([name, details]) => {
+          const payload = details && typeof details === "object" ? details : {};
+          const gathered = payload.gathered && typeof payload.gathered === "object" ? payload.gathered : {};
+          const tons = Number(gathered.tons);
+          return {
+            name: String(name || "").trim(),
+            tons: Number.isFinite(tons) && tons > 0 ? tons : 0
+          };
+        }).filter((row) => row.name && row.tons > 0);
+
+        if (!rows.length) {
+          return "--";
+        }
+
+        const totalTons = rows.reduce((sum, row) => sum + row.tons, 0);
+        if (!Number.isFinite(totalTons) || totalTons <= 0) {
+          return "--";
+        }
+
+        rows.sort((left, right) => {
+          if (right.tons !== left.tons) {
+            return right.tons - left.tons;
+          }
+          return left.name.localeCompare(right.name);
+        });
+        const top = rows[0];
+        const percent = (top.tons / totalTons) * 100;
+        return `${top.name} (${percent.toFixed(2)}%)`;
+      }
+
+      function buildSummary(sessionData, filename, overrides) {
+        const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const overall = meta.overall_tph || {};
+        const location = meta.location || {};
+        const prospected = meta.prospected || {};
+        const refinement = meta.refinement_activity || {};
+        const commodities = sessionData && sessionData.commodities ? Object.keys(sessionData.commodities).length : 0;
+        const commoditiesIgnored = computeIgnoredProspectedCommodities(sessionData);
+        const highestRefinedYield = computeHighestRefinedYieldCommodity(sessionData);
+        const limpetDumpThresholdRaw = Number(meta.limpet_dump_threshold);
+        const limpetDumpThreshold = Number.isFinite(limpetDumpThresholdRaw)
+          ? Math.max(0, Math.floor(limpetDumpThresholdRaw))
+          : 5;
+        const limpetDumps = computeLimpetDumpCount(sessionData, limpetDumpThreshold);
+        const stats = overrides && typeof overrides === "object" ? overrides : {};
+        const maxRpm = stats.maxRpm ?? refinement.max_rpm ?? meta.max_rpm ?? "--";
+        const tonsValue = Number(overall.tons);
+        const durationSeconds = Number(meta.duration_seconds);
+        const roundedDurationHours = Number.isFinite(durationSeconds) && durationSeconds >= 0
+          ? Number((durationSeconds / 3600.0).toFixed(2))
+          : null;
+        const durationHours = Number.isFinite(roundedDurationHours) ? roundedDurationHours.toFixed(2) : "--";
+        const tonsPerHour = (
+          Number.isFinite(tonsValue)
+          && tonsValue >= 0
+          && Number.isFinite(roundedDurationHours)
+          && roundedDurationHours > 0
+        )
+          ? (tonsValue / roundedDurationHours).toFixed(2)
+          : (overall.tons_per_hour ?? "--");
+
+        return [
+          ["File", filename],
+          ["Start", formatLocalDateTime(meta.start_time)],
+          ["End", formatLocalDateTime(meta.end_time)],
+          ["Ship", meta.ship || "--"],
+          ["System", location.system || "--"],
+          ["Body/Ring", location.body || location.ring || "--"],
+          ["Tons", overall.tons ?? "--"],
+          ["Duration (Hours)", durationHours],
+          ["Tons/Hour", tonsPerHour],
+          ["Max RPM", maxRpm],
+          ["Prospectors Launched", meta.prospectors_launched ?? "--"],
+          ["Prospected", prospected.total ?? "--"],
+          ["Duplicate Prospectors", prospected.duplicates ?? "--"],
+          [
+            "Limpet Dumps",
+            limpetDumps,
+            `More than ${limpetDumpThreshold} limpets dumped from inventory between Cargo events`
+          ],
+          ["Highest Yield (Refined)", highestRefinedYield],
+          ["Commodity Types", commodities],
+          ["Commodities Ignored", commoditiesIgnored]
+        ];
+      }
+
+      async function loadSession(filename) {
+        if (!filename) {
+          setStatus(analysisStatus, "No session selected.", "warn");
+          analysisMetrics.innerHTML = "";
+          clearCharts("No session selected.");
+          return;
+        }
+
+        setStatus(analysisStatus, `Loading ${filename}...`);
+        try {
+          await refreshAnalysisSettings();
+          const response = await fetch(`/session_data/${encodeURIComponent(filename)}`, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const payload = await response.json();
+          const chartStats = renderCharts(payload);
+          renderMetrics(buildSummary(payload, filename, chartStats));
+          setStatus(analysisStatus, "", "");
+        } catch (error) {
+          analysisMetrics.innerHTML = "";
+          clearCharts("Unable to render charts because session load failed.");
+          setStatus(
+            analysisStatus,
+            `Failed to load ${filename}: ${error && error.message ? error.message : "Unknown error"}`,
+            "bad"
+          );
+        }
+      }
+
+      async function loadSessionList() {
+        setStatus(sessionStatus, "Loading available sessions...");
+        try {
+          const response = await fetch("/session_data/", { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const listing = await response.text();
+          const doc = new DOMParser().parseFromString(listing, "text/html");
+          const files = Array.from(doc.querySelectorAll("a[href]"))
+            .map((link) => pickFilename(link.getAttribute("href")))
+            .filter((name) => !!name);
+
+          const unique = Array.from(new Set(files));
+          unique.sort((left, right) => {
+            const leftStamp = Number((/^session_data_(\d+)\.json$/.exec(left) || [])[1] || 0);
+            const rightStamp = Number((/^session_data_(\d+)\.json$/.exec(right) || [])[1] || 0);
+            return rightStamp - leftStamp;
+          });
+
+          sessionSelect.innerHTML = "";
+          if (unique.length === 0) {
+            const option = document.createElement("option");
+            option.textContent = "No saved sessions found";
+            sessionSelect.appendChild(option);
+            sessionSelect.disabled = true;
+            setStatus(sessionStatus, "No session_data JSON files found yet.", "warn");
+            setStatus(analysisStatus, "Record and save a session first, then reopen analysis.", "warn");
+            analysisMetrics.innerHTML = "";
+            clearCharts("No saved sessions available.");
+            return;
+          }
+
+          for (const file of unique) {
+            const option = document.createElement("option");
+            option.value = file;
+            option.textContent = formatTimestampFromFilename(file);
+            sessionSelect.appendChild(option);
+          }
+
+          sessionSelect.disabled = false;
+          setStatus(sessionStatus, `Found ${unique.length} saved sessions.`, "ok");
+          await loadSession(unique[0]);
+        } catch (error) {
+          sessionSelect.innerHTML = "";
+          const option = document.createElement("option");
+          option.textContent = "Unable to load session list";
+          sessionSelect.appendChild(option);
+          sessionSelect.disabled = true;
+          setStatus(
+            sessionStatus,
+            `Failed to read session list: ${error && error.message ? error.message : "Unknown error"}`,
+            "bad"
+          );
+          setStatus(analysisStatus, "Session analysis is unavailable until session files can be read.", "bad");
+          analysisMetrics.innerHTML = "";
+          clearCharts("Session list unavailable.");
+        }
+      }
+
+      sessionSelect.addEventListener("change", function (event) {
+        const target = event.target;
+        const selected = target && typeof target.value === "string" ? target.value : "";
+        void loadSession(selected);
+      });
+
+      applyFocusTokenToTitle();
+      clearCharts("Loading chart data...");
+      void loadSessionList();
     })();
   </script>
 </body>

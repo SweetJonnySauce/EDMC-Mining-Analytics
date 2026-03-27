@@ -7,6 +7,7 @@ import math
 import queue
 import random
 import threading
+import json
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from collections import Counter
@@ -2045,9 +2046,28 @@ class edmcmaMiningUI:
             self._local_web_server_thread = None
             self._local_web_server_root = None
 
+        ui_state = self._state
+
         class _LocalHandler(SimpleHTTPRequestHandler):
             def log_message(self, format: str, *args: object) -> None:  # noqa: A003
                 return
+
+            def do_GET(self) -> None:  # noqa: N802
+                path = (self.path or "").split("?", 1)[0]
+                if path == "/analysis_settings.json":
+                    payload = {
+                        "histogram_bin_size": max(1, int(getattr(ui_state, "histogram_bin_size", 10))),
+                        "limpet_dump_threshold": max(1, int(getattr(ui_state, "limpet_dump_threshold", 5))),
+                    }
+                    body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+                super().do_GET()
 
         try:
             handler = partial(_LocalHandler, directory=str(plugin_dir))

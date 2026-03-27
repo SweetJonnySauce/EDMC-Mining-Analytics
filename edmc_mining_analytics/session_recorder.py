@@ -285,12 +285,14 @@ class SessionRecorder:
             "inventory_tonnage": state.current_cargo_tonnage,
             "cargo_capacity": state.cargo_capacity,
             "materials": self._materials_snapshot(state.materials_collected),
+            "histogram_bin_size": state.histogram_bin_size,
             "max_rpm": max_rpm,
             "refinement_activity": {
                 "lookback_seconds": state.refinement_lookback_seconds,
                 "current_rpm": current_rpm,
                 "max_rpm": max_rpm,
             },
+            "limpet_dump_threshold": state.limpet_dump_threshold,
         }
 
         meta["commander"] = (state.cmdr_name or "").strip() or "Unknown"

@@ -85,6 +85,7 @@ class PreferencesManager:
             state.rpm_threshold_red = 1
             state.rpm_threshold_yellow = 20
             state.rpm_threshold_green = 40
+            state.limpet_dump_threshold = 5
             state.overlay_enabled = False
             state.overlay_anchor_x = 40
             state.overlay_anchor_y = 120
@@ -154,6 +155,11 @@ class PreferencesManager:
         state.rpm_threshold_green = clamp_positive_int(
             raw_green_threshold,
             40,
+            maximum=10_000,
+        )
+        state.limpet_dump_threshold = clamp_positive_int(
+            self._get_int("edmc_mining_limpet_dump_threshold", state.limpet_dump_threshold),
+            state.limpet_dump_threshold,
             maximum=10_000,
         )
         state.overlay_enabled = bool(self._get_int("edmc_mining_overlay_enabled", int(state.overlay_enabled)))
@@ -332,6 +338,14 @@ class PreferencesManager:
             )
         except Exception:
             _log.exception("Failed to persist RPM green threshold")
+
+        try:
+            config.set(
+                "edmc_mining_limpet_dump_threshold",
+                clamp_positive_int(state.limpet_dump_threshold, 5),
+            )
+        except Exception:
+            _log.exception("Failed to persist limpet dump threshold")
 
         try:
             config.set("edmc_mining_overlay_enabled", int(state.overlay_enabled))
