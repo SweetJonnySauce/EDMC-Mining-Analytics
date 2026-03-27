@@ -293,6 +293,7 @@ class SessionRecorder:
                 "max_rpm": max_rpm,
             },
             "limpet_dump_threshold": state.limpet_dump_threshold,
+            "estimated_sell": self._estimated_sell_snapshot(end),
         }
 
         meta["commander"] = (state.cmdr_name or "").strip() or "Unknown"
@@ -374,6 +375,105 @@ class SessionRecorder:
                 "tons_per_hour": tph,
             }
         return result
+
+    def _estimated_sell_snapshot(self, captured_at: datetime) -> dict[str, Any]:
+        state = self._state
+        by_commodity: list[dict[str, Any]] = []
+        priced_tons = 0.0
+        total_tons = 0.0
+
+        for commodity_key, tons_raw in sorted(state.cargo_totals.items()):
+            try:
+                tons = float(tons_raw)
+            except (TypeError, ValueError):
+                continue
+            if tons <= 0:
+                continue
+
+            total_tons += tons
+            sell_price_raw = state.market_sell_prices.get(commodity_key)
+            value_raw = state.market_sell_totals.get(commodity_key)
+            if value_raw is None and sell_price_raw is not None:
+                try:
+                    value_raw = float(sell_price_raw) * tons
+                except (TypeError, ValueError):
+                    value_raw = None
+
+            sell_price: Optional[float]
+            try:
+                sell_price = float(sell_price_raw) if sell_price_raw is not None else None
+            except (TypeError, ValueError):
+                sell_price = None
+
+            estimated_value_cr: Optional[float]
+            try:
+                estimated_value_cr = float(value_raw) if value_raw is not None else None
+            except (TypeError, ValueError):
+                estimated_value_cr = None
+
+            if sell_price is not None:
+                priced_tons += tons
+
+            detail = state.market_sell_details.get(commodity_key, {})
+            source: Optional[dict[str, Any]] = None
+            if isinstance(detail, dict):
+                source_candidate = {
+                    "system_name": detail.get("system_name"),
+                    "station_name": detail.get("station_name"),
+                    "market_updated_at": detail.get("market_updated_at"),
+                    "distance_ly": detail.get("distance_ly"),
+                    "distance_to_arrival": detail.get("distance_to_arrival"),
+                }
+                source_clean = {key: value for key, value in source_candidate.items() if value is not None}
+                if source_clean:
+                    source = source_clean
+
+            entry: dict[str, Any] = {
+                "key": str(commodity_key or "").strip().lower(),
+                "name": self._format_name(str(commodity_key)),
+                "tons": tons,
+                "sell_price": sell_price,
+                "estimated_value_cr": estimated_value_cr,
+            }
+            if source:
+                entry["price_source"] = source
+            by_commodity.append(entry)
+
+        by_commodity.sort(
+            key=lambda item: (
+                item.get("estimated_value_cr") is None,
+                -(float(item.get("estimated_value_cr")) if item.get("estimated_value_cr") is not None else 0.0),
+                str(item.get("name") or ""),
+            )
+        )
+
+        priced_entries = [entry for entry in by_commodity if entry.get("sell_price") is not None]
+        total_value_cr = sum(
+            float(entry.get("estimated_value_cr") or 0.0)
+            for entry in by_commodity
+            if entry.get("estimated_value_cr") is not None
+        )
+        sort_mode = (state.market_search_sort_mode or "best_price").strip().lower()
+        if sort_mode not in ("best_price", "nearest"):
+            sort_mode = "best_price"
+
+        coverage_ratio: Optional[float]
+        if total_tons > 0:
+            coverage_ratio = priced_tons / total_tons
+        else:
+            coverage_ratio = None
+
+        return {
+            "captured_at": self._isoformat(captured_at),
+            "sort_mode": sort_mode,
+            "total_value_cr": total_value_cr,
+            "priced_commodities": len(priced_entries),
+            "unpriced_commodities": max(0, len(by_commodity) - len(priced_entries)),
+            "priced_tons": priced_tons,
+            "total_tons": total_tons,
+            "coverage_ratio": coverage_ratio,
+            "by_commodity": by_commodity,
+        }
 
     def _percent_breakdown(self, samples: Iterable[float]) -> list[dict[str, Any]]:
         counter: Counter[str] = Counter()
