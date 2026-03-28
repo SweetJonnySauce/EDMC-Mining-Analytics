@@ -224,9 +224,27 @@ class SessionRecorder:
     # ------------------------------------------------------------------
     # Payload construction
     # ------------------------------------------------------------------
+    @staticmethod
+    def _is_legacy_timestamp_session_guid(value: Any) -> bool:
+        token = str(value or "").strip().lower()
+        if token.startswith("session_data_"):
+            suffix = token[len("session_data_"):]
+            return bool(suffix) and suffix.isdigit()
+        if token.startswith("sim-session_data_"):
+            suffix = token[len("sim-session_data_"):]
+            return bool(suffix) and suffix.isdigit()
+        return False
+
+    @staticmethod
+    def _normalize_session_guid(value: Any) -> str:
+        token = str(value or "").strip()
+        if token and not SessionRecorder._is_legacy_timestamp_session_guid(token):
+            return token
+        return str(uuid.uuid4())
+
     def _build_payload(self) -> dict[str, Any]:
         state = self._state
-        session_guid = (self._session_guid or "").strip() or str(uuid.uuid4())
+        session_guid = self._normalize_session_guid(self._session_guid)
         self._session_guid = session_guid
         start = self._ensure_aware(
             state.mining_start or self._session_start or datetime.now(timezone.utc)
@@ -328,7 +346,9 @@ class SessionRecorder:
             return
 
         meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
-        session_guid = str(meta.get("session_guid") or "").strip() or str(uuid.uuid4())
+        session_guid = self._normalize_session_guid(meta.get("session_guid"))
+        if isinstance(meta, dict):
+            meta["session_guid"] = session_guid
         events = payload.get("events", []) if isinstance(payload, dict) else []
         if not isinstance(events, list) or not events:
             return
