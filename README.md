@@ -1,6 +1,11 @@
 # EDMC Mining Analytics
 
 [![Github All Releases](https://img.shields.io/github/downloads/SweetJonnySauce/EDMC-Mining-Analytics/total.svg)](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest)
+[![GitHub Latest Version](https://img.shields.io/github/v/release/SweetJonnySauce/EDMC-Mining-Analytics)](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-clean-brightgreen.svg)]([https://www.virustotal.com/gui/file/2f7dbd4bc55ea5b83ae5b3fbfb66474a882bb5101048e4dd5c514773d3c92652](https://www.virustotal.com/gui/url/0b86225d410a7206430b2e341e5d3bb1cccff202b05b2cba3846fe62427f87c6?nocache=1))
+
+[build-badge]: https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/actions/workflows/ci.yml/badge.svg?branch=main
+[build-url]: https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/actions/workflows/ci.yml
 
 EDMC Mining Analytics extends Elite Dangerous Market Connector (EDMC) with a mining-focused control panel. The plugin listens to in-game journal events to present live production metrics, highlight rock quality, and capture session history without leaving EDMC.
 
