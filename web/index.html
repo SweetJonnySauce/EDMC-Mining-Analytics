@@ -32,6 +32,8 @@
       --ok: #45d483;
       --warn: #f7c948;
       --bad: #f25f5c;
+      --prospect-current-dot-fill: color-mix(in srgb, var(--accent) 78%, #ffffff);
+      --prospect-current-dot-ring: #ffffff;
     }
 
     @media (prefers-color-scheme: light) {
@@ -41,6 +43,7 @@
         --muted: #4b5563;
         --accent: #c45a00;
         --card: #ffffff;
+        --prospect-current-dot-ring: #000000;
       }
     }
 
@@ -50,6 +53,7 @@
       --muted: #4b5563;
       --accent: #3f87d4;
       --card: #ffffff;
+      --prospect-current-dot-ring: #000000;
     }
 
     :root[data-theme="blue-dark"] {
@@ -58,6 +62,7 @@
       --muted: #97a8bc;
       --accent: #3f87d4;
       --card: #131d2a;
+      --prospect-current-dot-ring: #ffffff;
     }
 
     :root[data-theme="orange-dark"] {
@@ -66,6 +71,7 @@
       --muted: #d4b89c;
       --accent: #d36f00;
       --card: #21180f;
+      --prospect-current-dot-ring: #ffffff;
       --cool-1: #ff9f1a;
       --cool-2: #e67e22;
       --cool-3: #8a4b08;
@@ -90,6 +96,7 @@
       --muted: #4c6348;
       --accent: #3c8223;
       --card: #ffffff;
+      --prospect-current-dot-ring: #000000;
       --cool-1: #8fd977;
       --cool-2: #4d9134;
       --cool-3: #7ab465;
@@ -104,6 +111,7 @@
       --muted: #b5c7bc;
       --accent: #d1d93b;
       --card: #243836;
+      --prospect-current-dot-ring: #ffffff;
       --cool-1: #b8e36c;
       --cool-2: #86c948;
       --cool-3: #7abf3f;
@@ -654,6 +662,24 @@
       flex-wrap: wrap;
     }
 
+    .panel-action-button {
+      border: 1px solid color-mix(in srgb, var(--accent) 46%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.78rem;
+      line-height: 1.2;
+      font-weight: 600;
+      padding: 2px 10px;
+      cursor: pointer;
+    }
+
+    .panel-action-button:hover {
+      border-color: color-mix(in srgb, var(--accent) 78%, transparent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
     .cumulative-layout {
       height: 100%;
       display: grid;
@@ -883,16 +909,18 @@
     }
 
     .prospect-frequency-dot--other {
-      fill: color-mix(in srgb, var(--cool-3) 80%, #fff);
-      stroke: color-mix(in srgb, var(--card) 84%, #000);
-      stroke-width: 1;
+      fill: color-mix(in srgb, var(--cool-3) 52%, #7b8a9b);
+      opacity: 0.75;
+      stroke: color-mix(in srgb, var(--card) 90%, #000);
+      stroke-width: 0.9;
       vector-effect: non-scaling-stroke;
     }
 
     .prospect-frequency-dot--current {
-      fill: color-mix(in srgb, var(--accent) 75%, #fff);
-      stroke: color-mix(in srgb, var(--fg) 42%, transparent);
-      stroke-width: 1.2;
+      fill: var(--prospect-current-dot-fill);
+      opacity: 1;
+      stroke: var(--prospect-current-dot-ring);
+      stroke-width: 1.8;
       vector-effect: non-scaling-stroke;
     }
 
@@ -947,15 +975,20 @@
     }
 
     .prospect-frequency-dot {
-      width: 9px;
-      height: 9px;
+      width: 10.8px;
+      height: 10.8px;
       border-radius: 999px;
       flex: 0 0 auto;
-      background: color-mix(in srgb, var(--cool-3) 80%, #fff);
+      background: color-mix(in srgb, var(--cool-3) 52%, #7b8a9b);
+      opacity: 0.75;
     }
 
     .prospect-frequency-dot.prospect-frequency-dot--current {
-      background: color-mix(in srgb, var(--accent) 75%, #fff);
+      width: 11px;
+      height: 11px;
+      background: var(--prospect-current-dot-fill);
+      opacity: 1;
+      border: 1px solid var(--prospect-current-dot-ring);
     }
 
     .prospect-frequency-bin-label {
@@ -971,7 +1004,7 @@
       position: fixed;
       z-index: 9999;
       pointer-events: none;
-      max-width: 280px;
+      max-width: min(520px, calc(100vw - 24px));
       padding: 6px 8px;
       border-radius: 6px;
       border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
@@ -1083,7 +1116,7 @@
         </article>
         <article class="chart-card chart-card--full">
           <div class="panel-header-row">
-            <h2>Cumulative Frequency (Ring)</h2>
+            <h2 id="prospect-frequency-title">Cumulative Frequency</h2>
             <div id="prospect-frequency-header-controls" class="panel-header-controls"></div>
           </div>
           <div id="chart-prospect-cumulative-frequency" class="chart-body"></div>
@@ -1129,6 +1162,7 @@
       const chartCumulativeCommodities = document.getElementById("chart-cumulative-commodities");
       const cumulativeHeaderControls = document.getElementById("cumulative-header-controls");
       const prospectFrequencyHeaderControls = document.getElementById("prospect-frequency-header-controls");
+      const prospectFrequencyTitle = document.getElementById("prospect-frequency-title");
       const commodityHistogramFilters = document.getElementById("commodity-histogram-filters");
       const refinementFilters = document.getElementById("refinement-filters");
       const eventFilters = document.getElementById("event-filters");
@@ -1156,6 +1190,7 @@
       let prospectFrequencyBinSize = 5;
       let prospectFrequencyIncludeDuplicates = true;
       let prospectFrequencyRenderToken = 0;
+      let sessionListRenderToken = 0;
       let allRefinementEntries = [];
       let refinementTimelineOptions = null;
       let refinementSelection = {};
@@ -1369,6 +1404,35 @@
         return `${stamp.toLocaleString()} (${filename})`;
       }
 
+      function formatSessionOptionLabel(filename, ringLabel) {
+        const base = formatTimestampFromFilename(filename);
+        const ring = typeof ringLabel === "string" ? ringLabel.trim() : "";
+        if (!ring || ring === "Unknown") {
+          return base;
+        }
+        return `${base} - ${ring}`;
+      }
+
+      async function fetchSessionRingLabel(filename) {
+        if (!filename) {
+          return "";
+        }
+        try {
+          const response = await fetch(`/session_data/${encodeURIComponent(filename)}`, { cache: "no-store" });
+          if (!response.ok) {
+            return "";
+          }
+          const payload = await response.json();
+          const ring = String(resolveSessionRingLabel(payload) || "").trim();
+          if (!ring || ring === "Unknown") {
+            return "";
+          }
+          return ring;
+        } catch (_error) {
+          return "";
+        }
+      }
+
       function pickFilename(href) {
         if (!href) {
           return null;
@@ -1442,6 +1506,23 @@
         return number;
       }
 
+      function renderProspectFrequencyTitle(sessionData) {
+        if (!prospectFrequencyTitle) {
+          return;
+        }
+        const commodity = String(selectedHistogramCommodity || "").trim();
+        const ringLabel = sessionData ? String(resolveSessionRingLabel(sessionData) || "").trim() : "";
+        if (commodity && ringLabel && ringLabel !== "Unknown") {
+          prospectFrequencyTitle.textContent = `Cumulative Frequency (${commodity} - ${ringLabel})`;
+          return;
+        }
+        if (commodity) {
+          prospectFrequencyTitle.textContent = `Cumulative Frequency (${commodity})`;
+          return;
+        }
+        prospectFrequencyTitle.textContent = "Cumulative Frequency";
+      }
+
       function clearCharts(message) {
         hideCursorTooltip();
         const text = message || "No chart data available.";
@@ -1464,6 +1545,7 @@
           prospectFrequencyHeaderControls.innerHTML = "";
         }
         selectedHistogramCommodity = "";
+        renderProspectFrequencyTitle();
         activeSessionData = null;
         activeSessionFilename = "";
         prospectFrequencyRenderToken += 1;
@@ -1735,6 +1817,10 @@
         return value.trim().toLowerCase();
       }
 
+      function normalizeCommodityKey(value) {
+        return normalizeTextKey(value).replace(/[^a-z0-9]+/g, "");
+      }
+
       function resolveSessionGuid(meta, filename) {
         const direct = typeof meta.session_guid === "string" ? meta.session_guid.trim() : "";
         if (direct) {
@@ -1751,11 +1837,11 @@
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const location = meta.location && typeof meta.location === "object" ? meta.location : {};
         const ringCandidate = (
-          (typeof location.body === "string" && location.body.trim() ? location.body.trim() : "")
-          || (typeof location.ring === "string" && location.ring.trim() ? location.ring.trim() : "")
+          (typeof location.ring === "string" && location.ring.trim() ? location.ring.trim() : "")
+          || (typeof location.body === "string" && location.body.trim() ? location.body.trim() : "")
           || (typeof location.system === "string" && location.system.trim() ? location.system.trim() : "")
-          || (typeof meta.body === "string" && meta.body.trim() ? meta.body.trim() : "")
           || (typeof meta.ring === "string" && meta.ring.trim() ? meta.ring.trim() : "")
+          || (typeof meta.body === "string" && meta.body.trim() ? meta.body.trim() : "")
           || (typeof meta.system === "string" && meta.system.trim() ? meta.system.trim() : "")
         );
         return ringCandidate || "Unknown";
@@ -1863,7 +1949,7 @@
 
         const ringLabel = resolveSessionRingLabel(sessionData);
         const ringKey = normalizeTextKey(ringLabel);
-        const commodityKey = normalizeTextKey(commodity);
+        const commodityKey = normalizeCommodityKey(commodity);
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const currentSessionGuid = resolveSessionGuid(meta, filename);
 
@@ -1893,7 +1979,7 @@
             asteroidMap.set(key, asteroid);
           }
           asteroid.duplicate = asteroid.duplicate || row.duplicate_prospector === true;
-          const rowCommodity = normalizeTextKey(row.commodity_name);
+          const rowCommodity = normalizeCommodityKey(row.commodity_name);
           if (!rowCommodity) {
             return;
           }
@@ -2014,11 +2100,23 @@
       async function renderProspectCumulativeFrequency(sessionData, filename) {
         const renderToken = ++prospectFrequencyRenderToken;
         chartProspectCumulativeFrequency.innerHTML = "";
+        renderProspectFrequencyTitle(sessionData);
         if (prospectFrequencyHeaderControls) {
           prospectFrequencyHeaderControls.innerHTML = "";
         }
 
         if (prospectFrequencyHeaderControls) {
+          const compareButton = document.createElement("button");
+          compareButton.type = "button";
+          compareButton.className = "panel-action-button";
+          compareButton.textContent = "Compare";
+          compareButton.addEventListener("click", () => {
+            const themeParam = encodeURIComponent(activeThemeId || DEFAULT_THEME_ID);
+            const url = `/web/compare.html?theme=${themeParam}`;
+            window.open(url, "_blank", "noopener");
+          });
+          prospectFrequencyHeaderControls.appendChild(compareButton);
+
           const addRadioOption = (labelText, value) => {
             const option = document.createElement("label");
             option.className = "prospect-frequency-control";
@@ -2084,14 +2182,39 @@
         plot.className = "prospect-frequency-plot";
         const yAxis = document.createElement("div");
         yAxis.className = "timeline-y-axis";
-        const half = Math.round(model.yMax / 2);
-        [model.yMax, half, 0]
-          .filter((value, index, values) => values.indexOf(value) === index)
-          .forEach((value) => {
-            const tick = document.createElement("span");
-            tick.textContent = String(value);
-            yAxis.appendChild(tick);
+        const yMaxInt = Math.max(1, Math.ceil(model.yMax));
+        const targetTickCount = 7;
+        const minStep = Math.max(1, yMaxInt / (targetTickCount - 1));
+        let magnitude = Math.pow(10, Math.floor(Math.log10(minStep)));
+        if (!Number.isFinite(magnitude) || magnitude <= 0) {
+          magnitude = 1;
+        }
+        let step = 0;
+        for (let attempts = 0; attempts < 8 && step <= 0; attempts += 1) {
+          [1, 2, 5].forEach((multiplier) => {
+            const candidate = multiplier * magnitude;
+            if (candidate >= minStep && (step <= 0 || candidate < step)) {
+              step = candidate;
+            }
           });
+          magnitude *= 10;
+        }
+        if (step <= 0) {
+          step = 1;
+        }
+        const yScaleMax = Math.max(yMaxInt, Math.ceil(yMaxInt / step) * step);
+        const yTickValues = [];
+        for (let value = yScaleMax; value >= 0; value -= step) {
+          yTickValues.push(value);
+        }
+        if (yTickValues[yTickValues.length - 1] !== 0) {
+          yTickValues.push(0);
+        }
+        yTickValues.forEach((value) => {
+          const tick = document.createElement("span");
+          tick.textContent = String(value);
+          yAxis.appendChild(tick);
+        });
 
         const surface = document.createElement("div");
         surface.className = "prospect-frequency-surface";
@@ -2109,8 +2232,14 @@
         svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
         svg.setAttribute("preserveAspectRatio", "none");
 
-        [0, 0.5, 1].forEach((ratio) => {
-          const y = topPad + (drawHeight * ratio);
+        const totalBins = Math.max(1, model.points.length);
+        const toX = (index) => sidePad + (((index + 0.5) / totalBins) * drawWidth);
+        const toY = (count) => {
+          const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
+          return topPad + (drawHeight * (1 - ratio));
+        };
+        yTickValues.forEach((value) => {
+          const y = toY(value);
           const line = document.createElementNS(ns, "line");
           line.setAttribute("x1", sidePad.toFixed(2));
           line.setAttribute("x2", (width - sidePad).toFixed(2));
@@ -2119,13 +2248,6 @@
           line.setAttribute("class", "prospect-frequency-grid-line");
           svg.appendChild(line);
         });
-
-        const totalBins = Math.max(1, model.points.length);
-        const toX = (index) => sidePad + (((index + 0.5) / totalBins) * drawWidth);
-        const toY = (count) => {
-          const ratio = model.yMax <= 0 ? 0 : (count / model.yMax);
-          return topPad + (drawHeight * (1 - ratio));
-        };
         const coordinates = model.points.map((point) => ({
           ...point,
           x: toX(point.index),
@@ -2167,8 +2289,7 @@
           const detail = [
             `${model.commodity} | ${point.intervalStart}% - ${point.intervalEnd}%`,
             `Cumulative Frequency: ${point.total} (Current: ${point.current}, Other: ${point.other})`,
-            `Bin Frequency: ${point.binTotal} (Current: ${point.binCurrent}, Other: ${point.binOther})`,
-            `Sessions: ${model.sessionsCount} | Avg Yield: ${formatNumber(model.averageYield, 2)}%`
+            `Bin Frequency: ${point.binTotal} (Current: ${point.binCurrent}, Other: ${point.binOther})`
           ].join("\n");
           showCursorTooltip(detail, event);
         };
@@ -2223,19 +2344,19 @@
           otherDot.setAttribute("class", "prospect-frequency-dot--other");
           otherDot.setAttribute("cx", point.x.toFixed(2));
           otherDot.setAttribute("cy", point.y.toFixed(2));
-          otherDot.setAttribute("r", "3.2");
+          otherDot.setAttribute("r", "5.7");
           svg.appendChild(otherDot);
         });
 
         coordinates.forEach((point) => {
-          if (point.current <= 0) {
+          if (point.binCurrent <= 0) {
             return;
           }
           const currentDot = document.createElementNS(ns, "circle");
           currentDot.setAttribute("class", "prospect-frequency-dot--current");
           currentDot.setAttribute("cx", point.x.toFixed(2));
           currentDot.setAttribute("cy", point.y.toFixed(2));
-          currentDot.setAttribute("r", "4.4");
+          currentDot.setAttribute("r", "6.2");
           svg.appendChild(currentDot);
         });
 
@@ -3854,6 +3975,7 @@
       }
 
       async function loadSessionList() {
+        const listToken = ++sessionListRenderToken;
         setStatus(sessionStatus, "Loading available sessions...");
         try {
           const response = await fetch("/session_data/", { cache: "no-store" });
@@ -3890,8 +4012,15 @@
           for (const file of unique) {
             const option = document.createElement("option");
             option.value = file;
-            option.textContent = formatTimestampFromFilename(file);
+            option.textContent = formatSessionOptionLabel(file, "");
             sessionSelect.appendChild(option);
+            void (async () => {
+              const ringLabel = await fetchSessionRingLabel(file);
+              if (listToken !== sessionListRenderToken) {
+                return;
+              }
+              option.textContent = formatSessionOptionLabel(file, ringLabel);
+            })();
           }
 
           sessionSelect.disabled = false;

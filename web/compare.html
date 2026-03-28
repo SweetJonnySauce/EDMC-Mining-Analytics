@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EDMC Mining Analytics Compare</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0e1217;
+      --fg: #f3f7fc;
+      --muted: #9aabc0;
+      --accent: #ff8a00;
+      --card: #171d25;
+      --line: color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #edf2f8;
+        --fg: #1f2937;
+        --muted: #4b5563;
+        --accent: #c45a00;
+        --card: #ffffff;
+      }
+    }
+
+    :root[data-theme="blue-light"] {
+      --bg: #edf2f8;
+      --fg: #1f2937;
+      --muted: #4b5563;
+      --accent: #3f87d4;
+      --card: #ffffff;
+    }
+
+    :root[data-theme="blue-dark"] {
+      --bg: #0b1017;
+      --fg: #f2f7ff;
+      --muted: #97a8bc;
+      --accent: #3f87d4;
+      --card: #131d2a;
+    }
+
+    :root[data-theme="orange-dark"] {
+      --bg: #130e09;
+      --fg: #fff4e8;
+      --muted: #d4b89c;
+      --accent: #d36f00;
+      --card: #21180f;
+    }
+
+    :root[data-theme="green-light"] {
+      --bg: #f4f9f2;
+      --fg: #1a2f17;
+      --muted: #4c6348;
+      --accent: #3c8223;
+      --card: #ffffff;
+    }
+
+    :root[data-theme="green-dark"] {
+      --bg: #1a2a29;
+      --fg: #edf6ef;
+      --muted: #b5c7bc;
+      --accent: #d1d93b;
+      --card: #243836;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 700px at 90% -20%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      padding: 24px;
+    }
+
+    .app {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      display: grid;
+      gap: 12px;
+    }
+
+    .title-row {
+      margin: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2vw, 1.7rem);
+      color: var(--fg);
+    }
+
+    .theme-control {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .theme-toggle {
+      border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--card) 88%, #000);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+
+    .theme-toggle:hover {
+      border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+    }
+
+    .theme-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 190px;
+      display: none;
+      gap: 4px;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--card) 95%, #000);
+      padding: 6px;
+      z-index: 40;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .theme-menu.theme-menu--open {
+      display: grid;
+    }
+
+    .theme-option {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.82rem;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+
+    .theme-option:hover {
+      background: color-mix(in srgb, var(--fg) 6%, transparent);
+      border-color: color-mix(in srgb, var(--fg) 16%, transparent);
+    }
+
+    .theme-option.theme-option--active {
+      border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+
+    .theme-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, var(--swatch-bg, #111), var(--swatch-accent, #999));
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .placeholder-panel {
+      border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+      border-radius: 10px;
+      min-height: 220px;
+      padding: 14px;
+      background: color-mix(in srgb, var(--card) 92%, #000);
+      color: var(--muted);
+      font-size: 0.92rem;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="title-row">
+      <h1>Compare</h1>
+      <div class="theme-control">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-haspopup="true" aria-expanded="false">Theme</button>
+        <div id="theme-menu" class="theme-menu" aria-hidden="true"></div>
+      </div>
+    </div>
+    <p class="sub">Compare panels will be added here.</p>
+    <section class="placeholder-panel">
+      <strong style="color: var(--fg);">No panels yet</strong>
+      <span>This page is ready for compare views.</span>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const rootElement = document.documentElement;
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeMenu = document.getElementById("theme-menu");
+      const THEME_STORAGE_KEY = "edmcma.analysis.theme";
+      const DEFAULT_THEME_ID = "orange-dark";
+      const themeOptions = [
+        { id: "blue-light", label: "Blue (light)", swatchBg: "#edf2f8", swatchAccent: "#3f87d4" },
+        { id: "blue-dark", label: "Blue (dark)", swatchBg: "#0b1017", swatchAccent: "#3f87d4" },
+        { id: "orange-dark", label: "Orange (dark)", swatchBg: "#130e09", swatchAccent: "#ff9f1a" },
+        { id: "green-light", label: "Green (light)", swatchBg: "#f4f9f2", swatchAccent: "#3c8223" },
+        { id: "green-dark", label: "Green (dark)", swatchBg: "#1a2a29", swatchAccent: "#86c948" }
+      ];
+      const VALID_THEMES = new Set(themeOptions.map((option) => option.id));
+      let activeThemeId = DEFAULT_THEME_ID;
+
+      function getThemeOption(themeId) {
+        return themeOptions.find((option) => option.id === themeId) || null;
+      }
+
+      function setThemeMenuOpen(open) {
+        if (!themeToggle || !themeMenu) {
+          return;
+        }
+        const isOpen = !!open;
+        themeToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        themeMenu.setAttribute("aria-hidden", isOpen ? "false" : "true");
+        themeMenu.classList.toggle("theme-menu--open", isOpen);
+      }
+
+      function syncThemeControls() {
+        if (!themeToggle || !themeMenu) {
+          return;
+        }
+        const option = getThemeOption(activeThemeId) || getThemeOption(DEFAULT_THEME_ID);
+        themeToggle.textContent = option ? `${option.label} ▾` : "Theme ▾";
+        const buttons = themeMenu.querySelectorAll(".theme-option[data-theme-id]");
+        buttons.forEach((button) => {
+          const isActive = button.getAttribute("data-theme-id") === activeThemeId;
+          button.classList.toggle("theme-option--active", isActive);
+          button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+
+      function applyTheme(themeId, persist) {
+        const option = getThemeOption(themeId) || getThemeOption(DEFAULT_THEME_ID);
+        if (!option) {
+          return;
+        }
+        activeThemeId = option.id;
+        rootElement.setAttribute("data-theme", option.id);
+        syncThemeControls();
+        if (persist !== false) {
+          try {
+            window.localStorage.setItem(THEME_STORAGE_KEY, option.id);
+          } catch (_err) {
+            // Ignore storage errors.
+          }
+        }
+      }
+
+      function renderThemeMenu() {
+        if (!themeMenu) {
+          return;
+        }
+        themeMenu.innerHTML = "";
+        themeOptions.forEach((option) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "theme-option";
+          button.setAttribute("data-theme-id", option.id);
+
+          const swatch = document.createElement("span");
+          swatch.className = "theme-swatch";
+          swatch.style.setProperty("--swatch-bg", option.swatchBg);
+          swatch.style.setProperty("--swatch-accent", option.swatchAccent);
+
+          const label = document.createElement("span");
+          label.textContent = option.label;
+
+          button.appendChild(swatch);
+          button.appendChild(label);
+          button.addEventListener("click", () => {
+            applyTheme(option.id);
+            setThemeMenuOpen(false);
+          });
+          themeMenu.appendChild(button);
+        });
+      }
+
+      function resolveThemeId() {
+        try {
+          const params = new URLSearchParams(window.location.search || "");
+          const queryTheme = (params.get("theme") || "").trim();
+          if (VALID_THEMES.has(queryTheme)) {
+            return queryTheme;
+          }
+        } catch (_err) {
+          // Ignore URL parsing issues.
+        }
+        try {
+          const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) || "";
+          if (VALID_THEMES.has(storedTheme)) {
+            return storedTheme;
+          }
+        } catch (_err) {
+          // Ignore storage issues.
+        }
+        return DEFAULT_THEME_ID;
+      }
+
+      function initializeThemeControl() {
+        if (!themeToggle || !themeMenu) {
+          return;
+        }
+        renderThemeMenu();
+        applyTheme(resolveThemeId(), false);
+
+        themeToggle.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const isOpen = themeMenu.classList.contains("theme-menu--open");
+          setThemeMenuOpen(!isOpen);
+        });
+        themeMenu.addEventListener("click", (event) => {
+          event.stopPropagation();
+        });
+        document.addEventListener("click", () => {
+          setThemeMenuOpen(false);
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            setThemeMenuOpen(false);
+          }
+        });
+      }
+
+      initializeThemeControl();
+    })();
+  </script>
+</body>
+</html>
