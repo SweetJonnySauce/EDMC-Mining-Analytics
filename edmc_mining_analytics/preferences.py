@@ -11,7 +11,7 @@ try:
 except ImportError:  # pragma: no cover - only available inside EDMC
     config = None  # type: ignore[assignment]
 
-from .state import MiningState
+from .state import MiningState, RPM_LOOKBACK_SECONDS
 from .logging_utils import get_logger
 
 
@@ -81,10 +81,11 @@ class PreferencesManager:
             state.send_summary_to_discord = False
             state.send_reset_summary = False
             state.discord_images = []
-            state.refinement_lookback_seconds = 10
+            state.refinement_lookback_seconds = RPM_LOOKBACK_SECONDS
             state.rpm_threshold_red = 1
             state.rpm_threshold_yellow = 20
             state.rpm_threshold_green = 40
+            state.limpet_dump_threshold = 5
             state.overlay_enabled = False
             state.overlay_anchor_x = 40
             state.overlay_anchor_y = 120
@@ -128,11 +129,7 @@ class PreferencesManager:
                 int(state.warn_on_non_metallic_ring),
             )
         )
-        state.refinement_lookback_seconds = clamp_positive_int(
-            self._get_int("edmc_mining_refinement_window", state.refinement_lookback_seconds),
-            state.refinement_lookback_seconds,
-            maximum=3600,
-        )
+        state.refinement_lookback_seconds = RPM_LOOKBACK_SECONDS
 
         raw_red_threshold = self._get_int("edmc_mining_rpm_red", state.rpm_threshold_red)
         if raw_red_threshold == 10:  # migrate legacy default to the new baseline
@@ -154,6 +151,11 @@ class PreferencesManager:
         state.rpm_threshold_green = clamp_positive_int(
             raw_green_threshold,
             40,
+            maximum=10_000,
+        )
+        state.limpet_dump_threshold = clamp_positive_int(
+            self._get_int("edmc_mining_limpet_dump_threshold", state.limpet_dump_threshold),
+            state.limpet_dump_threshold,
             maximum=10_000,
         )
         state.overlay_enabled = bool(self._get_int("edmc_mining_overlay_enabled", int(state.overlay_enabled)))
@@ -303,14 +305,6 @@ class PreferencesManager:
 
         try:
             config.set(
-                "edmc_mining_refinement_window",
-                clamp_positive_int(state.refinement_lookback_seconds, 10, maximum=3600),
-            )
-        except Exception:
-            _log.exception("Failed to persist refinement lookback preference")
-
-        try:
-            config.set(
                 "edmc_mining_rpm_red",
                 clamp_positive_int(state.rpm_threshold_red, 1),
             )
@@ -332,6 +326,14 @@ class PreferencesManager:
             )
         except Exception:
             _log.exception("Failed to persist RPM green threshold")
+
+        try:
+            config.set(
+                "edmc_mining_limpet_dump_threshold",
+                clamp_positive_int(state.limpet_dump_threshold, 5),
+            )
+        except Exception:
+            _log.exception("Failed to persist limpet dump threshold")
 
         try:
             config.set("edmc_mining_overlay_enabled", int(state.overlay_enabled))

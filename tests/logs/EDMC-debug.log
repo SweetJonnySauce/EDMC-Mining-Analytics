@@ -1,0 +1,103 @@
+2026-03-26 04:36:13.962 UTC - INFO - 2:136639601086592:0 plugin.TestHarness:176: Plugin start requested
+2026-03-26 04:36:13.984 UTC - INFO - 2:136639601086592:0 plugin.TestHarness:180: Starting EDMC Mining Analytics v0.6.0
+2026-03-26 04:36:13.987 UTC - DEBUG - 2:136639542273728:-1 mining_edsm.TestHarness:120: Requesting EDSM reserve level: https://www.edsm.net/api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1
+2026-03-26 04:36:13.987 UTC - DEBUG - 2:136639550666432:-1 update_manager.TestHarness:98: Unable to fetch release metadata: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest (Caused by NameResolutionError("HTTPSConnection(host='api.github.com', port=443): Failed to resolve 'api.github.com' ([Errno -2] Name or service not known)"))
+2026-03-26 04:36:13.989 UTC - DEBUG - 2:136639542273728:-1 mining_edsm.TestHarness:127: EDSM reserve request failed for Sol: HTTPSConnectionPool(host='www.edsm.net', port=443): Max retries exceeded with url: /api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1 (Caused by NameResolutionError("HTTPSConnection(host='www.edsm.net', port=443): Failed to resolve 'www.edsm.net' ([Errno -2] Name or service not known)"))
+2026-03-26 04:36:13.989 UTC - DEBUG - 2:136639542273728:-1 mining_edsm.TestHarness:232: EDSM reserve level unchanged: <none>
+2026-03-26 04:36:13.987 UTC - INFO - 2:136639601086592:0 journal.TestHarness:1115: Mining start event triggered (reason=Prospector drone launched)
+2026-03-26 04:36:13.990 UTC - DEBUG - 2:136639601086592:-1 journal.TestHarness:1117: Mining start event logged via plugin logger (reason=Prospector drone launched, entry={'event': 'LaunchDrone', 'Type': 'Prospector', 'StarSystem': 'Sol', 'timestamp': '3300-01-01T00:00:00Z'}, shared_state={})
+2026-03-26 04:36:13.990 UTC - DEBUG - 2:136639542273728:0 mining_edsm.TestHarness:233: EDSM reserve level unchanged: <none>
+2026-03-26 04:36:13.991 UTC - INFO - 2:136639601086592:0 journal.TestHarness:1139: Mining started: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-26 04:36:13.992 UTC - DEBUG - 2:136639601086592:-1 journal.TestHarness:1145: Mining started log dispatched: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-26 04:36:13.992 UTC - INFO - 2:136639601086592:0 journal.TestHarness:1156: Mining started at 3300-01-01T00:00:00+00:00 (location=Sol) - reason: Prospector drone launched
+2026-03-26 04:36:13.993 UTC - DEBUG - 2:136639601086592:-1 journal.TestHarness:1163: Mining start details logged: time=3300-01-01T00:00:00+00:00 location=Sol reason=Prospector drone launched
+2026-03-26 04:36:13.993 UTC - INFO - 2:136639601086592:-1 journal.TestHarness:1179: Mining state changed to active (Prospector drone launched)
+2026-03-26 04:36:13.987 UTC - DEBUG - 2:136639559059136:0 plugin.TestHarness:581: Version check failed: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest (Caused by NameResolutionError("HTTPSConnection(host='api.github.com', port=443): Failed to resolve 'api.github.com' ([Errno -2] Name or service not known)"))
+2026-03-26 04:36:14.493 UTC - INFO - 2:136639601086592:0 plugin.TestHarness:244: Plugin stop requested; shutting down EDMC Mining Analytics
+2026-03-26 04:36:14.494 UTC - DEBUG - 2:136639601086592:0 plugin.TestHarness:312: Skipping refresh scheduling because plugin is stopping
+2026-03-26 04:37:16.333 UTC - INFO - 11:128814503420032:0 plugin.TestHarness:176: Plugin start requested
+2026-03-26 04:37:16.357 UTC - INFO - 11:128814503420032:0 plugin.TestHarness:180: Starting EDMC Mining Analytics v0.6.0
+2026-03-26 04:37:16.359 UTC - DEBUG - 11:128814445307584:-1 mining_edsm.TestHarness:120: Requesting EDSM reserve level: https://www.edsm.net/api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1
+2026-03-26 04:37:16.362 UTC - DEBUG - 11:128814445307584:-1 mining_edsm.TestHarness:127: EDSM reserve request failed for Sol: HTTPSConnectionPool(host='www.edsm.net', port=443): Max retries exceeded with url: /api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1 (Caused by NameResolutionError("HTTPSConnection(host='www.edsm.net', port=443): Failed to resolve 'www.edsm.net' ([Errno -2] Name or service not known)"))
+2026-03-26 04:37:16.362 UTC - DEBUG - 11:128814453700288:-1 update_manager.TestHarness:98: Unable to fetch release metadata: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest (Caused by NameResolutionError("HTTPSConnection(host='api.github.com', port=443): Failed to resolve 'api.github.com' ([Errno -2] Name or service not known)"))
+2026-03-26 04:37:16.363 UTC - DEBUG - 11:128814445307584:-1 mining_edsm.TestHarness:232: EDSM reserve level unchanged: <none>
+2026-03-26 04:37:16.359 UTC - INFO - 11:128814503420032:0 journal.TestHarness:1115: Mining start event triggered (reason=Prospector drone launched)
+2026-03-26 04:37:16.364 UTC - DEBUG - 11:128814503420032:-1 journal.TestHarness:1117: Mining start event logged via plugin logger (reason=Prospector drone launched, entry={'event': 'LaunchDrone', 'Type': 'Prospector', 'StarSystem': 'Sol', 'timestamp': '3300-01-01T00:00:00Z'}, shared_state={})
+2026-03-26 04:37:16.363 UTC - DEBUG - 11:128814445307584:0 mining_edsm.TestHarness:233: EDSM reserve level unchanged: <none>
+2026-03-26 04:37:16.365 UTC - INFO - 11:128814503420032:0 journal.TestHarness:1139: Mining started: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-26 04:37:16.366 UTC - DEBUG - 11:128814503420032:-1 journal.TestHarness:1145: Mining started log dispatched: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-26 04:37:16.367 UTC - INFO - 11:128814503420032:0 journal.TestHarness:1156: Mining started at 3300-01-01T00:00:00+00:00 (location=Sol) - reason: Prospector drone launched
+2026-03-26 04:37:16.367 UTC - DEBUG - 11:128814503420032:-1 journal.TestHarness:1163: Mining start details logged: time=3300-01-01T00:00:00+00:00 location=Sol reason=Prospector drone launched
+2026-03-26 04:37:16.368 UTC - INFO - 11:128814503420032:-1 journal.TestHarness:1179: Mining state changed to active (Prospector drone launched)
+2026-03-26 04:37:16.362 UTC - DEBUG - 11:128814462092992:0 plugin.TestHarness:581: Version check failed: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest (Caused by NameResolutionError("HTTPSConnection(host='api.github.com', port=443): Failed to resolve 'api.github.com' ([Errno -2] Name or service not known)"))
+2026-03-26 04:37:16.868 UTC - INFO - 11:128814503420032:0 plugin.TestHarness:244: Plugin stop requested; shutting down EDMC Mining Analytics
+2026-03-26 04:37:16.869 UTC - DEBUG - 11:128814503420032:0 plugin.TestHarness:312: Skipping refresh scheduling because plugin is stopping
+2026-03-26 15:44:14.676 UTC - INFO - 2:129883684622464:0 plugin.TestHarness:176: Plugin start requested
+2026-03-26 15:44:14.707 UTC - INFO - 2:129883684622464:0 plugin.TestHarness:180: Starting EDMC Mining Analytics v0.6.0
+2026-03-26 15:44:14.710 UTC - DEBUG - 2:129883625825984:-1 mining_edsm.TestHarness:120: Requesting EDSM reserve level: https://www.edsm.net/api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1
+2026-03-26 15:44:14.710 UTC - INFO - 2:129883684622464:0 journal.TestHarness:1115: Mining start event triggered (reason=Prospector drone launched)
+2026-03-26 15:44:14.713 UTC - DEBUG - 2:129883684622464:-1 journal.TestHarness:1117: Mining start event logged via plugin logger (reason=Prospector drone launched, entry={'event': 'LaunchDrone', 'Type': 'Prospector', 'StarSystem': 'Sol', 'timestamp': '3300-01-01T00:00:00Z'}, shared_state={})
+2026-03-26 15:44:14.713 UTC - INFO - 2:129883684622464:0 journal.TestHarness:1139: Mining started: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-26 15:44:14.714 UTC - DEBUG - 2:129883684622464:-1 journal.TestHarness:1145: Mining started log dispatched: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-26 15:44:14.714 UTC - INFO - 2:129883684622464:0 journal.TestHarness:1156: Mining started at 3300-01-01T00:00:00+00:00 (location=Sol) - reason: Prospector drone launched
+2026-03-26 15:44:14.715 UTC - DEBUG - 2:129883684622464:-1 journal.TestHarness:1163: Mining start details logged: time=3300-01-01T00:00:00+00:00 location=Sol reason=Prospector drone launched
+2026-03-26 15:44:14.715 UTC - INFO - 2:129883684622464:-1 journal.TestHarness:1179: Mining state changed to active (Prospector drone launched)
+2026-03-26 15:44:14.720 UTC - DEBUG - 2:129883634218688:-1 update_manager.TestHarness:98: Unable to fetch release metadata: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest (Caused by NameResolutionError("HTTPSConnection(host='api.github.com', port=443): Failed to resolve 'api.github.com' ([Errno -5] No address associated with hostname)"))
+2026-03-26 15:44:14.721 UTC - DEBUG - 2:129883625825984:-1 mining_edsm.TestHarness:127: EDSM reserve request failed for Sol: HTTPSConnectionPool(host='www.edsm.net', port=443): Max retries exceeded with url: /api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1 (Caused by NameResolutionError("HTTPSConnection(host='www.edsm.net', port=443): Failed to resolve 'www.edsm.net' ([Errno -5] No address associated with hostname)"))
+2026-03-26 15:44:14.721 UTC - DEBUG - 2:129883625825984:-1 mining_edsm.TestHarness:232: EDSM reserve level unchanged: <none>
+2026-03-26 15:44:14.722 UTC - DEBUG - 2:129883625825984:0 mining_edsm.TestHarness:233: EDSM reserve level unchanged: <none>
+2026-03-26 15:44:14.721 UTC - DEBUG - 2:129883642611392:0 plugin.TestHarness:581: Version check failed: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest (Caused by NameResolutionError("HTTPSConnection(host='api.github.com', port=443): Failed to resolve 'api.github.com' ([Errno -5] No address associated with hostname)"))
+2026-03-26 15:44:15.215 UTC - INFO - 2:129883684622464:0 plugin.TestHarness:244: Plugin stop requested; shutting down EDMC Mining Analytics
+2026-03-26 15:44:15.217 UTC - DEBUG - 2:129883684622464:0 plugin.TestHarness:312: Skipping refresh scheduling because plugin is stopping
+2026-03-28 14:15:55.672 UTC - INFO - 2:132918427930752:0 plugin.TestHarness:179: Plugin start requested
+2026-03-28 14:15:55.709 UTC - INFO - 2:132918427930752:0 plugin.TestHarness:183: Starting EDMC Mining Analytics v0.6.0
+2026-03-28 14:15:55.710 UTC - DEBUG - 2:132918427930752:-1 service.TestHarness:66: Capability provider probe: provider=browser_windows available=False reason=unsupported_env details=os.startfile unavailable
+2026-03-28 14:15:55.710 UTC - DEBUG - 2:132918427930752:-1 service.TestHarness:66: Capability provider probe: provider=browser_linux_wayland available=False reason=unsupported_env details=Not in Wayland session
+2026-03-28 14:15:55.710 UTC - DEBUG - 2:132918427930752:-1 service.TestHarness:66: Capability provider probe: provider=browser_linux_x11 available=True reason=None details=X11 raise tools available
+2026-03-28 14:15:55.710 UTC - DEBUG - 2:132918427930752:-1 service.TestHarness:66: Capability provider probe: provider=browser_generic available=True reason=None details=Generic browser opener available
+2026-03-28 14:15:55.711 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:120: Requesting EDSM reserve level: https://www.edsm.net/api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1
+2026-03-28 14:15:55.711 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1116: Mining start event triggered (reason=Prospector drone launched)
+2026-03-28 14:15:55.714 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1118: Mining start event logged via plugin logger (reason=Prospector drone launched, entry={'event': 'LaunchDrone', 'Type': 'Prospector', 'StarSystem': 'Sol', 'timestamp': '3300-01-01T00:00:00Z'}, shared_state={})
+2026-03-28 14:15:55.714 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1140: Mining started: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-28 14:15:55.717 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1146: Mining started log dispatched: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-28 14:15:55.720 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:127: EDSM reserve request failed for Sol: HTTPSConnectionPool(host='www.edsm.net', port=443): Max retries exceeded with url: /api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1 (Caused by NameResolutionError("HTTPSConnection(host='www.edsm.net', port=443): Failed to resolve 'www.edsm.net' ([Errno -5] No address associated with hostname)"))
+2026-03-28 14:15:55.720 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:232: EDSM reserve level unchanged: <none>
+2026-03-28 14:15:55.718 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1157: Mining started at 3300-01-01T00:00:00+00:00 (location=Sol) - reason: Prospector drone launched
+2026-03-28 14:15:55.722 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1164: Mining start details logged: time=3300-01-01T00:00:00+00:00 location=Sol reason=Prospector drone launched
+2026-03-28 14:15:55.722 UTC - INFO - 2:132918427930752:-1 journal.TestHarness:1180: Mining state changed to active (Prospector drone launched)
+2026-03-28 14:15:55.722 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:828: Cargo update: total=0t capacity=None (source=journal)
+2026-03-28 14:15:55.722 UTC - INFO - 2:132918427930752:-1 journal.TestHarness:1180: Mining state changed to inactive (Entered Supercruise)
+2026-03-28 14:15:55.720 UTC - DEBUG - 2:132918386181824:0 mining_edsm.TestHarness:233: EDSM reserve level unchanged: <none>
+2026-03-28 14:15:55.723 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1116: Mining start event triggered (reason=Prospector drone launched)
+2026-03-28 14:15:55.724 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1118: Mining start event logged via plugin logger (reason=Prospector drone launched, entry={'event': 'LaunchDrone', 'Type': 'Prospector', 'StarSystem': 'Sol', 'timestamp': '3300-01-01T00:03:00Z'}, shared_state={})
+2026-03-28 14:15:55.725 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1140: Mining started: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-28 14:15:55.726 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1146: Mining started log dispatched: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-28 14:15:55.726 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1157: Mining started at 3300-01-01T00:03:00+00:00 (location=Sol) - reason: Prospector drone launched
+2026-03-28 14:15:55.728 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1164: Mining start details logged: time=3300-01-01T00:03:00+00:00 location=Sol reason=Prospector drone launched
+2026-03-28 14:15:55.728 UTC - INFO - 2:132918427930752:-1 journal.TestHarness:1180: Mining state changed to active (Prospector drone launched)
+2026-03-28 14:15:55.728 UTC - INFO - 2:132918427930752:0 plugin.TestHarness:251: Plugin stop requested; shutting down EDMC Mining Analytics
+2026-03-28 14:15:55.729 UTC - DEBUG - 2:132918427930752:0 plugin.TestHarness:319: Skipping refresh scheduling because plugin is stopping
+2026-03-28 14:15:55.736 UTC - INFO - 2:132918427930752:0 plugin.TestHarness:179: Plugin start requested
+2026-03-28 14:15:55.738 UTC - INFO - 2:132918427930752:0 plugin.TestHarness:183: Starting EDMC Mining Analytics v0.6.0
+2026-03-28 14:15:55.740 UTC - DEBUG - 2:132918427930752:-1 service.TestHarness:66: Capability provider probe: provider=browser_windows available=False reason=unsupported_env details=os.startfile unavailable
+2026-03-28 14:15:55.740 UTC - DEBUG - 2:132918427930752:-1 service.TestHarness:66: Capability provider probe: provider=browser_linux_wayland available=False reason=unsupported_env details=Not in Wayland session
+2026-03-28 14:15:55.740 UTC - DEBUG - 2:132918427930752:-1 service.TestHarness:66: Capability provider probe: provider=browser_linux_x11 available=True reason=None details=X11 raise tools available
+2026-03-28 14:15:55.740 UTC - DEBUG - 2:132918427930752:-1 service.TestHarness:66: Capability provider probe: provider=browser_generic available=True reason=None details=Generic browser opener available
+2026-03-28 14:15:55.741 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:120: Requesting EDSM reserve level: https://www.edsm.net/api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1
+2026-03-28 14:15:55.743 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:127: EDSM reserve request failed for Sol: HTTPSConnectionPool(host='www.edsm.net', port=443): Max retries exceeded with url: /api-v1/system?systemName=Sol&showId=1&showCoordinates=1&showInformation=1 (Caused by NameResolutionError("HTTPSConnection(host='www.edsm.net', port=443): Failed to resolve 'www.edsm.net' ([Errno -5] No address associated with hostname)"))
+2026-03-28 14:15:55.743 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:232: EDSM reserve level unchanged: <none>
+2026-03-28 14:15:55.741 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1116: Mining start event triggered (reason=Prospector drone launched)
+2026-03-28 14:15:55.746 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1118: Mining start event logged via plugin logger (reason=Prospector drone launched, entry={'event': 'LaunchDrone', 'Type': 'Prospector', 'StarSystem': 'Sol', 'timestamp': '3300-01-01T00:00:00Z'}, shared_state={})
+2026-03-28 14:15:55.744 UTC - DEBUG - 2:132918386181824:0 mining_edsm.TestHarness:233: EDSM reserve level unchanged: <none>
+2026-03-28 14:15:55.746 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1140: Mining started: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-28 14:15:55.748 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1146: Mining started log dispatched: ship=Unknown ship (ship data unavailable), cargo_capacity=unknown (capacity not provided)
+2026-03-28 14:15:55.748 UTC - INFO - 2:132918427930752:0 journal.TestHarness:1157: Mining started at 3300-01-01T00:00:00+00:00 (location=Sol) - reason: Prospector drone launched
+2026-03-28 14:15:55.749 UTC - DEBUG - 2:132918427930752:-1 journal.TestHarness:1164: Mining start details logged: time=3300-01-01T00:00:00+00:00 location=Sol reason=Prospector drone launched
+2026-03-28 14:15:55.749 UTC - INFO - 2:132918427930752:-1 journal.TestHarness:1180: Mining state changed to active (Prospector drone launched)
+2026-03-28 14:15:55.750 UTC - INFO - 2:132918427930752:-1 journal.TestHarness:1180: Mining state changed to inactive (FSD Jump)
+2026-03-28 14:15:55.751 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:120: Requesting EDSM reserve level: https://www.edsm.net/api-v1/system?systemName=Achenar&showId=1&showCoordinates=1&showInformation=1
+2026-03-28 14:15:55.753 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:127: EDSM reserve request failed for Achenar: HTTPSConnectionPool(host='www.edsm.net', port=443): Max retries exceeded with url: /api-v1/system?systemName=Achenar&showId=1&showCoordinates=1&showInformation=1 (Caused by NameResolutionError("HTTPSConnection(host='www.edsm.net', port=443): Failed to resolve 'www.edsm.net' ([Errno -5] No address associated with hostname)"))
+2026-03-28 14:15:55.753 UTC - DEBUG - 2:132918386181824:-1 mining_edsm.TestHarness:232: EDSM reserve level unchanged: <none>
+2026-03-28 14:15:55.751 UTC - INFO - 2:132918427930752:0 plugin.TestHarness:251: Plugin stop requested; shutting down EDMC Mining Analytics
+2026-03-28 14:15:55.753 UTC - DEBUG - 2:132918427930752:0 plugin.TestHarness:319: Skipping refresh scheduling because plugin is stopping
+2026-03-28 14:15:55.753 UTC - DEBUG - 2:132918386181824:0 mining_edsm.TestHarness:233: EDSM reserve level unchanged: <none>

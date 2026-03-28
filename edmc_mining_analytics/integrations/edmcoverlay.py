@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Sequence, Tuple
 
 from ..logging_utils import get_logger
-from ..state import MiningState, resolve_commodity_display_name
+from ..state import MiningState, resolve_commodity_display_name, update_rpm
 from ..formatting import format_compact_number
 
 try:  # pragma: no cover - runtime environment provides this module
@@ -259,7 +259,7 @@ class EdmcOverlayHelper:
             return
 
         self._last_failure_logged = False
-        metric = self._build_rpm_metric()
+        metric = self._build_rpm_metric(now)
         ttl = 5 if (preview_active and not self._state.is_mining) else self._derive_ttl()
         anchor_x = max(0, int(self._state.overlay_anchor_x or 0))
         anchor_y = max(0, int(self._state.overlay_anchor_y or 0))
@@ -302,9 +302,18 @@ class EdmcOverlayHelper:
             self._overlay = None
         return self._overlay
 
-    def _build_rpm_metric(self) -> _OverlayMetric:
-        rpm = float(self._state.rpm_display_value or 0.0)
-        rpm_color = self._state.rpm_display_color or DEFAULT_VALUE_COLOR
+    def _build_rpm_metric(self, now: Optional[datetime] = None) -> _OverlayMetric:
+        raw_rpm = float(update_rpm(self._state, now))
+        shared_display = self._state.rpm_display_value
+        if isinstance(shared_display, (int, float)) and shared_display >= 0:
+            rpm = float(shared_display)
+        else:
+            rpm = raw_rpm
+        rpm_color = self._state.rpm_display_color or determine_rpm_color(
+            self._state,
+            rpm,
+            default=DEFAULT_VALUE_COLOR,
+        )
         return _OverlayMetric(
             key="rpm",
             label="RPM",

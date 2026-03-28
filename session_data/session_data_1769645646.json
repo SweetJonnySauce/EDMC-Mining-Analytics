@@ -1,0 +1,365 @@
+{
+  "meta": {
+    "start_time": "2026-01-29T00:11:58Z",
+    "end_time": "2026-01-29T00:14:06.514689Z",
+    "duration_seconds": 128.514689,
+    "overall_tph": {
+      "tons": 12,
+      "elapsed_seconds": 128.514689,
+      "tons_per_hour": 336.148
+    },
+    "location": {
+      "body": "Col 285 Sector LB-O c6-3 A 8",
+      "system": "Col 285 Sector LB-O c6-3",
+      "ring": "Col 285 Sector LB-O c6-3 A 8 B Ring",
+      "reserve_level": "Pristine",
+      "ring_type": "Icy"
+    },
+    "ship": "Type-11 Prospector",
+    "prospected": {
+      "total": 1,
+      "already_mined": 0,
+      "duplicates": 0
+    },
+    "prospectors_launched": 1,
+    "collectors_launched": 1,
+    "collectors_abandoned": 0,
+    "limpets_remaining": 148,
+    "content_summary": {
+      "High": 0,
+      "Medium": 0,
+      "Low": 1
+    },
+    "inventory_tonnage": 94,
+    "cargo_capacity": 256,
+    "materials": [],
+    "max_rpm": 60.0,
+    "refinement_activity": {
+      "lookback_seconds": 2,
+      "current_rpm": 0.0,
+      "max_rpm": 60.0
+    },
+    "commander": "sweetjonnysauce",
+    "prospectors_lost": 0
+  },
+  "commodities": {
+    "Methanol Monohydrate Crystals": {
+      "asteroids_prospected": 1,
+      "percentage_of_asteroids": 100.0,
+      "gathered": {
+        "tons": 6,
+        "elapsed_seconds": 91.514689
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 6.54,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 6.544,
+        "avg": 6.544,
+        "max": 6.544
+      },
+      "tons_per_hour": 236.028
+    },
+    "Water": {
+      "asteroids_prospected": 1,
+      "percentage_of_asteroids": 100.0,
+      "gathered": {
+        "tons": 6,
+        "elapsed_seconds": 91.514689
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 7.02,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 7.02,
+        "avg": 7.02,
+        "max": 7.02
+      },
+      "tons_per_hour": 236.028
+    }
+  },
+  "events": [
+    {
+      "type": "mining_session_started",
+      "timestamp": "2026-01-29T00:11:58Z",
+      "details": {
+        "reason": "Prospector drone launched"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T00:11:58Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T00:12:09Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Water",
+            "percentage": 7.02014
+          },
+          {
+            "name": "Bromellite",
+            "percentage": 5.475714
+          },
+          {
+            "name": "Methanolmonohydratecrystals",
+            "percentage": 6.54365
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:12:32Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:12:33Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T00:12:34Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T00:12:35Z",
+      "details": {
+        "total_cargo": 84,
+        "count": 234,
+        "inventory": {
+          "Drones": 149,
+          "Liquidoxygen": 42,
+          "Lithiumhydroxide": 6,
+          "Methanol Monohydrate Crystals": 1,
+          "Water": 35
+        },
+        "limpets": 149
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:12:37Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:12:44Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T00:12:47Z",
+      "details": {
+        "total_cargo": 86,
+        "count": 234,
+        "inventory": {
+          "Drones": 148,
+          "Liquidoxygen": 42,
+          "Lithiumhydroxide": 6,
+          "Methanol Monohydrate Crystals": 3,
+          "Water": 35
+        },
+        "limpets": 148
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:12:53Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:12:54Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T00:12:57Z",
+      "details": {
+        "total_cargo": 88,
+        "count": 236,
+        "inventory": {
+          "Drones": 148,
+          "Liquidoxygen": 42,
+          "Lithiumhydroxide": 6,
+          "Methanol Monohydrate Crystals": 4,
+          "Water": 36
+        },
+        "limpets": 148
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:13:00Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T00:13:02Z",
+      "details": {
+        "total_cargo": 89,
+        "count": 237,
+        "inventory": {
+          "Drones": 148,
+          "Liquidoxygen": 42,
+          "Lithiumhydroxide": 6,
+          "Methanol Monohydrate Crystals": 4,
+          "Water": 37
+        },
+        "limpets": 148
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:13:08Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:13:10Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T00:13:12Z",
+      "details": {
+        "total_cargo": 91,
+        "count": 239,
+        "inventory": {
+          "Drones": 148,
+          "Liquidoxygen": 42,
+          "Lithiumhydroxide": 6,
+          "Methanol Monohydrate Crystals": 5,
+          "Water": 38
+        },
+        "limpets": 148
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:13:21Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:13:23Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T00:13:24Z",
+      "details": {
+        "total_cargo": 93,
+        "count": 241,
+        "inventory": {
+          "Drones": 148,
+          "Liquidoxygen": 42,
+          "Lithiumhydroxide": 6,
+          "Methanol Monohydrate Crystals": 6,
+          "Water": 39
+        },
+        "limpets": 148
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T00:13:25Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T00:13:26Z",
+      "details": {
+        "total_cargo": 94,
+        "count": 242,
+        "inventory": {
+          "Drones": 148,
+          "Liquidoxygen": 42,
+          "Lithiumhydroxide": 6,
+          "Methanol Monohydrate Crystals": 6,
+          "Water": 40
+        },
+        "limpets": 148
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T00:13:28Z",
+      "details": {
+        "total_cargo": 94,
+        "count": 242,
+        "inventory": {
+          "Drones": 148,
+          "Liquidoxygen": 42,
+          "Lithiumhydroxide": 6,
+          "Methanol Monohydrate Crystals": 6,
+          "Water": 40
+        },
+        "limpets": 148
+      }
+    },
+    {
+      "type": "mining_session_stopped",
+      "timestamp": "2026-01-29T00:14:06.514689Z",
+      "details": {
+        "reason": "manual reset"
+      }
+    }
+  ]
+}

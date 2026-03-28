@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
-import logging
-import webbrowser
 from pathlib import Path
 from typing import Dict, Optional
 
 from urllib.parse import urlencode
 
+from ..browser_utils import did_open, open_url_with_capability
+from ..capabilities import CapabilityService
 from ..state import MiningState
 from ..logging_utils import get_logger
 
@@ -20,8 +20,13 @@ _log = get_logger("inara")
 class InaraClient:
     """Encapsulates Inara commodity search URL generation and settings."""
 
-    def __init__(self, state: MiningState) -> None:
+    def __init__(
+        self,
+        state: MiningState,
+        capability_service: Optional[CapabilityService] = None,
+    ) -> None:
         self._state = state
+        self._capability_service = capability_service
         self._commodity_map: Dict[str, int] = {}
 
     @property
@@ -84,8 +89,8 @@ class InaraClient:
             _log.debug("Cannot build Inara link for %s: system unknown", commodity)
             return None
 
-        include_carriers = "0" if self._state.market_search_include_carriers else "1"
-        include_surface = "0" if self._state.market_search_include_surface else "1"
+        include_carriers = "1" if self._state.market_search_include_carriers else "0"
+        include_surface = "1" if self._state.market_search_include_surface else "0"
         sort_mode = (self._state.market_search_sort_mode or "best_price").strip().lower()
         search_mode = "3" if sort_mode == "nearest" else "1"
 
@@ -132,8 +137,18 @@ class InaraClient:
         url = self.build_url(commodity)
         if not url:
             return
-        try:
-            if not webbrowser.open(url, new=2):
-                webbrowser.open(url)
-        except Exception:
-            _log.exception("Failed to open browser for commodity %s", commodity)
+        result = open_url_with_capability(
+            self._capability_service,
+            url,
+            title_hints=("inara.cz", "Inara", commodity),
+            append_focus_token=False,
+            missing_url_message=f"Missing Inara URL for commodity {commodity}",
+        )
+        if not did_open(result):
+            _log.debug(
+                "Failed to open Inara browser link for %s via capability path: status=%s reason=%s message=%s",
+                commodity,
+                result.status,
+                result.reason_code,
+                result.message,
+            )

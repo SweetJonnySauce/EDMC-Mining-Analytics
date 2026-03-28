@@ -1,0 +1,600 @@
+{
+  "meta": {
+    "start_time": "2026-01-28T00:36:43Z",
+    "end_time": "2026-01-28T00:39:06.208245Z",
+    "duration_seconds": 143.208245,
+    "overall_tph": {
+      "tons": 12,
+      "elapsed_seconds": 143.208245,
+      "tons_per_hour": 301.659
+    },
+    "location": {
+      "body": "Col 285 Sector LB-O c6-3 A 8",
+      "system": "Col 285 Sector LB-O c6-3",
+      "ring": "Col 285 Sector LB-O c6-3 A 8 B Ring",
+      "reserve_level": "Pristine",
+      "ring_type": "Icy"
+    },
+    "ship": "Type-11 Prospector",
+    "prospected": {
+      "total": 3,
+      "already_mined": 0,
+      "duplicates": 0
+    },
+    "prospectors_launched": 4,
+    "collectors_launched": 9,
+    "collectors_abandoned": 0,
+    "limpets_remaining": 189,
+    "content_summary": {
+      "High": 1,
+      "Medium": 1,
+      "Low": 1
+    },
+    "inventory_tonnage": 31,
+    "cargo_capacity": 256,
+    "materials": [],
+    "max_rpm": 30.0,
+    "refinement_activity": {
+      "lookback_seconds": 2,
+      "current_rpm": 0.0,
+      "max_rpm": 30.0
+    },
+    "commander": "sweetjonnysauce",
+    "prospectors_lost": 1
+  },
+  "commodities": {
+    "Liquid oxygen": {
+      "asteroids_prospected": 1,
+      "percentage_of_asteroids": 33.333,
+      "gathered": {
+        "tons": 12,
+        "elapsed_seconds": 67.208245
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 23.15,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 23.154,
+        "avg": 23.154,
+        "max": 23.154
+      },
+      "tons_per_hour": 642.778
+    }
+  },
+  "events": [
+    {
+      "type": "mining_session_started",
+      "timestamp": "2026-01-28T00:36:43Z",
+      "details": {
+        "reason": "Prospector drone launched"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:36:43Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:36:54Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-28T00:36:57Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Lithiumhydroxide",
+            "percentage": 18.555607
+          },
+          {
+            "name": "Methanolmonohydratecrystals",
+            "percentage": 7.887066
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:01Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:01Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 219,
+        "inventory": {
+          "Drones": 200,
+          "Water": 19
+        },
+        "limpets": 200
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:06Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 218,
+        "inventory": {
+          "Drones": 199,
+          "Water": 19
+        },
+        "limpets": 199
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:09Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:16Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 217,
+        "inventory": {
+          "Drones": 198,
+          "Water": 19
+        },
+        "limpets": 198
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:19Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-28T00:37:21Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Bromellite",
+            "percentage": 16.507404
+          },
+          {
+            "name": "Hydrogenperoxide",
+            "percentage": 5.122123
+          },
+          {
+            "name": "Methaneclathrate",
+            "percentage": 3.730759
+          }
+        ],
+        "content": "High",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:25Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:27Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 215,
+        "inventory": {
+          "Drones": 196,
+          "Water": 19
+        },
+        "limpets": 196
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:27Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:29Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 214,
+        "inventory": {
+          "Drones": 195,
+          "Water": 19
+        },
+        "limpets": 195
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:30Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:31Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 214,
+        "inventory": {
+          "Drones": 195,
+          "Water": 19
+        },
+        "limpets": 195
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:36Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 213,
+        "inventory": {
+          "Drones": 194,
+          "Water": 19
+        },
+        "limpets": 194
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-28T00:37:41Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Liquidoxygen",
+            "percentage": 23.153917
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:44Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:51Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:52Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 211,
+        "inventory": {
+          "Drones": 192,
+          "Water": 19
+        },
+        "limpets": 192
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:53Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:54Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 210,
+        "inventory": {
+          "Drones": 191,
+          "Water": 19
+        },
+        "limpets": 191
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:55Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:56Z",
+      "details": {
+        "total_cargo": 19,
+        "count": 210,
+        "inventory": {
+          "Drones": 191,
+          "Water": 19
+        },
+        "limpets": 191
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-28T00:37:57Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:37:58Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:37:59Z",
+      "details": {
+        "total_cargo": 20,
+        "count": 210,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 1,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:00Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:02Z",
+      "details": {
+        "total_cargo": 21,
+        "count": 210,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 2,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:05Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:07Z",
+      "details": {
+        "total_cargo": 22,
+        "count": 212,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 3,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:08Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:09Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:11Z",
+      "details": {
+        "total_cargo": 24,
+        "count": 213,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 5,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:15Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:16Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:19Z",
+      "details": {
+        "total_cargo": 26,
+        "count": 216,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 7,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:19Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:22Z",
+      "details": {
+        "total_cargo": 27,
+        "count": 217,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 8,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:22Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:25Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:25Z",
+      "details": {
+        "total_cargo": 29,
+        "count": 218,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 10,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:27Z",
+      "details": {
+        "total_cargo": 29,
+        "count": 218,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 10,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:31Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-28T00:38:33Z",
+      "details": {
+        "type_localised": "Liquid oxygen",
+        "type": "$liquidoxygen_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:33Z",
+      "details": {
+        "total_cargo": 31,
+        "count": 220,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 12,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-28T00:38:35Z",
+      "details": {
+        "total_cargo": 31,
+        "count": 220,
+        "inventory": {
+          "Drones": 189,
+          "Liquid oxygen": 12,
+          "Water": 19
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "mining_session_stopped",
+      "timestamp": "2026-01-28T00:39:06.208245Z",
+      "details": {
+        "reason": "manual reset"
+      }
+    }
+  ]
+}

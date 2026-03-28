@@ -10,6 +10,7 @@ from typing import Deque, Dict, Iterable, List, Optional, Set, Tuple
 
 
 ProspectKey = Tuple[str, Tuple[Tuple[str, float], ...]]
+RPM_LOOKBACK_SECONDS = 10
 
 
 @dataclass
@@ -76,10 +77,11 @@ class MiningState:
     show_materials_collected: bool = True
     warn_on_non_metallic_ring: bool = False
 
-    refinement_lookback_seconds: int = 10
+    refinement_lookback_seconds: int = RPM_LOOKBACK_SECONDS
     rpm_threshold_red: int = 1
     rpm_threshold_yellow: int = 20
     rpm_threshold_green: int = 40
+    limpet_dump_threshold: int = 5
     recent_refinements: Deque[datetime] = field(default_factory=deque)
     current_rpm: float = 0.0
     max_rpm: float = 0.0
@@ -255,7 +257,9 @@ def update_rpm(state: MiningState, now: Optional[datetime] = None) -> float:
         now = datetime.now(timezone.utc)
     aware_now = _ensure_aware(now)
 
-    window = max(1, int(state.refinement_lookback_seconds or 1))
+    # RPM is intentionally fixed to a short, fixed lookback window.
+    window = RPM_LOOKBACK_SECONDS
+    state.refinement_lookback_seconds = window
     cutoff = aware_now - timedelta(seconds=window)
 
     refinements = state.recent_refinements

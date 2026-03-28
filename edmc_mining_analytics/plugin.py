@@ -42,6 +42,7 @@ from .journal import JournalProcessor
 from .preferences import PreferencesManager
 from .session_recorder import SessionRecorder
 from .state import MiningState, reset_mining_state
+from .capabilities import CapabilityService, build_default_capability_service
 from .logging_utils import get_logger, install_exception_logging, set_log_level
 from .edmc_mining_analytics_version import (
     PLUGIN_VERSION,
@@ -126,8 +127,9 @@ class MiningAnalyticsPlugin:
 
     def __init__(self) -> None:
         self.state = MiningState()
+        self.capabilities: CapabilityService = build_default_capability_service()
         self.preferences = PreferencesManager()
-        self.inara = InaraClient(self.state)
+        self.inara = InaraClient(self.state, capability_service=self.capabilities)
         self.spansh = SpanshHotspotClient(self.state)
         self.edsm = EdsmClient(self.state, self._schedule_ui_refresh)
         self.session_recorder = SessionRecorder(self.state)
@@ -148,6 +150,7 @@ class MiningAnalyticsPlugin:
             on_reset_inferred_capacities=self._handle_reset_inferred_capacities,
             on_test_webhook=self._handle_test_webhook,
             on_settings_changed=self._on_ui_settings_changed,
+            capability_service=self.capabilities,
         )
         self.journal = JournalProcessor(
             self.state,
@@ -179,6 +182,10 @@ class MiningAnalyticsPlugin:
         self._sync_logger_level()
         _log.info("Starting %s v%s", PLUGIN_NAME, PLUGIN_VERSION)
         self.preferences.load(self.state)
+        try:
+            self.capabilities.run_startup_probes()
+        except Exception:
+            _log.exception("Capability startup probes failed")
         self.overlay_helper.refresh_availability()
         if define_plugin_group is not None:
             try:
@@ -251,6 +258,7 @@ class MiningAnalyticsPlugin:
         self._persist_preferences()
         self.ui.cancel_rate_update()
         self.ui.close_histogram_windows()
+        self.ui.close_local_web_server()
         self._cancel_overlay_refresh()
         self._cancel_overlay_rpm_refresh()
         self.overlay_helper.clear_preview()
@@ -349,7 +357,7 @@ class MiningAnalyticsPlugin:
         frame = self.ui.get_root()
         if frame is None or not frame.winfo_exists():
             return
-        self._overlay_rpm_refresh_job = frame.after(50, self._overlay_rpm_tick)
+        self._overlay_rpm_refresh_job = frame.after(150, self._overlay_rpm_tick)
 
     def _cancel_overlay_refresh(self) -> None:
         if self._overlay_refresh_job is None:

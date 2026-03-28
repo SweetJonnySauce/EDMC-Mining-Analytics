@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import threading
 from typing import Any, Dict, Iterable, Optional
+import uuid
 
 from .logging_utils import get_logger
 from .state import (
@@ -36,6 +37,7 @@ class SessionRecorder:
         self._recording: bool = False
         self._session_start: Optional[datetime] = None
         self._session_end: Optional[datetime] = None
+        self._session_guid: Optional[str] = None
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -47,6 +49,7 @@ class SessionRecorder:
         self._events.clear()
         self._session_start = self._ensure_aware(timestamp)
         self._session_end = None
+        self._session_guid = str(uuid.uuid4())
         self._recording = bool(self._state.session_logging_enabled)
         if not should_generate:
             return
@@ -78,6 +81,7 @@ class SessionRecorder:
             self._events.clear()
             self._session_start = None
             self._session_end = None
+            self._session_guid = None
             return
 
         if self._recording:
@@ -102,6 +106,8 @@ class SessionRecorder:
             meta["session_end_reason"] = reason
             if reset:
                 meta["ended_via_reset"] = True
+            self._append_prospected_asteroid_summary(payload)
+            self._upsert_ring_summary(payload)
             self._maybe_send_summary(
                 payload,
                 json_path,
@@ -113,6 +119,7 @@ class SessionRecorder:
         self._recording = False
         self._session_start = None
         self._session_end = None
+        self._session_guid = None
 
     # ------------------------------------------------------------------
     # Event capture
@@ -218,8 +225,28 @@ class SessionRecorder:
     # ------------------------------------------------------------------
     # Payload construction
     # ------------------------------------------------------------------
+    @staticmethod
+    def _is_legacy_timestamp_session_guid(value: Any) -> bool:
+        token = str(value or "").strip().lower()
+        if token.startswith("session_data_"):
+            suffix = token[len("session_data_"):]
+            return bool(suffix) and suffix.isdigit()
+        if token.startswith("sim-session_data_"):
+            suffix = token[len("sim-session_data_"):]
+            return bool(suffix) and suffix.isdigit()
+        return False
+
+    @staticmethod
+    def _normalize_session_guid(value: Any) -> str:
+        token = str(value or "").strip()
+        if token and not SessionRecorder._is_legacy_timestamp_session_guid(token):
+            return token
+        return str(uuid.uuid4())
+
     def _build_payload(self) -> dict[str, Any]:
         state = self._state
+        session_guid = self._normalize_session_guid(self._session_guid)
+        self._session_guid = session_guid
         start = self._ensure_aware(
             state.mining_start or self._session_start or datetime.now(timezone.utc)
         )
@@ -260,6 +287,7 @@ class SessionRecorder:
         meta: dict[str, Any] = {
             "start_time": self._isoformat(start),
             "end_time": self._isoformat(end),
+            "session_guid": session_guid,
             "duration_seconds": duration_seconds,
             "overall_tph": {
                 "tons": total_cargo,
@@ -285,12 +313,15 @@ class SessionRecorder:
             "inventory_tonnage": state.current_cargo_tonnage,
             "cargo_capacity": state.cargo_capacity,
             "materials": self._materials_snapshot(state.materials_collected),
+            "histogram_bin_size": state.histogram_bin_size,
             "max_rpm": max_rpm,
             "refinement_activity": {
                 "lookback_seconds": state.refinement_lookback_seconds,
                 "current_rpm": current_rpm,
                 "max_rpm": max_rpm,
             },
+            "limpet_dump_threshold": state.limpet_dump_threshold,
+            "estimated_sell": self._estimated_sell_snapshot(end),
         }
 
         meta["commander"] = (state.cmdr_name or "").strip() or "Unknown"
@@ -303,6 +334,303 @@ class SessionRecorder:
             "events": list(self._events),
         }
         return payload
+
+    def _append_prospected_asteroid_summary(self, payload: dict[str, Any]) -> None:
+        directory = self._resolve_output_directory()
+        if directory is None:
+            _log.debug("Skipping prospected asteroid summary append: plugin directory unavailable")
+            return
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            _log.exception("Failed to create session output directory for prospect summary: %s", directory)
+            return
+
+        meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
+        session_guid = self._normalize_session_guid(meta.get("session_guid"))
+        if isinstance(meta, dict):
+            meta["session_guid"] = session_guid
+        events = payload.get("events", []) if isinstance(payload, dict) else []
+        if not isinstance(events, list) or not events:
+            return
+
+        records: list[dict[str, Any]] = []
+        asteroid_sequence = 0
+        for event in events:
+            if not isinstance(event, dict) or event.get("type") != "prospected_asteroid":
+                continue
+            asteroid_sequence += 1
+            details = event.get("details", {})
+            if not isinstance(details, dict):
+                continue
+            materials = details.get("materials", [])
+            if not isinstance(materials, list) or not materials:
+                continue
+
+            duplicate_flag = bool(details.get("duplicate"))
+            ring_label, ring_type, reserve_level = self._resolve_prospect_context(meta, details)
+            for material in materials:
+                if not isinstance(material, dict):
+                    continue
+                raw_name = material.get("name")
+                name = str(raw_name).strip() if raw_name is not None else ""
+                if not name:
+                    continue
+                try:
+                    pct = float(material.get("percentage"))
+                except (TypeError, ValueError):
+                    continue
+                records.append(
+                    {
+                        "session_guid": session_guid,
+                        "asteroid_id": asteroid_sequence,
+                        "ring_name": ring_label,
+                        "ring_type": ring_type,
+                        "reserve_level": reserve_level,
+                        "commodity_name": name,
+                        "percentage": pct,
+                        "duplicate_prospector": duplicate_flag,
+                    }
+                )
+
+        if not records:
+            return
+
+        path = directory / "prospected_asteroid_summary.jsonl"
+        try:
+            with path.open("a", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record, sort_keys=False))
+                    handle.write("\n")
+        except Exception:
+            _log.exception("Failed to append prospected asteroid summary: %s", path)
+
+    def _upsert_ring_summary(self, payload: dict[str, Any]) -> None:
+        directory = self._resolve_output_directory()
+        if directory is None:
+            _log.debug("Skipping ring summary upsert: plugin directory unavailable")
+            return
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            _log.exception("Failed to create session output directory for ring summary: %s", directory)
+            return
+
+        records = self._build_ring_summary_records(payload)
+        if not records:
+            return
+
+        path = directory / "ring_summary.jsonl"
+        index: dict[tuple[str, str], dict[str, Any]] = {}
+        order: list[tuple[str, str]] = []
+
+        if path.exists():
+            try:
+                with path.open("r", encoding="utf-8") as handle:
+                    for raw_line in handle:
+                        text = str(raw_line or "").strip()
+                        if not text:
+                            continue
+                        try:
+                            row = json.loads(text)
+                        except Exception:
+                            continue
+                        key = self._ring_summary_key_from_row(row)
+                        if key is None:
+                            continue
+                        normalised = self._normalise_ring_summary_row(row)
+                        if normalised is None:
+                            continue
+                        if key not in index:
+                            order.append(key)
+                            index[key] = normalised
+                        else:
+                            existing = index[key]
+                            existing["asteroids_prospected"] = (
+                                self._safe_int(existing.get("asteroids_prospected"))
+                                + self._safe_int(normalised.get("asteroids_prospected"))
+                            )
+                            existing["asteroids_with_commodity_present"] = (
+                                self._safe_int(existing.get("asteroids_with_commodity_present"))
+                                + self._safe_int(normalised.get("asteroids_with_commodity_present"))
+                            )
+                            existing["sum_percentage"] = (
+                                self._safe_float(existing.get("sum_percentage"))
+                                + self._safe_float(normalised.get("sum_percentage"))
+                            )
+            except Exception:
+                _log.exception("Failed to read existing ring summary file: %s", path)
+
+        for record in records:
+            key = self._ring_summary_key_from_row(record)
+            if key is None:
+                continue
+            normalised = self._normalise_ring_summary_row(record)
+            if normalised is None:
+                continue
+            if key not in index:
+                order.append(key)
+                index[key] = normalised
+                continue
+            existing = index[key]
+            existing["asteroids_prospected"] = (
+                self._safe_int(existing.get("asteroids_prospected"))
+                + self._safe_int(normalised.get("asteroids_prospected"))
+            )
+            existing["asteroids_with_commodity_present"] = (
+                self._safe_int(existing.get("asteroids_with_commodity_present"))
+                + self._safe_int(normalised.get("asteroids_with_commodity_present"))
+            )
+            existing["sum_percentage"] = (
+                self._safe_float(existing.get("sum_percentage"))
+                + self._safe_float(normalised.get("sum_percentage"))
+            )
+
+        try:
+            with path.open("w", encoding="utf-8") as handle:
+                for key in order:
+                    row = index.get(key)
+                    if row is None:
+                        continue
+                    handle.write(json.dumps(row, sort_keys=False))
+                    handle.write("\n")
+        except Exception:
+            _log.exception("Failed to upsert ring summary file: %s", path)
+
+    def _build_ring_summary_records(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
+        if not isinstance(payload, dict):
+            return []
+        meta = payload.get("meta", {})
+        if not isinstance(meta, dict):
+            return []
+        events = payload.get("events", [])
+        if not isinstance(events, list) or not events:
+            return []
+
+        ring_asteroids: Counter[str] = Counter()
+        ring_commodities: dict[str, dict[str, dict[str, float]]] = {}
+
+        for event in events:
+            if not isinstance(event, dict) or event.get("type") != "prospected_asteroid":
+                continue
+            details = event.get("details", {})
+            if not isinstance(details, dict):
+                continue
+            ring_name, _, _ = self._resolve_prospect_context(meta, details)
+            ring_label = str(ring_name or "Unknown").strip() or "Unknown"
+            ring_asteroids[ring_label] += 1
+            materials = details.get("materials", [])
+            if not isinstance(materials, list) or not materials:
+                continue
+            commodity_map = ring_commodities.setdefault(ring_label, {})
+            for material in materials:
+                if not isinstance(material, dict):
+                    continue
+                raw_name = material.get("name")
+                commodity_name = str(raw_name or "").strip()
+                if not commodity_name:
+                    continue
+                try:
+                    pct = float(material.get("percentage"))
+                except (TypeError, ValueError):
+                    continue
+                stats = commodity_map.setdefault(
+                    commodity_name,
+                    {"asteroids_with_commodity_present": 0.0, "sum_percentage": 0.0},
+                )
+                stats["asteroids_with_commodity_present"] += 1.0
+                stats["sum_percentage"] += pct
+
+        records: list[dict[str, Any]] = []
+        for ring_name, commodity_map in ring_commodities.items():
+            asteroids_prospected = int(ring_asteroids.get(ring_name, 0))
+            if asteroids_prospected <= 0:
+                continue
+            for commodity_name, stats in sorted(commodity_map.items(), key=lambda item: item[0].lower()):
+                present = int(stats.get("asteroids_with_commodity_present", 0.0))
+                sum_percentage = float(stats.get("sum_percentage", 0.0))
+                records.append(
+                    {
+                        "ring_name": ring_name,
+                        "commodity_name": commodity_name,
+                        "asteroids_prospected": asteroids_prospected,
+                        "asteroids_with_commodity_present": present,
+                        "sum_percentage": sum_percentage,
+                    }
+                )
+
+        return records
+
+    @staticmethod
+    def _ring_summary_key_from_row(row: Any) -> Optional[tuple[str, str]]:
+        if not isinstance(row, dict):
+            return None
+        ring_name = str(row.get("ring_name") or "").strip()
+        commodity_name = str(row.get("commodity_name") or "").strip()
+        if not ring_name or not commodity_name:
+            return None
+        return ring_name.lower(), commodity_name.lower()
+
+    def _normalise_ring_summary_row(self, row: Any) -> Optional[dict[str, Any]]:
+        if not isinstance(row, dict):
+            return None
+        ring_name = str(row.get("ring_name") or "").strip()
+        commodity_name = str(row.get("commodity_name") or "").strip()
+        if not ring_name or not commodity_name:
+            return None
+        return {
+            "ring_name": ring_name,
+            "commodity_name": commodity_name,
+            "asteroids_prospected": max(0, self._safe_int(row.get("asteroids_prospected"))),
+            "asteroids_with_commodity_present": max(
+                0,
+                self._safe_int(row.get("asteroids_with_commodity_present")),
+            ),
+            "sum_percentage": self._safe_float(row.get("sum_percentage")),
+        }
+
+    @staticmethod
+    def _resolve_prospect_context(meta: dict[str, Any], details: dict[str, Any]) -> tuple[str, Optional[str], Optional[str]]:
+        body_detail = details.get("body")
+        if isinstance(body_detail, str) and body_detail.strip():
+            ring_name = body_detail.strip()
+        else:
+            ring_name = "Unknown"
+            location = meta.get("location", {})
+            if isinstance(location, dict):
+                for key in ("ring", "body", "system"):
+                    value = location.get(key)
+                    if isinstance(value, str) and value.strip():
+                        ring_name = value.strip()
+                        break
+            if ring_name == "Unknown":
+                for key in ("ring", "body", "system"):
+                    value = meta.get(key)
+                    if isinstance(value, str) and value.strip():
+                        ring_name = value.strip()
+                        break
+
+        ring_type: Optional[str] = None
+        reserve_level: Optional[str] = None
+        location = meta.get("location", {})
+        if isinstance(location, dict):
+            ring_type_raw = location.get("ring_type")
+            reserve_level_raw = location.get("reserve_level")
+            if isinstance(ring_type_raw, str) and ring_type_raw.strip():
+                ring_type = ring_type_raw.strip()
+            if isinstance(reserve_level_raw, str) and reserve_level_raw.strip():
+                reserve_level = reserve_level_raw.strip()
+
+        if ring_type is None:
+            raw_ring_type = meta.get("ring_type")
+            if isinstance(raw_ring_type, str) and raw_ring_type.strip():
+                ring_type = raw_ring_type.strip()
+        if reserve_level is None:
+            raw_reserve = meta.get("reserve_level")
+            if isinstance(raw_reserve, str) and raw_reserve.strip():
+                reserve_level = raw_reserve.strip()
+
+        return ring_name, ring_type, reserve_level
 
     def _derive_ring_name(self) -> Optional[str]:
         ring = getattr(self._state, "mining_ring", None)
@@ -372,6 +700,143 @@ class SessionRecorder:
                 "tons_per_hour": tph,
             }
         return result
+
+    def _estimated_sell_snapshot(self, captured_at: datetime) -> dict[str, Any]:
+        state = self._state
+        by_commodity: list[dict[str, Any]] = []
+        priced_tons = 0.0
+        total_tons = 0.0
+
+        for commodity_key, tons_raw in sorted(state.cargo_totals.items()):
+            try:
+                tons = float(tons_raw)
+            except (TypeError, ValueError):
+                continue
+            if tons <= 0:
+                continue
+
+            total_tons += tons
+            sell_price_raw = state.market_sell_prices.get(commodity_key)
+            value_raw = state.market_sell_totals.get(commodity_key)
+            if value_raw is None and sell_price_raw is not None:
+                try:
+                    value_raw = float(sell_price_raw) * tons
+                except (TypeError, ValueError):
+                    value_raw = None
+
+            sell_price: Optional[float]
+            try:
+                sell_price = float(sell_price_raw) if sell_price_raw is not None else None
+            except (TypeError, ValueError):
+                sell_price = None
+
+            estimated_value_cr: Optional[float]
+            try:
+                estimated_value_cr = float(value_raw) if value_raw is not None else None
+            except (TypeError, ValueError):
+                estimated_value_cr = None
+
+            if sell_price is not None:
+                priced_tons += tons
+
+            detail = state.market_sell_details.get(commodity_key, {})
+            source: Optional[dict[str, Any]] = None
+            if isinstance(detail, dict):
+                source_candidate = {
+                    "system_name": detail.get("system_name"),
+                    "station_name": detail.get("station_name"),
+                    "market_updated_at": detail.get("market_updated_at"),
+                    "distance_ly": detail.get("distance_ly"),
+                    "distance_to_arrival": detail.get("distance_to_arrival"),
+                }
+                source_clean = {key: value for key, value in source_candidate.items() if value is not None}
+                if source_clean:
+                    source = source_clean
+
+            entry: dict[str, Any] = {
+                "key": str(commodity_key or "").strip().lower(),
+                "name": self._format_name(str(commodity_key)),
+                "tons": tons,
+                "sell_price": sell_price,
+                "estimated_value_cr": estimated_value_cr,
+            }
+            if source:
+                entry["price_source"] = source
+            by_commodity.append(entry)
+
+        by_commodity.sort(
+            key=lambda item: (
+                item.get("estimated_value_cr") is None,
+                -(float(item.get("estimated_value_cr")) if item.get("estimated_value_cr") is not None else 0.0),
+                str(item.get("name") or ""),
+            )
+        )
+
+        priced_entries = [entry for entry in by_commodity if entry.get("sell_price") is not None]
+        total_value_cr = sum(
+            float(entry.get("estimated_value_cr") or 0.0)
+            for entry in by_commodity
+            if entry.get("estimated_value_cr") is not None
+        )
+        sort_mode = (state.market_search_sort_mode or "best_price").strip().lower()
+        if sort_mode not in ("best_price", "nearest"):
+            sort_mode = "best_price"
+
+        has_large_pad = True if state.market_search_has_large_pad is True else False
+        min_demand = int(state.market_search_min_demand) if state.market_search_min_demand is not None else 0
+        if min_demand < 0:
+            min_demand = 0
+        age_days = int(state.market_search_age_days) if state.market_search_age_days is not None else 0
+        if age_days < 0:
+            age_days = 0
+        try:
+            distance_ly = float(state.market_search_distance_ly)
+        except (TypeError, ValueError):
+            distance_ly = 0.0
+        if distance_ly < 0:
+            distance_ly = 0.0
+        distance_ls: Optional[float]
+        try:
+            distance_ls = float(state.market_search_distance_ls) if state.market_search_distance_ls is not None else None
+        except (TypeError, ValueError):
+            distance_ls = None
+        if distance_ls is not None and distance_ls < 0:
+            distance_ls = 0.0
+
+        reference_system: Optional[str] = str(state.current_system or "").strip()
+        if not reference_system:
+            reference_system = str(getattr(state, "mining_system", None) or "").strip()
+        if not reference_system:
+            reference_system = None
+
+        coverage_ratio: Optional[float]
+        if total_tons > 0:
+            coverage_ratio = priced_tons / total_tons
+        else:
+            coverage_ratio = None
+
+        return {
+            "captured_at": self._isoformat(captured_at),
+            "sort_mode": sort_mode,
+            "total_value_cr": total_value_cr,
+            "priced_commodities": len(priced_entries),
+            "unpriced_commodities": max(0, len(by_commodity) - len(priced_entries)),
+            "priced_tons": priced_tons,
+            "total_tons": total_tons,
+            "coverage_ratio": coverage_ratio,
+            "search_criteria": {
+                "sort_mode": sort_mode,
+                "reference_system": reference_system,
+                "has_large_pad": has_large_pad,
+                "include_carriers": bool(state.market_search_include_carriers),
+                "include_surface": bool(state.market_search_include_surface),
+                "min_demand": min_demand,
+                "age_days": age_days,
+                "distance_ly": distance_ly,
+                "distance_ls": distance_ls,
+            },
+            "by_commodity": by_commodity,
+        }
 
     def _percent_breakdown(self, samples: Iterable[float]) -> list[dict[str, Any]]:
         counter: Counter[str] = Counter()
@@ -666,6 +1131,20 @@ class SessionRecorder:
             except (TypeError, ValueError):
                 continue
         return total
+
+    @staticmethod
+    def _safe_int(value: Any, default: int = 0) -> int:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+
+    @staticmethod
+    def _safe_float(value: Any, default: float = 0.0) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
 
     @staticmethod
     def _compute_rate(total: int, elapsed_seconds: Optional[float]) -> Optional[float]:

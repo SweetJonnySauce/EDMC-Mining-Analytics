@@ -5,7 +5,9 @@ from __future__ import annotations
 import queue
 import threading
 import time
+import json
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 try:
@@ -396,6 +398,7 @@ class HotspotSearchWindow:
     DEFAULT_RING_TYPE = "Metallic"
     DEFAULT_MIN_HOTSPOTS = 1
     RESULTS_PER_PAGE = DEFAULT_RESULT_SIZE
+    SIGNALS_COLUMN_HEADING = "Signals (qty) (known avg yield)"
 
     FALLBACK_RING_SIGNALS = [
         "Platinum",
@@ -471,6 +474,8 @@ class HotspotSearchWindow:
         self._pagination_has_next: bool = False
         self._search_started_at: Optional[float] = None
         self._last_search_duration: Optional[float] = None
+        self._ring_summary_avg_cache: Dict[tuple[str, str], float] = {}
+        self._ring_summary_avg_mtime_ns: Optional[int] = None
 
         self._build_ui()
         self._controller.register_metadata_callback(self._handle_metadata_update)
@@ -787,7 +792,7 @@ class HotspotSearchWindow:
         tree.heading("type", text="Type")
         tree.heading("distance_ly", text="Distance (LY)")
         tree.heading("distance_ls", text="Dist2Arrival (LS)")
-        tree.heading("signals", text="Signals")
+        tree.heading("signals", text=self.SIGNALS_COLUMN_HEADING)
 
         tree.column("copy", width=28, minwidth=28, anchor="center", stretch=False)
         tree.column("system", width=140, minwidth=140, anchor="w", stretch=False)
@@ -1121,6 +1126,136 @@ class HotspotSearchWindow:
             if isinstance(value, str):
                 selections.append(value)
         return selections
+
+    @staticmethod
+    def _normalise_summary_token(value: Optional[str]) -> str:
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        return " ".join(text.split()).lower()
+
+    @staticmethod
+    def _safe_int(value: object, default: int = 0) -> int:
+        try:
+            return int(value)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return default
+
+    @staticmethod
+    def _safe_float(value: object, default: float = 0.0) -> float:
+        try:
+            return float(value)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return default
+
+    @classmethod
+    def _build_known_avg_yield_index(cls, rows: Sequence[object]) -> Dict[tuple[str, str], float]:
+        aggregate: Dict[tuple[str, str], Dict[str, float]] = {}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            ring_key = cls._normalise_summary_token(row.get("ring_name"))
+            commodity_key = cls._normalise_summary_token(row.get("commodity_name"))
+            if not ring_key or not commodity_key:
+                continue
+
+            asteroids_prospected = cls._safe_int(row.get("asteroids_prospected"), 0)
+            if asteroids_prospected <= 0:
+                continue
+
+            sum_percentage = cls._safe_float(row.get("sum_percentage"), 0.0)
+            key = (ring_key, commodity_key)
+            bucket = aggregate.setdefault(key, {"sum_percentage": 0.0, "asteroids_prospected": 0.0})
+            bucket["sum_percentage"] += sum_percentage
+            bucket["asteroids_prospected"] += float(asteroids_prospected)
+
+        averages: Dict[tuple[str, str], float] = {}
+        for key, values in aggregate.items():
+            denominator = values.get("asteroids_prospected", 0.0)
+            if denominator <= 0:
+                continue
+            averages[key] = values.get("sum_percentage", 0.0) / denominator
+        return averages
+
+    @classmethod
+    def _lookup_known_avg_yield(
+        cls,
+        index: Dict[tuple[str, str], float],
+        commodity_name: Optional[str],
+        ring_candidates: Sequence[Optional[str]],
+    ) -> Optional[float]:
+        commodity_key = cls._normalise_summary_token(commodity_name)
+        if not commodity_key:
+            return None
+        for candidate in ring_candidates:
+            ring_key = cls._normalise_summary_token(candidate)
+            if not ring_key:
+                continue
+            value = index.get((ring_key, commodity_key))
+            if value is not None:
+                return float(value)
+        return None
+
+    @staticmethod
+    def _format_avg_yield_percentage(value: Optional[float]) -> Optional[str]:
+        if value is None:
+            return None
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
+        rounded = round(number, 1)
+        if float(rounded).is_integer():
+            return f"{int(rounded)}%"
+        return f"{rounded:.1f}%"
+
+    def _resolve_ring_summary_path(self) -> Optional[Path]:
+        plugin_dir = getattr(self._controller.state, "plugin_dir", None)
+        if not plugin_dir:
+            return None
+        return Path(str(plugin_dir)) / "session_data" / "ring_summary.jsonl"
+
+    def _load_known_avg_yield_index(self) -> Dict[tuple[str, str], float]:
+        path = self._resolve_ring_summary_path()
+        if path is None or not path.exists():
+            self._ring_summary_avg_cache = {}
+            self._ring_summary_avg_mtime_ns = None
+            return {}
+
+        try:
+            mtime_ns = path.stat().st_mtime_ns
+        except Exception:
+            mtime_ns = None
+
+        if (
+            mtime_ns is not None
+            and self._ring_summary_avg_mtime_ns == mtime_ns
+            and self._ring_summary_avg_cache
+        ):
+            return dict(self._ring_summary_avg_cache)
+
+        rows: List[object] = []
+        try:
+            with path.open("r", encoding="utf-8") as handle:
+                for raw_line in handle:
+                    text = str(raw_line or "").strip()
+                    if not text:
+                        continue
+                    try:
+                        row = json.loads(text)
+                    except Exception:
+                        continue
+                    rows.append(row)
+        except Exception:
+            _log.exception("Failed reading ring summary avg yield data: %s", path)
+            self._ring_summary_avg_cache = {}
+            self._ring_summary_avg_mtime_ns = mtime_ns
+            return {}
+
+        averages = self._build_known_avg_yield_index(rows)
+        self._ring_summary_avg_cache = dict(averages)
+        self._ring_summary_avg_mtime_ns = mtime_ns
+        return averages
 
     def _handle_reference_key_release(self, event: tk.Event) -> Optional[str]:
         keysym = getattr(event, "keysym", "")
@@ -1601,15 +1736,30 @@ class HotspotSearchWindow:
         for item in tree.get_children():
             tree.delete(item)
 
+        known_avg_index = self._load_known_avg_yield_index()
         entries = list(result.entries)
         system_labels: List[str] = []
         signals_labels: List[str] = []
         ring_labels: List[str] = []
         type_labels: List[str] = []
         for entry in entries:
-            signals_text = ", ".join(
-                f"{signal.name} ({signal.count})" if signal.count else signal.name for signal in entry.signals
-            )
+            signal_chunks: List[str] = []
+            for signal in entry.signals:
+                signal_name = str(signal.name or "").strip()
+                if not signal_name:
+                    continue
+                count = self._safe_int(signal.count, 0)
+                label = f"{signal_name} ({count})"
+                known_avg = self._lookup_known_avg_yield(
+                    known_avg_index,
+                    signal_name,
+                    [entry.ring_name, entry.body_name, entry.system_name],
+                )
+                known_avg_label = self._format_avg_yield_percentage(known_avg)
+                if known_avg_label:
+                    label = f"{label} ({known_avg_label})"
+                signal_chunks.append(label)
+            signals_text = ", ".join(signal_chunks)
             if not signals_text:
                 signals_text = "—"
             signals_labels.append(signals_text)
@@ -1676,7 +1826,7 @@ class HotspotSearchWindow:
                 max_width = max(item_font.measure(label) for label in (*system_labels, "System"))
                 system_width = max(140, max_width + 16)
                 tree.column("system", width=system_width, minwidth=system_width, stretch=False)
-                signals_width = max(item_font.measure(label) for label in (*signals_labels, "Signals"))
+                signals_width = max(item_font.measure(label) for label in (*signals_labels, self.SIGNALS_COLUMN_HEADING))
                 ring_width = max(item_font.measure(label) for label in (*ring_labels, "Ring"))
                 type_width = max(item_font.measure(label) for label in (*type_labels, "Type"))
             else:
@@ -1685,7 +1835,7 @@ class HotspotSearchWindow:
                 ring_width = 0
                 type_width = 0
 
-            header_width = heading_font.measure("Signals") if heading_font else signals_width
+            header_width = heading_font.measure(self.SIGNALS_COLUMN_HEADING) if heading_font else signals_width
             target_signal_width = max(header_width, signals_width) + 16
             current_config = tree.column("signals")
             current_width = current_config.get("width", 0) if isinstance(current_config, dict) else 0

@@ -3,8 +3,8 @@ import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from ..journal import JournalProcessor
-from ..state import MiningState
+from edmc_mining_analytics.journal import JournalProcessor
+from edmc_mining_analytics.state import MiningState
 
 
 class JournalSimulationTest(unittest.TestCase):
@@ -116,16 +116,101 @@ class JournalSimulationTest(unittest.TestCase):
 
         self.assertGreater(self._refresh_calls, 0)
 
+    def test_fsd_jump_stops_active_mining_session(self) -> None:
+        launch_ts = self._timestamp(0)
+        self.processor.handle_entry({
+            "event": "LaunchDrone",
+            "Type": "Prospector",
+            "StarSystem": "Sol",
+            "timestamp": launch_ts,
+        })
+        self.assertTrue(self.state.is_mining)
+
+        self.processor.handle_entry({
+            "event": "FSDJump",
+            "StarSystem": "Achenar",
+            "timestamp": self._timestamp(30),
+        })
+
+        self.assertFalse(self.state.is_mining)
+        self.assertTrue(self._session_ended)
+        self.assertIsNotNone(self.state.mining_end)
+
+    def test_saa_signals_found_updates_ring_from_body_name(self) -> None:
+        self.processor.handle_entry({
+            "event": "SAASignalsFound",
+            "timestamp": self._timestamp(5),
+            "BodyName": "Synuefe UZ-O c22-10 A Ring",
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 A Ring")
+
+    def test_saa_signals_found_ignores_non_ring_body_name(self) -> None:
+        self.processor.handle_entry({
+            "event": "SAASignalsFound",
+            "timestamp": self._timestamp(5),
+            "BodyName": "Synuefe UZ-O c22-10 A",
+        })
+        self.assertIsNone(self.state.mining_ring)
+
+    def test_saa_signals_found_uses_supercruise_exit_ring_confirmation(self) -> None:
+        self.processor.handle_entry({
+            "event": "SupercruiseExit",
+            "timestamp": self._timestamp(5),
+            "StarSystem": "Synuefe UZ-O c22-10",
+            "Body": "Synuefe UZ-O c22-10 9 A Ring",
+            "BodyID": 29,
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
+        self.processor.handle_entry({
+            "event": "SAASignalsFound",
+            "timestamp": self._timestamp(6),
+            "BodyName": "Synuefe UZ-O c22-10 9 B Ring",
+            "BodyID": 30,
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
+        self.processor.handle_entry({
+            "event": "SAASignalsFound",
+            "timestamp": self._timestamp(7),
+            "BodyName": "Synuefe UZ-O c22-10 9 A Ring",
+            "BodyID": 29,
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
+    def test_mining_start_preserves_recent_supercruise_ring(self) -> None:
+        self.processor.handle_entry({
+            "event": "SupercruiseExit",
+            "timestamp": self._timestamp(5),
+            "StarSystem": "Synuefe UZ-O c22-10",
+            "Body": "Synuefe UZ-O c22-10 9 A Ring",
+            "BodyID": 29,
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
+        self.processor.handle_entry({
+            "event": "LaunchDrone",
+            "Type": "Prospector",
+            "StarSystem": "Synuefe UZ-O c22-10",
+            "timestamp": self._timestamp(10),
+        })
+
+        self.assertTrue(self.state.is_mining)
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
     def test_replay_sample_journal(self) -> None:
         """Replay a captured journal slice to mirror EDMC runtime behaviour."""
 
-        journal_path = Path(__file__).resolve().parent / "data" / "sample_journal.jsonl"
+        journal_path = Path(__file__).resolve().parent / "config" / "journal_events.json"
         self.assertTrue(journal_path.exists(), "Sample journal file missing")
 
         with journal_path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                payload = json.loads(line.strip())
-                self.processor.handle_entry(payload, shared_state=None)
+            payload = json.load(handle)
+
+        sequence = payload.get("sample_mining_session", [])
+        self.assertIsInstance(sequence, list, "sample_mining_session must be a list")
+        for entry in sequence:
+            self.processor.handle_entry(entry, shared_state=None)
 
         # Expectations after replaying the sample:
         self.assertTrue(self._session_started)

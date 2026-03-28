@@ -1,0 +1,1962 @@
+{
+  "meta": {
+    "start_time": "2026-01-29T23:45:21Z",
+    "end_time": "2026-01-30T00:05:50Z",
+    "duration_seconds": 1229.0,
+    "overall_tph": {
+      "tons": 61,
+      "elapsed_seconds": 1229.0,
+      "tons_per_hour": 178.682
+    },
+    "location": {
+      "body": "Col 285 Sector LB-O c6-3 A 8",
+      "system": "Col 285 Sector LB-O c6-3",
+      "ring": "Col 285 Sector LB-O c6-3 A 8 B Ring",
+      "reserve_level": "Pristine",
+      "ring_type": "Icy"
+    },
+    "ship": "Type-11 Prospector",
+    "prospected": {
+      "total": 9,
+      "already_mined": 1,
+      "duplicates": 0
+    },
+    "prospectors_launched": 10,
+    "collectors_launched": 7,
+    "collectors_abandoned": 0,
+    "limpets_remaining": 1,
+    "content_summary": {
+      "High": 0,
+      "Medium": 4,
+      "Low": 5
+    },
+    "inventory_tonnage": 249,
+    "cargo_capacity": 256,
+    "materials": [],
+    "max_rpm": 60.0,
+    "refinement_activity": {
+      "lookback_seconds": 2,
+      "current_rpm": 0.0,
+      "max_rpm": 60.0
+    },
+    "commander": "sweetjonnysauce",
+    "prospectors_lost": 1
+  },
+  "commodities": {
+    "Hydrogen Peroxide": {
+      "asteroids_prospected": 4,
+      "percentage_of_asteroids": 44.444,
+      "gathered": {
+        "tons": 18,
+        "elapsed_seconds": 973.0
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 1.92,
+          "count": 1
+        },
+        {
+          "percentage": 6.5,
+          "count": 1
+        },
+        {
+          "percentage": 9.99,
+          "count": 1
+        },
+        {
+          "percentage": 15.9,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 1.916,
+        "avg": 8.577,
+        "max": 15.901
+      },
+      "tons_per_hour": 66.598
+    },
+    "Methanol Monohydrate Crystals": {
+      "asteroids_prospected": 3,
+      "percentage_of_asteroids": 33.333,
+      "gathered": {
+        "tons": 6,
+        "elapsed_seconds": 1205.0
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 3.07,
+          "count": 1
+        },
+        {
+          "percentage": 18.83,
+          "count": 1
+        },
+        {
+          "percentage": 31.44,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 3.072,
+        "avg": 17.778,
+        "max": 31.436
+      },
+      "tons_per_hour": 17.925
+    },
+    "Water": {
+      "asteroids_prospected": 6,
+      "percentage_of_asteroids": 66.667,
+      "gathered": {
+        "tons": 37,
+        "elapsed_seconds": 1135.0
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 1.24,
+          "count": 1
+        },
+        {
+          "percentage": 6.68,
+          "count": 1
+        },
+        {
+          "percentage": 7.85,
+          "count": 1
+        },
+        {
+          "percentage": 8.23,
+          "count": 1
+        },
+        {
+          "percentage": 14.32,
+          "count": 1
+        },
+        {
+          "percentage": 20.84,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 1.244,
+        "avg": 9.862,
+        "max": 20.844
+      },
+      "tons_per_hour": 117.357
+    }
+  },
+  "events": [
+    {
+      "type": "mining_session_started",
+      "timestamp": "2026-01-29T23:45:21Z",
+      "details": {
+        "reason": "Prospector drone launched"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:21Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:45:29Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Methanol Monohydrate Crystals",
+            "percentage": 31.435907
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 23.701298,
+        "already_mined": true,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:30Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:36Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:45:37Z",
+      "details": {
+        "total_cargo": 224,
+        "count": 238,
+        "inventory": {
+          "Drones": 14,
+          "Liquidoxygen": 42,
+          "Methanolmonohydratecrystals": 18,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 14
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:38Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:45:39Z",
+      "details": {
+        "total_cargo": 224,
+        "count": 237,
+        "inventory": {
+          "Drones": 13,
+          "Liquidoxygen": 42,
+          "Methanolmonohydratecrystals": 18,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 13
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:40Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:45:41Z",
+      "details": {
+        "total_cargo": 224,
+        "count": 236,
+        "inventory": {
+          "Drones": 12,
+          "Liquidoxygen": 42,
+          "Methanolmonohydratecrystals": 18,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 12
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:42Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:45:43Z",
+      "details": {
+        "total_cargo": 224,
+        "count": 235,
+        "inventory": {
+          "Drones": 11,
+          "Liquidoxygen": 42,
+          "Methanolmonohydratecrystals": 18,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 11
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:44Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:45:45Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:45:45Z",
+      "details": {
+        "total_cargo": 225,
+        "count": 235,
+        "inventory": {
+          "Drones": 10,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 19,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 10
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:46Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:45:49Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:45:49Z",
+      "details": {
+        "total_cargo": 226,
+        "count": 236,
+        "inventory": {
+          "Drones": 9,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 20,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 9
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:45:50Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:45:52Z",
+      "details": {
+        "total_cargo": 227,
+        "count": 237,
+        "inventory": {
+          "Drones": 9,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 21,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 9
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:45:53Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:45:55Z",
+      "details": {
+        "total_cargo": 228,
+        "count": 237,
+        "inventory": {
+          "Drones": 9,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 22,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 9
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:45:56Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:46:03Z",
+      "details": {
+        "total_cargo": 228,
+        "count": 236,
+        "inventory": {
+          "Drones": 8,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 22,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 8
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:46:08Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Lithiumhydroxide",
+            "percentage": 20.086483
+          },
+          {
+            "name": "Methanol Monohydrate Crystals",
+            "percentage": 3.07158
+          },
+          {
+            "name": "Methaneclathrate",
+            "percentage": 6.910426
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:46:13Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:46:16Z",
+      "details": {
+        "total_cargo": 229,
+        "count": 237,
+        "inventory": {
+          "Drones": 8,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 23,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 8
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:46:20Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:46:27Z",
+      "details": {
+        "total_cargo": 229,
+        "count": 236,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 23,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:46:34Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Water",
+            "percentage": 20.843597
+          },
+          {
+            "name": "Liquidoxygen",
+            "percentage": 2.890255
+          },
+          {
+            "name": "Hydrogenperoxide",
+            "percentage": 1.916044
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:46:45Z",
+      "details": {
+        "type_localised": "Methanol Monohydrate Crystals",
+        "type": "$methanolmonohydratecrystals_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:46:48Z",
+      "details": {
+        "total_cargo": 230,
+        "count": 237,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 24,
+          "Tritium": 14,
+          "Water": 150
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:46:51Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:46:52Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:46:53Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:46:55Z",
+      "details": {
+        "total_cargo": 232,
+        "count": 239,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 24,
+          "Tritium": 14,
+          "Water": 152
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:46:57Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:00Z",
+      "details": {
+        "total_cargo": 233,
+        "count": 241,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 24,
+          "Tritium": 14,
+          "Water": 153
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:01Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:03Z",
+      "details": {
+        "total_cargo": 234,
+        "count": 242,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 24,
+          "Tritium": 14,
+          "Water": 154
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:03Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:06Z",
+      "details": {
+        "total_cargo": 235,
+        "count": 243,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 24,
+          "Tritium": 14,
+          "Water": 155
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:06Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:09Z",
+      "details": {
+        "total_cargo": 236,
+        "count": 244,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Methanol Monohydrate Crystals": 24,
+          "Tritium": 14,
+          "Water": 156
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:10Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:13Z",
+      "details": {
+        "total_cargo": 213,
+        "count": 221,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 157
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:13Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:16Z",
+      "details": {
+        "total_cargo": 214,
+        "count": 222,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 158
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:16Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:19Z",
+      "details": {
+        "total_cargo": 215,
+        "count": 222,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 159
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:22Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:47:23Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:24Z",
+      "details": {
+        "total_cargo": 216,
+        "count": 224,
+        "inventory": {
+          "Drones": 7,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 160
+        },
+        "limpets": 7
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:25Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:47:34Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Liquidoxygen",
+            "percentage": 14.544296
+          },
+          {
+            "name": "Water",
+            "percentage": 8.233997
+          },
+          {
+            "name": "Bromellite",
+            "percentage": 3.731585
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:47:52Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:47:54Z",
+      "details": {
+        "total_cargo": 218,
+        "count": 224,
+        "inventory": {
+          "Drones": 6,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 162
+        },
+        "limpets": 6
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:48:00Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:48:02Z",
+      "details": {
+        "total_cargo": 219,
+        "count": 225,
+        "inventory": {
+          "Drones": 6,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 163
+        },
+        "limpets": 6
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:48:03Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:48:06Z",
+      "details": {
+        "total_cargo": 220,
+        "count": 226,
+        "inventory": {
+          "Drones": 6,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 164
+        },
+        "limpets": 6
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:48:27Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:48:33Z",
+      "details": {
+        "total_cargo": 220,
+        "count": 225,
+        "inventory": {
+          "Drones": 5,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 164
+        },
+        "limpets": 5
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:48:40Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Lithiumhydroxide",
+            "percentage": 17.187302
+          },
+          {
+            "name": "Bromellite",
+            "percentage": 10.854172
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:48:55Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:03Z",
+      "details": {
+        "total_cargo": 220,
+        "count": 224,
+        "inventory": {
+          "Drones": 4,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 164
+        },
+        "limpets": 4
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:49:05Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:12Z",
+      "details": {
+        "total_cargo": 220,
+        "count": 223,
+        "inventory": {
+          "Drones": 3,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 164
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:49:15Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Hydrogenperoxide",
+            "percentage": 15.901411
+          },
+          {
+            "name": "Water",
+            "percentage": 7.853889
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:35Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:35Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:37Z",
+      "details": {
+        "total_cargo": 222,
+        "count": 226,
+        "inventory": {
+          "Drones": 3,
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 165
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:38Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:39Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:41Z",
+      "details": {
+        "total_cargo": 224,
+        "count": 228,
+        "inventory": {
+          "Drones": 3,
+          "Hydrogen Peroxide": 2,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 166
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:41Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:43Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:44Z",
+      "details": {
+        "total_cargo": 226,
+        "count": 229,
+        "inventory": {
+          "Drones": 3,
+          "Hydrogen Peroxide": 3,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 167
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:45Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:45Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:46Z",
+      "details": {
+        "total_cargo": 228,
+        "count": 231,
+        "inventory": {
+          "Drones": 3,
+          "Hydrogen Peroxide": 4,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 168
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:48Z",
+      "details": {
+        "total_cargo": 228,
+        "count": 231,
+        "inventory": {
+          "Drones": 3,
+          "Hydrogen Peroxide": 4,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 168
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:50Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:51Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:53Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:53Z",
+      "details": {
+        "total_cargo": 227,
+        "count": 230,
+        "inventory": {
+          "Drones": 3,
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 170
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:49:53Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:55Z",
+      "details": {
+        "total_cargo": 227,
+        "count": 230,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 170
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:56Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:49:57Z",
+      "details": {
+        "total_cargo": 228,
+        "count": 231,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 2,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 170
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:49:57Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:00Z",
+      "details": {
+        "total_cargo": 229,
+        "count": 232,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 2,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 171
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:00Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:50:02Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Water",
+            "percentage": 6.678602
+          },
+          {
+            "name": "Hydrogen Peroxide",
+            "percentage": 6.497299
+          },
+          {
+            "name": "Lithiumhydroxide",
+            "percentage": 5.691066
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:03Z",
+      "details": {
+        "total_cargo": 230,
+        "count": 232,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 3,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 171
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:09Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:09Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:11Z",
+      "details": {
+        "total_cargo": 232,
+        "count": 234,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 4,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 172
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:23Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:25Z",
+      "details": {
+        "total_cargo": 233,
+        "count": 236,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 5,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 172
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:26Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:28Z",
+      "details": {
+        "total_cargo": 234,
+        "count": 237,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 5,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 173
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:29Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:31Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:31Z",
+      "details": {
+        "total_cargo": 236,
+        "count": 239,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 6,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 174
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:32Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:34Z",
+      "details": {
+        "total_cargo": 237,
+        "count": 239,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 7,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 174
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:43Z",
+      "details": {
+        "total_cargo": 230,
+        "count": 233,
+        "inventory": {
+          "Drones": 2,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 174
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:44Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:47Z",
+      "details": {
+        "total_cargo": 231,
+        "count": 233,
+        "inventory": {
+          "Drones": 2,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 175
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:50:57Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:50:59Z",
+      "details": {
+        "total_cargo": 232,
+        "count": 235,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 175
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:51:00Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:51:02Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:51:02Z",
+      "details": {
+        "total_cargo": 233,
+        "count": 235,
+        "inventory": {
+          "Drones": 2,
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 176
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:51:09Z",
+      "details": {
+        "total_cargo": 233,
+        "count": 234,
+        "inventory": {
+          "Drones": 1,
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 176
+        },
+        "limpets": 1
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:51:15Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:51:17Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Methanol Monohydrate Crystals",
+            "percentage": 18.826952
+          },
+          {
+            "name": "Water",
+            "percentage": 1.24363
+          },
+          {
+            "name": "Lithiumhydroxide",
+            "percentage": 4.370596
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:51:17Z",
+      "details": {
+        "total_cargo": 234,
+        "count": 235,
+        "inventory": {
+          "Drones": 1,
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 177
+        },
+        "limpets": 1
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:51:29Z",
+      "details": {
+        "total_cargo": 233,
+        "count": 234,
+        "inventory": {
+          "Drones": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 177
+        },
+        "limpets": 1
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-01-29T23:51:30Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:51:37Z",
+      "details": {
+        "total_cargo": 233,
+        "count": 233,
+        "inventory": {
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 177
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-01-29T23:51:52Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Hydrogen Peroxide",
+            "percentage": 9.993705
+          },
+          {
+            "name": "Water",
+            "percentage": 14.317838
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:13Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:13Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:15Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:16Z",
+      "details": {
+        "total_cargo": 236,
+        "count": 236,
+        "inventory": {
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 179
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:18Z",
+      "details": {
+        "total_cargo": 236,
+        "count": 238,
+        "inventory": {
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 179
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:18Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:19Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:22Z",
+      "details": {
+        "total_cargo": 238,
+        "count": 239,
+        "inventory": {
+          "Hydrogen Peroxide": 2,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 180
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:23Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:25Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:26Z",
+      "details": {
+        "total_cargo": 239,
+        "count": 239,
+        "inventory": {
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 182
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:28Z",
+      "details": {
+        "total_cargo": 239,
+        "count": 239,
+        "inventory": {
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 182
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:32Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:34Z",
+      "details": {
+        "total_cargo": 240,
+        "count": 240,
+        "inventory": {
+          "Hydrogen Peroxide": 1,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 183
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:37Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:39Z",
+      "details": {
+        "total_cargo": 241,
+        "count": 243,
+        "inventory": {
+          "Hydrogen Peroxide": 2,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 183
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:40Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:40Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:43Z",
+      "details": {
+        "total_cargo": 243,
+        "count": 243,
+        "inventory": {
+          "Hydrogen Peroxide": 3,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 184
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:45Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:45Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:48Z",
+      "details": {
+        "total_cargo": 245,
+        "count": 246,
+        "inventory": {
+          "Hydrogen Peroxide": 4,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 185
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:48Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:50Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:53Z",
+      "details": {
+        "total_cargo": 247,
+        "count": 247,
+        "inventory": {
+          "Hydrogen Peroxide": 5,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 186
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:54Z",
+      "details": {
+        "type_localised": "Water",
+        "type": "$water_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:52:57Z",
+      "details": {
+        "total_cargo": 248,
+        "count": 249,
+        "inventory": {
+          "Hydrogen Peroxide": 5,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 187
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-01-29T23:52:57Z",
+      "details": {
+        "type_localised": "Hydrogen Peroxide",
+        "type": "$hydrogenperoxide_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-29T23:53:00Z",
+      "details": {
+        "total_cargo": 249,
+        "count": 250,
+        "inventory": {
+          "Hydrogen Peroxide": 6,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 187
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-01-30T00:05:33Z",
+      "details": {
+        "total_cargo": 249,
+        "count": 249,
+        "inventory": {
+          "Hydrogen Peroxide": 6,
+          "Liquidoxygen": 42,
+          "Tritium": 14,
+          "Water": 187
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_session_stopped",
+      "timestamp": "2026-01-30T00:05:50Z",
+      "details": {
+        "reason": "Entered Supercruise"
+      }
+    }
+  ]
+}
