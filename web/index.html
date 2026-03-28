@@ -3182,6 +3182,46 @@
               areaPath.setAttribute("d", `${topCommands.join(" ")} ${bottomCommands.join(" ")} Z`);
               areaPath.setAttribute("fill", color);
               areaPath.setAttribute("fill-opacity", "0.24");
+              areaPath.style.cursor = "crosshair";
+              const areaPoints = item.points.slice(0, pointCount);
+              const areaPointX = areaPoints.map((point) => toX(point.ms));
+              const findNearestAreaPointIndex = (event) => {
+                if (!areaPoints.length) {
+                  return 0;
+                }
+                const rect = svg.getBoundingClientRect();
+                if (!rect.width) {
+                  return 0;
+                }
+                const ratio = (event.clientX - rect.left) / rect.width;
+                const localX = ratio * width;
+                let nearestIndex = 0;
+                let nearestDistance = Math.abs(areaPointX[0] - localX);
+                for (let idx = 1; idx < areaPointX.length; idx += 1) {
+                  const distance = Math.abs(areaPointX[idx] - localX);
+                  if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestIndex = idx;
+                  }
+                }
+                return nearestIndex;
+              };
+              const showAreaTooltip = (event) => {
+                const pointIndex = findNearestAreaPointIndex(event);
+                const point = areaPoints[pointIndex];
+                const pointMetric = readMetricValue(point);
+                const detail = `${item.name}: ${formatMetricValue(pointMetric)}\nStacked: ${formatMetricValue(upper[pointIndex])}\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
+                showCursorTooltip(detail, event);
+              };
+              areaPath.addEventListener("mouseenter", (event) => {
+                showAreaTooltip(event);
+              });
+              areaPath.addEventListener("mousemove", (event) => {
+                showAreaTooltip(event);
+              });
+              areaPath.addEventListener("mouseleave", () => {
+                hideCursorTooltip();
+              });
               svg.appendChild(areaPath);
 
               const outline = document.createElementNS(ns, "path");

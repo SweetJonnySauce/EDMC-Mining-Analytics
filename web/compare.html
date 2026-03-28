@@ -193,7 +193,7 @@
 
     .compare-controls {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(300px, 1.35fr);
       gap: 10px;
       border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
       border-radius: 10px;
@@ -225,9 +225,13 @@
 
     .compare-reference-options {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 6px;
       align-items: center;
+      justify-content: flex-start;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
     }
 
     .compare-reference-option {
@@ -242,6 +246,8 @@
       font-size: 0.78rem;
       line-height: 1.2;
       user-select: none;
+      white-space: nowrap;
+      flex: 0 0 auto;
     }
 
     .compare-reference-option input {
@@ -1283,6 +1289,7 @@
           return Number.isFinite(pick.y) ? pick.y : null;
         };
 
+        const referencePoints = [];
         REFERENCE_CROSSHAIRS.forEach((entry) => {
           if (!selectedKeys.has(entry.key)) {
             return;
@@ -1302,33 +1309,55 @@
             }
             return toY(referenceCount);
           })();
+          referencePoints.push({ entry, referenceX, referenceY });
+        });
 
-          const lineClass = `compare-reference-line compare-reference-line--${entry.key}`;
+        const overlapTolerance = 1.5;
+        const referenceGroups = [];
+        referencePoints.forEach((point) => {
+          const existing = referenceGroups.find(
+            (group) => Math.abs(group.referenceX - point.referenceX) <= overlapTolerance
+              && Math.abs(group.referenceY - point.referenceY) <= overlapTolerance
+          );
+          if (existing) {
+            existing.items.push(point);
+            return;
+          }
+          referenceGroups.push({
+            referenceX: point.referenceX,
+            referenceY: point.referenceY,
+            items: [point]
+          });
+        });
+
+        referenceGroups.forEach((group) => {
+          const lead = group.items[0];
+          const lineClass = `compare-reference-line compare-reference-line--${lead.entry.key}`;
           const horizontal = document.createElementNS(ns, "line");
           horizontal.setAttribute("class", lineClass);
           horizontal.setAttribute("x1", sidePad.toFixed(2));
-          horizontal.setAttribute("y1", referenceY.toFixed(2));
-          horizontal.setAttribute("x2", referenceX.toFixed(2));
-          horizontal.setAttribute("y2", referenceY.toFixed(2));
+          horizontal.setAttribute("y1", group.referenceY.toFixed(2));
+          horizontal.setAttribute("x2", group.referenceX.toFixed(2));
+          horizontal.setAttribute("y2", group.referenceY.toFixed(2));
           svg.appendChild(horizontal);
 
           const vertical = document.createElementNS(ns, "line");
           vertical.setAttribute("class", lineClass);
-          vertical.setAttribute("x1", referenceX.toFixed(2));
-          vertical.setAttribute("y1", referenceY.toFixed(2));
-          vertical.setAttribute("x2", referenceX.toFixed(2));
+          vertical.setAttribute("x1", group.referenceX.toFixed(2));
+          vertical.setAttribute("y1", group.referenceY.toFixed(2));
+          vertical.setAttribute("x2", group.referenceX.toFixed(2));
           vertical.setAttribute("y2", (topPad + drawHeight).toFixed(2));
           svg.appendChild(vertical);
 
           const label = document.createElementNS(ns, "text");
-          label.setAttribute("class", `compare-reference-label compare-reference-label--${entry.key}`);
+          label.setAttribute("class", `compare-reference-label compare-reference-label--${lead.entry.key}`);
           const labelOffsetX = 14;
-          const labelOffsetY = 24;
-          const clampedX = Math.max(sidePad + 6, Math.min(width - sidePad - 58, referenceX + labelOffsetX));
-          const clampedY = Math.max(topPad + 2, Math.min((topPad + drawHeight) - 8, referenceY + labelOffsetY));
+          const labelOffsetY = 10;
+          const clampedX = Math.max(sidePad + 6, Math.min(width - sidePad - 58, group.referenceX + labelOffsetX));
+          const clampedY = Math.max(topPad + 2, Math.min((topPad + drawHeight) - 8, group.referenceY + labelOffsetY));
           label.setAttribute("x", clampedX.toFixed(2));
           label.setAttribute("y", clampedY.toFixed(2));
-          label.textContent = entry.label;
+          label.textContent = group.items.map((item) => item.entry.label).join(" & ");
           svg.appendChild(label);
         });
 
