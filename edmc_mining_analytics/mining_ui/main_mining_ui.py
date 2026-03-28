@@ -686,36 +686,44 @@ class edmcmaMiningUI:
         var = self._prefs_market_min_demand_var
         if var is None:
             return
-        parsed = self._parse_market_number(var.get())
+        raw = str(var.get() or "").strip()
+        if raw.lower() == "any":
+            parsed = 0.0
+        else:
+            parsed = self._parse_market_number(raw)
         if parsed is None:
-            var.set(str(int(self._state.market_search_min_demand)))
+            var.set("Any" if self._state.market_search_min_demand <= 0 else str(int(self._state.market_search_min_demand)))
             return
         value = int(parsed)
         if value < 0:
-            var.set(str(int(self._state.market_search_min_demand)))
+            var.set("Any" if self._state.market_search_min_demand <= 0 else str(int(self._state.market_search_min_demand)))
             return
         if value == self._state.market_search_min_demand:
             return
         self._state.market_search_min_demand = value
-        var.set(str(value))
+        var.set("Any" if value <= 0 else str(value))
         self._notify_settings_changed()
 
     def _on_market_age_days_commit(self, *_: object) -> None:
         var = self._prefs_market_age_days_var
         if var is None:
             return
-        parsed = self._parse_market_number(var.get())
+        raw = str(var.get() or "").strip()
+        if raw.lower() == "any":
+            parsed = 0.0
+        else:
+            parsed = self._parse_market_number(raw)
         if parsed is None:
-            var.set(str(int(self._state.market_search_age_days)))
+            var.set("Any" if self._state.market_search_age_days <= 0 else str(int(self._state.market_search_age_days)))
             return
         value = int(parsed)
         if value < 0:
-            var.set(str(int(self._state.market_search_age_days)))
+            var.set("Any" if self._state.market_search_age_days <= 0 else str(int(self._state.market_search_age_days)))
             return
         if value == self._state.market_search_age_days:
             return
         self._state.market_search_age_days = value
-        var.set(str(value))
+        var.set("Any" if value <= 0 else str(value))
         self._notify_settings_changed()
 
     def _on_market_distance_commit(self, *_: object) -> None:
@@ -741,23 +749,29 @@ class edmcmaMiningUI:
         if var is None:
             return
         raw_text = str(var.get() or "")
+        if raw_text.strip().lower() == "any":
+            if self._state.market_search_distance_ls is not None:
+                self._state.market_search_distance_ls = None
+                self._notify_settings_changed()
+            var.set("Any")
+            return
         parsed = self._parse_market_number(raw_text)
         if parsed is None:
             if not raw_text.strip():
                 if self._state.market_search_distance_ls is not None:
                     self._state.market_search_distance_ls = None
                     self._notify_settings_changed()
-                var.set("")
+                var.set("Any")
                 return
             if self._state.market_search_distance_ls is None:
-                var.set("")
+                var.set("Any")
             else:
                 var.set(self._format_market_distance(self._state.market_search_distance_ls))
             return
         value = float(parsed)
         if value <= 0:
             if self._state.market_search_distance_ls is None:
-                var.set("")
+                var.set("Any")
             else:
                 var.set(self._format_market_distance(self._state.market_search_distance_ls))
             return

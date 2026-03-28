@@ -13,6 +13,11 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
 if TYPE_CHECKING:  # pragma: no cover
     from .main_mining_ui import edmcmaMiningUI
 
+MIN_DEMAND_OPTIONS = ("Any", "100", "500", "1000", "5000", "10000", "25000", "50000", "100000")
+AGE_DAYS_OPTIONS = ("Any", "1", "3", "7", "14", "30", "60", "90")
+DISTANCE_LY_OPTIONS = ("10", "25", "50", "75", "100", "150", "200", "250", "300", "400", "500", "750", "1000")
+DISTANCE_LS_OPTIONS = ("Any", "100", "280", "500", "1000", "2000", "5000", "10000", "20000")
+
 
 def create_market_search_section(
     ui: "edmcmaMiningUI",
@@ -88,27 +93,41 @@ def create_market_search_section(
     min_demand_label.grid(row=5, column=0, sticky="w", pady=(0, 6))
     ui._prefs_market_min_demand_var = tk.StringVar(
         master=frame,
-        value=str(int(ui._state.market_search_min_demand)),
+        value=_format_nonnegative_or_any(ui._state.market_search_min_demand),
     )
-    min_demand_entry = ttk.Entry(
+    min_demand_combo = ttk.Combobox(
         frame,
         textvariable=ui._prefs_market_min_demand_var,
-        width=12,
+        values=_with_current_option(
+            MIN_DEMAND_OPTIONS,
+            _format_nonnegative_or_any(ui._state.market_search_min_demand),
+            any_first=True,
+        ),
+        state="readonly",
+        width=14,
     )
-    min_demand_entry.grid(row=5, column=1, sticky="w", pady=(0, 6))
-    min_demand_entry.bind("<FocusOut>", ui._on_market_min_demand_commit)
-    min_demand_entry.bind("<Return>", ui._on_market_min_demand_commit)
+    min_demand_combo.grid(row=5, column=1, sticky="w", pady=(0, 6))
+    min_demand_combo.bind("<<ComboboxSelected>>", ui._on_market_min_demand_commit)
 
     age_label = tk.Label(frame, text="Age of market data (days)", anchor="w")
     age_label.grid(row=6, column=0, sticky="w", pady=(0, 6))
     ui._prefs_market_age_days_var = tk.StringVar(
         master=frame,
-        value=str(int(ui._state.market_search_age_days)),
+        value=_format_nonnegative_or_any(ui._state.market_search_age_days),
     )
-    age_entry = ttk.Entry(frame, textvariable=ui._prefs_market_age_days_var, width=12)
-    age_entry.grid(row=6, column=1, sticky="w", pady=(0, 6))
-    age_entry.bind("<FocusOut>", ui._on_market_age_days_commit)
-    age_entry.bind("<Return>", ui._on_market_age_days_commit)
+    age_combo = ttk.Combobox(
+        frame,
+        textvariable=ui._prefs_market_age_days_var,
+        values=_with_current_option(
+            AGE_DAYS_OPTIONS,
+            _format_nonnegative_or_any(ui._state.market_search_age_days),
+            any_first=True,
+        ),
+        state="readonly",
+        width=14,
+    )
+    age_combo.grid(row=6, column=1, sticky="w", pady=(0, 6))
+    age_combo.bind("<<ComboboxSelected>>", ui._on_market_age_days_commit)
 
     distance_label = tk.Label(frame, text="Distance (LY)", anchor="w")
     distance_label.grid(row=7, column=0, sticky="w", pady=(0, 6))
@@ -116,21 +135,39 @@ def create_market_search_section(
         master=frame,
         value=_format_distance(ui._state.market_search_distance_ly),
     )
-    distance_entry = ttk.Entry(frame, textvariable=ui._prefs_market_distance_var, width=12)
-    distance_entry.grid(row=7, column=1, sticky="w", pady=(0, 6))
-    distance_entry.bind("<FocusOut>", ui._on_market_distance_commit)
-    distance_entry.bind("<Return>", ui._on_market_distance_commit)
+    distance_combo = ttk.Combobox(
+        frame,
+        textvariable=ui._prefs_market_distance_var,
+        values=_with_current_option(
+            DISTANCE_LY_OPTIONS,
+            _format_distance(ui._state.market_search_distance_ly),
+            any_first=False,
+        ),
+        state="readonly",
+        width=14,
+    )
+    distance_combo.grid(row=7, column=1, sticky="w", pady=(0, 6))
+    distance_combo.bind("<<ComboboxSelected>>", ui._on_market_distance_commit)
 
     arrival_label = tk.Label(frame, text="Distance to arrival (Ls)", anchor="w")
     arrival_label.grid(row=8, column=0, sticky="w", pady=(0, 6))
     ui._prefs_market_distance_ls_var = tk.StringVar(
         master=frame,
-        value="" if ui._state.market_search_distance_ls is None else _format_distance(ui._state.market_search_distance_ls),
+        value=_format_optional_distance(ui._state.market_search_distance_ls),
     )
-    arrival_entry = ttk.Entry(frame, textvariable=ui._prefs_market_distance_ls_var, width=12)
-    arrival_entry.grid(row=8, column=1, sticky="w", pady=(0, 6))
-    arrival_entry.bind("<FocusOut>", ui._on_market_distance_ls_commit)
-    arrival_entry.bind("<Return>", ui._on_market_distance_ls_commit)
+    arrival_combo = ttk.Combobox(
+        frame,
+        textvariable=ui._prefs_market_distance_ls_var,
+        values=_with_current_option(
+            DISTANCE_LS_OPTIONS,
+            _format_optional_distance(ui._state.market_search_distance_ls),
+            any_first=True,
+        ),
+        state="readonly",
+        width=14,
+    )
+    arrival_combo.grid(row=8, column=1, sticky="w", pady=(0, 6))
+    arrival_combo.bind("<<ComboboxSelected>>", ui._on_market_distance_ls_commit)
 
     return frame
 
@@ -143,6 +180,50 @@ def _format_distance(value: float) -> str:
     if distance.is_integer():
         return str(int(distance))
     return str(distance)
+
+def _format_nonnegative_or_any(value: object) -> str:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return "Any"
+    if number <= 0:
+        return "Any"
+    return str(number)
+
+
+def _format_optional_distance(value: object) -> str:
+    if value is None:
+        return "Any"
+    text = _format_distance(float(value))
+    return text if text else "Any"
+
+
+def _with_current_option(values: tuple[str, ...], current: str, *, any_first: bool) -> tuple[str, ...]:
+    normalized_current = str(current or "").strip()
+    if not normalized_current:
+        normalized_current = "Any" if any_first else (values[0] if values else "")
+    if normalized_current in values:
+        return values
+    if not normalized_current:
+        return values
+    if any_first:
+        base = [item for item in values if item != "Any"]
+        if normalized_current != "Any":
+            base.append(normalized_current)
+            base = sorted(base, key=_sort_numeric_like)
+        return ("Any", *tuple(base))
+    merged = sorted({*values, normalized_current}, key=_sort_numeric_like)
+    return tuple(merged)
+
+
+def _sort_numeric_like(value: str) -> tuple[int, str]:
+    text = str(value or "").strip()
+    if text.lower() == "any":
+        return (-1, text)
+    try:
+        return (int(float(text)), text)
+    except (TypeError, ValueError):
+        return (10_000_000, text)
 
 
 __all__ = ["create_market_search_section"]

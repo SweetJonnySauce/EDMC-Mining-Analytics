@@ -1821,8 +1821,8 @@
         query.append("pa1[]", String(Math.trunc(commodityId)));
         query.set("ps1", referenceSystemRaw);
         query.set("pi10", sortMode === "nearest" ? "3" : "1");
-        query.set("pi4", includeSurface ? "0" : "1");
-        query.set("pi8", includeCarriers ? "0" : "1");
+        query.set("pi4", includeSurface ? "1" : "0");
+        query.set("pi8", includeCarriers ? "1" : "0");
         query.set("pi13", "0");
         query.set("pi12", "0");
         query.set("pi14", "0");

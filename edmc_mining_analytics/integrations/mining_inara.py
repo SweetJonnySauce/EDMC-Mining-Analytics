@@ -89,8 +89,8 @@ class InaraClient:
             _log.debug("Cannot build Inara link for %s: system unknown", commodity)
             return None
 
-        include_carriers = "0" if self._state.market_search_include_carriers else "1"
-        include_surface = "0" if self._state.market_search_include_surface else "1"
+        include_carriers = "1" if self._state.market_search_include_carriers else "0"
+        include_surface = "1" if self._state.market_search_include_surface else "0"
         sort_mode = (self._state.market_search_sort_mode or "best_price").strip().lower()
         search_mode = "3" if sort_mode == "nearest" else "1"
 
