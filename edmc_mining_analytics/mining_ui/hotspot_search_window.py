@@ -1196,6 +1196,41 @@ class HotspotSearchWindow:
                 return float(value)
         return None
 
+    @classmethod
+    def _build_ring_lookup_candidates(cls, entry: RingHotspot) -> List[str]:
+        candidates: List[str] = []
+        seen: set[str] = set()
+
+        def _add(value: Optional[str]) -> None:
+            token = str(value or "").strip()
+            if not token:
+                return
+            key = token.lower()
+            if key in seen:
+                return
+            seen.add(key)
+            candidates.append(token)
+
+        ring = str(entry.ring_name or "").strip()
+        body = str(entry.body_name or "").strip()
+        system = str(entry.system_name or "").strip()
+
+        # Strict match first: full ring name from Spansh row.
+        _add(ring)
+
+        # Fallback only to fuller ring forms, never body/system alone.
+        if body and ring and not ring.lower().startswith(body.lower()):
+            _add(f"{body} {ring}")
+
+        if system and body:
+            full_body = body
+            if not body.lower().startswith(system.lower()):
+                full_body = f"{system} {body}"
+            if ring and not ring.lower().startswith(full_body.lower()):
+                _add(f"{full_body} {ring}")
+
+        return candidates
+
     @staticmethod
     def _format_avg_yield_percentage(value: Optional[float]) -> Optional[str]:
         if value is None:
@@ -1753,7 +1788,7 @@ class HotspotSearchWindow:
                 known_avg = self._lookup_known_avg_yield(
                     known_avg_index,
                     signal_name,
-                    [entry.ring_name, entry.body_name, entry.system_name],
+                    self._build_ring_lookup_candidates(entry),
                 )
                 known_avg_label = self._format_avg_yield_percentage(known_avg)
                 if known_avg_label:
