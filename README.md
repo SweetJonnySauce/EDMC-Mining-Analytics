@@ -92,3 +92,11 @@ EDMC Mining Analytics connects to these internet services.
 - Discord for sending mining summaries only if you configure the option by providnig a Discord webhook in settings
 - Image hosting services (like imgur.com) only if you configure Discord images in settings
 - Github to confirm the lastest version of EDMC Mining Analytics is available
+
+## Analysis and Ring Comparison reports
+
+<img width="1181" height="3235" alt="Screenshot 2026-03-28 at 11-45-49 EDMC Mining Analytics Analysis 3a7d70b9" src="https://github.com/user-attachments/assets/0ffdb8f4-c36f-48ac-b82b-c564dc1b350e" />
+
+<img width="1181" height="2414" alt="Screenshot 2026-03-28 at 11-47-12 EDMC Mining Analytics Compare" src="https://github.com/user-attachments/assets/59123eef-661b-497a-ae55-0c8ac251c7fb" />
+
+
