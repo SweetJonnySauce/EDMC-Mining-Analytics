@@ -13,6 +13,10 @@
       --accent: #ff8a00;
       --card: #171d25;
       --line: color-mix(in srgb, var(--accent) 30%, transparent);
+      --ref-p90: color-mix(in srgb, var(--accent) 56%, #ff6e3a);
+      --ref-p75: color-mix(in srgb, var(--accent) 82%, #fff);
+      --ref-p50: color-mix(in srgb, var(--accent) 45%, #53a7ff);
+      --ref-p25: color-mix(in srgb, var(--accent) 36%, #56c88e);
     }
 
     @media (prefers-color-scheme: light) {
@@ -187,36 +191,424 @@
       font-size: 0.92rem;
     }
 
-    .placeholder-panel {
+    .compare-controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+      border-radius: 10px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--card) 92%, #000);
+    }
+
+    .compare-control {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .compare-control label {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .compare-control select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+      background: color-mix(in srgb, var(--card) 88%, #000);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.88rem;
+    }
+
+    .compare-reference-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .compare-reference-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.2;
+      user-select: none;
+    }
+
+    .compare-reference-option input {
+      margin: 0;
+      width: 12px;
+      height: 12px;
+      accent-color: var(--accent);
+    }
+
+    .compare-reference-swatch {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .compare-reference-swatch--p90 {
+      background: var(--ref-p90);
+    }
+
+    .compare-reference-swatch--p75 {
+      background: var(--ref-p75);
+    }
+
+    .compare-reference-swatch--p50 {
+      background: var(--ref-p50);
+    }
+
+    .compare-reference-swatch--p25 {
+      background: var(--ref-p25);
+    }
+
+    .compare-status {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      min-height: 1.2em;
+    }
+
+    .compare-status.bad {
+      color: #f25f5c;
+    }
+
+    .compare-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .ring-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+      gap: 10px;
       border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
       border-radius: 10px;
-      min-height: 220px;
-      padding: 14px;
       background: color-mix(in srgb, var(--card) 92%, #000);
-      color: var(--muted);
-      font-size: 0.92rem;
+      padding: 10px;
+    }
+
+    .ring-info-panel {
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      border-radius: 8px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--fg) 2%, transparent);
       display: grid;
-      align-content: center;
-      justify-items: center;
-      text-align: center;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .ring-title {
+      margin: 0;
+      color: var(--fg);
+      font-size: 0.95rem;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .info-grid {
+      display: grid;
+      gap: 4px;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: baseline;
+      font-size: 0.82rem;
+      line-height: 1.3;
+    }
+
+    .info-row .label {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .info-row .value {
+      color: var(--fg);
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .ring-chart-panel {
+      border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+      border-radius: 10px;
+      min-height: 240px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--card) 92%, #000);
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
       gap: 6px;
+    }
+
+    .ring-chart-title {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.2;
+    }
+
+    .compare-plot {
+      min-height: 178px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .compare-y-axis {
+      width: 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      padding: 2px 0;
+      user-select: none;
+    }
+
+    .compare-surface {
+      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      overflow: hidden;
+      min-height: 178px;
+    }
+
+    .compare-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .compare-grid-line {
+      stroke: color-mix(in srgb, var(--fg) 14%, transparent);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .compare-line {
+      fill: none;
+      stroke: color-mix(in srgb, var(--cool-2, var(--accent)) 78%, #fff);
+      stroke-width: 2.4;
+      vector-effect: non-scaling-stroke;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .compare-line-hitbox {
+      fill: none;
+      stroke: transparent;
+      stroke-width: 16;
+      vector-effect: non-scaling-stroke;
+      cursor: crosshair;
+    }
+
+    .compare-dot {
+      fill: color-mix(in srgb, var(--cool-3, var(--accent)) 78%, #fff);
+      stroke: color-mix(in srgb, var(--card) 90%, #000);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .compare-crosshair {
+      stroke: color-mix(in srgb, var(--accent) 62%, transparent);
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .compare-reference-line {
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+      opacity: 0.95;
+    }
+
+    .compare-reference-line--p90 {
+      stroke: var(--ref-p90);
+    }
+
+    .compare-reference-line--p75 {
+      stroke: var(--ref-p75);
+    }
+
+    .compare-reference-line--p50 {
+      stroke: var(--ref-p50);
+    }
+
+    .compare-reference-line--p25 {
+      stroke: var(--ref-p25);
+    }
+
+    .compare-reference-label {
+      font-size: 16px;
+      font-weight: 700;
+      text-anchor: start;
+      dominant-baseline: hanging;
+      letter-spacing: 0.1px;
+      paint-order: stroke;
+      stroke: color-mix(in srgb, var(--card) 85%, #000);
+      stroke-width: 3.6;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .compare-reference-label--p90 {
+      fill: var(--ref-p90);
+    }
+
+    .compare-reference-label--p75 {
+      fill: var(--ref-p75);
+    }
+
+    .compare-reference-label--p50 {
+      fill: var(--ref-p50);
+    }
+
+    .compare-reference-label--p25 {
+      fill: var(--ref-p25);
+    }
+
+    .compare-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      padding: 8px;
+      align-self: center;
+      justify-self: center;
+      text-align: center;
+    }
+
+    .compare-bin-label-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .compare-bin-spacer {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .compare-bin-labels {
+      display: grid;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .compare-bin-label {
+      text-align: center;
+      white-space: nowrap;
+      overflow: visible;
+      text-overflow: unset;
+      min-height: 1.2em;
+    }
+
+    .compare-axis {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .cursor-tooltip {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      max-width: min(520px, calc(100vw - 24px));
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+      background: color-mix(in srgb, var(--card) 94%, #000);
+      color: var(--fg);
+      font-size: 0.8rem;
+      line-height: 1.35;
+      white-space: pre-line;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transform: translateY(2px);
+      transition: opacity 0.08s ease-out, transform 0.08s ease-out;
+    }
+
+    .cursor-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 900px) {
+      .ring-row {
+        grid-template-columns: 1fr;
+      }
+
+      .compare-controls {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <main class="app">
     <div class="title-row">
-      <h1>Compare</h1>
+      <h1 id="compare-title">Compare Commodity Yield Across Rings</h1>
       <div class="theme-control">
         <button id="theme-toggle" class="theme-toggle" type="button" aria-haspopup="true" aria-expanded="false">Theme</button>
         <div id="theme-menu" class="theme-menu" aria-hidden="true"></div>
       </div>
     </div>
     <p class="sub">Compare panels will be added here.</p>
-    <section class="placeholder-panel">
-      <strong style="color: var(--fg);">No panels yet</strong>
-      <span>This page is ready for compare views.</span>
+    <section class="compare-controls">
+      <div class="compare-control">
+        <label for="compare-commodity-select">Commodity</label>
+        <select id="compare-commodity-select" aria-label="Commodity filter"></select>
+      </div>
+      <div class="compare-control">
+        <label for="compare-sort-select">Sort</label>
+        <select id="compare-sort-select" aria-label="Sort rings">
+          <option value="avg_desc">Avg Yield (High to Low)</option>
+          <option value="avg_asc">Avg Yield (Low to High)</option>
+          <option value="p90_desc">P90 (High to Low)</option>
+          <option value="p90_asc">P90 (Low to High)</option>
+          <option value="p75_desc">P75 (High to Low)</option>
+          <option value="p75_asc">P75 (Low to High)</option>
+          <option value="p25_desc">P25 (High to Low)</option>
+          <option value="p25_asc">P25 (Low to High)</option>
+          <option value="name_asc">Ring Name (A to Z)</option>
+        </select>
+      </div>
+      <div class="compare-control">
+        <label>Crosshairs</label>
+        <div id="compare-reference-options" class="compare-reference-options" aria-label="Crosshair overlays"></div>
+      </div>
     </section>
+    <p id="compare-status" class="compare-status"></p>
+    <section id="compare-list" class="compare-list"></section>
   </main>
 
   <script>
@@ -224,6 +616,12 @@
       const rootElement = document.documentElement;
       const themeToggle = document.getElementById("theme-toggle");
       const themeMenu = document.getElementById("theme-menu");
+      const compareTitle = document.getElementById("compare-title");
+      const compareCommoditySelect = document.getElementById("compare-commodity-select");
+      const compareSortSelect = document.getElementById("compare-sort-select");
+      const compareReferenceOptions = document.getElementById("compare-reference-options");
+      const compareStatus = document.getElementById("compare-status");
+      const compareList = document.getElementById("compare-list");
       const THEME_STORAGE_KEY = "edmcma.analysis.theme";
       const DEFAULT_THEME_ID = "orange-dark";
       const themeOptions = [
@@ -234,7 +632,18 @@
         { id: "green-dark", label: "Green (dark)", swatchBg: "#1a2a29", swatchAccent: "#86c948" }
       ];
       const VALID_THEMES = new Set(themeOptions.map((option) => option.id));
+      const REFERENCE_CROSSHAIRS = [
+        { key: "p90", label: "P90", metricKey: "p90", quantile: 0.9 },
+        { key: "p75", label: "P75", metricKey: "p75", quantile: 0.75 },
+        { key: "p50", label: "P50", metricKey: "p50", quantile: 0.5 },
+        { key: "p25", label: "P25", metricKey: "p25", quantile: 0.25 }
+      ];
       let activeThemeId = DEFAULT_THEME_ID;
+      let cursorTooltip = null;
+      let compareData = null;
+      let selectedCommodityKey = "";
+      let requestedCommodityKey = "";
+      let selectedReferenceCrosshairs = new Set();
 
       function getThemeOption(themeId) {
         return themeOptions.find((option) => option.id === themeId) || null;
@@ -331,6 +740,16 @@
         return DEFAULT_THEME_ID;
       }
 
+      function resolveRequestedCommodityKey() {
+        try {
+          const params = new URLSearchParams(window.location.search || "");
+          const rawCommodity = (params.get("commodity") || "").trim();
+          return normalizeCommodityKey(rawCommodity);
+        } catch (_err) {
+          return "";
+        }
+      }
+
       function initializeThemeControl() {
         if (!themeToggle || !themeMenu) {
           return;
@@ -356,7 +775,935 @@
         });
       }
 
+      function setStatus(text, isError) {
+        if (!compareStatus) {
+          return;
+        }
+        compareStatus.textContent = String(text || "");
+        compareStatus.classList.toggle("bad", !!isError);
+      }
+
+      function setCompareTitle(commodityLabel) {
+        if (!compareTitle) {
+          return;
+        }
+        const label = typeof commodityLabel === "string" ? commodityLabel.trim() : "";
+        if (!label) {
+          compareTitle.textContent = "Compare Commodity Yield Across Rings";
+          return;
+        }
+        compareTitle.textContent = `Compare ${label} Yield Across Rings`;
+      }
+
+      function normalizeTextKey(value) {
+        if (typeof value !== "string") {
+          return "";
+        }
+        return value.trim().toLowerCase();
+      }
+
+      function normalizeCommodityKey(value) {
+        return normalizeTextKey(value).replace(/[^a-z0-9]+/g, "");
+      }
+
+      function pickCommodityLabel(current, candidate) {
+        const next = typeof candidate === "string" ? candidate.trim() : "";
+        if (!next) {
+          return current || "";
+        }
+        if (!current) {
+          return next;
+        }
+        const currentHasSpace = /\s/.test(current);
+        const nextHasSpace = /\s/.test(next);
+        if (!currentHasSpace && nextHasSpace) {
+          return next;
+        }
+        return current;
+      }
+
+      function asNumber(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) {
+          return 0;
+        }
+        return number;
+      }
+
+      function formatNumber(value, digits) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) {
+          return "--";
+        }
+        const maximumDigits = Number.isFinite(digits) ? Math.max(0, digits) : 2;
+        return number.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: maximumDigits
+        });
+      }
+
+      function ensureCursorTooltip() {
+        if (cursorTooltip && document.body.contains(cursorTooltip)) {
+          return cursorTooltip;
+        }
+        const node = document.createElement("div");
+        node.className = "cursor-tooltip";
+        document.body.appendChild(node);
+        cursorTooltip = node;
+        return node;
+      }
+
+      function showCursorTooltip(text, event) {
+        const node = ensureCursorTooltip();
+        node.textContent = text;
+        const offset = 14;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1280;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 720;
+        const rect = node.getBoundingClientRect();
+        let x = event.clientX + offset;
+        let y = event.clientY + offset;
+        if (x + rect.width > viewportWidth - 8) {
+          x = Math.max(8, event.clientX - rect.width - offset);
+        }
+        if (y + rect.height > viewportHeight - 8) {
+          y = Math.max(8, event.clientY - rect.height - offset);
+        }
+        node.style.left = `${Math.round(x)}px`;
+        node.style.top = `${Math.round(y)}px`;
+        node.classList.add("visible");
+      }
+
+      function hideCursorTooltip() {
+        if (!cursorTooltip) {
+          return;
+        }
+        cursorTooltip.classList.remove("visible");
+      }
+
+      function buildSmoothLinePath(points) {
+        if (!Array.isArray(points) || points.length === 0) {
+          return "";
+        }
+        if (points.length === 1) {
+          const point = points[0];
+          return `M${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+        }
+        if (points.length === 2) {
+          const first = points[0];
+          const second = points[1];
+          return `M${first.x.toFixed(2)} ${first.y.toFixed(2)} L${second.x.toFixed(2)} ${second.y.toFixed(2)}`;
+        }
+        let command = `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+        for (let index = 0; index < points.length - 1; index += 1) {
+          const p0 = index > 0 ? points[index - 1] : points[index];
+          const p1 = points[index];
+          const p2 = points[index + 1];
+          const p3 = index + 2 < points.length ? points[index + 2] : p2;
+          const cp1x = p1.x + ((p2.x - p0.x) / 6);
+          const cp1y = p1.y + ((p2.y - p0.y) / 6);
+          const cp2x = p2.x - ((p3.x - p1.x) / 6);
+          const cp2y = p2.y - ((p3.y - p1.y) / 6);
+          command += ` C${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+        }
+        return command;
+      }
+
+      function inferStep(yMaxInt) {
+        const targetTickCount = 7;
+        const minStep = Math.max(1, yMaxInt / (targetTickCount - 1));
+        let magnitude = Math.pow(10, Math.floor(Math.log10(minStep)));
+        if (!Number.isFinite(magnitude) || magnitude <= 0) {
+          magnitude = 1;
+        }
+        let step = 0;
+        for (let attempts = 0; attempts < 8 && step <= 0; attempts += 1) {
+          [1, 2, 5].forEach((multiplier) => {
+            const candidate = multiplier * magnitude;
+            if (candidate >= minStep && (step <= 0 || candidate < step)) {
+              step = candidate;
+            }
+          });
+          magnitude *= 10;
+        }
+        return step > 0 ? step : 1;
+      }
+
+      function percentileInclusive(values, percentile) {
+        const p = Number(percentile);
+        if (!Array.isArray(values) || values.length === 0 || !Number.isFinite(p)) {
+          return null;
+        }
+        const clamped = Math.max(0, Math.min(1, p));
+        const sorted = values
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value))
+          .sort((a, b) => a - b);
+        if (!sorted.length) {
+          return null;
+        }
+        if (sorted.length === 1) {
+          return sorted[0];
+        }
+        // Inclusive percentile interpolation (equivalent to PERCENTILE.INC style ranking).
+        const rank = (sorted.length - 1) * clamped;
+        const lowIndex = Math.floor(rank);
+        const highIndex = Math.ceil(rank);
+        if (lowIndex === highIndex) {
+          return sorted[lowIndex];
+        }
+        const weight = rank - lowIndex;
+        return sorted[lowIndex] + ((sorted[highIndex] - sorted[lowIndex]) * weight);
+      }
+
+      function buildCompareData(records) {
+        const ringByKey = new Map();
+        const commodityLabels = new Map();
+        records.forEach((row) => {
+          if (!row || typeof row !== "object") {
+            return;
+          }
+          const sessionGuid = typeof row.session_guid === "string" ? row.session_guid.trim() : "";
+          const ringName = typeof row.ring_name === "string" ? row.ring_name.trim() : "";
+          const commodityName = typeof row.commodity_name === "string" ? row.commodity_name.trim() : "";
+          const asteroidRaw = Number(row.asteroid_id);
+          const percentage = Number(row.percentage);
+          if (!sessionGuid || !ringName || !commodityName || !Number.isFinite(asteroidRaw) || asteroidRaw < 1 || !Number.isFinite(percentage)) {
+            return;
+          }
+          const ringKey = normalizeTextKey(ringName);
+          if (!ringKey) {
+            return;
+          }
+          let ring = ringByKey.get(ringKey);
+          if (!ring) {
+            ring = {
+              ringKey,
+              ringName,
+              asteroids: new Map(),
+              ringTypeCounts: new Map(),
+              reserveLevelCounts: new Map()
+            };
+            ringByKey.set(ringKey, ring);
+          }
+          const ringType = typeof row.ring_type === "string" ? row.ring_type.trim() : "";
+          if (ringType) {
+            ring.ringTypeCounts.set(ringType, (ring.ringTypeCounts.get(ringType) || 0) + 1);
+          }
+          const reserveLevel = typeof row.reserve_level === "string" ? row.reserve_level.trim() : "";
+          if (reserveLevel) {
+            ring.reserveLevelCounts.set(reserveLevel, (ring.reserveLevelCounts.get(reserveLevel) || 0) + 1);
+          }
+          const asteroidId = Math.floor(asteroidRaw);
+          const asteroidKey = `${sessionGuid}::${asteroidId}`;
+          let asteroid = ring.asteroids.get(asteroidKey);
+          if (!asteroid) {
+            asteroid = {
+              sessionGuid,
+              asteroidId,
+              duplicate: false,
+              commodityPercentages: new Map()
+            };
+            ring.asteroids.set(asteroidKey, asteroid);
+          }
+          asteroid.duplicate = asteroid.duplicate || row.duplicate_prospector === true;
+          const commodityKey = normalizeCommodityKey(commodityName);
+          if (!commodityKey) {
+            return;
+          }
+          commodityLabels.set(commodityKey, pickCommodityLabel(commodityLabels.get(commodityKey) || "", commodityName));
+          const safePct = Math.max(0, percentage);
+          const previous = asteroid.commodityPercentages.get(commodityKey);
+          if (!Number.isFinite(previous) || safePct > previous) {
+            asteroid.commodityPercentages.set(commodityKey, safePct);
+          }
+        });
+        const commodities = Array.from(commodityLabels.entries())
+          .map(([key, label]) => ({ key, label: label || key }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+        const rings = Array.from(ringByKey.values())
+          .map((ring) => ({
+            ...ring,
+            asteroidList: Array.from(ring.asteroids.values())
+          }))
+          .sort((a, b) => a.ringName.localeCompare(b.ringName));
+        return { rings, commodities };
+      }
+
+      function dominantLabel(countMap) {
+        if (!(countMap instanceof Map) || countMap.size === 0) {
+          return "--";
+        }
+        let winner = "";
+        let maxCount = -1;
+        countMap.forEach((count, label) => {
+          if (count > maxCount) {
+            winner = label;
+            maxCount = count;
+          }
+        });
+        return winner || "--";
+      }
+
+      function syncReferenceCrosshairControls() {
+        if (!compareReferenceOptions) {
+          return;
+        }
+        compareReferenceOptions.innerHTML = "";
+        REFERENCE_CROSSHAIRS.forEach((entry) => {
+          const wrapper = document.createElement("label");
+          wrapper.className = "compare-reference-option";
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.checked = selectedReferenceCrosshairs.has(entry.key);
+          input.addEventListener("change", () => {
+            if (input.checked) {
+              selectedReferenceCrosshairs.add(entry.key);
+            } else {
+              selectedReferenceCrosshairs.delete(entry.key);
+            }
+            renderComparePanels();
+          });
+          const swatch = document.createElement("span");
+          swatch.className = `compare-reference-swatch compare-reference-swatch--${entry.key}`;
+          const text = document.createElement("span");
+          text.textContent = entry.label;
+          wrapper.appendChild(input);
+          wrapper.appendChild(swatch);
+          wrapper.appendChild(text);
+          compareReferenceOptions.appendChild(wrapper);
+        });
+      }
+
+      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax) {
+        const asteroids = Array.isArray(ring && ring.asteroidList) ? ring.asteroidList : [];
+        const presentAsteroids = asteroids
+          .map((asteroid) => {
+            const value = Number(asteroid && asteroid.commodityPercentages && asteroid.commodityPercentages.get(commodityKey));
+            if (!Number.isFinite(value)) {
+              return null;
+            }
+            return {
+              value: Math.max(0, value),
+              sessionGuid: asteroid.sessionGuid
+            };
+          })
+          .filter((row) => !!row);
+        const normalizedForcedXMax = Number.isFinite(forcedXMax) && forcedXMax > 0
+          ? Math.max(interval, forcedXMax)
+          : null;
+        const percentileValues = presentAsteroids.map((item) => item.value);
+        const p90 = percentileInclusive(percentileValues, 0.9);
+        const p75 = percentileInclusive(percentileValues, 0.75);
+        const p50 = percentileInclusive(percentileValues, 0.5);
+        const p25 = percentileInclusive(percentileValues, 0.25);
+        if (!presentAsteroids.length) {
+          return {
+            averageYield: null,
+            p90: null,
+            p75: null,
+            p50: null,
+            p25: null,
+            asteroidsCount: 0,
+            sessionsCount: 0,
+            points: [],
+            yMax: 1,
+            xMax: normalizedForcedXMax || interval
+          };
+        }
+        const maxObserved = presentAsteroids.reduce((peak, item) => Math.max(peak, item.value), 0);
+        const xMax = normalizedForcedXMax || Math.max(interval, Math.ceil(maxObserved / interval) * interval);
+        const bins = Math.max(1, Math.ceil(xMax / interval));
+        const counts = new Array(bins).fill(0);
+        let percentSum = 0;
+        const sessionGuids = new Set();
+        presentAsteroids.forEach((item) => {
+          percentSum += item.value;
+          sessionGuids.add(item.sessionGuid);
+          let index = item.value >= xMax ? (bins - 1) : Math.floor(item.value / interval);
+          if (index < 0) {
+            index = 0;
+          }
+          if (index >= bins) {
+            index = bins - 1;
+          }
+          counts[index] += 1;
+        });
+        const points = [];
+        let running = 0;
+        for (let index = 0; index < bins; index += 1) {
+          running += counts[index];
+          const intervalStart = index * interval;
+          const intervalEnd = Math.min(xMax, intervalStart + interval);
+          points.push({
+            index,
+            intervalStart,
+            intervalEnd,
+            binCount: counts[index],
+            total: running
+          });
+        }
+        return {
+          averageYield: percentSum / presentAsteroids.length,
+          p90,
+          p75,
+          p50,
+          p25,
+          asteroidsCount: presentAsteroids.length,
+          sessionsCount: sessionGuids.size,
+          points,
+          yMax: Math.max(1, running),
+          xMax
+        };
+      }
+
+      function renderRingChart(chartPanel, ringName, commodityLabel, model, forcedYMax, selectedCrosshairKeys) {
+        chartPanel.innerHTML = "";
+        const title = document.createElement("p");
+        title.className = "ring-chart-title";
+        title.textContent = `Cumulative Frequency (${commodityLabel})`;
+        chartPanel.appendChild(title);
+
+        if (!model || !Array.isArray(model.points) || model.points.length === 0) {
+          const note = document.createElement("p");
+          note.className = "compare-empty";
+          note.textContent = "No asteroids for this commodity in this ring.";
+          chartPanel.appendChild(note);
+          return;
+        }
+
+        const width = 1000;
+        const height = 220;
+        const topPad = 10;
+        const bottomPad = 16;
+        const sidePad = 14;
+        const drawWidth = Math.max(1, width - (sidePad * 2));
+        const drawHeight = Math.max(1, height - topPad - bottomPad);
+        const normalizedForcedYMax = Number.isFinite(forcedYMax) && forcedYMax > 0
+          ? forcedYMax
+          : null;
+        const yMaxInt = Math.max(1, Math.ceil(normalizedForcedYMax || model.yMax));
+        const step = inferStep(yMaxInt);
+        const yScaleMax = Math.max(yMaxInt, Math.ceil(yMaxInt / step) * step);
+        const yTicks = [];
+        for (let value = yScaleMax; value >= 0; value -= step) {
+          yTicks.push(value);
+        }
+        if (yTicks[yTicks.length - 1] !== 0) {
+          yTicks.push(0);
+        }
+
+        const plot = document.createElement("div");
+        plot.className = "compare-plot";
+        const yAxis = document.createElement("div");
+        yAxis.className = "compare-y-axis";
+        yTicks.forEach((value) => {
+          const tick = document.createElement("span");
+          tick.textContent = String(value);
+          yAxis.appendChild(tick);
+        });
+        const surface = document.createElement("div");
+        surface.className = "compare-surface";
+
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.classList.add("compare-svg");
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        svg.setAttribute("preserveAspectRatio", "none");
+        const totalBins = Math.max(1, model.points.length);
+        const toX = (index) => sidePad + (((index + 0.5) / totalBins) * drawWidth);
+        const toY = (count) => {
+          const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
+          return topPad + (drawHeight * (1 - ratio));
+        };
+
+        yTicks.forEach((value) => {
+          const y = toY(value);
+          const line = document.createElementNS(ns, "line");
+          line.setAttribute("x1", sidePad.toFixed(2));
+          line.setAttribute("x2", (width - sidePad).toFixed(2));
+          line.setAttribute("y1", y.toFixed(2));
+          line.setAttribute("y2", y.toFixed(2));
+          line.setAttribute("class", "compare-grid-line");
+          svg.appendChild(line);
+        });
+
+        const coordinates = model.points.map((point) => ({
+          ...point,
+          x: toX(point.index),
+          y: toY(point.total)
+        }));
+
+        const pathData = buildSmoothLinePath(coordinates);
+        const line = document.createElementNS(ns, "path");
+        line.setAttribute("class", "compare-line");
+        line.setAttribute("d", pathData);
+        svg.appendChild(line);
+
+        const selectedKeys = selectedCrosshairKeys instanceof Set ? selectedCrosshairKeys : new Set();
+        const maxXValue = Math.max(1, asNumber(model.xMax));
+        const totalCount = Math.max(1, asNumber(model.asteroidsCount));
+        const toXForValue = (rawValue) => {
+          const value = Number(rawValue);
+          if (!Number.isFinite(value)) {
+            return null;
+          }
+          const clamped = Math.max(0, Math.min(maxXValue, value));
+          return sidePad + ((clamped / maxXValue) * drawWidth);
+        };
+        const getYOnLineForX = (targetX) => {
+          if (!Number.isFinite(targetX) || typeof line.getTotalLength !== "function" || typeof line.getPointAtLength !== "function") {
+            return null;
+          }
+          const totalLength = line.getTotalLength();
+          if (!Number.isFinite(totalLength) || totalLength <= 0) {
+            return null;
+          }
+          let low = 0;
+          let high = totalLength;
+          for (let i = 0; i < 22; i += 1) {
+            const mid = (low + high) / 2;
+            const point = line.getPointAtLength(mid);
+            if (!point || !Number.isFinite(point.x)) {
+              return null;
+            }
+            if (point.x < targetX) {
+              low = mid;
+            } else {
+              high = mid;
+            }
+          }
+          const lowPoint = line.getPointAtLength(low);
+          const highPoint = line.getPointAtLength(high);
+          if (!lowPoint || !highPoint) {
+            return null;
+          }
+          const pick = Math.abs(asNumber(lowPoint.x) - targetX) <= Math.abs(asNumber(highPoint.x) - targetX)
+            ? lowPoint
+            : highPoint;
+          return Number.isFinite(pick.y) ? pick.y : null;
+        };
+
+        REFERENCE_CROSSHAIRS.forEach((entry) => {
+          if (!selectedKeys.has(entry.key)) {
+            return;
+          }
+          const metricValue = Number(model[entry.metricKey]);
+          const referenceX = toXForValue(metricValue);
+          if (!Number.isFinite(referenceX)) {
+            return;
+          }
+          const quantile = Number(entry.quantile);
+          const clampedQuantile = Number.isFinite(quantile) ? Math.max(0, Math.min(1, quantile)) : 0;
+          const referenceCount = totalCount * clampedQuantile;
+          const referenceY = (() => {
+            const yOnLine = getYOnLineForX(referenceX);
+            if (Number.isFinite(yOnLine)) {
+              return yOnLine;
+            }
+            return toY(referenceCount);
+          })();
+
+          const lineClass = `compare-reference-line compare-reference-line--${entry.key}`;
+          const horizontal = document.createElementNS(ns, "line");
+          horizontal.setAttribute("class", lineClass);
+          horizontal.setAttribute("x1", sidePad.toFixed(2));
+          horizontal.setAttribute("y1", referenceY.toFixed(2));
+          horizontal.setAttribute("x2", referenceX.toFixed(2));
+          horizontal.setAttribute("y2", referenceY.toFixed(2));
+          svg.appendChild(horizontal);
+
+          const vertical = document.createElementNS(ns, "line");
+          vertical.setAttribute("class", lineClass);
+          vertical.setAttribute("x1", referenceX.toFixed(2));
+          vertical.setAttribute("y1", referenceY.toFixed(2));
+          vertical.setAttribute("x2", referenceX.toFixed(2));
+          vertical.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+          svg.appendChild(vertical);
+
+          const label = document.createElementNS(ns, "text");
+          label.setAttribute("class", `compare-reference-label compare-reference-label--${entry.key}`);
+          const labelOffsetX = 14;
+          const labelOffsetY = 24;
+          const clampedX = Math.max(sidePad + 6, Math.min(width - sidePad - 58, referenceX + labelOffsetX));
+          const clampedY = Math.max(topPad + 2, Math.min((topPad + drawHeight) - 8, referenceY + labelOffsetY));
+          label.setAttribute("x", clampedX.toFixed(2));
+          label.setAttribute("y", clampedY.toFixed(2));
+          label.textContent = entry.label;
+          svg.appendChild(label);
+        });
+
+        const hitbox = document.createElementNS(ns, "path");
+        hitbox.setAttribute("class", "compare-line-hitbox");
+        hitbox.setAttribute("d", pathData);
+        svg.appendChild(hitbox);
+
+        const hCross = document.createElementNS(ns, "line");
+        hCross.setAttribute("class", "compare-crosshair");
+        svg.appendChild(hCross);
+
+        const vCross = document.createElementNS(ns, "line");
+        vCross.setAttribute("class", "compare-crosshair");
+        svg.appendChild(vCross);
+
+        const findNearestPoint = (event) => {
+          if (!coordinates.length) {
+            return null;
+          }
+          const rect = svg.getBoundingClientRect();
+          if (!rect.width) {
+            return coordinates[0];
+          }
+          const ratio = (event.clientX - rect.left) / rect.width;
+          const localX = ratio * width;
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.x - localX);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.x - localX);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
+            }
+          }
+          return nearest;
+        };
+
+        const showPointTooltip = (point, event) => {
+          const detail = [
+            `${ringName} | ${commodityLabel}`,
+            `${point.intervalStart}% - ${point.intervalEnd}%`,
+            `Cumulative Frequency: ${point.total}`,
+            `Bin Frequency: ${point.binCount}`
+          ].join("\n");
+          showCursorTooltip(detail, event);
+        };
+
+        const showCrosshairAt = (point, event) => {
+          hCross.setAttribute("x1", sidePad.toFixed(2));
+          hCross.setAttribute("y1", point.y.toFixed(2));
+          hCross.setAttribute("x2", point.x.toFixed(2));
+          hCross.setAttribute("y2", point.y.toFixed(2));
+          hCross.style.opacity = "1";
+
+          vCross.setAttribute("x1", point.x.toFixed(2));
+          vCross.setAttribute("y1", point.y.toFixed(2));
+          vCross.setAttribute("x2", point.x.toFixed(2));
+          vCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+          vCross.style.opacity = "1";
+
+          showPointTooltip(point, event);
+        };
+
+        const hideCrosshair = () => {
+          hCross.style.opacity = "0";
+          vCross.style.opacity = "0";
+          hideCursorTooltip();
+        };
+
+        hitbox.addEventListener("mouseenter", (event) => {
+          const nearest = findNearestPoint(event);
+          if (nearest) {
+            showCrosshairAt(nearest, event);
+          }
+        });
+        hitbox.addEventListener("mousemove", (event) => {
+          const nearest = findNearestPoint(event);
+          if (nearest) {
+            showCrosshairAt(nearest, event);
+          }
+        });
+        hitbox.addEventListener("mouseleave", () => {
+          hideCrosshair();
+        });
+
+        coordinates.forEach((point) => {
+          const dot = document.createElementNS(ns, "circle");
+          dot.setAttribute("class", "compare-dot");
+          dot.setAttribute("cx", point.x.toFixed(2));
+          dot.setAttribute("cy", point.y.toFixed(2));
+          dot.setAttribute("r", "5.8");
+          dot.addEventListener("mouseenter", (event) => {
+            showCrosshairAt(point, event);
+          });
+          dot.addEventListener("mousemove", (event) => {
+            showCrosshairAt(point, event);
+          });
+          dot.addEventListener("mouseleave", () => {
+            hideCrosshair();
+          });
+          svg.appendChild(dot);
+        });
+
+        surface.appendChild(svg);
+        plot.appendChild(yAxis);
+        plot.appendChild(surface);
+        plot.addEventListener("mouseleave", hideCrosshair);
+        chartPanel.appendChild(plot);
+
+        const labels = document.createElement("div");
+        labels.className = "compare-bin-labels";
+        labels.style.gridTemplateColumns = `repeat(${model.points.length}, minmax(0, 1fr))`;
+        const labelStep = Math.max(1, Math.ceil(model.points.length / 10));
+        model.points.forEach((point, index) => {
+          const label = document.createElement("span");
+          label.className = "compare-bin-label";
+          if ((index % labelStep) === 0 || index === model.points.length - 1) {
+            label.textContent = `${point.intervalStart}-${point.intervalEnd}%`;
+          }
+          labels.appendChild(label);
+        });
+        const labelsRow = document.createElement("div");
+        labelsRow.className = "compare-bin-label-row";
+        const spacer = document.createElement("div");
+        spacer.className = "compare-y-axis compare-bin-spacer";
+        labelsRow.appendChild(spacer);
+        labelsRow.appendChild(labels);
+        chartPanel.appendChild(labelsRow);
+
+        const axis = document.createElement("div");
+        axis.className = "compare-axis";
+        axis.innerHTML = `<span>0%</span><span>${model.xMax}%</span>`;
+        chartPanel.appendChild(axis);
+      }
+
+      function renderComparePanels() {
+        if (!compareList || !compareData) {
+          setCompareTitle("");
+          return;
+        }
+        const commodityKey = selectedCommodityKey;
+        const commodityLabel = (compareData.commodities.find((item) => item.key === commodityKey) || {}).label || commodityKey || "--";
+        setCompareTitle(commodityLabel);
+        const sortMode = compareSortSelect ? compareSortSelect.value : "avg_desc";
+        const interval = 5;
+        const globalCommodityPeak = compareData.rings.reduce((peak, ring) => {
+          const asteroids = Array.isArray(ring && ring.asteroidList) ? ring.asteroidList : [];
+          const ringPeak = asteroids.reduce((innerPeak, asteroid) => {
+            const value = Number(asteroid && asteroid.commodityPercentages && asteroid.commodityPercentages.get(commodityKey));
+            if (!Number.isFinite(value)) {
+              return innerPeak;
+            }
+            return Math.max(innerPeak, Math.max(0, value));
+          }, 0);
+          return Math.max(peak, ringPeak);
+        }, 0);
+        const sharedXMax = Math.max(interval, Math.ceil(globalCommodityPeak / interval) * interval);
+        const rows = compareData.rings.map((ring) => {
+          const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax);
+          return { ring, metric };
+        });
+        const sharedYMax = rows.reduce((peak, row) => {
+          const yMax = Number(row && row.metric && row.metric.yMax);
+          if (!Number.isFinite(yMax)) {
+            return peak;
+          }
+          return Math.max(peak, yMax);
+        }, 1);
+        rows.sort((left, right) => {
+          if (sortMode === "name_asc") {
+            return left.ring.ringName.localeCompare(right.ring.ringName);
+          }
+          if (
+            sortMode === "p90_asc" || sortMode === "p90_desc"
+            || sortMode === "p75_asc" || sortMode === "p75_desc"
+            || sortMode === "p25_asc" || sortMode === "p25_desc"
+          ) {
+            let key = "p90";
+            if (sortMode.startsWith("p75_")) {
+              key = "p75";
+            } else if (sortMode.startsWith("p25_")) {
+              key = "p25";
+            }
+            const leftMetric = Number(left.metric[key]);
+            const rightMetric = Number(right.metric[key]);
+            const leftValid = Number.isFinite(leftMetric);
+            const rightValid = Number.isFinite(rightMetric);
+            if (leftValid && rightValid && leftMetric !== rightMetric) {
+              return sortMode.endsWith("_asc")
+                ? (leftMetric - rightMetric)
+                : (rightMetric - leftMetric);
+            }
+            if (leftValid !== rightValid) {
+              return leftValid ? -1 : 1;
+            }
+            return left.ring.ringName.localeCompare(right.ring.ringName);
+          }
+          const leftAvg = Number(left.metric.averageYield);
+          const rightAvg = Number(right.metric.averageYield);
+          const leftValid = Number.isFinite(leftAvg);
+          const rightValid = Number.isFinite(rightAvg);
+          if (leftValid && rightValid) {
+            if (sortMode === "avg_asc" && leftAvg !== rightAvg) {
+              return leftAvg - rightAvg;
+            }
+            if (sortMode !== "avg_asc" && leftAvg !== rightAvg) {
+              return rightAvg - leftAvg;
+            }
+          } else if (leftValid !== rightValid) {
+            return leftValid ? -1 : 1;
+          }
+          return left.ring.ringName.localeCompare(right.ring.ringName);
+        });
+
+        compareList.innerHTML = "";
+        rows.forEach(({ ring, metric }) => {
+          const row = document.createElement("article");
+          row.className = "ring-row";
+
+          const infoPanel = document.createElement("section");
+          infoPanel.className = "ring-info-panel";
+
+          const ringTitle = document.createElement("h2");
+          ringTitle.className = "ring-title";
+          ringTitle.textContent = ring.ringName;
+          infoPanel.appendChild(ringTitle);
+
+          const infoGrid = document.createElement("div");
+          infoGrid.className = "info-grid";
+          const infoRows = [
+            ["Commodity", commodityLabel],
+            [
+              "P90",
+              Number.isFinite(metric.p90) ? `${formatNumber(metric.p90, 2)}%` : "--",
+              "P90 is the inclusive 90th percentile: 90% of asteroid yields are at or below this value."
+            ],
+            [
+              "P75",
+              Number.isFinite(metric.p75) ? `${formatNumber(metric.p75, 2)}%` : "--",
+              "Top Quartile: P75 is the inclusive 75th percentile: 75% of asteroid yields are at or below this value."
+            ],
+            [
+              "Avg Yield (P50)",
+              Number.isFinite(metric.averageYield) ? `${formatNumber(metric.averageYield, 2)}%` : "--",
+              "Avg Yield (P50): central tendency reference for this ring/commodity."
+            ],
+            [
+              "P25",
+              Number.isFinite(metric.p25) ? `${formatNumber(metric.p25, 2)}%` : "--",
+              "Bottom Quartile: P25 is the inclusive 25th percentile: 25% of asteroid yields are at or below this value."
+            ],
+            ["Asteroids", formatNumber(metric.asteroidsCount, 0)],
+            ["Sessions", formatNumber(metric.sessionsCount, 0)],
+            ["Ring Type", dominantLabel(ring.ringTypeCounts)],
+            ["Reserve", dominantLabel(ring.reserveLevelCounts)]
+          ];
+          infoRows.forEach(([labelText, valueText, tooltipText]) => {
+            const infoRow = document.createElement("div");
+            infoRow.className = "info-row";
+            const label = document.createElement("span");
+            label.className = "label";
+            label.textContent = `${labelText}:`;
+            if (typeof tooltipText === "string" && tooltipText.trim()) {
+              label.title = tooltipText;
+            }
+            const value = document.createElement("span");
+            value.className = "value";
+            value.textContent = String(valueText);
+            infoRow.appendChild(label);
+            infoRow.appendChild(value);
+            infoGrid.appendChild(infoRow);
+          });
+          infoPanel.appendChild(infoGrid);
+
+          const chartPanel = document.createElement("section");
+          chartPanel.className = "ring-chart-panel";
+          renderRingChart(
+            chartPanel,
+            ring.ringName,
+            commodityLabel,
+            metric,
+            sharedYMax,
+            selectedReferenceCrosshairs
+          );
+
+          row.appendChild(infoPanel);
+          row.appendChild(chartPanel);
+          compareList.appendChild(row);
+        });
+
+        setStatus(
+          `Showing ${rows.length} rings for ${commodityLabel}.`,
+          false
+        );
+      }
+
+      function syncCommodityControl() {
+        if (!compareCommoditySelect || !compareData) {
+          return;
+        }
+        compareCommoditySelect.innerHTML = "";
+        compareData.commodities.forEach((commodity) => {
+          const option = document.createElement("option");
+          option.value = commodity.key;
+          option.textContent = commodity.label;
+          compareCommoditySelect.appendChild(option);
+        });
+        if (requestedCommodityKey) {
+          const requestedExists = compareData.commodities.some((item) => item.key === requestedCommodityKey);
+          if (requestedExists) {
+            selectedCommodityKey = requestedCommodityKey;
+          }
+          requestedCommodityKey = "";
+        }
+        if (!selectedCommodityKey || !compareData.commodities.some((item) => item.key === selectedCommodityKey)) {
+          selectedCommodityKey = compareData.commodities.length ? compareData.commodities[0].key : "";
+        }
+        compareCommoditySelect.value = selectedCommodityKey;
+      }
+
+      async function loadCompareData() {
+        setStatus("Loading compare data...", false);
+        try {
+          const response = await fetch("/session_data/prospected_asteroid_summary.jsonl", { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const payload = await response.text();
+          const parsed = [];
+          payload.split(/\r?\n/).forEach((line) => {
+            const text = String(line || "").trim();
+            if (!text) {
+              return;
+            }
+            try {
+              parsed.push(JSON.parse(text));
+            } catch (_error) {
+              // Skip malformed rows.
+            }
+          });
+          compareData = buildCompareData(parsed);
+          if (!compareData.commodities.length) {
+            compareList.innerHTML = "";
+            setStatus("No commodity records available yet.", false);
+            return;
+          }
+          syncCommodityControl();
+          renderComparePanels();
+        } catch (error) {
+          compareList.innerHTML = "";
+          setStatus(
+            `Unable to load compare data: ${error && error.message ? error.message : "Unknown error"}`,
+            true
+          );
+        }
+      }
+
       initializeThemeControl();
+      requestedCommodityKey = resolveRequestedCommodityKey();
+      syncReferenceCrosshairControls();
+      if (compareCommoditySelect) {
+        compareCommoditySelect.addEventListener("change", (event) => {
+          const target = event.target;
+          selectedCommodityKey = target && typeof target.value === "string" ? target.value : "";
+          renderComparePanels();
+        });
+      }
+      if (compareSortSelect) {
+        compareSortSelect.addEventListener("change", () => {
+          renderComparePanels();
+        });
+      }
+      void loadCompareData();
     })();
   </script>
 </body>

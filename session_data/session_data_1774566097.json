@@ -10,8 +10,10 @@
     },
     "location": {
       "body": "Col 285 Sector LB-O c6-3",
+      "ring": "Col 285 Sector LB-O c6-3 A 8 A Ring",
       "system": "Col 285 Sector LB-O c6-3",
-      "reserve_level": "Pristine"
+      "reserve_level": "Pristine",
+      "ring_type": "Metalic"
     },
     "ship": "Type-11 Prospector",
     "prospected": {

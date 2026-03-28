@@ -518,42 +518,43 @@
 
     .mix-layout {
       display: grid;
-      grid-template-columns: minmax(120px, 170px) 1fr;
-      gap: 14px;
-      align-items: center;
+      grid-template-rows: auto auto auto;
+      gap: 10px;
+      align-content: start;
       height: 100%;
     }
 
-    .mix-ring {
-      width: min(36vw, 160px);
-      aspect-ratio: 1 / 1;
-      border-radius: 50%;
-      margin: 0 auto;
-      position: relative;
-      background: color-mix(in srgb, var(--fg) 15%, transparent);
+    .mix-bar {
+      height: 14px;
+      display: flex;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      background: color-mix(in srgb, var(--fg) 10%, transparent);
     }
 
-    .mix-ring::after {
-      content: "";
-      position: absolute;
-      inset: 24%;
-      border-radius: 50%;
-      background: var(--card);
-      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+    .mix-segment {
+      height: 100%;
+      min-width: 2px;
     }
 
     .mix-legend {
-      display: grid;
-      gap: 7px;
-      align-content: start;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
     }
 
     .mix-item {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 0.9rem;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      font-size: 0.78rem;
+      line-height: 1.2;
     }
 
     .mix-item .left {
@@ -574,6 +575,47 @@
       color: var(--muted);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
+    }
+
+    .mix-mats {
+      border-top: 1px dashed color-mix(in srgb, var(--fg) 16%, transparent);
+      padding-top: 8px;
+      display: grid;
+      gap: 6px;
+      align-content: start;
+    }
+
+    .mix-mats-title {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .mix-mats-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .mix-mat {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--fg);
+      font-size: 0.78rem;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .mix-mat-qty {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
     }
 
     .timeline {
@@ -699,6 +741,29 @@
       font-size: 0.78rem;
       line-height: 1.2;
       user-select: none;
+    }
+
+    .cumulative-render-mode-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      overflow: hidden;
+    }
+
+    .cumulative-render-mode-group .cumulative-render-mode {
+      border: 0;
+      border-right: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      border-radius: 0;
+      background: transparent;
+      padding: 2px 10px;
+      margin: 0;
+    }
+
+    .cumulative-render-mode-group .cumulative-render-mode:last-child {
+      border-right: 0;
     }
 
     .cumulative-render-mode input {
@@ -954,6 +1019,40 @@
       accent-color: var(--accent);
     }
 
+    .prospect-frequency-interval-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      overflow: hidden;
+    }
+
+    .prospect-frequency-interval-prefix {
+      display: inline-flex;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.2;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-right: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+    }
+
+    .prospect-frequency-interval-group .prospect-frequency-control {
+      padding: 2px 9px;
+      border: 0;
+      border-right: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      border-radius: 0;
+      background: transparent;
+      margin: 0;
+    }
+
+    .prospect-frequency-interval-group .prospect-frequency-control:last-child {
+      border-right: 0;
+    }
+
     .prospect-frequency-legend {
       display: flex;
       flex-wrap: wrap;
@@ -1106,7 +1205,7 @@
           <div id="chart-commodity-tph" class="chart-body"></div>
         </article>
         <article class="chart-card">
-          <h2>Asteroid Material Mix</h2>
+          <h2>Raw Engineering Materials</h2>
           <div id="chart-content-mix" class="chart-body"></div>
         </article>
         <article class="chart-card">
@@ -1196,6 +1295,7 @@
       let refinementSelection = {};
       let cumulativeCommoditySelection = {};
       let cumulativeRenderMode = "line";
+      let cumulativeValueMode = "quantity";
       let allEventEntries = [];
       let eventTimelineOptions = null;
       let eventTypeSelection = {};
@@ -1603,6 +1703,22 @@
         });
       }
 
+      function formatDurationWithHours(seconds) {
+        const rawSeconds = Number(seconds);
+        if (!Number.isFinite(rawSeconds) || rawSeconds < 0) {
+          return "--";
+        }
+        const totalSeconds = Math.max(0, Math.round(rawSeconds));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        const hh = String(hours).padStart(2, "0");
+        const mm = String(minutes).padStart(2, "0");
+        const ss = String(secs).padStart(2, "0");
+        const decimalHours = (totalSeconds / 3600).toFixed(2);
+        return `${hh}:${mm}:${ss} (${decimalHours} hr)`;
+      }
+
       function buildCommodityRows(sessionData) {
         const source = sessionData && typeof sessionData === "object" ? (sessionData.commodities || {}) : {};
         return Object.entries(source).map(([name, details]) => {
@@ -1683,36 +1799,65 @@
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const summary = meta.content_summary && typeof meta.content_summary === "object" ? meta.content_summary : {};
         const entries = [
-          { name: "High", color: "#2ecc71", count: asNumber(summary.High) },
+          { name: "Low", color: "#f25f5c", count: asNumber(summary.Low) },
           { name: "Medium", color: "#f7c948", count: asNumber(summary.Medium) },
-          { name: "Low", color: "#f25f5c", count: asNumber(summary.Low) }
+          { name: "High", color: "#2ecc71", count: asNumber(summary.High) }
         ];
         const total = entries.reduce((sum, item) => sum + item.count, 0);
+        const materials = Array.isArray(meta.materials)
+          ? meta.materials
+              .map((entry) => {
+                const payload = entry && typeof entry === "object" ? entry : {};
+                const name = typeof payload.name === "string" ? payload.name.trim() : "";
+                const count = Math.max(0, Math.floor(asNumber(payload.count)));
+                return { name, count };
+              })
+              .filter((entry) => !!entry.name && entry.count > 0)
+              .sort((left, right) => {
+                if (right.count !== left.count) {
+                  return right.count - left.count;
+                }
+                return left.name.localeCompare(right.name);
+              })
+          : [];
 
-        if (total <= 0) {
+        if (total <= 0 && !materials.length) {
           const note = document.createElement("p");
           note.className = "chart-empty";
-          note.textContent = "No content summary found in this session.";
+          note.textContent = "No material summary found in this session.";
           chartContentMix.appendChild(note);
           return;
         }
 
-        let offset = 0;
-        const segments = entries.map((entry) => {
-          const ratio = entry.count / total;
-          const start = (offset * 360);
-          offset += ratio;
-          const end = (offset * 360);
-          return `${entry.color} ${start.toFixed(1)}deg ${end.toFixed(1)}deg`;
-        });
-
         const wrapper = document.createElement("div");
         wrapper.className = "mix-layout";
 
-        const ring = document.createElement("div");
-        ring.className = "mix-ring";
-        ring.style.background = `conic-gradient(${segments.join(", ")})`;
-        ring.title = `Total prospected: ${total.toLocaleString()}`;
+        if (total > 0) {
+          const bar = document.createElement("div");
+          bar.className = "mix-bar";
+          bar.title = `Total prospected asteroids: ${total.toLocaleString()}`;
+
+          entries.forEach((entry) => {
+            if (entry.count <= 0) {
+              return;
+            }
+            const ratio = entry.count / total;
+            const segment = document.createElement("div");
+            segment.className = "mix-segment";
+            segment.style.width = `${Math.max(1.5, ratio * 100)}%`;
+            segment.style.background = entry.color;
+            segment.title = `${entry.name}: ${entry.count.toLocaleString()} (${(ratio * 100).toFixed(1)}%)`;
+            bar.appendChild(segment);
+          });
+
+          wrapper.appendChild(bar);
+        } else {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.style.margin = "0";
+          note.textContent = "No High/Medium/Low content summary in this session.";
+          wrapper.appendChild(note);
+        }
 
         const legend = document.createElement("div");
         legend.className = "mix-legend";
@@ -1743,9 +1888,40 @@
           row.appendChild(count);
           legend.appendChild(row);
         });
-
-        wrapper.appendChild(ring);
         wrapper.appendChild(legend);
+
+        const matsWrap = document.createElement("div");
+        matsWrap.className = "mix-mats";
+        const matsTitle = document.createElement("p");
+        matsTitle.className = "mix-mats-title";
+        matsTitle.textContent = "Collected Materials";
+        matsWrap.appendChild(matsTitle);
+
+        if (!materials.length) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.style.margin = "0";
+          note.textContent = "No engineering materials were recorded.";
+          matsWrap.appendChild(note);
+        } else {
+          const matsList = document.createElement("div");
+          matsList.className = "mix-mats-list";
+          materials.forEach((entry) => {
+            const item = document.createElement("span");
+            item.className = "mix-mat";
+            const name = document.createElement("span");
+            name.textContent = entry.name;
+            const qty = document.createElement("span");
+            qty.className = "mix-mat-qty";
+            qty.textContent = `x${entry.count}`;
+            item.appendChild(name);
+            item.appendChild(qty);
+            matsList.appendChild(item);
+          });
+          matsWrap.appendChild(matsList);
+        }
+        wrapper.appendChild(matsWrap);
+
         chartContentMix.appendChild(wrapper);
       }
 
@@ -2111,11 +2287,27 @@
           compareButton.className = "panel-action-button";
           compareButton.textContent = "Compare";
           compareButton.addEventListener("click", () => {
-            const themeParam = encodeURIComponent(activeThemeId || DEFAULT_THEME_ID);
-            const url = `/web/compare.html?theme=${themeParam}`;
+            const params = new URLSearchParams();
+            params.set("theme", activeThemeId || DEFAULT_THEME_ID);
+            const selectedCommodity = String(selectedHistogramCommodity || "").trim();
+            if (selectedCommodity) {
+              const commodityKey = selectedCommodity.toLowerCase().replace(/[^a-z0-9]+/g, "");
+              if (commodityKey) {
+                params.set("commodity", commodityKey);
+              }
+            }
+            const url = `/web/compare.html?${params.toString()}`;
             window.open(url, "_blank", "noopener");
           });
           prospectFrequencyHeaderControls.appendChild(compareButton);
+
+          const intervalGroup = document.createElement("div");
+          intervalGroup.className = "prospect-frequency-interval-group";
+          const intervalPrefix = document.createElement("span");
+          intervalPrefix.className = "prospect-frequency-interval-prefix";
+          intervalPrefix.textContent = "Interval:";
+          intervalGroup.appendChild(intervalPrefix);
+          prospectFrequencyHeaderControls.appendChild(intervalGroup);
 
           const addRadioOption = (labelText, value) => {
             const option = document.createElement("label");
@@ -2138,7 +2330,7 @@
             text.textContent = `${labelText}`;
             option.appendChild(input);
             option.appendChild(text);
-            prospectFrequencyHeaderControls.appendChild(option);
+            intervalGroup.appendChild(option);
           };
 
           addRadioOption("5%", 5);
@@ -2413,11 +2605,6 @@
         asteroidLegend.textContent = `Asteroids: ${model.asteroidsCount}`;
         legend.appendChild(asteroidLegend);
 
-        const ringLegend = document.createElement("span");
-        ringLegend.className = "prospect-frequency-legend-item";
-        ringLegend.textContent = `Ring: ${model.ringLabel}`;
-        legend.appendChild(ringLegend);
-
         layout.appendChild(legend);
         chartProspectCumulativeFrequency.appendChild(layout);
       }
@@ -2569,6 +2756,31 @@
       function buildCumulativeCommoditySeries(sessionData) {
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const estimatedSell = meta && typeof meta.estimated_sell === "object" ? meta.estimated_sell : {};
+        const byCommodity = Array.isArray(estimatedSell.by_commodity) ? estimatedSell.by_commodity : [];
+        const sellPriceByCommodity = new Map();
+        byCommodity.forEach((entry) => {
+          if (!entry || typeof entry !== "object") {
+            return;
+          }
+          const candidates = [entry.name, entry.key, entry.commodity];
+          let normalizedName = "";
+          for (const candidate of candidates) {
+            const normalized = normalizeCommodityName(candidate);
+            if (normalized) {
+              normalizedName = normalized;
+              break;
+            }
+          }
+          if (!normalizedName) {
+            return;
+          }
+          const sellPrice = Number(entry.sell_price);
+          if (!Number.isFinite(sellPrice) || sellPrice < 0) {
+            return;
+          }
+          sellPriceByCommodity.set(normalizedName, sellPrice);
+        });
         const readCargoLimpetCount = (details, inventory) => {
           const directLimpets = Number(details && details.limpets);
           if (Number.isFinite(directLimpets) && directLimpets >= 0) {
@@ -2640,16 +2852,22 @@
         const endMs = endCandidate > startMs ? endCandidate : (startMs + 1);
 
         const series = names.map((name) => {
+          const sellPrice = asNumber(sellPriceByCommodity.get(normalizeCommodityName(name)));
           const points = cargoSnapshots.map((snapshot) => {
             const rawValue = name === "Limpets"
               ? Number(snapshot.limpetCount)
               : Number(snapshot.inventory[name]);
-            const value = Number.isFinite(rawValue) && rawValue >= 0 ? rawValue : 0;
-            return { ms: snapshot.ms, value };
+            const quantity = Number.isFinite(rawValue) && rawValue >= 0 ? rawValue : 0;
+            const profit = sellPrice > 0 ? (quantity * sellPrice) : 0;
+            return { ms: snapshot.ms, quantity, profit };
           });
           const lastPoint = points[points.length - 1] || null;
           if (lastPoint && lastPoint.ms < endMs) {
-            points.push({ ms: endMs, value: lastPoint.value });
+            points.push({
+              ms: endMs,
+              quantity: asNumber(lastPoint.quantity),
+              profit: asNumber(lastPoint.profit)
+            });
           }
           return { name, points };
         });
@@ -2703,6 +2921,15 @@
               "#ff6f91",
               "#4dd0b5"
             ];
+        const readMetricValue = (point) => cumulativeValueMode === "profit"
+          ? asNumber(point && point.profit)
+          : asNumber(point && point.quantity);
+        const formatMetricValue = (value) => cumulativeValueMode === "profit"
+          ? `${formatNumber(value, 0)} CR`
+          : `${formatNumber(value, 0)} t`;
+        const formatAxisMetricValue = (value) => cumulativeValueMode === "profit"
+          ? `${formatNumber(value / 1000000, 0)} M`
+          : formatNumber(value, 0);
 
         const layout = document.createElement("div");
         layout.className = "cumulative-layout";
@@ -2772,12 +2999,43 @@
           swatch.style.background = color;
           const latest = item.points[item.points.length - 1];
           const text = document.createElement("span");
-          text.textContent = `${item.name} (${formatNumber(latest ? latest.value : 0, 0)} t)`;
+          text.textContent = `${item.name} (${formatMetricValue(readMetricValue(latest))})`;
           legendItem.appendChild(checkbox);
           legendItem.appendChild(swatch);
           legendItem.appendChild(text);
-          legendRows.set(item.name, { item: legendItem, checkbox });
+          legendRows.set(item.name, { item: legendItem, checkbox, text, seriesItem: item });
           legend.appendChild(legendItem);
+        });
+
+        const valueModes = [
+          { value: "quantity", label: "Quantity" },
+          { value: "profit", label: "Profit" }
+        ];
+        if (cumulativeValueMode !== "quantity" && cumulativeValueMode !== "profit") {
+          cumulativeValueMode = "quantity";
+        }
+        const valueModeGroup = document.createElement("div");
+        valueModeGroup.className = "cumulative-render-mode-group";
+        valueModes.forEach((mode) => {
+          const option = document.createElement("label");
+          option.className = "cumulative-render-mode";
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "cumulative-value-mode";
+          input.value = mode.value;
+          input.checked = cumulativeValueMode === mode.value;
+          input.addEventListener("change", () => {
+            if (!input.checked) {
+              return;
+            }
+            cumulativeValueMode = mode.value;
+            renderSelectedSeries();
+          });
+          const text = document.createElement("span");
+          text.textContent = mode.label;
+          option.appendChild(input);
+          option.appendChild(text);
+          valueModeGroup.appendChild(option);
         });
 
         const renderModes = [
@@ -2787,6 +3045,8 @@
         if (cumulativeRenderMode !== "line" && cumulativeRenderMode !== "stacked-area") {
           cumulativeRenderMode = "line";
         }
+        const renderModeGroup = document.createElement("div");
+        renderModeGroup.className = "cumulative-render-mode-group";
         renderModes.forEach((mode) => {
           const option = document.createElement("label");
           option.className = "cumulative-render-mode";
@@ -2806,10 +3066,12 @@
           text.textContent = mode.label;
           option.appendChild(input);
           option.appendChild(text);
-          if (cumulativeHeaderControls) {
-            cumulativeHeaderControls.appendChild(option);
-          }
+          renderModeGroup.appendChild(option);
         });
+        if (cumulativeHeaderControls) {
+          cumulativeHeaderControls.appendChild(valueModeGroup);
+          cumulativeHeaderControls.appendChild(renderModeGroup);
+        }
 
         function renderSelectedSeries() {
           hideCursorTooltip();
@@ -2825,10 +3087,12 @@
           const pointCount = selectedSeries.length
             ? Math.min(...selectedSeries.map((item) => item.points.length))
             : 0;
-          const values = selectedSeries.flatMap((item) => item.points.slice(0, pointCount).map((point) => point.value));
+          const values = selectedSeries.flatMap(
+            (item) => item.points.slice(0, pointCount).map((point) => readMetricValue(point))
+          );
           const stackedTotals = pointCount > 0
             ? new Array(pointCount).fill(0).map((_, pointIndex) => selectedSeries.reduce(
-              (sum, item) => sum + asNumber(item.points[pointIndex] && item.points[pointIndex].value),
+              (sum, item) => sum + readMetricValue(item.points[pointIndex]),
               0
             ))
             : [];
@@ -2841,12 +3105,14 @@
           const mid = Math.round(yMax / 2);
           [yMax, mid, 0].forEach((value) => {
             const tick = document.createElement("span");
-            tick.textContent = String(value);
+            tick.textContent = formatAxisMetricValue(value);
             yAxis.appendChild(tick);
           });
 
-          legendRows.forEach(({ item, checkbox }) => {
-            item.classList.toggle("cumulative-legend-item--off", !checkbox.checked);
+          legendRows.forEach((row) => {
+            row.item.classList.toggle("cumulative-legend-item--off", !row.checkbox.checked);
+            const latestPoint = row.seriesItem.points[row.seriesItem.points.length - 1];
+            row.text.textContent = `${row.seriesItem.name} (${formatMetricValue(readMetricValue(latestPoint))})`;
           });
 
           surface.innerHTML = "";
@@ -2897,7 +3163,9 @@
               }
               const index = seriesIndexByName.get(item.name) || 0;
               const color = palette[index % palette.length];
-              const upper = item.points.slice(0, pointCount).map((point, pointIndex) => lower[pointIndex] + asNumber(point.value));
+              const upper = item.points.slice(0, pointCount).map(
+                (point, pointIndex) => lower[pointIndex] + readMetricValue(point)
+              );
               const topCommands = item.points.slice(0, pointCount).map((point, pointIndex) => {
                 const x = toX(point.ms);
                 const y = toY(upper[pointIndex]);
@@ -2929,7 +3197,8 @@
                 marker.setAttribute("r", "3");
                 marker.setAttribute("fill", color);
                 marker.setAttribute("class", "cumulative-point");
-                const detail = `${item.name}: ${formatNumber(point.value, 0)} t\nStacked: ${formatNumber(upper[pointIndex], 0)} t\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
+                const pointMetric = readMetricValue(point);
+                const detail = `${item.name}: ${formatMetricValue(pointMetric)}\nStacked: ${formatMetricValue(upper[pointIndex])}\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
                 marker.addEventListener("mouseenter", (event) => {
                   showCursorTooltip(detail, event);
                 });
@@ -2956,7 +3225,7 @@
               const path = document.createElementNS(ns, "path");
               const commands = item.points.slice(0, pointCount).map((point, pointIndex) => {
                 const x = toX(point.ms);
-                const y = toY(point.value);
+                const y = toY(readMetricValue(point));
                 return `${pointIndex === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
               }).join(" ");
               path.setAttribute("d", commands);
@@ -2967,11 +3236,12 @@
               item.points.slice(0, pointCount).forEach((point) => {
                 const marker = document.createElementNS(ns, "circle");
                 marker.setAttribute("cx", toX(point.ms).toFixed(2));
-                marker.setAttribute("cy", toY(point.value).toFixed(2));
+                const pointMetric = readMetricValue(point);
+                marker.setAttribute("cy", toY(pointMetric).toFixed(2));
                 marker.setAttribute("r", "3");
                 marker.setAttribute("fill", color);
                 marker.setAttribute("class", "cumulative-point");
-                const detail = `${item.name}: ${formatNumber(point.value, 0)} t\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
+                const detail = `${item.name}: ${formatMetricValue(pointMetric)}\n${formatLocalDateTime(new Date(point.ms).toISOString())}`;
                 marker.addEventListener("mouseenter", (event) => {
                   showCursorTooltip(detail, event);
                 });
@@ -3905,7 +4175,7 @@
         const roundedDurationHours = Number.isFinite(durationSeconds) && durationSeconds >= 0
           ? Number((durationSeconds / 3600.0).toFixed(2))
           : null;
-        const durationHours = Number.isFinite(roundedDurationHours) ? roundedDurationHours.toFixed(2) : "--";
+        const durationDisplay = formatDurationWithHours(durationSeconds);
         const tonsPerHour = (
           Number.isFinite(tonsValue)
           && tonsValue >= 0
@@ -3923,7 +4193,7 @@
           ["System", location.system || "--"],
           ["Body/Ring", location.body || location.ring || "--"],
           ["Tons", overall.tons ?? "--"],
-          ["Duration (Hours)", durationHours],
+          ["Duration (Hours)", durationDisplay],
           ["Tons/Hour", tonsPerHour],
           ["Total Est. Profit", totalEstProfit],
           ["Prospectors Launched", meta.prospectors_launched ?? "--"],
