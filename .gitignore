@@ -5,7 +5,7 @@ edmc_mining_analytics/util/__pycache__/
 
 integrations/__pycache__/
 session_data/
-session_data_*.json
+#session_data_*.json
 
 .codex/
 
