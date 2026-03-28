@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import threading
 from typing import Any, Dict, Iterable, Optional
+import uuid
 
 from .logging_utils import get_logger
 from .state import (
@@ -36,6 +37,7 @@ class SessionRecorder:
         self._recording: bool = False
         self._session_start: Optional[datetime] = None
         self._session_end: Optional[datetime] = None
+        self._session_guid: Optional[str] = None
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -47,6 +49,7 @@ class SessionRecorder:
         self._events.clear()
         self._session_start = self._ensure_aware(timestamp)
         self._session_end = None
+        self._session_guid = str(uuid.uuid4())
         self._recording = bool(self._state.session_logging_enabled)
         if not should_generate:
             return
@@ -78,6 +81,7 @@ class SessionRecorder:
             self._events.clear()
             self._session_start = None
             self._session_end = None
+            self._session_guid = None
             return
 
         if self._recording:
@@ -102,6 +106,7 @@ class SessionRecorder:
             meta["session_end_reason"] = reason
             if reset:
                 meta["ended_via_reset"] = True
+            self._append_prospected_asteroid_summary(payload)
             self._maybe_send_summary(
                 payload,
                 json_path,
@@ -113,6 +118,7 @@ class SessionRecorder:
         self._recording = False
         self._session_start = None
         self._session_end = None
+        self._session_guid = None
 
     # ------------------------------------------------------------------
     # Event capture
@@ -220,6 +226,8 @@ class SessionRecorder:
     # ------------------------------------------------------------------
     def _build_payload(self) -> dict[str, Any]:
         state = self._state
+        session_guid = (self._session_guid or "").strip() or str(uuid.uuid4())
+        self._session_guid = session_guid
         start = self._ensure_aware(
             state.mining_start or self._session_start or datetime.now(timezone.utc)
         )
@@ -260,6 +268,7 @@ class SessionRecorder:
         meta: dict[str, Any] = {
             "start_time": self._isoformat(start),
             "end_time": self._isoformat(end),
+            "session_guid": session_guid,
             "duration_seconds": duration_seconds,
             "overall_tph": {
                 "tons": total_cargo,
@@ -306,6 +315,117 @@ class SessionRecorder:
             "events": list(self._events),
         }
         return payload
+
+    def _append_prospected_asteroid_summary(self, payload: dict[str, Any]) -> None:
+        directory = self._resolve_output_directory()
+        if directory is None:
+            _log.debug("Skipping prospected asteroid summary append: plugin directory unavailable")
+            return
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            _log.exception("Failed to create session output directory for prospect summary: %s", directory)
+            return
+
+        meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
+        session_guid = str(meta.get("session_guid") or "").strip() or str(uuid.uuid4())
+        events = payload.get("events", []) if isinstance(payload, dict) else []
+        if not isinstance(events, list) or not events:
+            return
+
+        records: list[dict[str, Any]] = []
+        asteroid_sequence = 0
+        for event in events:
+            if not isinstance(event, dict) or event.get("type") != "prospected_asteroid":
+                continue
+            asteroid_sequence += 1
+            details = event.get("details", {})
+            if not isinstance(details, dict):
+                continue
+            materials = details.get("materials", [])
+            if not isinstance(materials, list) or not materials:
+                continue
+
+            duplicate_flag = bool(details.get("duplicate"))
+            ring_label, ring_type, reserve_level = self._resolve_prospect_context(meta, details)
+            for material in materials:
+                if not isinstance(material, dict):
+                    continue
+                raw_name = material.get("name")
+                name = str(raw_name).strip() if raw_name is not None else ""
+                if not name:
+                    continue
+                try:
+                    pct = float(material.get("percentage"))
+                except (TypeError, ValueError):
+                    continue
+                records.append(
+                    {
+                        "session_guid": session_guid,
+                        "asteroid_id": asteroid_sequence,
+                        "ring_name": ring_label,
+                        "ring_type": ring_type,
+                        "reserve_level": reserve_level,
+                        "commodity_name": name,
+                        "percentage": pct,
+                        "duplicate_prospector": duplicate_flag,
+                    }
+                )
+
+        if not records:
+            return
+
+        path = directory / "prospected_asteroid_summary.jsonl"
+        try:
+            with path.open("a", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record, sort_keys=False))
+                    handle.write("\n")
+        except Exception:
+            _log.exception("Failed to append prospected asteroid summary: %s", path)
+
+    @staticmethod
+    def _resolve_prospect_context(meta: dict[str, Any], details: dict[str, Any]) -> tuple[str, Optional[str], Optional[str]]:
+        body_detail = details.get("body")
+        if isinstance(body_detail, str) and body_detail.strip():
+            ring_name = body_detail.strip()
+        else:
+            ring_name = "Unknown"
+            location = meta.get("location", {})
+            if isinstance(location, dict):
+                for key in ("ring", "body", "system"):
+                    value = location.get(key)
+                    if isinstance(value, str) and value.strip():
+                        ring_name = value.strip()
+                        break
+            if ring_name == "Unknown":
+                for key in ("ring", "body", "system"):
+                    value = meta.get(key)
+                    if isinstance(value, str) and value.strip():
+                        ring_name = value.strip()
+                        break
+
+        ring_type: Optional[str] = None
+        reserve_level: Optional[str] = None
+        location = meta.get("location", {})
+        if isinstance(location, dict):
+            ring_type_raw = location.get("ring_type")
+            reserve_level_raw = location.get("reserve_level")
+            if isinstance(ring_type_raw, str) and ring_type_raw.strip():
+                ring_type = ring_type_raw.strip()
+            if isinstance(reserve_level_raw, str) and reserve_level_raw.strip():
+                reserve_level = reserve_level_raw.strip()
+
+        if ring_type is None:
+            raw_ring_type = meta.get("ring_type")
+            if isinstance(raw_ring_type, str) and raw_ring_type.strip():
+                ring_type = raw_ring_type.strip()
+        if reserve_level is None:
+            raw_reserve = meta.get("reserve_level")
+            if isinstance(raw_reserve, str) and raw_reserve.strip():
+                reserve_level = raw_reserve.strip()
+
+        return ring_name, ring_type, reserve_level
 
     def _derive_ring_name(self) -> Optional[str]:
         ring = getattr(self._state, "mining_ring", None)

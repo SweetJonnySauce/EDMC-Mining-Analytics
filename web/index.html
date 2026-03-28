@@ -19,6 +19,16 @@
       --cool-4: #3d90f0;
       --cool-text: #cfe8ff;
       --cool-glow: transparent;
+      --bar-primary-horizontal-start: color-mix(in srgb, var(--accent) 65%, #fff);
+      --bar-primary-horizontal-end: var(--accent);
+      --bar-primary-vertical-start: color-mix(in srgb, var(--accent) 75%, #fff);
+      --bar-primary-vertical-end: var(--accent);
+      --bar-secondary-horizontal-start: var(--cool-3);
+      --bar-secondary-horizontal-end: var(--cool-4);
+      --bar-secondary-vertical-start: var(--cool-1);
+      --bar-secondary-vertical-end: var(--cool-2);
+      --bar-histogram-vertical-start: var(--cool-1);
+      --bar-histogram-vertical-end: var(--cool-4);
       --ok: #45d483;
       --warn: #f7c948;
       --bad: #f25f5c;
@@ -62,6 +72,16 @@
       --cool-4: #4a2a05;
       --cool-text: #ffdcb3;
       --cool-glow: color-mix(in srgb, #ff9f1a 38%, transparent);
+      --bar-primary-horizontal-start: #4a2a05;
+      --bar-primary-horizontal-end: #ff9f1a;
+      --bar-primary-vertical-start: #ff9f1a;
+      --bar-primary-vertical-end: #4a2a05;
+      --bar-secondary-horizontal-start: #4a2a05;
+      --bar-secondary-horizontal-end: #ff9f1a;
+      --bar-secondary-vertical-start: #ff9f1a;
+      --bar-secondary-vertical-end: #4a2a05;
+      --bar-histogram-vertical-start: #ff9f1a;
+      --bar-histogram-vertical-end: #4a2a05;
     }
 
     :root[data-theme="green-light"] {
@@ -70,11 +90,12 @@
       --muted: #4c6348;
       --accent: #3c8223;
       --card: #ffffff;
-      --cool-1: #d8909f;
-      --cool-2: #b56576;
-      --cool-3: #ce7f90;
-      --cool-4: #b56576;
-      --cool-text: #7b2f40;
+      --cool-1: #8fd977;
+      --cool-2: #4d9134;
+      --cool-3: #7ab465;
+      --cool-4: #2e631b;
+      --cool-text: #1f4d14;
+      --cool-glow: color-mix(in srgb, #4d9134 35%, transparent);
     }
 
     :root[data-theme="green-dark"] {
@@ -83,11 +104,12 @@
       --muted: #b5c7bc;
       --accent: #d1d93b;
       --card: #243836;
-      --cool-1: #dd9aaa;
-      --cool-2: #b56576;
-      --cool-3: #d28798;
-      --cool-4: #b56576;
-      --cool-text: #f0d1d8;
+      --cool-1: #b8e36c;
+      --cool-2: #86c948;
+      --cool-3: #7abf3f;
+      --cool-4: #548a2a;
+      --cool-text: #e6f8c8;
+      --cool-glow: color-mix(in srgb, #86c948 40%, transparent);
     }
 
     * {
@@ -478,11 +500,11 @@
     .bar-fill {
       height: 100%;
       border-radius: 999px;
-      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 65%, #fff), var(--accent));
+      background: linear-gradient(90deg, var(--bar-primary-horizontal-start), var(--bar-primary-horizontal-end));
     }
 
     .bar-fill.cool {
-      background: linear-gradient(90deg, var(--cool-3), var(--cool-4));
+      background: linear-gradient(90deg, var(--bar-secondary-horizontal-start), var(--bar-secondary-horizontal-end));
       box-shadow: 0 0 8px var(--cool-glow);
     }
 
@@ -592,12 +614,12 @@
       width: 100%;
       border-radius: 3px 3px 0 0;
       min-height: 2px;
-      background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 75%, #fff), var(--accent));
+      background: linear-gradient(180deg, var(--bar-primary-vertical-start), var(--bar-primary-vertical-end));
       opacity: 0.9;
     }
 
     .timeline-bar.cool {
-      background: linear-gradient(180deg, var(--cool-1), var(--cool-2));
+      background: linear-gradient(180deg, var(--bar-secondary-vertical-start), var(--bar-secondary-vertical-end));
       box-shadow: 0 0 6px var(--cool-glow);
     }
 
@@ -773,7 +795,7 @@
       width: 100%;
       border-radius: 3px 3px 0 0;
       min-height: 2px;
-      background: linear-gradient(180deg, var(--cool-1), var(--cool-4));
+      background: linear-gradient(180deg, var(--bar-histogram-vertical-start), var(--bar-histogram-vertical-end));
       box-shadow: 0 0 6px var(--cool-glow);
       opacity: 0.92;
     }
@@ -807,6 +829,142 @@
       overflow-wrap: anywhere;
       word-break: break-word;
       min-height: 2.1em;
+    }
+
+    .prospect-frequency-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto auto;
+      gap: 8px;
+    }
+
+    .prospect-frequency-plot {
+      min-height: 210px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .prospect-frequency-surface {
+      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      overflow: hidden;
+    }
+
+    .prospect-frequency-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .prospect-frequency-grid-line {
+      stroke: color-mix(in srgb, var(--fg) 14%, transparent);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .prospect-frequency-line {
+      fill: none;
+      stroke: color-mix(in srgb, var(--cool-2) 78%, #fff);
+      stroke-width: 2.6;
+      vector-effect: non-scaling-stroke;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .prospect-frequency-line-hitbox {
+      fill: none;
+      stroke: transparent;
+      stroke-width: 16;
+      vector-effect: non-scaling-stroke;
+      cursor: crosshair;
+    }
+
+    .prospect-frequency-dot--other {
+      fill: color-mix(in srgb, var(--cool-3) 80%, #fff);
+      stroke: color-mix(in srgb, var(--card) 84%, #000);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .prospect-frequency-dot--current {
+      fill: color-mix(in srgb, var(--accent) 75%, #fff);
+      stroke: color-mix(in srgb, var(--fg) 42%, transparent);
+      stroke-width: 1.2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .prospect-frequency-crosshair {
+      stroke: color-mix(in srgb, var(--accent) 58%, transparent);
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .prospect-frequency-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.2;
+      user-select: none;
+    }
+
+    .prospect-frequency-control input {
+      margin: 0;
+      width: 12px;
+      height: 12px;
+      accent-color: var(--accent);
+    }
+
+    .prospect-frequency-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .prospect-frequency-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.2;
+    }
+
+    .prospect-frequency-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      background: color-mix(in srgb, var(--cool-3) 80%, #fff);
+    }
+
+    .prospect-frequency-dot.prospect-frequency-dot--current {
+      background: color-mix(in srgb, var(--accent) 75%, #fff);
+    }
+
+    .prospect-frequency-bin-label {
+      white-space: nowrap;
+      overflow-wrap: normal;
+      word-break: normal;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      min-height: 1.2em;
     }
 
     .cursor-tooltip {
@@ -924,7 +1082,14 @@
           <div id="commodity-histogram-filters" class="event-filters"></div>
         </article>
         <article class="chart-card chart-card--full">
-          <h2>Refinements Per Minute Bins</h2>
+          <div class="panel-header-row">
+            <h2>Cumulative Frequency (Ring)</h2>
+            <div id="prospect-frequency-header-controls" class="panel-header-controls"></div>
+          </div>
+          <div id="chart-prospect-cumulative-frequency" class="chart-body"></div>
+        </article>
+        <article class="chart-card chart-card--full">
+          <h2>Mining Refinements Per Minute (RPM)</h2>
           <div id="chart-refinements" class="chart-body"></div>
           <div id="refinement-filters" class="event-filters"></div>
         </article>
@@ -958,10 +1123,12 @@
       const chartCommodityTph = document.getElementById("chart-commodity-tph");
       const chartContentMix = document.getElementById("chart-content-mix");
       const chartProspectHistogram = document.getElementById("chart-prospect-histogram");
+      const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
       const chartCumulativeCommodities = document.getElementById("chart-cumulative-commodities");
       const cumulativeHeaderControls = document.getElementById("cumulative-header-controls");
+      const prospectFrequencyHeaderControls = document.getElementById("prospect-frequency-header-controls");
       const commodityHistogramFilters = document.getElementById("commodity-histogram-filters");
       const refinementFilters = document.getElementById("refinement-filters");
       const eventFilters = document.getElementById("event-filters");
@@ -975,13 +1142,20 @@
         { id: "blue-light", label: "Blue (light)", swatchBg: "#edf2f8", swatchAccent: "#3f87d4" },
         { id: "blue-dark", label: "Blue (dark)", swatchBg: "#0b1017", swatchAccent: "#3f87d4" },
         { id: "orange-dark", label: "Orange (dark)", swatchBg: "#130e09", swatchAccent: "#ff9f1a" },
-        { id: "green-light", label: "Green (light)", swatchBg: "#f4f9f2", swatchAccent: "#b56576" },
-        { id: "green-dark", label: "Green (dark)", swatchBg: "#1a2a29", swatchAccent: "#d35400" }
+        { id: "green-light", label: "Green (light)", swatchBg: "#f4f9f2", swatchAccent: "#3c8223" },
+        { id: "green-dark", label: "Green (dark)", swatchBg: "#1a2a29", swatchAccent: "#86c948" }
       ];
       let cursorTooltip = null;
       let runtimeAnalysisSettings = {};
       let activeThemeId = DEFAULT_THEME_ID;
       let selectedHistogramCommodity = "";
+      let activeSessionData = null;
+      let activeSessionFilename = "";
+      let prospectSummaryRecords = null;
+      let prospectSummaryLoadPromise = null;
+      let prospectFrequencyBinSize = 5;
+      let prospectFrequencyIncludeDuplicates = true;
+      let prospectFrequencyRenderToken = 0;
       let allRefinementEntries = [];
       let refinementTimelineOptions = null;
       let refinementSelection = {};
@@ -1220,7 +1394,7 @@
           tons: "s",
           "duration (hours)": "s",
           "tons/hour": "s",
-          "max rpm": "s",
+          "total est. profit": "s",
           prospected: "s",
           "prospectors launched": "s",
           "duplicate prospectors": "s",
@@ -1286,7 +1460,13 @@
         if (cumulativeHeaderControls) {
           cumulativeHeaderControls.innerHTML = "";
         }
+        if (prospectFrequencyHeaderControls) {
+          prospectFrequencyHeaderControls.innerHTML = "";
+        }
         selectedHistogramCommodity = "";
+        activeSessionData = null;
+        activeSessionFilename = "";
+        prospectFrequencyRenderToken += 1;
         allRefinementEntries = [];
         refinementTimelineOptions = null;
         refinementSelection = {};
@@ -1299,7 +1479,7 @@
         eventJournalFirstTimeByBin = new Map();
         activeJournalRow = null;
         activeTimelineBar = null;
-        [chartCommodityTons, chartCommodityTph, chartContentMix, chartProspectHistogram, chartRefinements, chartCumulativeCommodities, chartEvents].forEach((container) => {
+        [chartCommodityTons, chartCommodityTph, chartContentMix, chartProspectHistogram, chartProspectCumulativeFrequency, chartRefinements, chartCumulativeCommodities, chartEvents].forEach((container) => {
           container.innerHTML = "";
           const note = document.createElement("p");
           note.className = "chart-empty";
@@ -1548,6 +1728,579 @@
         };
       }
 
+      function normalizeTextKey(value) {
+        if (typeof value !== "string") {
+          return "";
+        }
+        return value.trim().toLowerCase();
+      }
+
+      function resolveSessionGuid(meta, filename) {
+        const direct = typeof meta.session_guid === "string" ? meta.session_guid.trim() : "";
+        if (direct) {
+          return direct;
+        }
+        const cleanName = typeof filename === "string" ? filename.trim() : "";
+        if (/^session_data_\d+\.json$/.test(cleanName)) {
+          return `sim-${cleanName.replace(/\.json$/i, "")}`;
+        }
+        return "";
+      }
+
+      function resolveSessionRingLabel(sessionData) {
+        const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const location = meta.location && typeof meta.location === "object" ? meta.location : {};
+        const ringCandidate = (
+          (typeof location.body === "string" && location.body.trim() ? location.body.trim() : "")
+          || (typeof location.ring === "string" && location.ring.trim() ? location.ring.trim() : "")
+          || (typeof location.system === "string" && location.system.trim() ? location.system.trim() : "")
+          || (typeof meta.body === "string" && meta.body.trim() ? meta.body.trim() : "")
+          || (typeof meta.ring === "string" && meta.ring.trim() ? meta.ring.trim() : "")
+          || (typeof meta.system === "string" && meta.system.trim() ? meta.system.trim() : "")
+        );
+        return ringCandidate || "Unknown";
+      }
+
+      async function loadProspectedAsteroidSummaryRecords() {
+        if (Array.isArray(prospectSummaryRecords)) {
+          return prospectSummaryRecords;
+        }
+        if (prospectSummaryLoadPromise) {
+          return prospectSummaryLoadPromise;
+        }
+        prospectSummaryLoadPromise = (async () => {
+          try {
+            const response = await fetch("/session_data/prospected_asteroid_summary.jsonl", { cache: "no-store" });
+            if (!response.ok) {
+              prospectSummaryRecords = [];
+              return prospectSummaryRecords;
+            }
+            const payload = await response.text();
+            const lines = payload.split(/\r?\n/);
+            const parsed = [];
+            for (const line of lines) {
+              const text = String(line || "").trim();
+              if (!text) {
+                continue;
+              }
+              try {
+                const row = JSON.parse(text);
+                if (!row || typeof row !== "object") {
+                  continue;
+                }
+                const sessionGuid = typeof row.session_guid === "string" ? row.session_guid.trim() : "";
+                const ringName = typeof row.ring_name === "string" && row.ring_name.trim()
+                  ? row.ring_name.trim()
+                  : "Unknown";
+                const commodityName = typeof row.commodity_name === "string" ? row.commodity_name.trim() : "";
+                const asteroidRaw = Number(row.asteroid_id);
+                const percentage = Number(row.percentage);
+                if (!sessionGuid || !commodityName || !Number.isFinite(asteroidRaw) || asteroidRaw < 1 || !Number.isFinite(percentage)) {
+                  continue;
+                }
+                parsed.push({
+                  session_guid: sessionGuid,
+                  asteroid_id: Math.floor(asteroidRaw),
+                  ring_name: ringName,
+                  commodity_name: commodityName,
+                  percentage: Math.max(0, percentage),
+                  duplicate_prospector: row.duplicate_prospector === true
+                });
+              } catch (_error) {
+                // Skip invalid JSON lines.
+              }
+            }
+            prospectSummaryRecords = parsed;
+            return prospectSummaryRecords;
+          } catch (_error) {
+            prospectSummaryRecords = [];
+            return prospectSummaryRecords;
+          } finally {
+            prospectSummaryLoadPromise = null;
+          }
+        })();
+        return prospectSummaryLoadPromise;
+      }
+
+      function buildSmoothLinePath(points) {
+        if (!Array.isArray(points) || points.length === 0) {
+          return "";
+        }
+        if (points.length === 1) {
+          const point = points[0];
+          return `M${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+        }
+        if (points.length === 2) {
+          const first = points[0];
+          const second = points[1];
+          return `M${first.x.toFixed(2)} ${first.y.toFixed(2)} L${second.x.toFixed(2)} ${second.y.toFixed(2)}`;
+        }
+        let command = `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+        for (let index = 0; index < points.length - 1; index += 1) {
+          const p0 = index > 0 ? points[index - 1] : points[index];
+          const p1 = points[index];
+          const p2 = points[index + 1];
+          const p3 = index + 2 < points.length ? points[index + 2] : p2;
+
+          // Catmull-Rom to cubic Bezier conversion; curve passes through every point.
+          const cp1x = p1.x + ((p2.x - p0.x) / 6);
+          const cp1y = p1.y + ((p2.y - p0.y) / 6);
+          const cp2x = p2.x - ((p3.x - p1.x) / 6);
+          const cp2y = p2.y - ((p3.y - p1.y) / 6);
+          command += ` C${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+        }
+        return command;
+      }
+
+      function buildProspectCumulativeFrequencyModel(sessionData, filename, summaryRecords) {
+        const commodity = String(selectedHistogramCommodity || "").trim();
+        if (!commodity) {
+          return { error: "Select a commodity in Asteroid Percentage Histogram to view cumulative frequency." };
+        }
+        if (!Array.isArray(summaryRecords) || summaryRecords.length === 0) {
+          return { error: "No long-term prospect summary data found yet." };
+        }
+
+        const ringLabel = resolveSessionRingLabel(sessionData);
+        const ringKey = normalizeTextKey(ringLabel);
+        const commodityKey = normalizeTextKey(commodity);
+        const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const currentSessionGuid = resolveSessionGuid(meta, filename);
+
+        const asteroidMap = new Map();
+        summaryRecords.forEach((row) => {
+          if (!row || typeof row !== "object") {
+            return;
+          }
+          if (normalizeTextKey(row.ring_name) !== ringKey) {
+            return;
+          }
+          const sessionGuid = typeof row.session_guid === "string" ? row.session_guid.trim() : "";
+          const asteroidRaw = Number(row.asteroid_id);
+          if (!sessionGuid || !Number.isFinite(asteroidRaw) || asteroidRaw < 1) {
+            return;
+          }
+          const asteroidId = Math.floor(asteroidRaw);
+          const key = `${sessionGuid}::${asteroidId}`;
+          let asteroid = asteroidMap.get(key);
+          if (!asteroid) {
+            asteroid = {
+              sessionGuid,
+              asteroidId,
+              duplicate: false,
+              commodityPercentages: new Map()
+            };
+            asteroidMap.set(key, asteroid);
+          }
+          asteroid.duplicate = asteroid.duplicate || row.duplicate_prospector === true;
+          const rowCommodity = normalizeTextKey(row.commodity_name);
+          if (!rowCommodity) {
+            return;
+          }
+          const pct = Number(row.percentage);
+          if (!Number.isFinite(pct)) {
+            return;
+          }
+          const safePct = Math.max(0, pct);
+          const prior = asteroid.commodityPercentages.get(rowCommodity);
+          if (!Number.isFinite(prior) || safePct > prior) {
+            asteroid.commodityPercentages.set(rowCommodity, safePct);
+          }
+        });
+
+        let asteroids = Array.from(asteroidMap.values());
+        if (!prospectFrequencyIncludeDuplicates) {
+          asteroids = asteroids.filter((asteroid) => !asteroid.duplicate);
+        }
+        if (!asteroids.length) {
+          return { error: "No asteroid records match the current ring and duplicate filter." };
+        }
+
+        const presentAsteroids = asteroids
+          .map((asteroid) => {
+            const raw = Number(asteroid.commodityPercentages.get(commodityKey));
+            if (!Number.isFinite(raw)) {
+              return null;
+            }
+            return {
+              value: Math.max(0, raw),
+              sessionGuid: asteroid.sessionGuid,
+              isCurrentSession: currentSessionGuid ? asteroid.sessionGuid === currentSessionGuid : false
+            };
+          })
+          .filter((asteroid) => !!asteroid);
+        if (!presentAsteroids.length) {
+          return { error: "No asteroids in this ring contain the selected commodity for the current duplicate filter." };
+        }
+
+        const sessionGuids = new Set();
+        presentAsteroids.forEach((asteroid) => {
+          sessionGuids.add(asteroid.sessionGuid);
+        });
+
+        const interval = prospectFrequencyBinSize === 10 ? 10 : 5;
+        const maxObserved = presentAsteroids.reduce((peak, item) => Math.max(peak, item.value), 0);
+        const xMax = Math.max(interval, Math.ceil(maxObserved / interval) * interval);
+        const bins = Math.max(1, Math.ceil(xMax / interval));
+        const totalCounts = new Array(bins).fill(0);
+        const currentCounts = new Array(bins).fill(0);
+        const otherCounts = new Array(bins).fill(0);
+        let percentSum = 0;
+
+        presentAsteroids.forEach((item) => {
+          percentSum += item.value;
+          let index = item.value >= xMax ? (bins - 1) : Math.floor(item.value / interval);
+          if (index < 0) {
+            index = 0;
+          }
+          if (index >= bins) {
+            index = bins - 1;
+          }
+          totalCounts[index] += 1;
+          if (item.isCurrentSession) {
+            currentCounts[index] += 1;
+          } else {
+            otherCounts[index] += 1;
+          }
+        });
+
+        const cumulativeTotalCounts = [];
+        const cumulativeCurrentCounts = [];
+        const cumulativeOtherCounts = [];
+        let runningTotal = 0;
+        let runningCurrent = 0;
+        let runningOther = 0;
+        for (let index = 0; index < bins; index += 1) {
+          runningTotal += totalCounts[index];
+          runningCurrent += currentCounts[index];
+          runningOther += otherCounts[index];
+          cumulativeTotalCounts.push(runningTotal);
+          cumulativeCurrentCounts.push(runningCurrent);
+          cumulativeOtherCounts.push(runningOther);
+        }
+
+        const points = cumulativeTotalCounts.map((total, index) => {
+          const intervalStart = index * interval;
+          const intervalEnd = Math.min(xMax, intervalStart + interval);
+          const center = intervalStart + ((intervalEnd - intervalStart) / 2);
+          return {
+            index,
+            intervalStart,
+            intervalEnd,
+            center,
+            binTotal: totalCounts[index],
+            binCurrent: currentCounts[index],
+            binOther: otherCounts[index],
+            total,
+            current: cumulativeCurrentCounts[index],
+            other: cumulativeOtherCounts[index]
+          };
+        });
+        const yMax = Math.max(1, runningTotal);
+        const averageYield = presentAsteroids.length > 0 ? (percentSum / presentAsteroids.length) : 0;
+
+        return {
+          ringLabel,
+          commodity,
+          points,
+          xMax,
+          yMax,
+          sessionsCount: sessionGuids.size,
+          asteroidsCount: presentAsteroids.length,
+          averageYield
+        };
+      }
+
+      async function renderProspectCumulativeFrequency(sessionData, filename) {
+        const renderToken = ++prospectFrequencyRenderToken;
+        chartProspectCumulativeFrequency.innerHTML = "";
+        if (prospectFrequencyHeaderControls) {
+          prospectFrequencyHeaderControls.innerHTML = "";
+        }
+
+        if (prospectFrequencyHeaderControls) {
+          const addRadioOption = (labelText, value) => {
+            const option = document.createElement("label");
+            option.className = "prospect-frequency-control";
+            const input = document.createElement("input");
+            input.type = "radio";
+            input.name = "prospect-frequency-interval";
+            input.value = String(value);
+            input.checked = prospectFrequencyBinSize === value;
+            input.addEventListener("change", () => {
+              if (!input.checked) {
+                return;
+              }
+              prospectFrequencyBinSize = value;
+              if (activeSessionData) {
+                void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+              }
+            });
+            const text = document.createElement("span");
+            text.textContent = `${labelText}`;
+            option.appendChild(input);
+            option.appendChild(text);
+            prospectFrequencyHeaderControls.appendChild(option);
+          };
+
+          addRadioOption("5%", 5);
+          addRadioOption("10%", 10);
+
+          const duplicatesToggle = document.createElement("label");
+          duplicatesToggle.className = "prospect-frequency-control";
+          const duplicateInput = document.createElement("input");
+          duplicateInput.type = "checkbox";
+          duplicateInput.checked = prospectFrequencyIncludeDuplicates;
+          duplicateInput.addEventListener("change", () => {
+            prospectFrequencyIncludeDuplicates = duplicateInput.checked;
+            if (activeSessionData) {
+              void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+            }
+          });
+          const duplicateText = document.createElement("span");
+          duplicateText.textContent = "Include Duplicates";
+          duplicatesToggle.appendChild(duplicateInput);
+          duplicatesToggle.appendChild(duplicateText);
+          prospectFrequencyHeaderControls.appendChild(duplicatesToggle);
+        }
+
+        const summaryRecords = await loadProspectedAsteroidSummaryRecords();
+        if (renderToken !== prospectFrequencyRenderToken) {
+          return;
+        }
+
+        const model = buildProspectCumulativeFrequencyModel(sessionData, filename, summaryRecords);
+        if (!model || model.error) {
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = model && model.error ? model.error : "Cumulative frequency data unavailable.";
+          chartProspectCumulativeFrequency.appendChild(note);
+          return;
+        }
+
+        const layout = document.createElement("div");
+        layout.className = "prospect-frequency-layout";
+        const plot = document.createElement("div");
+        plot.className = "prospect-frequency-plot";
+        const yAxis = document.createElement("div");
+        yAxis.className = "timeline-y-axis";
+        const half = Math.round(model.yMax / 2);
+        [model.yMax, half, 0]
+          .filter((value, index, values) => values.indexOf(value) === index)
+          .forEach((value) => {
+            const tick = document.createElement("span");
+            tick.textContent = String(value);
+            yAxis.appendChild(tick);
+          });
+
+        const surface = document.createElement("div");
+        surface.className = "prospect-frequency-surface";
+
+        const width = 1000;
+        const height = 240;
+        const topPad = 10;
+        const bottomPad = 18;
+        const sidePad = 14;
+        const drawWidth = Math.max(1, width - (sidePad * 2));
+        const drawHeight = Math.max(1, height - topPad - bottomPad);
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.classList.add("prospect-frequency-svg");
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        svg.setAttribute("preserveAspectRatio", "none");
+
+        [0, 0.5, 1].forEach((ratio) => {
+          const y = topPad + (drawHeight * ratio);
+          const line = document.createElementNS(ns, "line");
+          line.setAttribute("x1", sidePad.toFixed(2));
+          line.setAttribute("x2", (width - sidePad).toFixed(2));
+          line.setAttribute("y1", y.toFixed(2));
+          line.setAttribute("y2", y.toFixed(2));
+          line.setAttribute("class", "prospect-frequency-grid-line");
+          svg.appendChild(line);
+        });
+
+        const totalBins = Math.max(1, model.points.length);
+        const toX = (index) => sidePad + (((index + 0.5) / totalBins) * drawWidth);
+        const toY = (count) => {
+          const ratio = model.yMax <= 0 ? 0 : (count / model.yMax);
+          return topPad + (drawHeight * (1 - ratio));
+        };
+        const coordinates = model.points.map((point) => ({
+          ...point,
+          x: toX(point.index),
+          y: toY(point.total)
+        }));
+
+        const pathData = buildSmoothLinePath(coordinates);
+        const line = document.createElementNS(ns, "path");
+        line.setAttribute("class", "prospect-frequency-line");
+        line.setAttribute("d", pathData);
+        svg.appendChild(line);
+
+        const hitbox = document.createElementNS(ns, "path");
+        hitbox.setAttribute("class", "prospect-frequency-line-hitbox");
+        hitbox.setAttribute("d", pathData);
+        svg.appendChild(hitbox);
+
+        const hCross = document.createElementNS(ns, "line");
+        hCross.setAttribute("class", "prospect-frequency-crosshair");
+        svg.appendChild(hCross);
+
+        const vCross = document.createElementNS(ns, "line");
+        vCross.setAttribute("class", "prospect-frequency-crosshair");
+        svg.appendChild(vCross);
+
+        const showCrosshairAt = (point, event) => {
+          hCross.setAttribute("x1", sidePad.toFixed(2));
+          hCross.setAttribute("y1", point.y.toFixed(2));
+          hCross.setAttribute("x2", point.x.toFixed(2));
+          hCross.setAttribute("y2", point.y.toFixed(2));
+          hCross.style.opacity = "1";
+
+          vCross.setAttribute("x1", point.x.toFixed(2));
+          vCross.setAttribute("y1", point.y.toFixed(2));
+          vCross.setAttribute("x2", point.x.toFixed(2));
+          vCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+          vCross.style.opacity = "1";
+
+          const detail = [
+            `${model.commodity} | ${point.intervalStart}% - ${point.intervalEnd}%`,
+            `Cumulative Frequency: ${point.total} (Current: ${point.current}, Other: ${point.other})`,
+            `Bin Frequency: ${point.binTotal} (Current: ${point.binCurrent}, Other: ${point.binOther})`,
+            `Sessions: ${model.sessionsCount} | Avg Yield: ${formatNumber(model.averageYield, 2)}%`
+          ].join("\n");
+          showCursorTooltip(detail, event);
+        };
+
+        const hideCrosshair = () => {
+          hCross.style.opacity = "0";
+          vCross.style.opacity = "0";
+          hideCursorTooltip();
+        };
+
+        const findNearestPoint = (event) => {
+          if (!coordinates.length) {
+            return null;
+          }
+          const rect = svg.getBoundingClientRect();
+          if (!rect.width) {
+            return coordinates[0];
+          }
+          const ratio = (event.clientX - rect.left) / rect.width;
+          const localX = ratio * width;
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.x - localX);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.x - localX);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
+            }
+          }
+          return nearest;
+        };
+
+        hitbox.addEventListener("mouseenter", (event) => {
+          const nearest = findNearestPoint(event);
+          if (nearest) {
+            showCrosshairAt(nearest, event);
+          }
+        });
+        hitbox.addEventListener("mousemove", (event) => {
+          const nearest = findNearestPoint(event);
+          if (nearest) {
+            showCrosshairAt(nearest, event);
+          }
+        });
+        hitbox.addEventListener("mouseleave", () => {
+          hideCrosshair();
+        });
+
+        coordinates.forEach((point) => {
+          const otherDot = document.createElementNS(ns, "circle");
+          otherDot.setAttribute("class", "prospect-frequency-dot--other");
+          otherDot.setAttribute("cx", point.x.toFixed(2));
+          otherDot.setAttribute("cy", point.y.toFixed(2));
+          otherDot.setAttribute("r", "3.2");
+          svg.appendChild(otherDot);
+        });
+
+        coordinates.forEach((point) => {
+          if (point.current <= 0) {
+            return;
+          }
+          const currentDot = document.createElementNS(ns, "circle");
+          currentDot.setAttribute("class", "prospect-frequency-dot--current");
+          currentDot.setAttribute("cx", point.x.toFixed(2));
+          currentDot.setAttribute("cy", point.y.toFixed(2));
+          currentDot.setAttribute("r", "4.4");
+          svg.appendChild(currentDot);
+        });
+
+        surface.appendChild(svg);
+        plot.appendChild(yAxis);
+        plot.appendChild(surface);
+        layout.appendChild(plot);
+
+        const labels = document.createElement("div");
+        labels.className = "histogram-bin-labels";
+        labels.style.gridTemplateColumns = `repeat(${model.points.length}, minmax(0, 1fr))`;
+        const labelStep = Math.max(1, Math.ceil(model.points.length / 12));
+        model.points.forEach((point, index) => {
+          const label = document.createElement("span");
+          label.className = "histogram-bin-label prospect-frequency-bin-label";
+          if ((index % labelStep) === 0 || index === model.points.length - 1) {
+            label.textContent = `${point.intervalStart}-${point.intervalEnd}%`;
+          }
+          labels.appendChild(label);
+        });
+        const labelsRow = document.createElement("div");
+        labelsRow.className = "histogram-label-row";
+        const spacer = document.createElement("div");
+        spacer.className = "timeline-y-axis histogram-label-spacer";
+        labelsRow.appendChild(spacer);
+        labelsRow.appendChild(labels);
+        layout.appendChild(labelsRow);
+
+        const legend = document.createElement("div");
+        legend.className = "prospect-frequency-legend";
+
+        const dotLegendOther = document.createElement("span");
+        dotLegendOther.className = "prospect-frequency-legend-item";
+        dotLegendOther.innerHTML = "<span class=\"prospect-frequency-dot\"></span><span>Other Sessions</span>";
+        legend.appendChild(dotLegendOther);
+
+        const dotLegendCurrent = document.createElement("span");
+        dotLegendCurrent.className = "prospect-frequency-legend-item";
+        dotLegendCurrent.innerHTML = "<span class=\"prospect-frequency-dot prospect-frequency-dot--current\"></span><span>Current Session</span>";
+        legend.appendChild(dotLegendCurrent);
+
+        const sessionsLegend = document.createElement("span");
+        sessionsLegend.className = "prospect-frequency-legend-item";
+        sessionsLegend.textContent = `Mining Sessions: ${model.sessionsCount}`;
+        legend.appendChild(sessionsLegend);
+
+        const averageLegend = document.createElement("span");
+        averageLegend.className = "prospect-frequency-legend-item";
+        averageLegend.textContent = `Average Yield: ${formatNumber(model.averageYield, 2)}%`;
+        legend.appendChild(averageLegend);
+
+        const asteroidLegend = document.createElement("span");
+        asteroidLegend.className = "prospect-frequency-legend-item";
+        asteroidLegend.textContent = `Asteroids: ${model.asteroidsCount}`;
+        legend.appendChild(asteroidLegend);
+
+        const ringLegend = document.createElement("span");
+        ringLegend.className = "prospect-frequency-legend-item";
+        ringLegend.textContent = `Ring: ${model.ringLabel}`;
+        legend.appendChild(ringLegend);
+
+        layout.appendChild(legend);
+        chartProspectCumulativeFrequency.appendChild(layout);
+      }
+
       function renderProspectHistogram(sessionData) {
         chartProspectHistogram.innerHTML = "";
         if (commodityHistogramFilters) {
@@ -1564,6 +2317,9 @@
             filterNote.className = "chart-empty";
             filterNote.textContent = "No commodity options available.";
             commodityHistogramFilters.appendChild(filterNote);
+          }
+          if (activeSessionData) {
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
           }
           return;
         }
@@ -1655,6 +2411,9 @@
           layout.appendChild(labelsRow);
           layout.appendChild(axis);
           chartProspectHistogram.appendChild(layout);
+          if (activeSessionData) {
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
         };
 
         if (commodityHistogramFilters) {
@@ -1804,14 +2563,14 @@
 
         const palette = (activeThemeId === "green-light" || activeThemeId === "green-dark")
           ? [
-              "#d08a9a",
-              "#d35400",
-              "#8be37f",
-              "#f7c948",
-              "#ff9f43",
-              "#d0a5ff",
-              "#ff6f91",
-              "#4dd0b5"
+              "#224914",
+              "#2e631b",
+              "#367520",
+              "#3c8223",
+              "#4d9134",
+              "#7ab465",
+              "#b7daaa",
+              "#d7ebd0"
             ]
           : [
               "#67d4ff",
@@ -3007,7 +3766,7 @@
         const overall = meta.overall_tph || {};
         const location = meta.location || {};
         const prospected = meta.prospected || {};
-        const refinement = meta.refinement_activity || {};
+        const estimatedSell = meta.estimated_sell || {};
         const commodities = sessionData && sessionData.commodities ? Object.keys(sessionData.commodities).length : 0;
         const commoditiesIgnored = computeIgnoredProspectedCommodities(sessionData);
         const highestRefinedYield = computeHighestRefinedYieldCommodity(sessionData);
@@ -3016,8 +3775,10 @@
           ? Math.max(0, Math.floor(limpetDumpThresholdRaw))
           : 5;
         const limpetDumps = computeLimpetDumpCount(sessionData, limpetDumpThreshold);
-        const stats = overrides && typeof overrides === "object" ? overrides : {};
-        const maxRpm = stats.maxRpm ?? refinement.max_rpm ?? meta.max_rpm ?? "--";
+        const totalEstProfitRaw = Number(estimatedSell.total_value_cr);
+        const totalEstProfit = Number.isFinite(totalEstProfitRaw)
+          ? `${Math.round(totalEstProfitRaw).toLocaleString()} CR`
+          : "--";
         const tonsValue = Number(overall.tons);
         const durationSeconds = Number(meta.duration_seconds);
         const roundedDurationHours = Number.isFinite(durationSeconds) && durationSeconds >= 0
@@ -3043,7 +3804,7 @@
           ["Tons", overall.tons ?? "--"],
           ["Duration (Hours)", durationHours],
           ["Tons/Hour", tonsPerHour],
-          ["Max RPM", maxRpm],
+          ["Total Est. Profit", totalEstProfit],
           ["Prospectors Launched", meta.prospectors_launched ?? "--"],
           ["Prospected", prospected.total ?? "--"],
           ["Duplicate Prospectors", prospected.duplicates ?? "--"],
@@ -3074,10 +3835,14 @@
             throw new Error(`HTTP ${response.status}`);
           }
           const payload = await response.json();
+          activeSessionData = payload;
+          activeSessionFilename = filename;
           const chartStats = renderCharts(payload);
           renderMetrics(buildSummary(payload, filename, chartStats));
           setStatus(analysisStatus, "", "");
         } catch (error) {
+          activeSessionData = null;
+          activeSessionFilename = "";
           analysisMetrics.innerHTML = "";
           clearCharts("Unable to render charts because session load failed.");
           setStatus(
