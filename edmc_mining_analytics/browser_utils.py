@@ -19,24 +19,23 @@ from .capabilities import (
 from .capabilities.providers.browser_common import open_browser_url
 
 
-def open_analysis_url(
+def open_url_with_capability(
     capability_service: Optional[CapabilityService],
     url: str,
     *,
     policy_override: str | None = None,
-    title_hints: tuple[str, ...] = (
-        "EDMC Mining Analytics Web Page",
-        "EDMC Mining Analytics local web page",
-    ),
+    title_hints: tuple[str, ...] = (),
+    append_focus_token: bool = False,
+    missing_url_message: str = "Missing URL",
 ) -> CapabilityResult:
-    """Execute browser open/raise capability for the analysis URL."""
+    """Execute browser open/raise capability for an arbitrary URL."""
 
     target = str(url or "").strip()
     if not target:
         return CapabilityResult(
             status=STATUS_FAILED,
             reason_code=REASON_EXECUTION_ERROR,
-            message="Missing analysis URL",
+            message=str(missing_url_message or "Missing URL"),
         )
 
     if capability_service is None:
@@ -55,15 +54,41 @@ def open_analysis_url(
             message="Opened browser URL via fallback path",
         )
 
-    focus_token = secrets.token_hex(4)
-    tokenized_url = _append_query_param(target, "edmcma_focus_token", focus_token)
-    resolved_title_hints = tuple(title_hints) + (focus_token,)
+    tokenized_url = target
+    resolved_title_hints = tuple(str(hint) for hint in title_hints if str(hint or "").strip())
+    if append_focus_token:
+        focus_token = secrets.token_hex(4)
+        tokenized_url = _append_query_param(target, "edmcma_focus_token", focus_token)
+        resolved_title_hints = resolved_title_hints + (focus_token,)
+
     request = CapabilityRequest(
         capability_id=BROWSER_OPEN_RAISE,
         payload={"url": tokenized_url, "title_hints": resolved_title_hints},
         policy_override=policy_override,
     )
     return capability_service.execute(request)
+
+
+def open_analysis_url(
+    capability_service: Optional[CapabilityService],
+    url: str,
+    *,
+    policy_override: str | None = None,
+    title_hints: tuple[str, ...] = (
+        "EDMC Mining Analytics Web Page",
+        "EDMC Mining Analytics local web page",
+    ),
+) -> CapabilityResult:
+    """Execute browser open/raise capability for the analysis URL."""
+
+    return open_url_with_capability(
+        capability_service,
+        url,
+        policy_override=policy_override,
+        title_hints=title_hints,
+        append_focus_token=True,
+        missing_url_message="Missing analysis URL",
+    )
 
 
 def did_open(result: CapabilityResult) -> bool:

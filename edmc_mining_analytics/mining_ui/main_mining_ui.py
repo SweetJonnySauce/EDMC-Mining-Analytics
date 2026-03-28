@@ -86,6 +86,8 @@ NON_METAL_WARNING_COLOR = "#ff4d4d"
 NON_METAL_WARNING_TEXT = " (Warning: Non-Metallic ring)"
 DETAILS_ICON_EXPANDED = "🔼"
 DETAILS_ICON_COLLAPSED = "🔽"
+RPM_ANIMATION_INTERVAL_MS = 150
+RPM_SMOOTHING_ALPHA = 0.10
 
 
 class edmcmaMiningUI:
@@ -136,7 +138,8 @@ class edmcmaMiningUI:
         self._rpm_font: Optional[tkfont.Font] = None
         self._rpm_frame: Optional[tk.Frame] = None
         self._rpm_display_value: float = self._state.rpm_display_value
-        self._rpm_target_value: float = 0.0
+        self._rpm_target_value: float = self._rpm_display_value
+        self._rpm_pending_target: Optional[float] = None
         self._rpm_animation_after: Optional[str] = None
         self._pause_btn: Optional[ButtonType] = None
         self._commodities_headers: list[tk.Label] = []
@@ -219,7 +222,6 @@ class edmcmaMiningUI:
         self._prefs_auto_unpause_var: Optional[tk.BooleanVar] = None
         self._prefs_session_logging_var: Optional[tk.BooleanVar] = None
         self._prefs_session_retention_var: Optional[tk.IntVar] = None
-        self._prefs_refinement_window_var: Optional[tk.IntVar] = None
         self._prefs_rpm_red_var: Optional[tk.IntVar] = None
         self._prefs_rpm_yellow_var: Optional[tk.IntVar] = None
         self._prefs_rpm_green_var: Optional[tk.IntVar] = None
@@ -263,7 +265,6 @@ class edmcmaMiningUI:
         self._updating_rate_var = False
         self._updating_session_logging_var = False
         self._updating_session_retention_var = False
-        self._updating_refinement_window_var = False
         self._updating_rpm_vars = False
         self._updating_webhook_var = False
         self._updating_send_summary_var = False
@@ -474,6 +475,7 @@ class edmcmaMiningUI:
             except Exception:
                 pass
         self._rpm_update_job = None
+        self._cancel_rpm_animation()
 
     def _on_rpm_update_tick(self) -> None:
         # Clear the handle first to allow rescheduling even if exceptions occur
@@ -1310,8 +1312,9 @@ class edmcmaMiningUI:
             return
 
         if self._state.is_mining:
-            if self._state.mining_location:
-                status_base = f"You're mining {self._state.mining_location}"
+            location_label = self._state.mining_ring or self._state.mining_location
+            if location_label:
+                status_base = f"You're mining {location_label}"
             else:
                 status_base = "You're mining!"
         else:
@@ -1503,14 +1506,13 @@ class edmcmaMiningUI:
 
         now = datetime.now(timezone.utc)
         rpm = update_rpm(self._state, now)
-        self._start_rpm_animation(rpm)
+        self._animate_rpm_display(round(rpm, 1))
 
         tooltip = self._rpm_tooltip
         if tooltip is not None:
-            lookback = max(1, int(self._state.refinement_lookback_seconds or 1))
             tooltip.set_text(
                 (
-                    f"Refinements per minute over the last {lookback} seconds.\n"
+                    "Refinements per minute over the last 10 seconds.\n"
                     f"Session max RPM: {self._state.max_rpm:.1f}"
                 )
             )
@@ -1519,53 +1521,82 @@ class edmcmaMiningUI:
         default_color = self._theme.default_text_color()
         return determine_rpm_color(self._state, rpm, default=default_color)
 
-    def _start_rpm_animation(self, target_rpm: float) -> None:
-        self._rpm_target_value = target_rpm
-        if self._frame is None:
+    def _animate_rpm_display(self, target: float) -> None:
+        target_value = max(0.0, float(target))
+        frame = self._frame
+        if frame is None or not frame.winfo_exists():
+            self._rpm_target_value = target_value
+            self._rpm_pending_target = None
+            self._set_rpm_display(self._rpm_target_value)
             return
-
         if self._rpm_animation_after is not None:
+            self._rpm_pending_target = target_value
+            return
+        self._rpm_target_value = target_value
+        self._rpm_pending_target = None
+        if abs(self._rpm_target_value - self._rpm_display_value) < 0.05:
+            self._set_rpm_display(self._rpm_target_value)
+            return
+        if self._rpm_animation_after is None:
+            self._rpm_animation_after = frame.after(RPM_ANIMATION_INTERVAL_MS, self._on_rpm_animation_step)
+
+    def _cancel_rpm_animation(self) -> None:
+        frame = self._frame
+        if self._rpm_animation_after is None:
+            return
+        if frame is not None and frame.winfo_exists():
             try:
-                self._frame.after_cancel(self._rpm_animation_after)
+                frame.after_cancel(self._rpm_animation_after)
             except Exception:
                 pass
-            self._rpm_animation_after = None
+        self._rpm_animation_after = None
+        self._rpm_pending_target = None
 
-        if abs(self._rpm_display_value - target_rpm) < 0.05:
-            self._set_rpm_display(target_rpm)
-            return
-
-        self._schedule_rpm_step()
-
-    def _schedule_rpm_step(self) -> None:
-        frame = self._frame
-        if frame is None:
-            return
-        self._rpm_animation_after = frame.after(50, self._animate_rpm_step)
-
-    def _animate_rpm_step(self) -> None:
-        target_rpm = self._rpm_target_value
-        current_display = self._rpm_display_value
-
-        delta = target_rpm - current_display
+    def _on_rpm_animation_step(self) -> None:
+        self._rpm_animation_after = None
+        target = max(0.0, self._rpm_target_value)
+        current = max(0.0, self._rpm_display_value)
+        delta = target - current
         if abs(delta) < 0.05:
-            self._set_rpm_display(target_rpm)
-            self._rpm_animation_after = None
+            self._set_rpm_display(target)
+            self._promote_pending_rpm_target()
             return
 
-        step = 0.2 if delta > 0 else -0.2
-        next_value = round(current_display + step, 1)
+        # Display-only low-pass smoothing; the underlying RPM value remains event-count based.
+        alpha = RPM_SMOOTHING_ALPHA
+        next_value = current + (delta * alpha)
+        if abs(target - next_value) < 0.05:
+            self._set_rpm_display(target)
+            self._promote_pending_rpm_target()
+            return
         self._set_rpm_display(next_value)
-        self._schedule_rpm_step()
+
+        frame = self._frame
+        if frame is not None and frame.winfo_exists():
+            self._rpm_animation_after = frame.after(RPM_ANIMATION_INTERVAL_MS, self._on_rpm_animation_step)
+
+    def _promote_pending_rpm_target(self) -> None:
+        pending_target = self._rpm_pending_target
+        self._rpm_pending_target = None
+        if pending_target is None:
+            return
+        self._rpm_target_value = max(0.0, float(pending_target))
+        if abs(self._rpm_target_value - self._rpm_display_value) < 0.05:
+            self._set_rpm_display(self._rpm_target_value)
+            return
+        frame = self._frame
+        if frame is not None and frame.winfo_exists():
+            self._rpm_animation_after = frame.after(RPM_ANIMATION_INTERVAL_MS, self._on_rpm_animation_step)
 
     def _set_rpm_display(self, value: float) -> None:
-        self._rpm_display_value = value
-        self._state.rpm_display_value = value
+        display_value = max(0.0, float(value))
+        self._rpm_display_value = display_value
+        self._state.rpm_display_value = display_value
         rpm_var = self._rpm_var
         if rpm_var is not None:
-            rpm_var.set(f"{value:.1f}")
+            rpm_var.set(f"{display_value:.1f}")
 
-        color = self._determine_rpm_color(value)
+        color = self._determine_rpm_color(display_value)
         self._state.rpm_display_color = color
         if self._rpm_label is not None:
             try:
@@ -1916,27 +1947,6 @@ class edmcmaMiningUI:
             self._updating_rate_var = False
         self.schedule_rate_update()
 
-    def _on_refinement_window_change(self, *_: object) -> None:
-        if (
-            self._prefs_refinement_window_var is None
-            or self._updating_refinement_window_var
-        ):
-            return
-        try:
-            value = int(self._prefs_refinement_window_var.get())
-        except (TypeError, ValueError, tk.TclError):
-            return
-        window = clamp_positive_int(value, self._state.refinement_lookback_seconds, maximum=3600)
-        if window == self._state.refinement_lookback_seconds:
-            return
-        self._state.refinement_lookback_seconds = window
-        if self._prefs_refinement_window_var.get() != window:
-            self._updating_refinement_window_var = True
-            self._prefs_refinement_window_var.set(window)
-            self._updating_refinement_window_var = False
-        update_rpm(self._state)
-        self._update_rpm_indicator()
-
     def _on_rpm_threshold_change(self, *_: object) -> None:
         if (
             self._prefs_rpm_red_var is None
@@ -2055,9 +2065,36 @@ class edmcmaMiningUI:
             def do_GET(self) -> None:  # noqa: N802
                 path = (self.path or "").split("?", 1)[0]
                 if path == "/analysis_settings.json":
+                    distance_ls_raw = getattr(ui_state, "market_search_distance_ls", None)
+                    try:
+                        distance_ls = float(distance_ls_raw) if distance_ls_raw is not None else None
+                    except (TypeError, ValueError):
+                        distance_ls = None
+                    try:
+                        distance_ly = float(getattr(ui_state, "market_search_distance_ly", 0.0))
+                    except (TypeError, ValueError):
+                        distance_ly = 0.0
+                    try:
+                        min_demand = int(getattr(ui_state, "market_search_min_demand", 0))
+                    except (TypeError, ValueError):
+                        min_demand = 0
+                    try:
+                        age_days = int(getattr(ui_state, "market_search_age_days", 0))
+                    except (TypeError, ValueError):
+                        age_days = 0
                     payload = {
                         "histogram_bin_size": max(1, int(getattr(ui_state, "histogram_bin_size", 10))),
                         "limpet_dump_threshold": max(1, int(getattr(ui_state, "limpet_dump_threshold", 5))),
+                        "market_search_criteria": {
+                            "sort_mode": str(getattr(ui_state, "market_search_sort_mode", "best_price") or "best_price"),
+                            "has_large_pad": bool(getattr(ui_state, "market_search_has_large_pad", False) is True),
+                            "include_carriers": bool(getattr(ui_state, "market_search_include_carriers", True)),
+                            "include_surface": bool(getattr(ui_state, "market_search_include_surface", True)),
+                            "min_demand": max(0, min_demand),
+                            "age_days": max(0, age_days),
+                            "distance_ly": max(0.0, distance_ly),
+                            "distance_ls": None if distance_ls is None else max(0.0, distance_ls),
+                        },
                     }
                     body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
                     self.send_response(200)

@@ -597,6 +597,33 @@ class SessionRecorder:
         if sort_mode not in ("best_price", "nearest"):
             sort_mode = "best_price"
 
+        has_large_pad = True if state.market_search_has_large_pad is True else False
+        min_demand = int(state.market_search_min_demand) if state.market_search_min_demand is not None else 0
+        if min_demand < 0:
+            min_demand = 0
+        age_days = int(state.market_search_age_days) if state.market_search_age_days is not None else 0
+        if age_days < 0:
+            age_days = 0
+        try:
+            distance_ly = float(state.market_search_distance_ly)
+        except (TypeError, ValueError):
+            distance_ly = 0.0
+        if distance_ly < 0:
+            distance_ly = 0.0
+        distance_ls: Optional[float]
+        try:
+            distance_ls = float(state.market_search_distance_ls) if state.market_search_distance_ls is not None else None
+        except (TypeError, ValueError):
+            distance_ls = None
+        if distance_ls is not None and distance_ls < 0:
+            distance_ls = 0.0
+
+        reference_system: Optional[str] = str(state.current_system or "").strip()
+        if not reference_system:
+            reference_system = str(state.mining_system or "").strip()
+        if not reference_system:
+            reference_system = None
+
         coverage_ratio: Optional[float]
         if total_tons > 0:
             coverage_ratio = priced_tons / total_tons
@@ -612,6 +639,17 @@ class SessionRecorder:
             "priced_tons": priced_tons,
             "total_tons": total_tons,
             "coverage_ratio": coverage_ratio,
+            "search_criteria": {
+                "sort_mode": sort_mode,
+                "reference_system": reference_system,
+                "has_large_pad": has_large_pad,
+                "include_carriers": bool(state.market_search_include_carriers),
+                "include_surface": bool(state.market_search_include_surface),
+                "min_demand": min_demand,
+                "age_days": age_days,
+                "distance_ly": distance_ly,
+                "distance_ls": distance_ls,
+            },
             "by_commodity": by_commodity,
         }
 

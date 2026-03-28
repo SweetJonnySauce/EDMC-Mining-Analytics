@@ -184,6 +184,26 @@ def test_session_boundaries_and_manual_reset() -> None:
         assert state.cargo_additions == {}
 
 
+def test_session_stops_on_fsd_jump() -> None:
+    with harness_context() as (harness, load, _cfg):
+        _register_handler(harness, load)
+
+        harness.fire_event(_launch_prospector_event("3300-01-01T00:00:00Z"), state={})
+        state = load._plugin.state
+        assert state.is_mining is True
+
+        harness.fire_event(
+            {
+                "event": "FSDJump",
+                "StarSystem": "Achenar",
+                "timestamp": "3300-01-01T00:02:00Z",
+            },
+            state={},
+        )
+        assert state.is_mining is False
+        assert state.mining_end is not None
+
+
 def test_shipyard_swap_pending_update_resolves_on_loadout() -> None:
     with harness_context() as (harness, load, _cfg):
         _register_handler(harness, load)

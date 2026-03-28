@@ -1,0 +1,6541 @@
+{
+  "meta": {
+    "start_time": "2026-03-28T13:38:37Z",
+    "end_time": "2026-03-28T14:07:51Z",
+    "session_guid": "98548e59-df23-4c3d-bae4-6c2c13833200",
+    "duration_seconds": 1754.0,
+    "overall_tph": {
+      "tons": 256,
+      "elapsed_seconds": 1754.0,
+      "tons_per_hour": 525.428
+    },
+    "location": {
+      "body": "Synuefe UZ-O c22-10",
+      "system": "HIP 21070"
+    },
+    "ship": "Type-11 Prospector",
+    "prospected": {
+      "total": 25,
+      "already_mined": 0,
+      "duplicates": 0
+    },
+    "prospectors_launched": 28,
+    "collectors_launched": 35,
+    "collectors_abandoned": 166,
+    "limpets_remaining": 1,
+    "content_summary": {
+      "High": 2,
+      "Medium": 11,
+      "Low": 12
+    },
+    "inventory_tonnage": 256,
+    "cargo_capacity": 256,
+    "materials": [
+      {
+        "name": "Germanium",
+        "count": 3
+      },
+      {
+        "name": "Tungsten",
+        "count": 6
+      }
+    ],
+    "histogram_bin_size": 10,
+    "max_rpm": 120.0,
+    "refinement_activity": {
+      "lookback_seconds": 2,
+      "current_rpm": 0.0,
+      "max_rpm": 120.0
+    },
+    "limpet_dump_threshold": 5,
+    "estimated_sell": {
+      "captured_at": "2026-03-28T14:07:51Z",
+      "sort_mode": "nearest",
+      "total_value_cr": 15091818.0,
+      "priced_commodities": 4,
+      "unpriced_commodities": 0,
+      "priced_tons": 256.0,
+      "total_tons": 256.0,
+      "coverage_ratio": 1.0,
+      "by_commodity": [
+        {
+          "key": "platinum",
+          "name": "Platinum",
+          "tons": 226.0,
+          "sell_price": 60641.0,
+          "estimated_value_cr": 13704866.0,
+          "price_source": {
+            "system_name": "HIP 21070",
+            "station_name": "Bunch Point",
+            "market_updated_at": "2026-03-26 19:33:05+00",
+            "distance_ly": 16.7191004636165,
+            "distance_to_arrival": 8.381887
+          }
+        },
+        {
+          "key": "osmium",
+          "name": "Osmium",
+          "tons": 19.0,
+          "sell_price": 48707.0,
+          "estimated_value_cr": 925433.0,
+          "price_source": {
+            "system_name": "HIP 21070",
+            "station_name": "Bunch Point",
+            "market_updated_at": "2026-03-26 19:33:05+00",
+            "distance_ly": 16.7191004636165,
+            "distance_to_arrival": 8.381887
+          }
+        },
+        {
+          "key": "silver",
+          "name": "Silver",
+          "tons": 10.0,
+          "sell_price": 41084.0,
+          "estimated_value_cr": 410840.0,
+          "price_source": {
+            "system_name": "Synuefe ZA-N c23-11",
+            "station_name": "Gladwell Relay",
+            "market_updated_at": "2026-03-21 12:28:12+00",
+            "distance_ly": 50.4516611935375,
+            "distance_to_arrival": 3.711396
+          }
+        },
+        {
+          "key": "gold",
+          "name": "Gold",
+          "tons": 1.0,
+          "sell_price": 50679.0,
+          "estimated_value_cr": 50679.0,
+          "price_source": {
+            "system_name": "Col 285 Sector LQ-E b12-2",
+            "station_name": "Hood Enterprise",
+            "market_updated_at": "2026-03-12 03:05:57+00",
+            "distance_ly": 67.8483344259459,
+            "distance_to_arrival": 6.20068
+          }
+        }
+      ]
+    },
+    "commander": "sweetjonnysauce",
+    "prospectors_lost": 3
+  },
+  "commodities": {
+    "Gold": {
+      "asteroids_prospected": 4,
+      "percentage_of_asteroids": 16.0,
+      "gathered": {
+        "tons": 1,
+        "elapsed_seconds": 1629.0
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 4.46,
+          "count": 1
+        },
+        {
+          "percentage": 9.16,
+          "count": 1
+        },
+        {
+          "percentage": 14.01,
+          "count": 1
+        },
+        {
+          "percentage": 16.57,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 4.464,
+        "avg": 11.05,
+        "max": 16.573
+      },
+      "tons_per_hour": 2.21
+    },
+    "Osmium": {
+      "asteroids_prospected": 3,
+      "percentage_of_asteroids": 12.0,
+      "gathered": {
+        "tons": 19,
+        "elapsed_seconds": 1491.0
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 4.96,
+          "count": 1
+        },
+        {
+          "percentage": 30.9,
+          "count": 1
+        },
+        {
+          "percentage": 45.18,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 4.955,
+        "avg": 27.014,
+        "max": 45.183
+      },
+      "tons_per_hour": 45.875
+    },
+    "Platinum": {
+      "asteroids_prospected": 17,
+      "percentage_of_asteroids": 68.0,
+      "gathered": {
+        "tons": 226,
+        "elapsed_seconds": 1677.0
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 6.91,
+          "count": 1
+        },
+        {
+          "percentage": 8.2,
+          "count": 1
+        },
+        {
+          "percentage": 15.81,
+          "count": 1
+        },
+        {
+          "percentage": 22.97,
+          "count": 1
+        },
+        {
+          "percentage": 26.56,
+          "count": 1
+        },
+        {
+          "percentage": 26.64,
+          "count": 1
+        },
+        {
+          "percentage": 30.7,
+          "count": 1
+        },
+        {
+          "percentage": 31.75,
+          "count": 1
+        },
+        {
+          "percentage": 38.76,
+          "count": 1
+        },
+        {
+          "percentage": 45.81,
+          "count": 1
+        },
+        {
+          "percentage": 49.69,
+          "count": 1
+        },
+        {
+          "percentage": 50.32,
+          "count": 1
+        },
+        {
+          "percentage": 52.35,
+          "count": 1
+        },
+        {
+          "percentage": 53.04,
+          "count": 1
+        },
+        {
+          "percentage": 55.51,
+          "count": 1
+        },
+        {
+          "percentage": 59.89,
+          "count": 1
+        },
+        {
+          "percentage": 66.67,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 6.911,
+        "avg": 37.739,
+        "max": 66.667
+      },
+      "tons_per_hour": 485.152
+    },
+    "Silver": {
+      "asteroids_prospected": 4,
+      "percentage_of_asteroids": 16.0,
+      "gathered": {
+        "tons": 10,
+        "elapsed_seconds": 1312.0
+      },
+      "percentage_breakdown": [
+        {
+          "percentage": 15.33,
+          "count": 1
+        },
+        {
+          "percentage": 15.46,
+          "count": 1
+        },
+        {
+          "percentage": 18.69,
+          "count": 1
+        },
+        {
+          "percentage": 27.27,
+          "count": 1
+        }
+      ],
+      "percentage_stats": {
+        "min": 15.33,
+        "avg": 19.189,
+        "max": 27.274
+      },
+      "tons_per_hour": 27.439
+    }
+  },
+  "events": [
+    {
+      "type": "mining_session_started",
+      "timestamp": "2026-03-28T13:38:37Z",
+      "details": {
+        "reason": "Prospector drone launched"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:38:37Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:38:49Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Samarium",
+            "percentage": 32.564152
+          },
+          {
+            "name": "Praseodymium",
+            "percentage": 13.454042
+          },
+          {
+            "name": "Gallite",
+            "percentage": 6.93149
+          }
+        ],
+        "content": "High",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:38:59Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:03Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 228,
+        "inventory": {
+          "Drones": 228
+        },
+        "limpets": 228
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:06Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:10Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 227,
+        "inventory": {
+          "Drones": 227
+        },
+        "limpets": 227
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:14Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:18Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 226,
+        "inventory": {
+          "Drones": 226
+        },
+        "limpets": 226
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:39:20Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 38.758614
+          },
+          {
+            "name": "Gallite",
+            "percentage": 12.006343
+          },
+          {
+            "name": "Gold",
+            "percentage": 4.463995
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:39:28Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Gallite",
+            "percentage": 39.164715
+          },
+          {
+            "name": "Platinum",
+            "percentage": 6.911442
+          },
+          {
+            "name": "Samarium",
+            "percentage": 7.191104
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:33Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:36Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:37Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 224,
+        "inventory": {
+          "Drones": 224
+        },
+        "limpets": 224
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:38Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:39Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 223,
+        "inventory": {
+          "Drones": 223
+        },
+        "limpets": 223
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:40Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:41Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 222,
+        "inventory": {
+          "Drones": 222
+        },
+        "limpets": 222
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:42Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:43Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 221,
+        "inventory": {
+          "Drones": 221
+        },
+        "limpets": 221
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:44Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:45Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 220,
+        "inventory": {
+          "Drones": 220
+        },
+        "limpets": 220
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:46Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:48Z",
+      "details": {
+        "total_cargo": 0,
+        "count": 220,
+        "inventory": {
+          "Drones": 219
+        },
+        "limpets": 219
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:39:48Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:48Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:50Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:52Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:54Z",
+      "details": {
+        "total_cargo": 1,
+        "count": 218,
+        "inventory": {
+          "Drones": 216,
+          "Platinum": 1
+        },
+        "limpets": 216
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:54Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:39:55Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:39:56Z",
+      "details": {
+        "total_cargo": 2,
+        "count": 217,
+        "inventory": {
+          "Drones": 215,
+          "Platinum": 2
+        },
+        "limpets": 215
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:56Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:39:57Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:39:58Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:40:00Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:01Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:02Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:03Z",
+      "details": {
+        "total_cargo": 5,
+        "count": 218,
+        "inventory": {
+          "Drones": 212,
+          "Platinum": 5
+        },
+        "limpets": 212
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:05Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:08Z",
+      "details": {
+        "total_cargo": 6,
+        "count": 219,
+        "inventory": {
+          "Drones": 212,
+          "Platinum": 6
+        },
+        "limpets": 212
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:08Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:10Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:11Z",
+      "details": {
+        "total_cargo": 8,
+        "count": 220,
+        "inventory": {
+          "Drones": 212,
+          "Platinum": 8
+        },
+        "limpets": 212
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:13Z",
+      "details": {
+        "total_cargo": 8,
+        "count": 221,
+        "inventory": {
+          "Drones": 212,
+          "Platinum": 8
+        },
+        "limpets": 212
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:15Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:18Z",
+      "details": {
+        "total_cargo": 10,
+        "count": 223,
+        "inventory": {
+          "Drones": 212,
+          "Platinum": 10
+        },
+        "limpets": 212
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:19Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:20Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:23Z",
+      "details": {
+        "total_cargo": 12,
+        "count": 224,
+        "inventory": {
+          "Drones": 212,
+          "Platinum": 12
+        },
+        "limpets": 212
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:25Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:28Z",
+      "details": {
+        "total_cargo": 13,
+        "count": 226,
+        "inventory": {
+          "Drones": 212,
+          "Platinum": 13
+        },
+        "limpets": 212
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:29Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:30Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:32Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:40:33Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:34Z",
+      "details": {
+        "total_cargo": 16,
+        "count": 229,
+        "inventory": {
+          "Drones": 212,
+          "Platinum": 16
+        },
+        "limpets": 212
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:36Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:38Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:39Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:41Z",
+      "details": {
+        "type_localised": "Gold",
+        "type": "$gold_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:41Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:42Z",
+      "details": {
+        "total_cargo": 21,
+        "count": 232,
+        "inventory": {
+          "Drones": 211,
+          "Gold": 1,
+          "Platinum": 20
+        },
+        "limpets": 211
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:44Z",
+      "details": {
+        "total_cargo": 21,
+        "count": 233,
+        "inventory": {
+          "Drones": 211,
+          "Gold": 1,
+          "Platinum": 20
+        },
+        "limpets": 211
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:45Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:47Z",
+      "details": {
+        "total_cargo": 22,
+        "count": 234,
+        "inventory": {
+          "Drones": 211,
+          "Gold": 1,
+          "Platinum": 21
+        },
+        "limpets": 211
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:40:49Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:40:49Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:52Z",
+      "details": {
+        "total_cargo": 23,
+        "count": 234,
+        "inventory": {
+          "Drones": 211,
+          "Gold": 1,
+          "Platinum": 22
+        },
+        "limpets": 211
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:40:56Z",
+      "details": {
+        "total_cargo": 23,
+        "count": 233,
+        "inventory": {
+          "Drones": 210,
+          "Gold": 1,
+          "Platinum": 22
+        },
+        "limpets": 210
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:40:56Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Palladium",
+            "percentage": 37.376549
+          },
+          {
+            "name": "Platinum",
+            "percentage": 15.814506
+          },
+          {
+            "name": "Praseodymium",
+            "percentage": 9.155624
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:41:10Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 55.511307
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:28Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:31Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:31Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:31Z",
+      "details": {
+        "total_cargo": 25,
+        "count": 237,
+        "inventory": {
+          "Drones": 210,
+          "Gold": 1,
+          "Platinum": 24
+        },
+        "limpets": 210
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:32Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:33Z",
+      "details": {
+        "total_cargo": 26,
+        "count": 238,
+        "inventory": {
+          "Drones": 210,
+          "Gold": 1,
+          "Platinum": 25
+        },
+        "limpets": 210
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:34Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:34Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:36Z",
+      "details": {
+        "total_cargo": 27,
+        "count": 238,
+        "inventory": {
+          "Drones": 210,
+          "Gold": 1,
+          "Platinum": 26
+        },
+        "limpets": 210
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:37Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:38Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:38Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:39Z",
+      "details": {
+        "total_cargo": 29,
+        "count": 241,
+        "inventory": {
+          "Drones": 210,
+          "Gold": 1,
+          "Platinum": 28
+        },
+        "limpets": 210
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:41Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:41Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:41Z",
+      "details": {
+        "total_cargo": 30,
+        "count": 240,
+        "inventory": {
+          "Drones": 210,
+          "Gold": 1,
+          "Platinum": 29
+        },
+        "limpets": 210
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:43Z",
+      "details": {
+        "total_cargo": 30,
+        "count": 242,
+        "inventory": {
+          "Drones": 210,
+          "Gold": 1,
+          "Platinum": 29
+        },
+        "limpets": 210
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:44Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:45Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:46Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:46Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:47Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:49Z",
+      "details": {
+        "total_cargo": 34,
+        "count": 244,
+        "inventory": {
+          "Drones": 210,
+          "Gold": 1,
+          "Platinum": 33
+        },
+        "limpets": 210
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:41:50Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:51Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:53Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:53Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:53Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:53Z",
+      "details": {
+        "total_cargo": 36,
+        "count": 246,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 35
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:54Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:41:56Z",
+      "details": {
+        "total_cargo": 37,
+        "count": 247,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 36
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:41:58Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:00Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:00Z",
+      "details": {
+        "total_cargo": 39,
+        "count": 249,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 38
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:02Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:02Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:02Z",
+      "details": {
+        "total_cargo": 40,
+        "count": 250,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 39
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:03Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:06Z",
+      "details": {
+        "total_cargo": 41,
+        "count": 251,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 40
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:06Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:08Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:09Z",
+      "details": {
+        "total_cargo": 43,
+        "count": 253,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 42
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:42:10Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Osmium",
+            "percentage": 45.183254
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:10Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:11Z",
+      "details": {
+        "total_cargo": 44,
+        "count": 254,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 43
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:11Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:13Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:14Z",
+      "details": {
+        "total_cargo": 46,
+        "count": 256,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 45
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:15Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:16Z",
+      "details": {
+        "total_cargo": 47,
+        "count": 256,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 46
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:18Z",
+      "details": {
+        "total_cargo": 47,
+        "count": 256,
+        "inventory": {
+          "Drones": 209,
+          "Gold": 1,
+          "Platinum": 46
+        },
+        "limpets": 209
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:32Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:32Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:33Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:36Z",
+      "details": {
+        "total_cargo": 50,
+        "count": 239,
+        "inventory": {
+          "Drones": 189,
+          "Gold": 1,
+          "Platinum": 49
+        },
+        "limpets": 189
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:42:36Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:42:40Z",
+      "details": {
+        "total_cargo": 50,
+        "count": 238,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:42:49Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 50.319141
+          },
+          {
+            "name": "Gallite",
+            "percentage": 6.844662
+          },
+          {
+            "name": "Painite",
+            "percentage": 5.911866
+          }
+        ],
+        "content": "High",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:58Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:42:58Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:00Z",
+      "details": {
+        "total_cargo": 51,
+        "count": 242,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 1,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:00Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:00Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:02Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:03Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:04Z",
+      "details": {
+        "total_cargo": 54,
+        "count": 244,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 4,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:04Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:05Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:07Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:08Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:10Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:10Z",
+      "details": {
+        "total_cargo": 59,
+        "count": 248,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 9,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:11Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:12Z",
+      "details": {
+        "total_cargo": 60,
+        "count": 249,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 10,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:13Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:15Z",
+      "details": {
+        "total_cargo": 61,
+        "count": 250,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 11,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:15Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:18Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:18Z",
+      "details": {
+        "total_cargo": 63,
+        "count": 251,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 13,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:20Z",
+      "details": {
+        "total_cargo": 63,
+        "count": 252,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 13,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:21Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:22Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:24Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:26Z",
+      "details": {
+        "total_cargo": 66,
+        "count": 255,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 16,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:26Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:43:27Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:29Z",
+      "details": {
+        "total_cargo": 67,
+        "count": 256,
+        "inventory": {
+          "Drones": 188,
+          "Gold": 1,
+          "Osmium": 17,
+          "Platinum": 49
+        },
+        "limpets": 188
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:30Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:43:34Z",
+      "details": {
+        "type_localised": "Osmium",
+        "type": "$osmium_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:37Z",
+      "details": {
+        "total_cargo": 69,
+        "count": 256,
+        "inventory": {
+          "Drones": 187,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 49
+        },
+        "limpets": 187
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:43:45Z",
+      "details": {
+        "total_cargo": 69,
+        "count": 236,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 49
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:00Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:01Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:02Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:04Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:04Z",
+      "details": {
+        "total_cargo": 73,
+        "count": 242,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 53
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:05Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:05Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:07Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:07Z",
+      "details": {
+        "total_cargo": 75,
+        "count": 243,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 55
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:08Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:09Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:09Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:10Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:12Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:12Z",
+      "details": {
+        "total_cargo": 79,
+        "count": 247,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 59
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:13Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:15Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:15Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:16Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:17Z",
+      "details": {
+        "total_cargo": 82,
+        "count": 251,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 62
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:18Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:18Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:19Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:21Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:21Z",
+      "details": {
+        "total_cargo": 85,
+        "count": 254,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 65
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:22Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:22Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:24Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:24Z",
+      "details": {
+        "total_cargo": 87,
+        "count": 254,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 67
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:26Z",
+      "details": {
+        "total_cargo": 87,
+        "count": 255,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 67
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:27Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:29Z",
+      "details": {
+        "total_cargo": 88,
+        "count": 255,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 68
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:31Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:33Z",
+      "details": {
+        "total_cargo": 89,
+        "count": 256,
+        "inventory": {
+          "Drones": 167,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 69
+        },
+        "limpets": 167
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:45Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:46Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:47Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:44:48Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:44:51Z",
+      "details": {
+        "total_cargo": 93,
+        "count": 240,
+        "inventory": {
+          "Drones": 147,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 73
+        },
+        "limpets": 147
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:44:54Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:45:01Z",
+      "details": {
+        "total_cargo": 93,
+        "count": 239,
+        "inventory": {
+          "Drones": 146,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 73
+        },
+        "limpets": 146
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:45:06Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:45:13Z",
+      "details": {
+        "total_cargo": 93,
+        "count": 238,
+        "inventory": {
+          "Drones": 145,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 73
+        },
+        "limpets": 145
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:45:19Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:45:25Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Silver",
+            "percentage": 15.330384
+          },
+          {
+            "name": "Platinum",
+            "percentage": 26.635759
+          },
+          {
+            "name": "Bertrandite",
+            "percentage": 6.669978
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:45:26Z",
+      "details": {
+        "total_cargo": 93,
+        "count": 237,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 73
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:45:42Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 45.80574
+          },
+          {
+            "name": "Praseodymium",
+            "percentage": 13.617648
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:45:52Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:45:54Z",
+      "details": {
+        "total_cargo": 94,
+        "count": 240,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 74
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:45:55Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:45:55Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:45:56Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:45:58Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:45:59Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:45:59Z",
+      "details": {
+        "total_cargo": 98,
+        "count": 242,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 76,
+          "Silver": 2
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:01Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:01Z",
+      "details": {
+        "total_cargo": 99,
+        "count": 244,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 77,
+          "Silver": 2
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:02Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:03Z",
+      "details": {
+        "total_cargo": 100,
+        "count": 246,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 77,
+          "Silver": 3
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:03Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:03Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:06Z",
+      "details": {
+        "total_cargo": 102,
+        "count": 246,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 78,
+          "Silver": 4
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:08Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:10Z",
+      "details": {
+        "total_cargo": 103,
+        "count": 248,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 79,
+          "Silver": 4
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:10Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:13Z",
+      "details": {
+        "total_cargo": 104,
+        "count": 249,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 80,
+          "Silver": 4
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:17Z",
+      "details": {
+        "total_cargo": 105,
+        "count": 252,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 81,
+          "Silver": 4
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:18Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:18Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:19Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:21Z",
+      "details": {
+        "total_cargo": 108,
+        "count": 253,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 83,
+          "Silver": 5
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:23Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:25Z",
+      "details": {
+        "total_cargo": 109,
+        "count": 253,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 84,
+          "Silver": 5
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:54Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:55Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:46:57Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:46:58Z",
+      "details": {
+        "total_cargo": 112,
+        "count": 256,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 87,
+          "Silver": 5
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:47:00Z",
+      "details": {
+        "total_cargo": 112,
+        "count": 256,
+        "inventory": {
+          "Drones": 144,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 87,
+          "Silver": 5
+        },
+        "limpets": 144
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:47:04Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:10Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:47:10Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:12Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:47:12Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:47:17Z",
+      "details": {
+        "total_cargo": 115,
+        "count": 256,
+        "inventory": {
+          "Drones": 141,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 90,
+          "Silver": 5
+        },
+        "limpets": 141
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:30Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:31Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:32Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:33Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:34Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:34Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:34Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:34Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:47:35Z",
+      "details": {
+        "total_cargo": 119,
+        "count": 241,
+        "inventory": {
+          "Drones": 121,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 94,
+          "Silver": 5
+        },
+        "limpets": 121
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:35Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:47:43Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:47:50Z",
+      "details": {
+        "total_cargo": 119,
+        "count": 240,
+        "inventory": {
+          "Drones": 120,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 94,
+          "Silver": 5
+        },
+        "limpets": 120
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:52Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:52Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:53Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:47:53Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:47:55Z",
+      "details": {
+        "total_cargo": 121,
+        "count": 241,
+        "inventory": {
+          "Drones": 120,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 96,
+          "Silver": 5
+        },
+        "limpets": 120
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:47:57Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:48:02Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Gallite",
+            "percentage": 30.645779
+          },
+          {
+            "name": "Platinum",
+            "percentage": 26.561764
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:48:04Z",
+      "details": {
+        "total_cargo": 121,
+        "count": 240,
+        "inventory": {
+          "Drones": 119,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 96,
+          "Silver": 5
+        },
+        "limpets": 119
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:48:12Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:48:13Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:48:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:48:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:48:15Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:48:17Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Bertrandite",
+            "percentage": 33.015015
+          },
+          {
+            "name": "Gold",
+            "percentage": 9.155422
+          },
+          {
+            "name": "Palladium",
+            "percentage": 5.237526
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:48:17Z",
+      "details": {
+        "total_cargo": 125,
+        "count": 244,
+        "inventory": {
+          "Drones": 119,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 100,
+          "Silver": 5
+        },
+        "limpets": 119
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:48:36Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:48:38Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:48:38Z",
+      "details": {
+        "total_cargo": 127,
+        "count": 247,
+        "inventory": {
+          "Drones": 119,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 102,
+          "Silver": 5
+        },
+        "limpets": 119
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:48:39Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:48:41Z",
+      "details": {
+        "total_cargo": 128,
+        "count": 247,
+        "inventory": {
+          "Drones": 119,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 103,
+          "Silver": 5
+        },
+        "limpets": 119
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:49:02Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:49:09Z",
+      "details": {
+        "total_cargo": 128,
+        "count": 246,
+        "inventory": {
+          "Drones": 118,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 103,
+          "Silver": 5
+        },
+        "limpets": 118
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:49:13Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 59.894985
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:37Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:38Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:38Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:49:39Z",
+      "details": {
+        "total_cargo": 130,
+        "count": 249,
+        "inventory": {
+          "Drones": 118,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 105,
+          "Silver": 5
+        },
+        "limpets": 118
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:39Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:40Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:49:43Z",
+      "details": {
+        "total_cargo": 132,
+        "count": 250,
+        "inventory": {
+          "Drones": 118,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 107,
+          "Silver": 5
+        },
+        "limpets": 118
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:44Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:49:47Z",
+      "details": {
+        "total_cargo": 133,
+        "count": 251,
+        "inventory": {
+          "Drones": 118,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 108,
+          "Silver": 5
+        },
+        "limpets": 118
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:48Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:50Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:51Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:51Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:49:52Z",
+      "details": {
+        "total_cargo": 136,
+        "count": 255,
+        "inventory": {
+          "Drones": 118,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 111,
+          "Silver": 5
+        },
+        "limpets": 118
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:49:53Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:53Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:49:54Z",
+      "details": {
+        "total_cargo": 137,
+        "count": 255,
+        "inventory": {
+          "Drones": 118,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 112,
+          "Silver": 5
+        },
+        "limpets": 118
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:49:56Z",
+      "details": {
+        "total_cargo": 137,
+        "count": 255,
+        "inventory": {
+          "Drones": 118,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 112,
+          "Silver": 5
+        },
+        "limpets": 118
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:49:58Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:00Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:50:03Z",
+      "details": {
+        "total_cargo": 139,
+        "count": 256,
+        "inventory": {
+          "Drones": 117,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 114,
+          "Silver": 5
+        },
+        "limpets": 117
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:50:15Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:50:18Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 53.035019
+          },
+          {
+            "name": "Gallite",
+            "percentage": 11.814725
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:20Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:50:21Z",
+      "details": {
+        "total_cargo": 140,
+        "count": 256,
+        "inventory": {
+          "Drones": 116,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 115,
+          "Silver": 5
+        },
+        "limpets": 116
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:50:23Z",
+      "details": {
+        "total_cargo": 140,
+        "count": 256,
+        "inventory": {
+          "Drones": 116,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 115,
+          "Silver": 5
+        },
+        "limpets": 116
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:50:36Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Samarium",
+            "percentage": 25.427156
+          },
+          {
+            "name": "Gold",
+            "percentage": 16.572594
+          },
+          {
+            "name": "Bertrandite",
+            "percentage": 6.240834
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:38Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:40Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:50:41Z",
+      "details": {
+        "total_cargo": 142,
+        "count": 240,
+        "inventory": {
+          "Drones": 96,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 117,
+          "Silver": 5
+        },
+        "limpets": 96
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:41Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:42Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:43Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:43Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:43Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:43Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:44Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:50:44Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:50:44Z",
+      "details": {
+        "total_cargo": 144,
+        "count": 240,
+        "inventory": {
+          "Drones": 96,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 119,
+          "Silver": 5
+        },
+        "limpets": 96
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:00Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:05Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:06Z",
+      "details": {
+        "total_cargo": 144,
+        "count": 238,
+        "inventory": {
+          "Drones": 94,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 119,
+          "Silver": 5
+        },
+        "limpets": 94
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:07Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:08Z",
+      "details": {
+        "total_cargo": 144,
+        "count": 237,
+        "inventory": {
+          "Drones": 93,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 119,
+          "Silver": 5
+        },
+        "limpets": 93
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:09Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:10Z",
+      "details": {
+        "total_cargo": 144,
+        "count": 236,
+        "inventory": {
+          "Drones": 92,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 119,
+          "Silver": 5
+        },
+        "limpets": 92
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:11Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:12Z",
+      "details": {
+        "total_cargo": 144,
+        "count": 235,
+        "inventory": {
+          "Drones": 91,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 119,
+          "Silver": 5
+        },
+        "limpets": 91
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:13Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:14Z",
+      "details": {
+        "total_cargo": 145,
+        "count": 235,
+        "inventory": {
+          "Drones": 90,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 120,
+          "Silver": 5
+        },
+        "limpets": 90
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:15Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:17Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:18Z",
+      "details": {
+        "total_cargo": 145,
+        "count": 234,
+        "inventory": {
+          "Drones": 88,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 120,
+          "Silver": 5
+        },
+        "limpets": 88
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:19Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:19Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:21Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:22Z",
+      "details": {
+        "total_cargo": 146,
+        "count": 234,
+        "inventory": {
+          "Drones": 87,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 121,
+          "Silver": 5
+        },
+        "limpets": 87
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:22Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:24Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:26Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:26Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:28Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:28Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:51:30Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:31Z",
+      "details": {
+        "total_cargo": 149,
+        "count": 231,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 124,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:33Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:33Z",
+      "details": {
+        "total_cargo": 150,
+        "count": 232,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 125,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:35Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:35Z",
+      "details": {
+        "total_cargo": 151,
+        "count": 234,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 126,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:36Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:39Z",
+      "details": {
+        "total_cargo": 152,
+        "count": 236,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 127,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:39Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:40Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:43Z",
+      "details": {
+        "total_cargo": 154,
+        "count": 237,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 129,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:43Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:46Z",
+      "details": {
+        "total_cargo": 155,
+        "count": 238,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 130,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:46Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:47Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:49Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:51Z",
+      "details": {
+        "total_cargo": 158,
+        "count": 241,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 133,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:51Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:54Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:54Z",
+      "details": {
+        "total_cargo": 160,
+        "count": 242,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 135,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:56Z",
+      "details": {
+        "total_cargo": 160,
+        "count": 243,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 135,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:56Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:51:59Z",
+      "details": {
+        "total_cargo": 161,
+        "count": 244,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 136,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:51:59Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:02Z",
+      "details": {
+        "total_cargo": 162,
+        "count": 245,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 137,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:03Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:06Z",
+      "details": {
+        "total_cargo": 163,
+        "count": 245,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 138,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:08Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:10Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:12Z",
+      "details": {
+        "total_cargo": 165,
+        "count": 248,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 140,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:13Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:16Z",
+      "details": {
+        "total_cargo": 166,
+        "count": 249,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 141,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:17Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:19Z",
+      "details": {
+        "total_cargo": 167,
+        "count": 249,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 142,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:22Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:24Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:25Z",
+      "details": {
+        "total_cargo": 169,
+        "count": 251,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 144,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:52:26Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:27Z",
+      "details": {
+        "total_cargo": 169,
+        "count": 251,
+        "inventory": {
+          "Drones": 82,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 144,
+          "Silver": 5
+        },
+        "limpets": 82
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:30Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:52:31Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:34Z",
+      "details": {
+        "total_cargo": 170,
+        "count": 250,
+        "inventory": {
+          "Drones": 80,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 145,
+          "Silver": 5
+        },
+        "limpets": 80
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:36Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:37Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:38Z",
+      "details": {
+        "total_cargo": 172,
+        "count": 252,
+        "inventory": {
+          "Drones": 80,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 147,
+          "Silver": 5
+        },
+        "limpets": 80
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:52:39Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:40Z",
+      "details": {
+        "total_cargo": 173,
+        "count": 253,
+        "inventory": {
+          "Drones": 80,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 148,
+          "Silver": 5
+        },
+        "limpets": 80
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:42Z",
+      "details": {
+        "total_cargo": 173,
+        "count": 253,
+        "inventory": {
+          "Drones": 80,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 148,
+          "Silver": 5
+        },
+        "limpets": 80
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:52:45Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:52:48Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Silver",
+            "percentage": 27.273994
+          },
+          {
+            "name": "Platinum",
+            "percentage": 30.69652
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:52:52Z",
+      "details": {
+        "total_cargo": 173,
+        "count": 252,
+        "inventory": {
+          "Drones": 79,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 148,
+          "Silver": 5
+        },
+        "limpets": 79
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:52:59Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 66.666664
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:53:08Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:53:13Z",
+      "details": {
+        "type": "Collection"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:53:14Z",
+      "details": {
+        "total_cargo": 173,
+        "count": 250,
+        "inventory": {
+          "Drones": 77,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 148,
+          "Silver": 5
+        },
+        "limpets": 77
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:53:16Z",
+      "details": {
+        "total_cargo": 173,
+        "count": 251,
+        "inventory": {
+          "Drones": 77,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 148,
+          "Silver": 5
+        },
+        "limpets": 77
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:18Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:18Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:53:20Z",
+      "details": {
+        "total_cargo": 174,
+        "count": 253,
+        "inventory": {
+          "Drones": 77,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 149,
+          "Silver": 5
+        },
+        "limpets": 77
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:20Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:21Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:23Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:23Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:53:25Z",
+      "details": {
+        "total_cargo": 177,
+        "count": 256,
+        "inventory": {
+          "Drones": 77,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 152,
+          "Silver": 5
+        },
+        "limpets": 77
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:26Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:27Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:53:28Z",
+      "details": {
+        "total_cargo": 179,
+        "count": 256,
+        "inventory": {
+          "Drones": 77,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 154,
+          "Silver": 5
+        },
+        "limpets": 77
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:53:30Z",
+      "details": {
+        "total_cargo": 179,
+        "count": 256,
+        "inventory": {
+          "Drones": 77,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 154,
+          "Silver": 5
+        },
+        "limpets": 77
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:43Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:44Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:45Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:46Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:47Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:47Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:47Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:47Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:53:48Z",
+      "details": {
+        "total_cargo": 183,
+        "count": 242,
+        "inventory": {
+          "Drones": 57,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 158,
+          "Silver": 5
+        },
+        "limpets": 57
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:48Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:48Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:56Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:57Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:58Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:53:59Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:00Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:54:01Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:02Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:54:02Z",
+      "details": {
+        "total_cargo": 189,
+        "count": 246,
+        "inventory": {
+          "Drones": 57,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 164,
+          "Silver": 5
+        },
+        "limpets": 57
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:54:04Z",
+      "details": {
+        "total_cargo": 189,
+        "count": 246,
+        "inventory": {
+          "Drones": 57,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 164,
+          "Silver": 5
+        },
+        "limpets": 57
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:54:08Z",
+      "details": {
+        "total_cargo": 189,
+        "count": 246,
+        "inventory": {
+          "Drones": 56,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 164,
+          "Silver": 5
+        },
+        "limpets": 56
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:09Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:11Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:12Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:13Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:15Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:54:18Z",
+      "details": {
+        "total_cargo": 195,
+        "count": 251,
+        "inventory": {
+          "Drones": 56,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 170,
+          "Silver": 5
+        },
+        "limpets": 56
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:54:23Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 49.691635
+          },
+          {
+            "name": "Indite",
+            "percentage": 10.024853
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:23Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:54:26Z",
+      "details": {
+        "total_cargo": 196,
+        "count": 253,
+        "inventory": {
+          "Drones": 56,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 171,
+          "Silver": 5
+        },
+        "limpets": 56
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:26Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:27Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:54:30Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:54:30Z",
+      "details": {
+        "total_cargo": 199,
+        "count": 255,
+        "inventory": {
+          "Drones": 56,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 174,
+          "Silver": 5
+        },
+        "limpets": 56
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:54:32Z",
+      "details": {
+        "total_cargo": 199,
+        "count": 255,
+        "inventory": {
+          "Drones": 56,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 174,
+          "Silver": 5
+        },
+        "limpets": 56
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:04Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:07Z",
+      "details": {
+        "total_cargo": 200,
+        "count": 256,
+        "inventory": {
+          "Drones": 56,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 175,
+          "Silver": 5
+        },
+        "limpets": 56
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:23Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:24Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:25Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:26Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:27Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:27Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:27Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:27Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:28Z",
+      "details": {
+        "total_cargo": 204,
+        "count": 241,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 179,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:28Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:33Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:33Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:33Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:36Z",
+      "details": {
+        "total_cargo": 205,
+        "count": 243,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 180,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:36Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:37Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:40Z",
+      "details": {
+        "total_cargo": 207,
+        "count": 245,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 182,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:41Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:41Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:44Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:44Z",
+      "details": {
+        "total_cargo": 209,
+        "count": 245,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 184,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:46Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:46Z",
+      "details": {
+        "total_cargo": 210,
+        "count": 246,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 185,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:48Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:48Z",
+      "details": {
+        "total_cargo": 211,
+        "count": 247,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 186,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:50Z",
+      "details": {
+        "total_cargo": 211,
+        "count": 248,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 186,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:51Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:52Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:53Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:55Z",
+      "details": {
+        "total_cargo": 214,
+        "count": 251,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 189,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:56Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:55:56Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:55:59Z",
+      "details": {
+        "total_cargo": 215,
+        "count": 252,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 190,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:56:00Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:56:02Z",
+      "details": {
+        "total_cargo": 216,
+        "count": 254,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 191,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:56:02Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:56:04Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:56:06Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:56:06Z",
+      "details": {
+        "total_cargo": 219,
+        "count": 256,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 194,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:56:08Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:56:08Z",
+      "details": {
+        "total_cargo": 220,
+        "count": 256,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 195,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:56:10Z",
+      "details": {
+        "total_cargo": 220,
+        "count": 256,
+        "inventory": {
+          "Drones": 36,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 195,
+          "Silver": 5
+        },
+        "limpets": 36
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:56:20Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:56:22Z",
+      "details": {
+        "total_cargo": 221,
+        "count": 247,
+        "inventory": {
+          "Drones": 26,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 196,
+          "Silver": 5
+        },
+        "limpets": 26
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:56:25Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:56:31Z",
+      "details": {
+        "total_cargo": 221,
+        "count": 246,
+        "inventory": {
+          "Drones": 25,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 196,
+          "Silver": 5
+        },
+        "limpets": 25
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:56:40Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:56:46Z",
+      "details": {
+        "total_cargo": 221,
+        "count": 245,
+        "inventory": {
+          "Drones": 24,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 196,
+          "Silver": 5
+        },
+        "limpets": 24
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:56:54Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 31.753822
+          },
+          {
+            "name": "Praseodymium",
+            "percentage": 12.911196
+          },
+          {
+            "name": "Silver",
+            "percentage": 15.464145
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:56:54Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Gallite",
+            "percentage": 28.47201
+          },
+          {
+            "name": "Samarium",
+            "percentage": 25.354374
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:12Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:57:15Z",
+      "details": {
+        "total_cargo": 222,
+        "count": 251,
+        "inventory": {
+          "Drones": 24,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 197,
+          "Silver": 5
+        },
+        "limpets": 24
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:15Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:15Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:15Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:16Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:16Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:18Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:57:19Z",
+      "details": {
+        "total_cargo": 227,
+        "count": 253,
+        "inventory": {
+          "Drones": 24,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 200,
+          "Silver": 7
+        },
+        "limpets": 24
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:20Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:20Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:57:22Z",
+      "details": {
+        "total_cargo": 229,
+        "count": 254,
+        "inventory": {
+          "Drones": 24,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 201,
+          "Silver": 8
+        },
+        "limpets": 24
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:23Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:24Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:25Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:57:28Z",
+      "details": {
+        "total_cargo": 232,
+        "count": 256,
+        "inventory": {
+          "Drones": 24,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 204,
+          "Silver": 8
+        },
+        "limpets": 24
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:37Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:37Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:38Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:39Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:41Z",
+      "details": {
+        "type_localised": "Silver",
+        "type": "$silver_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:41Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:57:42Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:57:44Z",
+      "details": {
+        "total_cargo": 238,
+        "count": 256,
+        "inventory": {
+          "Drones": 18,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 208,
+          "Silver": 10
+        },
+        "limpets": 18
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:57:58Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:58:00Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:58:03Z",
+      "details": {
+        "total_cargo": 239,
+        "count": 256,
+        "inventory": {
+          "Drones": 17,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 209,
+          "Silver": 10
+        },
+        "limpets": 17
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:58:13Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:58:17Z",
+      "details": {
+        "total_cargo": 239,
+        "count": 255,
+        "inventory": {
+          "Drones": 16,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 209,
+          "Silver": 10
+        },
+        "limpets": 16
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:58:25Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Silver",
+            "percentage": 18.687183
+          },
+          {
+            "name": "Praseodymium",
+            "percentage": 22.692404
+          },
+          {
+            "name": "Indite",
+            "percentage": 8.981124
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:58:28Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Praseodymium",
+            "percentage": 30.207241
+          },
+          {
+            "name": "Bertrandite",
+            "percentage": 24.279884
+          },
+          {
+            "name": "Platinum",
+            "percentage": 8.198777
+          }
+        ],
+        "content": "Low",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:58:30Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:58:37Z",
+      "details": {
+        "total_cargo": 239,
+        "count": 254,
+        "inventory": {
+          "Drones": 15,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 209,
+          "Silver": 10
+        },
+        "limpets": 15
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:58:41Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:58:48Z",
+      "details": {
+        "total_cargo": 239,
+        "count": 253,
+        "inventory": {
+          "Drones": 14,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 209,
+          "Silver": 10
+        },
+        "limpets": 14
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:59:04Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Samarium",
+            "percentage": 39.209831
+          },
+          {
+            "name": "Gallite",
+            "percentage": 13.759078
+          },
+          {
+            "name": "Osmium",
+            "percentage": 4.955429
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T13:59:17Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:59:24Z",
+      "details": {
+        "total_cargo": 239,
+        "count": 252,
+        "inventory": {
+          "Drones": 13,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 209,
+          "Silver": 10
+        },
+        "limpets": 13
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T13:59:33Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Platinum",
+            "percentage": 52.345322
+          },
+          {
+            "name": "Samarium",
+            "percentage": 7.99031
+          },
+          {
+            "name": "Gallite",
+            "percentage": 3.073428
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:59:48Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:59:50Z",
+      "details": {
+        "total_cargo": 240,
+        "count": 254,
+        "inventory": {
+          "Drones": 13,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 210,
+          "Silver": 10
+        },
+        "limpets": 13
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:59:52Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:59:52Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:59:53Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T13:59:54Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T13:59:56Z",
+      "details": {
+        "total_cargo": 243,
+        "count": 256,
+        "inventory": {
+          "Drones": 13,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 213,
+          "Silver": 10
+        },
+        "limpets": 13
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:08Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:09Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:10Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:10Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T14:00:13Z",
+      "details": {
+        "total_cargo": 247,
+        "count": 255,
+        "inventory": {
+          "Drones": 3,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 217,
+          "Silver": 10
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:14Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:19Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:19Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:19Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:20Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:22Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T14:00:23Z",
+      "details": {
+        "total_cargo": 250,
+        "count": 253,
+        "inventory": {
+          "Drones": 3,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 220,
+          "Silver": 10
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T14:00:25Z",
+      "details": {
+        "total_cargo": 250,
+        "count": 254,
+        "inventory": {
+          "Drones": 3,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 220,
+          "Silver": 10
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:26Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:28Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T14:00:29Z",
+      "details": {
+        "total_cargo": 252,
+        "count": 256,
+        "inventory": {
+          "Drones": 3,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 222,
+          "Silver": 10
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:00:30Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T14:00:32Z",
+      "details": {
+        "total_cargo": 253,
+        "count": 256,
+        "inventory": {
+          "Drones": 3,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 223,
+          "Silver": 10
+        },
+        "limpets": 3
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T14:01:16Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:01:21Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T14:01:23Z",
+      "details": {
+        "total_cargo": 254,
+        "count": 256,
+        "inventory": {
+          "Drones": 2,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 224,
+          "Silver": 10
+        },
+        "limpets": 2
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T14:01:25Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Praseodymium",
+            "percentage": 34.842678
+          },
+          {
+            "name": "Gold",
+            "percentage": 14.007931
+          },
+          {
+            "name": "Gallite",
+            "percentage": 5.542801
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "launch_drone",
+      "timestamp": "2026-03-28T14:01:29Z",
+      "details": {
+        "type": "Prospector"
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:01:35Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T14:01:37Z",
+      "details": {
+        "total_cargo": 255,
+        "count": 256,
+        "inventory": {
+          "Drones": 1,
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 225,
+          "Silver": 10
+        },
+        "limpets": 1
+      }
+    },
+    {
+      "type": "prospected_asteroid",
+      "timestamp": "2026-03-28T14:01:48Z",
+      "details": {
+        "materials": [
+          {
+            "name": "Osmium",
+            "percentage": 30.904272
+          },
+          {
+            "name": "Platinum",
+            "percentage": 22.967995
+          }
+        ],
+        "content": "Medium",
+        "remaining_percent": 100.0,
+        "already_mined": false,
+        "duplicate": false
+      }
+    },
+    {
+      "type": "mining_refined",
+      "timestamp": "2026-03-28T14:02:43Z",
+      "details": {
+        "type_localised": "Platinum",
+        "type": "$platinum_name;"
+      }
+    },
+    {
+      "type": "cargo",
+      "timestamp": "2026-03-28T14:02:46Z",
+      "details": {
+        "total_cargo": 256,
+        "count": 256,
+        "inventory": {
+          "Gold": 1,
+          "Osmium": 19,
+          "Platinum": 226,
+          "Silver": 10
+        },
+        "limpets": null
+      }
+    },
+    {
+      "type": "mining_session_stopped",
+      "timestamp": "2026-03-28T14:07:51Z",
+      "details": {
+        "reason": "Entered Supercruise"
+      }
+    }
+  ]
+}

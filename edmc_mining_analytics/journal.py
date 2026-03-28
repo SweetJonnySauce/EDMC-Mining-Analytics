@@ -79,6 +79,8 @@ class JournalProcessor:
         self._session_recorder = session_recorder
         self._edsm = edsm_client
         self._market_search = market_search_service
+        self._ring_anchor_name: Optional[str] = None
+        self._ring_anchor_body_id: Optional[int] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -114,6 +116,12 @@ class JournalProcessor:
         event = entry.get("event")
         if event == "LaunchDrone":
             self._process_launch_drone(entry, edmc_state, event_time)
+        elif event == "SupercruiseExit":
+            if self._capture_ring_from_supercruise_exit(entry):
+                self._refresh_edsm()
+        elif event == "SAASignalsFound":
+            if self._capture_ring_from_saa(entry):
+                self._refresh_edsm()
         elif event == "ProspectedAsteroid" and self._state.is_mining:
             self._register_prospected_asteroid(entry, event_time)
         elif event == "Cargo":
@@ -147,16 +155,20 @@ class JournalProcessor:
                 drone_type = entry.get("Type")
                 drone_name = drone_type if isinstance(drone_type, str) else None
                 self._session_recorder.record_buy_drones(event_time, count=parsed_count, drone_type=drone_name)
-        elif event == "SupercruiseEntry" and self._state.is_mining:
+        elif event in {"SupercruiseEntry", "FSDJump"} and self._state.is_mining:
+            stop_reason = "Entered Supercruise" if event == "SupercruiseEntry" else "FSD Jump"
             self._update_mining_state(
                 False,
-                "Entered Supercruise",
+                stop_reason,
                 entry.get("timestamp"),
                 state=edmc_state,
                 entry=entry,
             )
+            self._clear_ring_anchor()
         elif event == "MaterialCollected" and self._state.is_mining:
             self._register_material_collected(entry)
+        elif event in {"SupercruiseEntry", "FSDJump"}:
+            self._clear_ring_anchor()
         elif event == "LoadGame":
             self._handle_ship_update(
                 entry,
@@ -267,9 +279,7 @@ class JournalProcessor:
             remaining_value = None
         already_mined = remaining_value is not None and remaining_value < 100
 
-        body_value = entry.get("Body") or entry.get("BodyName")
-        if isinstance(body_value, str) and "ring" in body_value.lower():
-            self._state.mining_ring = body_value
+        if self._capture_ring_from_entry(entry):
             self._refresh_edsm()
 
         if self._session_recorder:
@@ -1046,6 +1056,7 @@ class JournalProcessor:
             return
 
         if active:
+            anchored_ring = self._ring_anchor_name
             ship_display, ship_source, capacity_value, capacity_source = self._extract_ship_and_capacity(entry, state)
             existing_ship = self._state.current_ship
             existing_capacity = self._state.cargo_capacity
@@ -1083,6 +1094,8 @@ class JournalProcessor:
             self._state.mining_start = start_time
             self._state.mining_end = None
             self._state.mining_location = self._detect_current_location(state or entry)
+            if not self._state.mining_ring and anchored_ring:
+                self._state.mining_ring = anchored_ring
             system_name = self._detect_current_system(state or entry)
             if system_name:
                 self._set_current_system(system_name)
@@ -1192,12 +1205,12 @@ class JournalProcessor:
         if not state:
             return None
         try:
-            body = state.get("Body")
-            if body:
-                if isinstance(body, str) and "ring" in body.lower():
-                    self._state.mining_ring = str(body)
-                    self._refresh_edsm()
-                return str(body)
+            for key in ("Body", "BodyName"):
+                body = state.get(key)
+                if body:
+                    body_text = str(body)
+                    self._capture_ring_from_entry({"Body": body_text})
+                    return body_text
         except Exception:
             pass
         try:
@@ -1207,6 +1220,81 @@ class JournalProcessor:
         except Exception:
             pass
         return None
+
+    def _capture_ring_from_entry(self, entry: Optional[dict]) -> bool:
+        ring_name, _ = self._extract_ring_candidate(entry)
+        if not ring_name:
+            return False
+        if self._state.mining_ring == ring_name:
+            return False
+        self._state.mining_ring = ring_name
+        return True
+
+    @staticmethod
+    def _parse_body_id(value: Any) -> Optional[int]:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _extract_ring_candidate(self, entry: Optional[dict]) -> tuple[Optional[str], Optional[int]]:
+        if not isinstance(entry, dict):
+            return None, None
+        for key in ("Body", "BodyName"):
+            value = entry.get(key)
+            if not isinstance(value, str):
+                continue
+            ring_name = value.strip()
+            if not ring_name:
+                continue
+            if "ring" not in ring_name.lower():
+                continue
+            return ring_name, self._parse_body_id(entry.get("BodyID"))
+        return None, None
+
+    def _capture_ring_from_supercruise_exit(self, entry: Optional[dict]) -> bool:
+        ring_name, body_id = self._extract_ring_candidate(entry)
+        if not ring_name:
+            return False
+        self._ring_anchor_name = ring_name
+        self._ring_anchor_body_id = body_id
+        if self._state.mining_ring == ring_name:
+            return False
+        self._state.mining_ring = ring_name
+        return True
+
+    def _capture_ring_from_saa(self, entry: Optional[dict]) -> bool:
+        ring_name, body_id = self._extract_ring_candidate(entry)
+        if not ring_name:
+            return False
+
+        anchor_name = self._ring_anchor_name
+        anchor_body_id = self._ring_anchor_body_id
+        if anchor_name:
+            ring_match = ring_name.lower() == anchor_name.lower()
+            body_match = (
+                body_id is not None
+                and anchor_body_id is not None
+                and body_id == anchor_body_id
+            )
+            if not (ring_match or body_match):
+                _log.debug(
+                    "Ignoring SAASignalsFound ring candidate '%s' (BodyID=%s); anchored ring is '%s' (BodyID=%s)",
+                    ring_name,
+                    body_id,
+                    anchor_name,
+                    anchor_body_id,
+                )
+                return False
+
+        if self._state.mining_ring == ring_name:
+            return False
+        self._state.mining_ring = ring_name
+        return True
+
+    def _clear_ring_anchor(self) -> None:
+        self._ring_anchor_name = None
+        self._ring_anchor_body_id = None
 
     @staticmethod
     def _detect_current_system(state: Optional[dict]) -> Optional[str]:

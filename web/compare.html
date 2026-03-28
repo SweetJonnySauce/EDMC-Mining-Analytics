@@ -16,6 +16,7 @@
       --ref-p90: color-mix(in srgb, var(--accent) 56%, #ff6e3a);
       --ref-p75: color-mix(in srgb, var(--accent) 82%, #fff);
       --ref-p50: color-mix(in srgb, var(--accent) 45%, #53a7ff);
+      --ref-avg: color-mix(in srgb, var(--accent) 65%, #7dd3fc);
       --ref-p25: color-mix(in srgb, var(--accent) 36%, #56c88e);
     }
 
@@ -224,14 +225,13 @@
     }
 
     .compare-reference-options {
-      display: flex;
-      flex-wrap: nowrap;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, max-content));
       gap: 6px;
       align-items: center;
       justify-content: flex-start;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scrollbar-width: thin;
+      align-content: start;
+      overflow: visible;
     }
 
     .compare-reference-option {
@@ -247,7 +247,7 @@
       line-height: 1.2;
       user-select: none;
       white-space: nowrap;
-      flex: 0 0 auto;
+      width: max-content;
     }
 
     .compare-reference-option input {
@@ -274,6 +274,10 @@
 
     .compare-reference-swatch--p50 {
       background: var(--ref-p50);
+    }
+
+    .compare-reference-swatch--avg {
+      background: var(--ref-avg);
     }
 
     .compare-reference-swatch--p25 {
@@ -347,6 +351,11 @@
       color: var(--fg);
       font-variant-numeric: tabular-nums;
       overflow-wrap: anywhere;
+    }
+
+    .info-row--crosshair .label,
+    .info-row--crosshair .value {
+      cursor: crosshair;
     }
 
     .ring-chart-panel {
@@ -433,6 +442,14 @@
       vector-effect: non-scaling-stroke;
     }
 
+    .compare-reference-dot {
+      fill: color-mix(in srgb, var(--accent) 82%, #fff);
+      stroke: color-mix(in srgb, var(--card) 92%, #000);
+      stroke-width: 1.4;
+      vector-effect: non-scaling-stroke;
+      cursor: crosshair;
+    }
+
     .compare-crosshair {
       stroke: color-mix(in srgb, var(--accent) 62%, transparent);
       stroke-width: 1;
@@ -462,6 +479,10 @@
       stroke: var(--ref-p50);
     }
 
+    .compare-reference-line--avg {
+      stroke: var(--ref-avg);
+    }
+
     .compare-reference-line--p25 {
       stroke: var(--ref-p25);
     }
@@ -489,6 +510,10 @@
 
     .compare-reference-label--p50 {
       fill: var(--ref-p50);
+    }
+
+    .compare-reference-label--avg {
+      fill: var(--ref-avg);
     }
 
     .compare-reference-label--p25 {
@@ -576,6 +601,10 @@
       .compare-controls {
         grid-template-columns: 1fr;
       }
+
+      .compare-reference-options {
+        grid-template-columns: repeat(2, minmax(0, max-content));
+      }
     }
   </style>
 </head>
@@ -597,8 +626,10 @@
       <div class="compare-control">
         <label for="compare-sort-select">Sort</label>
         <select id="compare-sort-select" aria-label="Sort rings">
-          <option value="avg_desc">Avg Yield (High to Low)</option>
-          <option value="avg_asc">Avg Yield (Low to High)</option>
+          <option value="avg_desc">Avg Yield (mean, High to Low)</option>
+          <option value="avg_asc">Avg Yield (mean, Low to High)</option>
+          <option value="p50_desc">Median (P50 High to Low)</option>
+          <option value="p50_asc">Median (P50 Low to High)</option>
           <option value="p90_desc">P90 (High to Low)</option>
           <option value="p90_asc">P90 (Low to High)</option>
           <option value="p75_desc">P75 (High to Low)</option>
@@ -642,6 +673,7 @@
         { key: "p90", label: "P90", metricKey: "p90", quantile: 0.9 },
         { key: "p75", label: "P75", metricKey: "p75", quantile: 0.75 },
         { key: "p50", label: "P50", metricKey: "p50", quantile: 0.5 },
+        { key: "avg", label: "Avg", metricKey: "averageYield", quantile: null },
         { key: "p25", label: "P25", metricKey: "p25", quantile: 0.25 }
       ];
       let activeThemeId = DEFAULT_THEME_ID;
@@ -1301,15 +1333,18 @@
           }
           const quantile = Number(entry.quantile);
           const clampedQuantile = Number.isFinite(quantile) ? Math.max(0, Math.min(1, quantile)) : 0;
-          const referenceCount = totalCount * clampedQuantile;
+          const referenceCount = Number.isFinite(quantile) ? (totalCount * clampedQuantile) : null;
           const referenceY = (() => {
             const yOnLine = getYOnLineForX(referenceX);
             if (Number.isFinite(yOnLine)) {
               return yOnLine;
             }
-            return toY(referenceCount);
+            if (Number.isFinite(referenceCount)) {
+              return toY(referenceCount);
+            }
+            return toY(0);
           })();
-          referencePoints.push({ entry, referenceX, referenceY });
+          referencePoints.push({ entry, referenceX, referenceY, metricValue });
         });
 
         const overlapTolerance = 1.5;
@@ -1359,7 +1394,59 @@
           label.setAttribute("y", clampedY.toFixed(2));
           label.textContent = group.items.map((item) => item.entry.label).join(" & ");
           svg.appendChild(label);
+
+          const hasNearbyDataDot = coordinates.some(
+            (point) => Math.abs(point.x - group.referenceX) <= overlapTolerance
+              && Math.abs(point.y - group.referenceY) <= overlapTolerance
+          );
+          if (hasNearbyDataDot) {
+            return;
+          }
+
+          const marker = document.createElementNS(ns, "circle");
+          marker.setAttribute("class", "compare-reference-dot");
+          marker.setAttribute("cx", group.referenceX.toFixed(2));
+          marker.setAttribute("cy", group.referenceY.toFixed(2));
+          marker.setAttribute("r", "6.2");
+          const markerTooltipText = [
+            `${ringName} | ${commodityLabel}`,
+            ...group.items.map((item) => `${item.entry.label}: ${formatNumber(item.metricValue, 2)}%`)
+          ].join("\n");
+          marker.addEventListener("mouseenter", (event) => {
+            hCross.setAttribute("x1", sidePad.toFixed(2));
+            hCross.setAttribute("y1", group.referenceY.toFixed(2));
+            hCross.setAttribute("x2", group.referenceX.toFixed(2));
+            hCross.setAttribute("y2", group.referenceY.toFixed(2));
+            hCross.style.opacity = "1";
+
+            vCross.setAttribute("x1", group.referenceX.toFixed(2));
+            vCross.setAttribute("y1", group.referenceY.toFixed(2));
+            vCross.setAttribute("x2", group.referenceX.toFixed(2));
+            vCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+            vCross.style.opacity = "1";
+            showCursorTooltip(markerTooltipText, event);
+          });
+          marker.addEventListener("mousemove", (event) => {
+            showCursorTooltip(markerTooltipText, event);
+          });
+          marker.addEventListener("mouseleave", () => {
+            hCross.style.opacity = "0";
+            vCross.style.opacity = "0";
+            hideCursorTooltip();
+          });
+          svg.appendChild(marker);
         });
+
+        const snapPoints = [
+          ...coordinates.map((point) => ({ kind: "bin", ...point })),
+          ...referenceGroups.map((group) => ({
+            kind: "reference",
+            x: group.referenceX,
+            y: group.referenceY,
+            labels: group.items.map((item) => item.entry.label),
+            values: group.items.map((item) => item.metricValue)
+          }))
+        ];
 
         const hitbox = document.createElementNS(ns, "path");
         hitbox.setAttribute("class", "compare-line-hitbox");
@@ -1375,19 +1462,19 @@
         svg.appendChild(vCross);
 
         const findNearestPoint = (event) => {
-          if (!coordinates.length) {
+          if (!snapPoints.length) {
             return null;
           }
           const rect = svg.getBoundingClientRect();
           if (!rect.width) {
-            return coordinates[0];
+            return snapPoints[0];
           }
           const ratio = (event.clientX - rect.left) / rect.width;
           const localX = ratio * width;
-          let nearest = coordinates[0];
+          let nearest = snapPoints[0];
           let nearestDistance = Math.abs(nearest.x - localX);
-          for (let index = 1; index < coordinates.length; index += 1) {
-            const candidate = coordinates[index];
+          for (let index = 1; index < snapPoints.length; index += 1) {
+            const candidate = snapPoints[index];
             const distance = Math.abs(candidate.x - localX);
             if (distance < nearestDistance) {
               nearest = candidate;
@@ -1398,6 +1485,14 @@
         };
 
         const showPointTooltip = (point, event) => {
+          if (point.kind === "reference") {
+            const detail = [
+              `${ringName} | ${commodityLabel}`,
+              ...point.labels.map((label, idx) => `${label}: ${formatNumber(point.values[idx], 2)}%`)
+            ].join("\n");
+            showCursorTooltip(detail, event);
+            return;
+          }
           const detail = [
             `${ringName} | ${commodityLabel}`,
             `${point.intervalStart}% - ${point.intervalEnd}%`,
@@ -1535,11 +1630,14 @@
           if (
             sortMode === "p90_asc" || sortMode === "p90_desc"
             || sortMode === "p75_asc" || sortMode === "p75_desc"
+            || sortMode === "p50_asc" || sortMode === "p50_desc"
             || sortMode === "p25_asc" || sortMode === "p25_desc"
           ) {
             let key = "p90";
             if (sortMode.startsWith("p75_")) {
               key = "p75";
+            } else if (sortMode.startsWith("p50_")) {
+              key = "p50";
             } else if (sortMode.startsWith("p25_")) {
               key = "p25";
             }
@@ -1587,36 +1685,91 @@
           ringTitle.textContent = ring.ringName;
           infoPanel.appendChild(ringTitle);
 
+          const chartPanel = document.createElement("section");
+          chartPanel.className = "ring-chart-panel";
+          let hoveredInfoCrosshairKey = "";
+          const renderRowChart = () => {
+            const rowCrosshairs = new Set(selectedReferenceCrosshairs);
+            if (hoveredInfoCrosshairKey) {
+              rowCrosshairs.add(hoveredInfoCrosshairKey);
+            }
+            renderRingChart(
+              chartPanel,
+              ring.ringName,
+              commodityLabel,
+              metric,
+              sharedYMax,
+              rowCrosshairs
+            );
+          };
+
           const infoGrid = document.createElement("div");
           infoGrid.className = "info-grid";
+          const metricRows = [
+            {
+              label: "P90",
+              value: Number(metric.p90),
+              display: Number.isFinite(metric.p90) ? `${formatNumber(metric.p90, 2)}%` : "--",
+              tooltip: "P90 is the inclusive 90th percentile: 90% of asteroid yields are at or below this value.",
+              crosshairKey: "p90",
+              crosshairValue: metric.p90
+            },
+            {
+              label: "P75",
+              value: Number(metric.p75),
+              display: Number.isFinite(metric.p75) ? `${formatNumber(metric.p75, 2)}%` : "--",
+              tooltip: "Top Quartile: P75 is the inclusive 75th percentile: 75% of asteroid yields are at or below this value.",
+              crosshairKey: "p75",
+              crosshairValue: metric.p75
+            },
+            {
+              label: "Median (P50)",
+              value: Number(metric.p50),
+              display: Number.isFinite(metric.p50) ? `${formatNumber(metric.p50, 2)}%` : "--",
+              tooltip: "Median (P50): inclusive 50th percentile. 50% of asteroid yields are at or below this value.",
+              crosshairKey: "p50",
+              crosshairValue: metric.p50
+            },
+            {
+              label: "Avg Yield (mean)",
+              value: Number(metric.averageYield),
+              display: Number.isFinite(metric.averageYield) ? `${formatNumber(metric.averageYield, 2)}%` : "--",
+              tooltip: "Mean yield: arithmetic average across asteroids where the commodity is present.",
+              crosshairKey: "avg",
+              crosshairValue: metric.averageYield
+            },
+            {
+              label: "P25",
+              value: Number(metric.p25),
+              display: Number.isFinite(metric.p25) ? `${formatNumber(metric.p25, 2)}%` : "--",
+              tooltip: "Bottom Quartile: P25 is the inclusive 25th percentile: 25% of asteroid yields are at or below this value.",
+              crosshairKey: "p25",
+              crosshairValue: metric.p25
+            }
+          ];
+          metricRows.sort((left, right) => {
+            const leftValid = Number.isFinite(left.value);
+            const rightValid = Number.isFinite(right.value);
+            if (leftValid && rightValid) {
+              if (left.value !== right.value) {
+                return right.value - left.value;
+              }
+              return left.label.localeCompare(right.label);
+            }
+            if (leftValid !== rightValid) {
+              return leftValid ? -1 : 1;
+            }
+            return left.label.localeCompare(right.label);
+          });
           const infoRows = [
             ["Commodity", commodityLabel],
-            [
-              "P90",
-              Number.isFinite(metric.p90) ? `${formatNumber(metric.p90, 2)}%` : "--",
-              "P90 is the inclusive 90th percentile: 90% of asteroid yields are at or below this value."
-            ],
-            [
-              "P75",
-              Number.isFinite(metric.p75) ? `${formatNumber(metric.p75, 2)}%` : "--",
-              "Top Quartile: P75 is the inclusive 75th percentile: 75% of asteroid yields are at or below this value."
-            ],
-            [
-              "Avg Yield (P50)",
-              Number.isFinite(metric.averageYield) ? `${formatNumber(metric.averageYield, 2)}%` : "--",
-              "Avg Yield (P50): central tendency reference for this ring/commodity."
-            ],
-            [
-              "P25",
-              Number.isFinite(metric.p25) ? `${formatNumber(metric.p25, 2)}%` : "--",
-              "Bottom Quartile: P25 is the inclusive 25th percentile: 25% of asteroid yields are at or below this value."
-            ],
+            ...metricRows.map((row) => [row.label, row.display, row.tooltip, row.crosshairKey, row.crosshairValue]),
             ["Asteroids", formatNumber(metric.asteroidsCount, 0)],
             ["Sessions", formatNumber(metric.sessionsCount, 0)],
             ["Ring Type", dominantLabel(ring.ringTypeCounts)],
             ["Reserve", dominantLabel(ring.reserveLevelCounts)]
           ];
-          infoRows.forEach(([labelText, valueText, tooltipText]) => {
+          infoRows.forEach(([labelText, valueText, tooltipText, hoverCrosshairKey, hoverCrosshairValue]) => {
             const infoRow = document.createElement("div");
             infoRow.className = "info-row";
             const label = document.createElement("span");
@@ -1628,22 +1781,34 @@
             const value = document.createElement("span");
             value.className = "value";
             value.textContent = String(valueText);
+            if (hoverCrosshairKey && Number.isFinite(Number(hoverCrosshairValue))) {
+              infoRow.classList.add("info-row--crosshair");
+              const activateCrosshair = () => {
+                if (hoveredInfoCrosshairKey === hoverCrosshairKey) {
+                  return;
+                }
+                hoveredInfoCrosshairKey = hoverCrosshairKey;
+                renderRowChart();
+              };
+              const deactivateCrosshair = () => {
+                if (hoveredInfoCrosshairKey !== hoverCrosshairKey) {
+                  return;
+                }
+                hoveredInfoCrosshairKey = "";
+                renderRowChart();
+              };
+              infoRow.addEventListener("mouseenter", activateCrosshair);
+              infoRow.addEventListener("mouseleave", deactivateCrosshair);
+              value.addEventListener("mouseenter", activateCrosshair);
+              value.addEventListener("mouseleave", deactivateCrosshair);
+            }
             infoRow.appendChild(label);
             infoRow.appendChild(value);
             infoGrid.appendChild(infoRow);
           });
           infoPanel.appendChild(infoGrid);
 
-          const chartPanel = document.createElement("section");
-          chartPanel.className = "ring-chart-panel";
-          renderRingChart(
-            chartPanel,
-            ring.ringName,
-            commodityLabel,
-            metric,
-            sharedYMax,
-            selectedReferenceCrosshairs
-          );
+          renderRowChart();
 
           row.appendChild(infoPanel);
           row.appendChild(chartPanel);

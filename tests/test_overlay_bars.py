@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from edmc_mining_analytics.integrations.edmcoverlay import EdmcOverlayHelper
 from edmc_mining_analytics.state import MiningState
 
@@ -55,3 +57,26 @@ def test_overlay_bars_use_abbreviations_when_available() -> None:
     bars = EdmcOverlayHelper(state)._build_overlay_bars()
 
     assert bars[0].label == "M.M.Crystals"
+
+
+def test_overlay_rpm_metric_uses_live_fixed_lookback_value() -> None:
+    state = MiningState()
+    helper = EdmcOverlayHelper(state)
+    now = datetime(2026, 3, 28, 12, 0, 0, tzinfo=timezone.utc)
+    state.recent_refinements.extend(
+        [
+            now - timedelta(seconds=61),
+            now - timedelta(seconds=45),
+            now - timedelta(seconds=10),
+        ]
+    )
+    state.rpm_display_value = 4.2
+    state.rpm_display_color = "#123456"
+
+    metric = helper._build_rpm_metric(now)
+    follow_up_metric = helper._build_rpm_metric(now + timedelta(seconds=30))
+
+    assert metric.value == "4.2"
+    assert metric.color == "#123456"
+    assert follow_up_metric.value == "4.2"
+    assert len(state.recent_refinements) == 0

@@ -129,7 +129,7 @@ class MiningAnalyticsPlugin:
         self.state = MiningState()
         self.capabilities: CapabilityService = build_default_capability_service()
         self.preferences = PreferencesManager()
-        self.inara = InaraClient(self.state)
+        self.inara = InaraClient(self.state, capability_service=self.capabilities)
         self.spansh = SpanshHotspotClient(self.state)
         self.edsm = EdsmClient(self.state, self._schedule_ui_refresh)
         self.session_recorder = SessionRecorder(self.state)
@@ -357,7 +357,7 @@ class MiningAnalyticsPlugin:
         frame = self.ui.get_root()
         if frame is None or not frame.winfo_exists():
             return
-        self._overlay_rpm_refresh_job = frame.after(50, self._overlay_rpm_tick)
+        self._overlay_rpm_refresh_job = frame.after(150, self._overlay_rpm_tick)
 
     def _cancel_overlay_refresh(self) -> None:
         if self._overlay_refresh_job is None:

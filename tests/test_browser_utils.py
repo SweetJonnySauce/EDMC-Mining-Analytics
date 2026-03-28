@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from edmc_mining_analytics.browser_utils import did_open, open_analysis_url
+from edmc_mining_analytics.browser_utils import did_open, open_analysis_url, open_url_with_capability
 from edmc_mining_analytics.capabilities.models import CapabilityResult, STATUS_DEGRADED, STATUS_FAILED, STATUS_SUCCESS
 
 
@@ -31,6 +31,17 @@ def test_open_analysis_url_reports_missing_url() -> None:
     result = open_analysis_url(None, "")
 
     assert result.status == STATUS_FAILED
+
+
+def test_open_url_with_capability_does_not_append_focus_token_unless_requested() -> None:
+    service = _FakeCapabilityService(CapabilityResult(status=STATUS_SUCCESS, metadata={"opened": True, "raised": True}))
+
+    result = open_url_with_capability(service, "https://inara.cz/elite/commodities/?formbrief=1")
+
+    assert service.requests
+    request = service.requests[0]
+    assert "edmcma_focus_token=" not in request.payload.get("url", "")
+    assert result.status == STATUS_SUCCESS
 
 
 def test_did_open_respects_metadata_and_status() -> None:

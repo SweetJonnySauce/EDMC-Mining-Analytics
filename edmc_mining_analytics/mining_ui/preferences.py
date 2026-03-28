@@ -147,8 +147,7 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     refinement_desc = tk.Label(
         refinement_frame,
         text=(
-            "Historical refinement windows control how far back we capture and average "
-            "mining performance for rate calculations."
+            "RPM is calculated from MiningRefined events over a fixed 10-second window."
         ),
         anchor="w",
         justify="left",
@@ -156,31 +155,8 @@ def build_preferences(ui: "edmcmaMiningUI", parent: tk.Widget) -> tk.Widget:
     )
     refinement_desc.grid(row=0, column=0, sticky="w", pady=(4, 4))
 
-    ui._prefs_refinement_window_var = tk.IntVar(
-        master=refinement_frame, value=ui._state.refinement_lookback_seconds
-    )
-    ui._prefs_refinement_window_var.trace_add("write", ui._on_refinement_window_change)
-    refinement_window_container = tk.Frame(refinement_frame, highlightthickness=0, bd=0)
-    refinement_window_container.grid(row=1, column=0, sticky="w", pady=(0, 4))
-
-    ttk.Spinbox(
-        refinement_window_container,
-        from_=5,
-        to=240,
-        increment=5,
-        textvariable=ui._prefs_refinement_window_var,
-        width=6,
-    ).grid(row=0, column=0, sticky="w")
-
-    refinement_seconds_label = tk.Label(
-        refinement_window_container,
-        text="seconds",
-        anchor="w",
-    )
-    refinement_seconds_label.grid(row=0, column=1, sticky="w", padx=(8, 0))
-
     thresholds_container = tk.Frame(refinement_frame, highlightthickness=0, bd=0)
-    thresholds_container.grid(row=2, column=0, sticky="ew", pady=(6, 4))
+    thresholds_container.grid(row=1, column=0, sticky="ew", pady=(6, 4))
     thresholds_container.columnconfigure((0, 1, 2), weight=1)
 
     thresholds_desc = tk.Label(

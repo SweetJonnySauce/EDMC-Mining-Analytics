@@ -116,6 +116,88 @@ class JournalSimulationTest(unittest.TestCase):
 
         self.assertGreater(self._refresh_calls, 0)
 
+    def test_fsd_jump_stops_active_mining_session(self) -> None:
+        launch_ts = self._timestamp(0)
+        self.processor.handle_entry({
+            "event": "LaunchDrone",
+            "Type": "Prospector",
+            "StarSystem": "Sol",
+            "timestamp": launch_ts,
+        })
+        self.assertTrue(self.state.is_mining)
+
+        self.processor.handle_entry({
+            "event": "FSDJump",
+            "StarSystem": "Achenar",
+            "timestamp": self._timestamp(30),
+        })
+
+        self.assertFalse(self.state.is_mining)
+        self.assertTrue(self._session_ended)
+        self.assertIsNotNone(self.state.mining_end)
+
+    def test_saa_signals_found_updates_ring_from_body_name(self) -> None:
+        self.processor.handle_entry({
+            "event": "SAASignalsFound",
+            "timestamp": self._timestamp(5),
+            "BodyName": "Synuefe UZ-O c22-10 A Ring",
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 A Ring")
+
+    def test_saa_signals_found_ignores_non_ring_body_name(self) -> None:
+        self.processor.handle_entry({
+            "event": "SAASignalsFound",
+            "timestamp": self._timestamp(5),
+            "BodyName": "Synuefe UZ-O c22-10 A",
+        })
+        self.assertIsNone(self.state.mining_ring)
+
+    def test_saa_signals_found_uses_supercruise_exit_ring_confirmation(self) -> None:
+        self.processor.handle_entry({
+            "event": "SupercruiseExit",
+            "timestamp": self._timestamp(5),
+            "StarSystem": "Synuefe UZ-O c22-10",
+            "Body": "Synuefe UZ-O c22-10 9 A Ring",
+            "BodyID": 29,
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
+        self.processor.handle_entry({
+            "event": "SAASignalsFound",
+            "timestamp": self._timestamp(6),
+            "BodyName": "Synuefe UZ-O c22-10 9 B Ring",
+            "BodyID": 30,
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
+        self.processor.handle_entry({
+            "event": "SAASignalsFound",
+            "timestamp": self._timestamp(7),
+            "BodyName": "Synuefe UZ-O c22-10 9 A Ring",
+            "BodyID": 29,
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
+    def test_mining_start_preserves_recent_supercruise_ring(self) -> None:
+        self.processor.handle_entry({
+            "event": "SupercruiseExit",
+            "timestamp": self._timestamp(5),
+            "StarSystem": "Synuefe UZ-O c22-10",
+            "Body": "Synuefe UZ-O c22-10 9 A Ring",
+            "BodyID": 29,
+        })
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
+        self.processor.handle_entry({
+            "event": "LaunchDrone",
+            "Type": "Prospector",
+            "StarSystem": "Synuefe UZ-O c22-10",
+            "timestamp": self._timestamp(10),
+        })
+
+        self.assertTrue(self.state.is_mining)
+        self.assertEqual(self.state.mining_ring, "Synuefe UZ-O c22-10 9 A Ring")
+
     def test_replay_sample_journal(self) -> None:
         """Replay a captured journal slice to mirror EDMC runtime behaviour."""
 
