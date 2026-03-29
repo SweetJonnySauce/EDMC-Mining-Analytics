@@ -18,6 +18,7 @@ def _build_state() -> MiningState:
 def test_session_payload_includes_estimated_sell_full_coverage() -> None:
     state = _build_state()
     state.cargo_totals = {"platinum": 10, "gold": 5}
+    state.last_cargo_counts = {"platinum": 10, "gold": 5}
     state.commodity_display_names = {"platinum": "Platinum", "gold": "Gold"}
     state.market_search_sort_mode = "best_price"
     state.market_search_has_large_pad = True
@@ -28,8 +29,6 @@ def test_session_payload_includes_estimated_sell_full_coverage() -> None:
     state.market_search_distance_ly = 88.5
     state.market_search_distance_ls = 4200.0
     state.market_sell_prices = {"platinum": 1_000_000.0, "gold": 500_000.0}
-    state.market_sell_totals = {"platinum": 10_000_000.0, "gold": 2_500_000.0}
-    state.market_sell_total = 12_500_000.0
     state.market_sell_details = {
         "platinum": {
             "system_name": "Sol",
@@ -44,7 +43,6 @@ def test_session_payload_includes_estimated_sell_full_coverage() -> None:
     estimated = payload["meta"]["estimated_sell"]
 
     assert estimated["sort_mode"] == "best_price"
-    assert estimated["total_value_cr"] == pytest.approx(12_500_000.0)
     assert estimated["priced_commodities"] == 2
     assert estimated["unpriced_commodities"] == 0
     assert estimated["priced_tons"] == pytest.approx(15.0)
@@ -68,6 +66,7 @@ def test_session_payload_includes_estimated_sell_full_coverage() -> None:
 def test_session_payload_includes_estimated_sell_partial_coverage() -> None:
     state = _build_state()
     state.cargo_totals = {"platinum": 10, "gold": 5, "silver": 2}
+    state.last_cargo_counts = {"platinum": 10, "gold": 5, "silver": 2}
     state.commodity_display_names = {"platinum": "Platinum", "gold": "Gold", "silver": "Silver"}
     state.market_search_sort_mode = "nearest"
     state.market_search_has_large_pad = None
@@ -78,14 +77,11 @@ def test_session_payload_includes_estimated_sell_partial_coverage() -> None:
     state.market_search_distance_ly = 100.0
     state.market_search_distance_ls = None
     state.market_sell_prices = {"platinum": 1_000_000.0, "gold": 500_000.0}
-    state.market_sell_totals = {"platinum": 10_000_000.0, "gold": 2_500_000.0}
-    state.market_sell_total = 12_500_000.0
 
     payload = SessionRecorder(state)._build_payload()
     estimated = payload["meta"]["estimated_sell"]
 
     assert estimated["sort_mode"] == "nearest"
-    assert estimated["total_value_cr"] == pytest.approx(12_500_000.0)
     assert estimated["priced_commodities"] == 2
     assert estimated["unpriced_commodities"] == 1
     assert estimated["priced_tons"] == pytest.approx(15.0)
@@ -105,14 +101,42 @@ def test_session_payload_includes_estimated_sell_partial_coverage() -> None:
 def test_session_payload_includes_estimated_sell_empty_prices() -> None:
     state = _build_state()
     state.cargo_totals = {"methanolmonohydratecrystals": 12}
+    state.last_cargo_counts = {"methanolmonohydratecrystals": 12}
     state.commodity_display_names = {"methanolmonohydratecrystals": "Methanol Monohydrate Crystals"}
 
     payload = SessionRecorder(state)._build_payload()
     estimated = payload["meta"]["estimated_sell"]
 
-    assert estimated["total_value_cr"] == pytest.approx(0.0)
     assert estimated["priced_commodities"] == 0
     assert estimated["unpriced_commodities"] == 1
     assert estimated["priced_tons"] == pytest.approx(0.0)
     assert estimated["total_tons"] == pytest.approx(12.0)
     assert estimated["coverage_ratio"] == pytest.approx(0.0)
+
+
+def test_session_payload_estimated_sell_prefers_last_cargo_snapshot() -> None:
+    state = _build_state()
+    state.cargo_totals = {"platinum": 246, "osmium": 16, "gold": 18, "silver": 1}
+    state.last_cargo_counts = {"platinum": 246, "osmium": 10, "drones": 111}
+    state.commodity_display_names = {
+        "platinum": "Platinum",
+        "osmium": "Osmium",
+        "gold": "Gold",
+        "silver": "Silver",
+    }
+    state.market_sell_prices = {
+        "platinum": 300_452.0,
+        "osmium": 273_000.0,
+        "gold": 56_526.0,
+        "silver": 49_426.0,
+    }
+
+    payload = SessionRecorder(state)._build_payload()
+    estimated = payload["meta"]["estimated_sell"]
+    by_name = {entry["name"]: entry for entry in estimated["by_commodity"]}
+
+    assert set(by_name) == {"Platinum", "Osmium"}
+    assert by_name["Platinum"]["estimated_value_cr"] == pytest.approx(246.0 * 300_452.0)
+    assert by_name["Osmium"]["estimated_value_cr"] == pytest.approx(10.0 * 273_000.0)
+    assert estimated["total_tons"] == pytest.approx(256.0)
+    assert estimated["priced_tons"] == pytest.approx(256.0)
