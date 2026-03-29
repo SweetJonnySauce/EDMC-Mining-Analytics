@@ -194,8 +194,10 @@
 
     .compare-controls {
       display: grid;
-      grid-template-columns: minmax(170px, 1fr) minmax(170px, 1fr) minmax(220px, 1fr) minmax(280px, 1.2fr);
+      grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) max-content max-content;
       gap: 10px;
+      justify-content: start;
+      align-items: start;
       border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
       border-radius: 10px;
       padding: 10px;
@@ -217,6 +219,9 @@
       display: grid;
       gap: 6px;
       min-width: 0;
+      width: max-content;
+      max-width: 100%;
+      justify-self: start;
       border: 1px solid color-mix(in srgb, var(--fg) 16%, transparent);
       border-radius: 10px;
       padding: 8px 10px;
@@ -348,6 +353,15 @@
       font-size: 0.95rem;
       line-height: 1.25;
       overflow-wrap: anywhere;
+    }
+
+    .ring-title-favorite {
+      display: inline-block;
+      margin-left: 6px;
+      color: #FF6A00;
+      font-size: 0.95em;
+      line-height: 1;
+      vertical-align: baseline;
     }
 
     .info-grid {
@@ -624,6 +638,11 @@
         grid-template-columns: 1fr;
       }
 
+      .compare-control-pill {
+        width: 100%;
+        justify-self: stretch;
+      }
+
       .compare-reference-options {
         grid-template-columns: repeat(2, minmax(0, max-content));
       }
@@ -643,7 +662,6 @@
         <div id="theme-menu" class="theme-menu" aria-hidden="true"></div>
       </div>
     </div>
-    <p class="sub">Compare panels will be added here.</p>
     <section class="compare-controls">
       <div class="compare-control">
         <label for="compare-commodity-select">Commodity</label>
@@ -718,6 +736,7 @@
       let requestedCommodityKey = "";
       let selectedYieldPopulationMode = "present";
       let selectedReferenceCrosshairs = new Set();
+      let favoriteRingNames = new Set();
 
       function getThemeOption(themeId) {
         return themeOptions.find((option) => option.id === themeId) || null;
@@ -1101,6 +1120,30 @@
           }))
           .sort((a, b) => a.ringName.localeCompare(b.ringName));
         return { rings, commodities };
+      }
+
+      async function loadFavoriteRingNames() {
+        favoriteRingNames = new Set();
+        try {
+          const response = await fetch("/config/hotspot_favorite_rings.json", { cache: "no-store" });
+          if (!response.ok) {
+            return;
+          }
+          const payload = await response.json();
+          const rows = Array.isArray(payload)
+            ? payload
+            : ((payload && typeof payload === "object" && Array.isArray(payload.favorite_rings))
+              ? payload.favorite_rings
+              : []);
+          rows.forEach((value) => {
+            const ringName = typeof value === "string" ? value.trim() : "";
+            if (ringName) {
+              favoriteRingNames.add(ringName);
+            }
+          });
+        } catch (_error) {
+          // Optional source; ignore if unavailable.
+        }
       }
 
       function dominantLabel(countMap) {
@@ -1749,6 +1792,14 @@
           const ringTitle = document.createElement("h2");
           ringTitle.className = "ring-title";
           ringTitle.textContent = ring.ringName;
+          if (favoriteRingNames.has(String(ring.ringName || "").trim())) {
+            const favoriteStar = document.createElement("span");
+            favoriteStar.className = "ring-title-favorite";
+            favoriteStar.textContent = "★";
+            favoriteStar.title = "Favorite rings in the hotspot finder.";
+            favoriteStar.setAttribute("aria-label", "Favorite rings in the hotspot finder.");
+            ringTitle.appendChild(favoriteStar);
+          }
           infoPanel.appendChild(ringTitle);
 
           const chartPanel = document.createElement("section");
@@ -1921,6 +1972,7 @@
       async function loadCompareData() {
         setStatus("Loading compare data...", false);
         try {
+          await loadFavoriteRingNames();
           const response = await fetch("/session_data/prospected_asteroid_summary.jsonl", { cache: "no-store" });
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);

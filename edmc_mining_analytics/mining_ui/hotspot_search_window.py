@@ -420,6 +420,10 @@ class HotspotSearchWindow:
         (YIELD_BASIS_ALL, "All asteroids"),
         (YIELD_BASIS_PRESENT, "Only w/ Commodity"),
     )
+    FAVORITE_STAR_EMPTY = "✩"
+    FAVORITE_STAR_FILLED = "✭"
+    FAVORITES_FILENAME = "hotspot_favorite_rings.json"
+    FAVORITE_COLUMN_WIDTH = 40
     RESULTS_PER_PAGE = DEFAULT_RESULT_SIZE
     SIGNALS_COLUMN_HEADING = "Signals (qty) (known avg yield)"
 
@@ -500,7 +504,10 @@ class HotspotSearchWindow:
         self._last_search_duration: Optional[float] = None
         self._ring_summary_avg_cache: Dict[str, Dict[tuple[str, str], float]] = {}
         self._ring_summary_avg_mtime_ns: Optional[int] = None
+        self._favorite_rings: set[str] = set()
+        self._result_item_ring_names: Dict[str, str] = {}
 
+        self._load_favorite_rings_from_disk()
         self._build_ui()
         self._controller.register_metadata_callback(self._handle_metadata_update)
         self._schedule_initial_search()
@@ -594,6 +601,7 @@ class HotspotSearchWindow:
         self._pagination_has_next = False
         self._search_started_at = None
         self._last_search_duration = None
+        self._result_item_ring_names = {}
 
     def _handle_metadata_update(
         self,
@@ -680,12 +688,23 @@ class HotspotSearchWindow:
         left_controls_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 12))
         left_controls_frame.columnconfigure(0, weight=1)
         left_controls_frame.columnconfigure(1, weight=0)
-        left_controls_frame.rowconfigure(1, weight=1)
+        left_controls_frame.rowconfigure(0, weight=1)
         self._theme.register(left_controls_frame)
         self._hotspot_controls_frame = left_controls_frame
 
-        distance_frame = tk.LabelFrame(left_controls_frame, text="Distance (LY)")
-        distance_frame.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        primary_controls_frame = tk.Frame(left_controls_frame, highlightthickness=0, bd=0)
+        primary_controls_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+        primary_controls_frame.columnconfigure(0, weight=1)
+        primary_controls_frame.rowconfigure(1, weight=1)
+        self._theme.register(primary_controls_frame)
+
+        secondary_controls_frame = tk.Frame(left_controls_frame, highlightthickness=0, bd=0)
+        secondary_controls_frame.grid(row=0, column=1, sticky="ns")
+        secondary_controls_frame.columnconfigure(0, weight=1)
+        self._theme.register(secondary_controls_frame)
+
+        distance_frame = tk.LabelFrame(primary_controls_frame, text="Distance (LY)")
+        distance_frame.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         self._theme.register(distance_frame)
 
         tk.Label(distance_frame, text="Min").grid(row=0, column=0, sticky="w", padx=(4, 4), pady=(2, 2))
@@ -696,8 +715,8 @@ class HotspotSearchWindow:
         max_entry = ttk.Entry(distance_frame, textvariable=self._distance_max_var, width=8)
         max_entry.grid(row=1, column=1, sticky="w", padx=(0, 8), pady=(2, 2))
 
-        reserve_frame = tk.LabelFrame(left_controls_frame, text="Reserve Level")
-        reserve_frame.grid(row=0, column=1, sticky="ew")
+        reserve_frame = tk.LabelFrame(secondary_controls_frame, text="Reserve Level")
+        reserve_frame.grid(row=0, column=0, sticky="ew")
         self._theme.register(reserve_frame)
 
         reserve_values = self._reserve_level_options or self.FALLBACK_RESERVE_LEVELS
@@ -717,8 +736,8 @@ class HotspotSearchWindow:
             reserve_combo.current(0)
         self._reserve_combobox = reserve_combo
 
-        ring_type_frame = tk.LabelFrame(left_controls_frame, text="Ring Filters")
-        ring_type_frame.grid(row=1, column=0, sticky="nsew", pady=(8, 0), padx=(0, 8))
+        ring_type_frame = tk.LabelFrame(primary_controls_frame, text="Ring Filters")
+        ring_type_frame.grid(row=1, column=0, sticky="nsew")
         self._theme.register(ring_type_frame)
 
         ring_type_list = tk.Listbox(
@@ -747,8 +766,8 @@ class HotspotSearchWindow:
         self._min_hotspots_var = tk.StringVar(master=self._toplevel, value=str(min_hotspots_initial))
         yield_basis_initial = self._normalise_yield_basis(filters.yield_basis)
         self._yield_basis_var = tk.StringVar(master=self._toplevel, value=yield_basis_initial)
-        min_hotspots_frame = tk.LabelFrame(left_controls_frame, text="Minimum Hotspots")
-        min_hotspots_frame.grid(row=1, column=1, sticky="ew", pady=(8, 0))
+        min_hotspots_frame = tk.LabelFrame(secondary_controls_frame, text="Minimum Hotspots")
+        min_hotspots_frame.grid(row=1, column=0, sticky="ew", pady=(8, 0))
         self._theme.register(min_hotspots_frame)
         spinbox_kwargs = {
             "from_": 1,
@@ -765,12 +784,12 @@ class HotspotSearchWindow:
         self._theme.register(min_hotspots_spin)
         self._min_hotspots_var.trace_add("write", self._on_filters_changed)
 
-        basis_label = tk.Label(min_hotspots_frame, text="Yield Basis")
-        basis_label.grid(row=1, column=0, sticky="w", padx=6, pady=(0, 2))
-        self._theme.register(basis_label)
-        for row_index, (basis_key, basis_text) in enumerate(self.YIELD_BASIS_OPTIONS, start=2):
+        yield_basis_frame = tk.LabelFrame(secondary_controls_frame, text="Yield Basis")
+        yield_basis_frame.grid(row=2, column=0, sticky="ew", pady=(8, 0))
+        self._theme.register(yield_basis_frame)
+        for row_index, (basis_key, basis_text) in enumerate(self.YIELD_BASIS_OPTIONS):
             basis_button = tk.Radiobutton(
-                min_hotspots_frame,
+                yield_basis_frame,
                 text=basis_text,
                 variable=self._yield_basis_var,
                 value=basis_key,
@@ -779,7 +798,7 @@ class HotspotSearchWindow:
                 bd=0,
                 command=self._on_filters_changed,
             )
-            basis_button.grid(row=row_index, column=0, sticky="w", padx=6, pady=(0, 2))
+            basis_button.grid(row=row_index, column=0, sticky="w", padx=6, pady=2)
             self._theme.register(basis_button)
 
         signal_frame = tk.LabelFrame(layout_frame, text="Ring Signals")
@@ -827,8 +846,9 @@ class HotspotSearchWindow:
         self._theme.register(results_frame)
         self._results_frame = results_frame
 
-        columns = ("copy", "system", "body", "ring", "type", "distance_ly", "distance_ls", "signals")
+        columns = ("favorite", "copy", "system", "body", "ring", "type", "distance_ly", "distance_ls", "signals")
         tree = ttk.Treeview(results_frame, columns=columns, show="headings")
+        tree.heading("favorite", text="★")
         tree.heading("copy", text="")
         tree.heading("system", text="System")
         tree.heading("body", text="Body")
@@ -838,6 +858,13 @@ class HotspotSearchWindow:
         tree.heading("distance_ls", text="Dist2Arrival (LS)")
         tree.heading("signals", text=self.SIGNALS_COLUMN_HEADING)
 
+        tree.column(
+            "favorite",
+            width=self.FAVORITE_COLUMN_WIDTH,
+            minwidth=self.FAVORITE_COLUMN_WIDTH,
+            anchor="center",
+            stretch=False,
+        )
         tree.column("copy", width=28, minwidth=28, anchor="center", stretch=False)
         tree.column("system", width=140, minwidth=140, anchor="w", stretch=False)
         tree.column("body", width=140, anchor="w")
@@ -1400,13 +1427,16 @@ class HotspotSearchWindow:
         if not item_id:
             return
         column = tree.identify_column(event.x)
-        if column != "#1":
+        if column == "#1":
+            self._toggle_favorite_ring(str(item_id))
+            return
+        if column != "#2":
             return
 
         values = tree.item(item_id, "values")
-        if not values or len(values) < 2:
+        if not values or len(values) < 3:
             return
-        system_name = values[1]
+        system_name = values[2]
         if not isinstance(system_name, str) or not system_name.strip():
             return
         self._copy_system_to_clipboard(system_name.strip())
@@ -1853,6 +1883,7 @@ class HotspotSearchWindow:
 
         for item in tree.get_children():
             tree.delete(item)
+        self._result_item_ring_names = {}
 
         yield_basis = self._normalise_yield_basis(
             (self._active_params.yield_basis if self._active_params else None)
@@ -1909,10 +1940,13 @@ class HotspotSearchWindow:
                 ring_display = entry.ring_name or "—"
             ring_labels.append(ring_display or "—")
             type_labels.append(entry.ring_type or "—")
-            tree.insert(
+            full_ring_name = str(entry.ring_name or "").strip()
+            favorite_symbol = self._favorite_symbol_for_ring(full_ring_name)
+            item_id = tree.insert(
                 "",
                 "end",
                 values=(
+                    favorite_symbol,
                     "📋",
                     system_display,
                     body_display,
@@ -1923,6 +1957,8 @@ class HotspotSearchWindow:
                     signals_text,
                 ),
             )
+            if full_ring_name:
+                self._result_item_ring_names[str(item_id)] = full_ring_name
 
         if entries:
             try:
@@ -2094,6 +2130,113 @@ class HotspotSearchWindow:
             self._status_var.set(f"Copied '{system_name}' to clipboard")
         except Exception:
             _log.exception("Failed to copy system name to clipboard")
+
+    def _favorite_symbol_for_ring(self, ring_name: str) -> str:
+        if ring_name and ring_name in self._favorite_rings:
+            return self.FAVORITE_STAR_FILLED
+        return self.FAVORITE_STAR_EMPTY
+
+    def _toggle_favorite_ring(self, item_id: str) -> None:
+        ring_name = self._result_item_ring_names.get(str(item_id), "")
+        if not ring_name:
+            return
+
+        was_favorited = ring_name in self._favorite_rings
+        if was_favorited:
+            self._favorite_rings.discard(ring_name)
+        else:
+            self._favorite_rings.add(ring_name)
+
+        if not self._save_favorite_rings_to_disk():
+            if was_favorited:
+                self._favorite_rings.add(ring_name)
+            else:
+                self._favorite_rings.discard(ring_name)
+            self._set_search_status("Failed to save favorite ring selection.", include_duration=False)
+            return
+
+        is_favorited = ring_name in self._favorite_rings
+        self._refresh_ring_favorite_markers(ring_name, is_favorited)
+        if is_favorited:
+            self._set_search_status(f"Favorited ring: {ring_name}", include_duration=False)
+        else:
+            self._set_search_status(f"Removed favorite: {ring_name}", include_duration=False)
+
+    def _refresh_ring_favorite_markers(self, ring_name: str, is_favorited: bool) -> None:
+        tree = self._results_tree
+        if not tree or not tree.winfo_exists():
+            return
+
+        marker_text = self.FAVORITE_STAR_FILLED if is_favorited else self.FAVORITE_STAR_EMPTY
+        for candidate_item_id, candidate_ring_name in list(self._result_item_ring_names.items()):
+            if candidate_ring_name != ring_name:
+                continue
+            values = tree.item(candidate_item_id, "values")
+            if not values:
+                continue
+            updated_values = list(values)
+            if not updated_values:
+                continue
+            updated_values[0] = marker_text
+            tree.item(candidate_item_id, values=tuple(updated_values))
+
+    def _resolve_favorites_path(self) -> Optional[Path]:
+        plugin_dir = getattr(self._controller.state, "plugin_dir", None)
+        if not plugin_dir:
+            return None
+        return Path(str(plugin_dir)) / "config" / self.FAVORITES_FILENAME
+
+    def _load_favorite_rings_from_disk(self) -> None:
+        path = self._resolve_favorites_path()
+        if path is None:
+            self._favorite_rings = set()
+            return
+        self._favorite_rings = self._load_favorite_rings_file(path)
+
+    def _save_favorite_rings_to_disk(self) -> bool:
+        path = self._resolve_favorites_path()
+        if path is None:
+            return False
+        try:
+            self._save_favorite_rings_file(path, self._favorite_rings)
+        except Exception:
+            _log.exception("Failed saving favorite rings file: %s", path)
+            return False
+        return True
+
+    @staticmethod
+    def _load_favorite_rings_file(path: Path) -> set[str]:
+        if not path.exists():
+            return set()
+        try:
+            with path.open("r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+        except Exception:
+            _log.exception("Failed reading favorite rings file: %s", path)
+            return set()
+
+        values: Sequence[object]
+        if isinstance(payload, dict):
+            candidate = payload.get("favorite_rings")
+            values = candidate if isinstance(candidate, list) else []
+        elif isinstance(payload, list):
+            values = payload
+        else:
+            values = []
+
+        rings: set[str] = set()
+        for value in values:
+            text = str(value or "").strip()
+            if text:
+                rings.add(text)
+        return rings
+
+    @staticmethod
+    def _save_favorite_rings_file(path: Path, rings: Sequence[str]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"favorite_rings": sorted({str(ring).strip() for ring in rings if str(ring).strip()})}
+        with path.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
 
     def _schedule_result_poll(self) -> None:
         if not self._toplevel or not self._toplevel.winfo_exists():

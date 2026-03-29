@@ -190,20 +190,32 @@ def build_top_bar(
 
 
 def _load_hotspot_icon(plugin_dir: Optional[Path]) -> Optional[tk.PhotoImage]:
-    icon_path = None
+    icon_filenames = (
+        "crisis_alert_24dp_FF6A00_FILL0_wght400_GRAD0_opsz24.png",
+        "platinum_hotspot_icon_20x20.png",
+    )
+    candidate_paths = []
     if plugin_dir:
-        candidate = plugin_dir / "assets" / "platinum_hotspot_icon_20x20.png"
-        if candidate.exists():
-            icon_path = candidate
-    if icon_path is None:
-        try:
-            icon_path = Path(__file__).resolve().parents[2] / "assets" / "platinum_hotspot_icon_20x20.png"
-        except Exception:
-            icon_path = Path("assets/platinum_hotspot_icon_20x20.png")
+        candidate_paths.extend((plugin_dir / "assets" / name) for name in icon_filenames)
     try:
-        return tk.PhotoImage(file=str(icon_path))
+        module_assets = Path(__file__).resolve().parents[2] / "assets"
     except Exception:
-        return None
+        module_assets = Path("assets")
+    candidate_paths.extend((module_assets / name) for name in icon_filenames)
+
+    seen: set[str] = set()
+    for path in candidate_paths:
+        key = str(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        if not path.exists():
+            continue
+        try:
+            return tk.PhotoImage(file=str(path))
+        except Exception:
+            continue
+    return None
 
 
 def _open_url(url: str) -> None:
