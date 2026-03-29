@@ -1,6 +1,11 @@
 # EDMC Mining Analytics
 
 [![Github All Releases](https://img.shields.io/github/downloads/SweetJonnySauce/EDMC-Mining-Analytics/total.svg)](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest)
+[![GitHub Latest Version](https://img.shields.io/github/v/release/SweetJonnySauce/EDMC-Mining-Analytics)](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-clean-brightgreen.svg)]([https://www.virustotal.com/gui/file/2f7dbd4bc55ea5b83ae5b3fbfb66474a882bb5101048e4dd5c514773d3c92652](https://www.virustotal.com/gui/url/0b86225d410a7206430b2e341e5d3bb1cccff202b05b2cba3846fe62427f87c6?nocache=1))
+
+[build-badge]: https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/actions/workflows/ci.yml/badge.svg?branch=main
+[build-url]: https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/actions/workflows/ci.yml
 
 EDMC Mining Analytics extends Elite Dangerous Market Connector (EDMC) with a mining-focused control panel. The plugin listens to in-game journal events to present live production metrics, highlight rock quality, and capture session history without leaving EDMC.
 
@@ -92,3 +97,14 @@ EDMC Mining Analytics connects to these internet services.
 - Discord for sending mining summaries only if you configure the option by providnig a Discord webhook in settings
 - Image hosting services (like imgur.com) only if you configure Discord images in settings
 - Github to confirm the lastest version of EDMC Mining Analytics is available
+
+## Blame
+Yes, this is built with AI. This was one of my first attempts at creating a plugin with AI so if you go looking, I'm sure you'll find slop.
+
+## Analysis and Ring Comparison reports
+
+<img width="1181" height="3235" alt="Screenshot 2026-03-28 at 11-45-49 EDMC Mining Analytics Analysis 3a7d70b9" src="https://github.com/user-attachments/assets/0ffdb8f4-c36f-48ac-b82b-c564dc1b350e" />
+
+<img width="1181" height="2414" alt="Screenshot 2026-03-28 at 11-47-12 EDMC Mining Analytics Compare" src="https://github.com/user-attachments/assets/59123eef-661b-497a-ae55-0c8ac251c7fb" />
+
+
