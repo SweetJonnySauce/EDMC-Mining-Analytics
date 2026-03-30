@@ -2196,6 +2196,38 @@
         return `${formatNumber(amount, digits)} CR`;
       }
 
+      function computeEstimatedSellTotalValue(sessionData, estimatedSell) {
+        const model = buildCumulativeCommoditySeries(sessionData);
+        if (model && Array.isArray(model.series) && model.series.length) {
+          return model.series.reduce((sum, item) => {
+            if (!item || !Array.isArray(item.points) || !item.points.length) {
+              return sum;
+            }
+            const lastPoint = item.points[item.points.length - 1] || {};
+            const profit = Number(lastPoint.profit);
+            return Number.isFinite(profit) ? (sum + profit) : sum;
+          }, 0);
+        }
+        const byCommodity = Array.isArray(estimatedSell && estimatedSell.by_commodity)
+          ? estimatedSell.by_commodity
+          : [];
+        return byCommodity.reduce((sum, entry) => {
+          if (!entry || typeof entry !== "object") {
+            return sum;
+          }
+          const explicitValue = Number(entry.estimated_value_cr);
+          if (Number.isFinite(explicitValue)) {
+            return sum + explicitValue;
+          }
+          const tons = Number(entry.tons);
+          const sellPrice = Number(entry.sell_price);
+          if (Number.isFinite(tons) && tons >= 0 && Number.isFinite(sellPrice) && sellPrice >= 0) {
+            return sum + (tons * sellPrice);
+          }
+          return sum;
+        }, 0);
+      }
+
       function renderEstimatedProfitDetails(sessionData) {
         if (!estimatedProfitDetails) {
           return;
@@ -2271,8 +2303,9 @@
         const pricedCommodities = Number(estimatedSell.priced_commodities);
         const unpricedCommodities = Number(estimatedSell.unpriced_commodities);
 
+        const totalEstimatedProfit = computeEstimatedSellTotalValue(sessionData, estimatedSell);
         const settingsRows = [
-          ["Total Estimated Profit", formatCredits(estimatedSell.total_value_cr, 0)],
+          ["Total Estimated Profit", formatCredits(totalEstimatedProfit, 0)],
           ["Captured", formatLocalDateTime(estimatedSell.captured_at)],
           ["Criteria Source", criteriaSource],
           ["Search Sort Mode", normalizeSortMode(readCriteria("sort_mode", estimatedSell.sort_mode))],
@@ -4955,7 +4988,7 @@
           ? Math.max(0, Math.floor(limpetDumpThresholdRaw))
           : 5;
         const limpetDumps = computeLimpetDumpCount(sessionData, limpetDumpThreshold);
-        const totalEstProfitRaw = Number(estimatedSell.total_value_cr);
+        const totalEstProfitRaw = computeEstimatedSellTotalValue(sessionData, estimatedSell);
         const totalEstProfit = Number.isFinite(totalEstProfitRaw)
           ? `${Math.round(totalEstProfitRaw).toLocaleString()} CR`
           : "--";

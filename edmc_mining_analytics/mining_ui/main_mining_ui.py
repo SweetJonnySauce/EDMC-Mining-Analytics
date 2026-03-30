@@ -31,6 +31,7 @@ except ImportError:  # pragma: no cover - fallback when not running inside EDMC
 from edmc_mining_analytics.tooltip import WidgetTooltip
 from edmc_mining_analytics.debugging import apply_frame_debugging, collect_frames
 from ..formatting import format_compact_number
+from ..estimated_sell import build_estimated_sell_breakdown
 from ..state import MiningState, compute_percentage_stats, update_rpm, resolve_commodity_display_name
 from ..integrations.mining_inara import InaraClient
 from ..integrations.spansh_hotspots import (
@@ -1619,9 +1620,11 @@ class edmcmaMiningUI:
                 pass
 
     def _populate_tables(self) -> None:
+        estimated_sell = build_estimated_sell_breakdown(self._state)
+
         commodities_parent = self._commodities_frame
         if commodities_parent and getattr(commodities_parent, "winfo_exists", lambda: False)():
-            self._populate_commodities_table()
+            self._populate_commodities_table(estimated_sell)
 
         materials_label = self._materials_text
         if materials_label and getattr(materials_label, "winfo_exists", lambda: False)():
@@ -1644,8 +1647,9 @@ class edmcmaMiningUI:
                 )
 
         if self._total_estimated_cr_var is not None:
-            total_value = self._state.market_sell_total
-            if self._state.market_sell_totals:
+            total_value = float(estimated_sell.get("total_estimated_value_cr") or 0.0)
+            priced_commodities = int(estimated_sell.get("priced_commodities") or 0)
+            if priced_commodities > 0:
                 display_value = format_compact_number(total_value, default="-")
             else:
                 display_value = "-"
@@ -1810,7 +1814,23 @@ class edmcmaMiningUI:
 
         return header_frame
 
-    def _populate_commodities_table(self) -> None:
+    def _populate_commodities_table(self, estimated_sell: Optional[Dict[str, Any]] = None) -> None:
+        breakdown = estimated_sell if isinstance(estimated_sell, dict) else build_estimated_sell_breakdown(self._state)
+        by_commodity = breakdown.get("by_commodity", [])
+        est_by_key: Dict[str, Optional[float]] = {}
+        if isinstance(by_commodity, list):
+            for entry in by_commodity:
+                if not isinstance(entry, dict):
+                    continue
+                key = str(entry.get("key") or "").strip().lower()
+                if not key:
+                    continue
+                value = entry.get("estimated_value_cr")
+                try:
+                    est_by_key[key] = float(value) if value is not None else None
+                except (TypeError, ValueError):
+                    est_by_key[key] = None
+
         rows = sorted(
             name
             for name in set(self._state.cargo_totals) | set(self._state.cargo_additions)
@@ -1848,7 +1868,7 @@ class edmcmaMiningUI:
             percent = (present / total_asteroids) * 100 if total_asteroids else 0.0
             range_label = self._format_range_label(commodity)
             tph = self._format_tph(commodity)
-            est_total = self._state.market_sell_totals.get(commodity)
+            est_total = est_by_key.get(commodity)
             est_label = format_compact_number(est_total, default="-")
 
             total_amount = self._state.cargo_totals.get(commodity, 0)

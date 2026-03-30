@@ -12,6 +12,7 @@ import requests
 from ..http_client import get_shared_session
 from ..state import MiningState, resolve_commodity_display_name
 from ..formatting import format_compact_number
+from ..estimated_sell import build_estimated_sell_breakdown
 from .discord_image_manager import DiscordImageManager
 
 EMBED_COLOR = 0x1d9bf0
@@ -336,24 +337,31 @@ def _format_materials(materials: Iterable[Dict[str, Any]]) -> Optional[str]:
 
 
 def _format_estimated_sell_values(state: MiningState) -> Optional[str]:
-    totals = state.market_sell_totals
-    if not totals:
+    breakdown = build_estimated_sell_breakdown(state)
+    entries_raw = breakdown.get("by_commodity", [])
+    if not isinstance(entries_raw, list) or not entries_raw:
         return None
-    details = state.market_sell_details
-    entries: List[Tuple[str, float]] = []
-    for commodity, total in totals.items():
+
+    entries: List[Tuple[str, float, Dict[str, Any]]] = []
+    for entry in entries_raw:
+        if not isinstance(entry, dict):
+            continue
+        commodity = str(entry.get("key") or "").strip().lower()
+        if not commodity:
+            continue
+        total = entry.get("estimated_value_cr")
         try:
             value = float(total)
         except (TypeError, ValueError):
             continue
-        entries.append((commodity, value))
+        entries.append((commodity, value, entry))
     if not entries:
         return None
     entries.sort(key=lambda item: item[1], reverse=True)
     lines: List[str] = []
-    for commodity, total in entries:
+    for commodity, total, entry in entries:
         name = resolve_commodity_display_name(state, commodity)
-        detail = details.get(commodity, {})
+        detail = entry.get("price_source", {})
         system_name = detail.get("system_name") if isinstance(detail, dict) else None
         station_name = detail.get("station_name") if isinstance(detail, dict) else None
         system = str(system_name).strip() if system_name else ""
@@ -369,7 +377,7 @@ def _format_estimated_sell_values(state: MiningState) -> Optional[str]:
             lines.append(f"**{name}** — {format_compact_number(total)} ({location})")
         else:
             lines.append(f"**{name}** — {format_compact_number(total)}")
-    total_value = state.market_sell_total if entries else None
+    total_value = breakdown.get("total_estimated_value_cr") if entries else None
     if total_value is not None:
         lines.append(f"Total — {format_compact_number(total_value)}")
     return "\n".join(lines)
