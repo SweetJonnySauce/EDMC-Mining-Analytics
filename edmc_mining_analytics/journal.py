@@ -81,6 +81,7 @@ class JournalProcessor:
         self._market_search = market_search_service
         self._ring_anchor_name: Optional[str] = None
         self._ring_anchor_body_id: Optional[int] = None
+        self._ring_anchor_system: Optional[str] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -117,6 +118,9 @@ class JournalProcessor:
         if event == "LaunchDrone":
             self._process_launch_drone(entry, edmc_state, event_time)
         elif event == "SupercruiseExit":
+            supercruise_system = self._detect_current_system(entry)
+            if supercruise_system:
+                self._ring_anchor_system = supercruise_system
             if self._capture_ring_from_supercruise_exit(entry):
                 self._refresh_edsm()
         elif event == "SAASignalsFound":
@@ -1097,6 +1101,8 @@ class JournalProcessor:
             if not self._state.mining_ring and anchored_ring:
                 self._state.mining_ring = anchored_ring
             system_name = self._detect_current_system(state or entry)
+            if not system_name and self._ring_anchor_system:
+                system_name = self._ring_anchor_system
             if system_name:
                 self._set_current_system(system_name)
             self._refresh_edsm()
@@ -1295,6 +1301,7 @@ class JournalProcessor:
     def _clear_ring_anchor(self) -> None:
         self._ring_anchor_name = None
         self._ring_anchor_body_id = None
+        self._ring_anchor_system = None
 
     @staticmethod
     def _detect_current_system(state: Optional[dict]) -> Optional[str]:
