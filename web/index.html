@@ -261,6 +261,41 @@
       font: inherit;
     }
 
+    .session-toolbar-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      width: 100%;
+    }
+
+    .session-toolbar-select {
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: none;
+    }
+
+    .session-toolbar-compare-button {
+      border: 1px solid color-mix(in srgb, var(--accent) 46%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.86rem;
+      line-height: 1.2;
+      font-weight: 600;
+      padding: 9px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      margin-left: auto;
+      flex: 0 0 auto;
+    }
+
+    .session-toolbar-compare-button:hover {
+      border-color: color-mix(in srgb, var(--accent) 78%, transparent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
     .status {
       min-height: 1.2em;
       color: var(--muted);
@@ -1144,6 +1179,134 @@
       min-height: 2.1em;
     }
 
+    .material-percent-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 8px;
+    }
+
+    .material-percent-plot {
+      min-height: 220px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .material-percent-y-axis {
+      width: 120px;
+      display: grid;
+      align-content: stretch;
+      justify-items: end;
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1;
+      padding: 0;
+      user-select: none;
+    }
+
+    .material-percent-y-label {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      text-align: right;
+      padding-right: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      line-height: 1.2;
+    }
+
+    .material-percent-y-label.material-percent-y-label--selected {
+      color: color-mix(in srgb, var(--fg) 82%, var(--accent));
+      font-weight: 700;
+    }
+
+    .material-percent-y-label.material-percent-y-label--interactive {
+      cursor: pointer;
+    }
+
+    .material-percent-y-spacer {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .material-percent-surface {
+      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      overflow: hidden;
+    }
+
+    .material-percent-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .material-percent-grid-line {
+      stroke: color-mix(in srgb, var(--fg) 12%, transparent);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .material-percent-grid-line.material-percent-grid-line--selected {
+      stroke: color-mix(in srgb, var(--fg) 12%, transparent);
+      stroke-width: 1;
+    }
+
+    .material-percent-row-hitbox {
+      stroke: transparent;
+      stroke-width: 12;
+      vector-effect: non-scaling-stroke;
+      cursor: pointer;
+    }
+
+    .material-percent-row-highlight {
+      fill: color-mix(in srgb, var(--accent) 14%, transparent);
+      pointer-events: none;
+    }
+
+    .material-percent-dot {
+      fill-opacity: 0.9;
+      stroke: color-mix(in srgb, var(--card) 92%, #000);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .material-percent-axis-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .material-percent-axis-spacer {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .material-percent-axis {
+      position: relative;
+      min-height: 1.2em;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+      user-select: none;
+    }
+
+    .material-percent-axis-label {
+      position: absolute;
+      top: 0;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
     .prospect-frequency-layout {
       height: 100%;
       display: grid;
@@ -1354,6 +1517,18 @@
         padding: 14px;
       }
 
+      .session-toolbar-input-row {
+        align-items: stretch;
+      }
+
+      .session-toolbar-select {
+        flex: 1 1 100%;
+      }
+
+      .session-toolbar-compare-button {
+        width: max-content;
+      }
+
       .metrics {
         grid-template-columns: repeat(6, minmax(0, 1fr));
       }
@@ -1408,9 +1583,12 @@
 
     <section class="session-toolbar">
       <label for="session-select">Session to analyze</label>
-      <select id="session-select" disabled>
-        <option>Loading sessions...</option>
-      </select>
+      <div class="session-toolbar-input-row">
+        <select id="session-select" class="session-toolbar-select" disabled>
+          <option>Loading sessions...</option>
+        </select>
+        <button id="compare-rings-button" class="session-toolbar-compare-button" type="button">Compare Rings</button>
+      </div>
       <p id="session-status" class="status">Preparing session list...</p>
     </section>
 
@@ -1434,6 +1612,18 @@
           <h2>Asteroid Percentage Histogram</h2>
           <div id="chart-prospect-histogram" class="chart-body"></div>
           <div id="commodity-histogram-filters" class="event-filters"></div>
+        </article>
+        <article class="chart-card chart-card--full">
+          <div class="panel-header-row">
+            <h2>Commodity Percent Amount per Asteroid</h2>
+            <div id="material-percent-header-controls" class="panel-header-controls">
+              <label class="prospect-frequency-control">
+                <input id="material-percent-show-collected" type="checkbox">
+                <span>Show only collected</span>
+              </label>
+            </div>
+          </div>
+          <div id="chart-material-percent-amount" class="chart-body"></div>
         </article>
         <article class="chart-card chart-card--full">
           <div class="panel-header-row">
@@ -1474,6 +1664,7 @@
   <script>
     (function () {
       const sessionSelect = document.getElementById("session-select");
+      const compareRingsButton = document.getElementById("compare-rings-button");
       const sessionStatus = document.getElementById("session-status");
       const analysisStatus = document.getElementById("analysis-status");
       const analysisMetrics = document.getElementById("analysis-metrics");
@@ -1481,6 +1672,9 @@
       const chartCommodityTph = document.getElementById("chart-commodity-tph");
       const chartContentMix = document.getElementById("chart-content-mix");
       const chartProspectHistogram = document.getElementById("chart-prospect-histogram");
+      const chartMaterialPercentAmount = document.getElementById("chart-material-percent-amount");
+      const materialPercentCard = chartMaterialPercentAmount ? chartMaterialPercentAmount.closest(".chart-card") : null;
+      const materialPercentShowCollectedInput = document.getElementById("material-percent-show-collected");
       const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
@@ -1509,8 +1703,11 @@
       let runtimeAnalysisSettings = {};
       let activeThemeId = DEFAULT_THEME_ID;
       let selectedHistogramCommodity = "";
+      let materialPercentHighlightedCommodityKey = "";
+      let histogramSelectionClearedByMaterial = false;
       let activeSessionData = null;
       let activeSessionFilename = "";
+      let materialPercentShowOnlyCollected = false;
       let commodityLinkMap = new Map();
       let commodityLinkLoadPromise = null;
       let prospectSummaryRecords = null;
@@ -1871,45 +2068,71 @@
         return link;
       }
 
-      function formatTimestampFromFilename(filename) {
+      function formatSessionDateTimeFromFilename(filename) {
         const match = /^session_data_(\d+)\.json$/.exec(filename || "");
         if (!match) {
-          return filename || "Unknown session";
+          return {
+            dateLabel: filename || "Unknown session",
+            timeLabel: ""
+          };
         }
         const epochSeconds = Number(match[1]);
         if (!Number.isFinite(epochSeconds)) {
-          return filename;
+          return {
+            dateLabel: filename,
+            timeLabel: ""
+          };
         }
         const stamp = new Date(epochSeconds * 1000);
-        return `${stamp.toLocaleString()} (${filename})`;
+        return {
+          dateLabel: stamp.toLocaleDateString(),
+          timeLabel: stamp.toLocaleTimeString()
+        };
       }
 
-      function formatSessionOptionLabel(filename, ringLabel) {
-        const base = formatTimestampFromFilename(filename);
-        const ring = typeof ringLabel === "string" ? ringLabel.trim() : "";
-        if (!ring || ring === "Unknown") {
-          return base;
+      function resolveSessionAsteroidCount(sessionData) {
+        const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const prospected = meta && typeof meta === "object" ? (meta.prospected || {}) : {};
+        const rawTotal = Number(prospected.total);
+        if (Number.isFinite(rawTotal) && rawTotal >= 0) {
+          return Math.floor(rawTotal);
         }
-        return `${base} - ${ring}`;
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const counted = events.reduce((count, event) => (
+          event && event.type === "prospected_asteroid" ? count + 1 : count
+        ), 0);
+        return counted > 0 ? counted : null;
       }
 
-      async function fetchSessionRingLabel(filename) {
+      function formatSessionOptionLabel(filename, ringLabel, asteroidCount) {
+        const when = formatSessionDateTimeFromFilename(filename);
+        const ring = typeof ringLabel === "string" && ringLabel.trim() ? ringLabel.trim() : "Unknown";
+        const asteroidText = Number.isFinite(asteroidCount)
+          ? formatNumber(Math.max(0, Math.floor(asteroidCount)), 0)
+          : "--";
+        if (!when.timeLabel) {
+          return `${when.dateLabel}, ${ring}, (Asteroids: ${asteroidText})`;
+        }
+        return `${when.dateLabel}, ${when.timeLabel}, ${ring}, (Asteroids: ${asteroidText})`;
+      }
+
+      async function fetchSessionOptionDetails(filename) {
         if (!filename) {
-          return "";
+          return { ringLabel: "", asteroidCount: null };
         }
         try {
           const response = await fetch(`/session_data/${encodeURIComponent(filename)}`, { cache: "no-store" });
           if (!response.ok) {
-            return "";
+            return { ringLabel: "", asteroidCount: null };
           }
           const payload = await response.json();
           const ring = String(resolveSessionRingLabel(payload) || "").trim();
-          if (!ring || ring === "Unknown") {
-            return "";
-          }
-          return ring;
+          return {
+            ringLabel: ring && ring !== "Unknown" ? ring : "",
+            asteroidCount: resolveSessionAsteroidCount(payload)
+          };
         } catch (_error) {
-          return "";
+          return { ringLabel: "", asteroidCount: null };
         }
       }
 
@@ -2100,6 +2323,39 @@
         prospectFrequencyTitle.textContent = "Cumulative Frequency";
       }
 
+      function openCompareRingsPage() {
+        const params = new URLSearchParams();
+        params.set("theme", activeThemeId || DEFAULT_THEME_ID);
+        const selectedCommodity = String(selectedHistogramCommodity || "").trim();
+        if (selectedCommodity) {
+          const commodityKey = selectedCommodity.toLowerCase().replace(/[^a-z0-9]+/g, "");
+          if (commodityKey) {
+            params.set("commodity", commodityKey);
+          }
+        }
+        const url = `/web/compare.html?${params.toString()}`;
+        window.open(url, "_blank", "noopener");
+      }
+
+      function applyMaterialPercentCommoditySelection(commodityName, commodityKey, isCollected) {
+        const key = normalizeCommodityKey(commodityKey || commodityName);
+        if (!key) {
+          return;
+        }
+        materialPercentHighlightedCommodityKey = key;
+        if (isCollected) {
+          selectedHistogramCommodity = String(commodityName || "").trim();
+          histogramSelectionClearedByMaterial = false;
+        } else {
+          selectedHistogramCommodity = "";
+          histogramSelectionClearedByMaterial = true;
+        }
+        if (activeSessionData) {
+          renderProspectHistogram(activeSessionData);
+          renderMaterialPercentAmount(activeSessionData);
+        }
+      }
+
       function clearCharts(message) {
         hideCursorTooltip();
         const text = message || "No chart data available.";
@@ -2129,6 +2385,8 @@
           prospectFrequencyHeaderControls.innerHTML = "";
         }
         selectedHistogramCommodity = "";
+        materialPercentHighlightedCommodityKey = "";
+        histogramSelectionClearedByMaterial = false;
         renderProspectFrequencyTitle();
         activeSessionData = null;
         activeSessionFilename = "";
@@ -2674,6 +2932,425 @@
         chartContentMix.appendChild(wrapper);
       }
 
+      function buildMaterialPercentAmountModel(sessionData, showOnlyCollected) {
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const commodityMap = new Map();
+        const collectedCommodityKeys = new Set();
+        let asteroidNumber = 0;
+
+        events.forEach((event) => {
+          if (!event || event.type !== "mining_refined") {
+            return;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          const localized = typeof details.type_localised === "string" ? details.type_localised.trim() : "";
+          const rawType = typeof details.type === "string" ? details.type.trim() : "";
+          const display = localized || rawType
+            .replace(/^\$/, "")
+            .replace(/;$/, "")
+            .replace(/_name$/i, "")
+            .replace(/_/g, " ");
+          const key = normalizeCommodityKey(display) || normalizeTextKey(display);
+          if (key) {
+            collectedCommodityKeys.add(key);
+          }
+        });
+
+        events.forEach((event) => {
+          if (!event || event.type !== "prospected_asteroid") {
+            return;
+          }
+          asteroidNumber += 1;
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          const materials = Array.isArray(details.materials) ? details.materials : [];
+          materials.forEach((material) => {
+            if (!material || typeof material !== "object") {
+              return;
+            }
+            const name = typeof material.name === "string" ? material.name.trim() : "";
+            const percentage = Number(material.percentage);
+            if (!name || !Number.isFinite(percentage) || percentage <= 0) {
+              return;
+            }
+            const commodityKey = normalizeCommodityKey(name) || normalizeTextKey(name);
+            if (!commodityKey) {
+              return;
+            }
+            const commodityIsCollected = collectedCommodityKeys.has(commodityKey);
+            if (showOnlyCollected && !commodityIsCollected) {
+              return;
+            }
+            let item = commodityMap.get(commodityKey);
+            if (!item) {
+              item = {
+                key: commodityKey,
+                name,
+                isCollected: commodityIsCollected,
+                totalPercentage: 0,
+                count: 0,
+                points: []
+              };
+              commodityMap.set(commodityKey, item);
+            } else if (commodityIsCollected) {
+              item.isCollected = true;
+            }
+            const safePercentage = Math.max(0, Math.min(100, percentage));
+            item.totalPercentage += safePercentage;
+            item.count += 1;
+            item.points.push({
+              asteroidNumber,
+              percentage: safePercentage
+            });
+          });
+        });
+
+        const commodities = Array.from(commodityMap.values()).sort((left, right) => {
+          if (right.totalPercentage !== left.totalPercentage) {
+            return right.totalPercentage - left.totalPercentage;
+          }
+          if (right.count !== left.count) {
+            return right.count - left.count;
+          }
+          return left.name.localeCompare(right.name);
+        });
+
+        if (!commodities.length || asteroidNumber <= 0) {
+          return null;
+        }
+
+        return {
+          commodities,
+          maxAsteroidNumber: asteroidNumber
+        };
+      }
+
+      function renderMaterialPercentAmount(sessionData) {
+        if (!chartMaterialPercentAmount) {
+          return;
+        }
+        chartMaterialPercentAmount.innerHTML = "";
+        const model = buildMaterialPercentAmountModel(sessionData, materialPercentShowOnlyCollected);
+        if (!model) {
+          if (materialPercentCard) {
+            materialPercentCard.style.minHeight = "170px";
+          }
+          const note = document.createElement("p");
+          note.className = "chart-empty";
+          note.textContent = materialPercentShowOnlyCollected
+            ? "No prospected commodities match collected/refined materials for this session."
+            : "No prospected asteroid material percentages found in this session.";
+          chartMaterialPercentAmount.appendChild(note);
+          return;
+        }
+
+        const palette = (activeThemeId === "green-light" || activeThemeId === "green-dark")
+          ? [
+              "#b8d63f",
+              "#90cc59",
+              "#61bfa1",
+              "#4fb5d2",
+              "#6ba3f1",
+              "#998fe4",
+              "#c486d6",
+              "#df80b4",
+              "#ef8e88"
+            ]
+          : [
+              "#f7c948",
+              "#72d572",
+              "#47d6a7",
+              "#5ec8ff",
+              "#60a4ff",
+              "#9d8bff",
+              "#ca7fff",
+              "#ff7fa5",
+              "#ffa45f"
+            ];
+
+        const commodityCount = Math.max(1, model.commodities.length);
+        const preferredRowSpacing = materialPercentShowOnlyCollected ? 24 : 28;
+        const topPad = 12;
+        const bottomPad = 12;
+        const sidePad = 12;
+        const minimumVisualRows = materialPercentShowOnlyCollected ? 2 : 4;
+        const effectiveRowCount = Math.max(minimumVisualRows, commodityCount);
+        const width = 1100;
+        const height = topPad + bottomPad + (effectiveRowCount * preferredRowSpacing);
+        const drawWidth = Math.max(1, width - (sidePad * 2));
+        const drawHeight = Math.max(1, height - topPad - bottomPad);
+        const rowSpacing = drawHeight / commodityCount;
+        const selectedHighlightMaxHeight = 36;
+        const selectedHighlightHeight = Math.min(rowSpacing, selectedHighlightMaxHeight);
+        const axisRowHeight = 26;
+        const cardChromeHeight = 72;
+        const desiredCardMinHeight = Math.round(cardChromeHeight + height + axisRowHeight);
+        if (materialPercentCard) {
+          materialPercentCard.style.minHeight = `${Math.max(170, desiredCardMinHeight)}px`;
+        }
+        const maxAsteroidNumber = Math.max(1, Math.floor(asNumber(model.maxAsteroidNumber)));
+        const selectedCommodityKeyFallback = normalizeCommodityKey(selectedHistogramCommodity);
+        const selectedCommodityKey = model.commodities.some((commodity) => commodity.key === materialPercentHighlightedCommodityKey)
+          ? materialPercentHighlightedCommodityKey
+          : selectedCommodityKeyFallback;
+        const selectedRowIndex = model.commodities.findIndex((commodity) => commodity.key === selectedCommodityKey);
+        const xDivisor = Math.max(1, maxAsteroidNumber - 1);
+        const toX = (asteroidNumber) => {
+          const safeAsteroidNumber = Math.max(1, Math.min(maxAsteroidNumber, Math.floor(asNumber(asteroidNumber))));
+          if (maxAsteroidNumber <= 1) {
+            return sidePad + (drawWidth / 2);
+          }
+          const ratio = (safeAsteroidNumber - 1) / xDivisor;
+          return sidePad + (ratio * drawWidth);
+        };
+        const toRowCenterY = (index) => topPad + ((index + 0.5) * rowSpacing);
+        const toPlotY = (index) => toRowCenterY(index);
+
+        const layout = document.createElement("div");
+        layout.className = "material-percent-layout";
+        const plot = document.createElement("div");
+        plot.className = "material-percent-plot";
+        plot.style.minHeight = `${height}px`;
+
+        const yAxis = document.createElement("div");
+        yAxis.className = "material-percent-y-axis";
+        yAxis.style.gridTemplateRows = `${topPad}px repeat(${commodityCount}, ${rowSpacing.toFixed(2)}px) ${bottomPad}px`;
+        const yTopSpacer = document.createElement("span");
+        yTopSpacer.className = "material-percent-y-spacer";
+        yAxis.appendChild(yTopSpacer);
+        model.commodities.forEach((commodity) => {
+          const label = document.createElement("span");
+          label.className = "material-percent-y-label";
+          label.classList.add("material-percent-y-label--interactive");
+          if (commodity.key === selectedCommodityKey) {
+            label.classList.add("material-percent-y-label--selected");
+          }
+          label.textContent = commodity.name;
+          label.title = commodity.name;
+          label.addEventListener("click", () => {
+            applyMaterialPercentCommoditySelection(commodity.name, commodity.key, commodity.isCollected === true);
+          });
+          yAxis.appendChild(label);
+        });
+        const yBottomSpacer = document.createElement("span");
+        yBottomSpacer.className = "material-percent-y-spacer";
+        yAxis.appendChild(yBottomSpacer);
+
+        const surface = document.createElement("div");
+        surface.className = "material-percent-surface";
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.classList.add("material-percent-svg");
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        svg.setAttribute("preserveAspectRatio", "none");
+
+        if (selectedRowIndex >= 0) {
+          const selectedBand = document.createElementNS(ns, "rect");
+          selectedBand.setAttribute("class", "material-percent-row-highlight");
+          selectedBand.setAttribute("data-row-index", String(selectedRowIndex));
+          selectedBand.setAttribute("x", sidePad.toFixed(2));
+          selectedBand.setAttribute("y", (toRowCenterY(selectedRowIndex) - (selectedHighlightHeight / 2)).toFixed(2));
+          selectedBand.setAttribute("width", drawWidth.toFixed(2));
+          selectedBand.setAttribute("height", selectedHighlightHeight.toFixed(2));
+          svg.appendChild(selectedBand);
+        }
+
+        model.commodities.forEach((commodity, index) => {
+          const y = toPlotY(index);
+          const line = document.createElementNS(ns, "line");
+          line.setAttribute("x1", sidePad.toFixed(2));
+          line.setAttribute("y1", y.toFixed(2));
+          line.setAttribute("x2", (width - sidePad).toFixed(2));
+          line.setAttribute("y2", y.toFixed(2));
+          const lineClass = index === selectedRowIndex
+            ? "material-percent-grid-line material-percent-grid-line--selected"
+            : "material-percent-grid-line";
+          line.setAttribute("class", lineClass);
+          line.setAttribute("data-row-index", String(index));
+          svg.appendChild(line);
+
+          const hitbox = document.createElementNS(ns, "line");
+          hitbox.setAttribute("class", "material-percent-row-hitbox");
+          hitbox.setAttribute("data-row-index", String(index));
+          hitbox.setAttribute("x1", sidePad.toFixed(2));
+          hitbox.setAttribute("y1", y.toFixed(2));
+          hitbox.setAttribute("x2", (width - sidePad).toFixed(2));
+          hitbox.setAttribute("y2", y.toFixed(2));
+          hitbox.addEventListener("click", () => {
+            applyMaterialPercentCommoditySelection(commodity.name, commodity.key, commodity.isCollected === true);
+          });
+          svg.appendChild(hitbox);
+        });
+
+        const maxGridLines = 8;
+        const xStep = Math.max(1, Math.ceil(maxAsteroidNumber / maxGridLines));
+        const xTickValues = [];
+        for (let value = 1; value <= maxAsteroidNumber; value += xStep) {
+          xTickValues.push(value);
+        }
+        if (xTickValues[xTickValues.length - 1] !== maxAsteroidNumber) {
+          xTickValues.push(maxAsteroidNumber);
+        }
+        xTickValues.forEach((value) => {
+          const x = toX(value);
+          const line = document.createElementNS(ns, "line");
+          line.setAttribute("x1", x.toFixed(2));
+          line.setAttribute("y1", topPad.toFixed(2));
+          line.setAttribute("x2", x.toFixed(2));
+          line.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+          line.setAttribute("class", "material-percent-grid-line");
+          svg.appendChild(line);
+        });
+
+        const minDotRadius = 4.4;
+        const maxDotRadius = 20.14;
+        model.commodities.forEach((commodity, commodityIndex) => {
+          const color = palette[commodityIndex % palette.length];
+          const y = toPlotY(commodityIndex);
+          commodity.points.forEach((point) => {
+            const x = toX(point.asteroidNumber);
+            const normalizedPercentage = Math.max(0, Math.min(100, point.percentage)) / 100;
+            const radius = normalizedPercentage > 0
+              ? (minDotRadius + (normalizedPercentage * (maxDotRadius - minDotRadius)))
+              : 0;
+            const dot = document.createElementNS(ns, "ellipse");
+            dot.setAttribute("class", "material-percent-dot");
+            dot.setAttribute("cx", x.toFixed(2));
+            dot.setAttribute("cy", y.toFixed(2));
+            dot.setAttribute("rx", radius.toFixed(2));
+            dot.setAttribute("ry", radius.toFixed(2));
+            dot.setAttribute("data-base-r", radius.toFixed(4));
+            dot.setAttribute("data-row-index", String(commodityIndex));
+            dot.setAttribute("fill", color);
+            const detail = [
+              `${commodity.name} | Asteroid #${point.asteroidNumber}`,
+              `Percentage: ${formatNumber(point.percentage, 2)}%`
+            ].join("\n");
+            dot.addEventListener("mouseenter", (event) => {
+              showCursorTooltip(detail, event);
+            });
+            dot.addEventListener("mousemove", (event) => {
+              showCursorTooltip(detail, event);
+            });
+            dot.addEventListener("mouseleave", () => {
+              hideCursorTooltip();
+            });
+            svg.appendChild(dot);
+          });
+        });
+
+        svg.addEventListener("mouseleave", hideCursorTooltip);
+        surface.appendChild(svg);
+        plot.appendChild(yAxis);
+        plot.appendChild(surface);
+        layout.appendChild(plot);
+
+        const axisRow = document.createElement("div");
+        axisRow.className = "material-percent-axis-row";
+        const axisSpacer = document.createElement("div");
+        axisSpacer.className = "material-percent-y-axis material-percent-axis-spacer";
+        axisRow.appendChild(axisSpacer);
+
+        const axis = document.createElement("div");
+        axis.className = "material-percent-axis";
+        const maxDigits = Math.max(1, String(maxAsteroidNumber).length);
+        const minLabelSpacing = Math.max(18, (maxDigits * 7) + 10);
+        const maxLabelCount = Math.max(2, Math.floor(drawWidth / minLabelSpacing));
+        const xLabelStep = maxAsteroidNumber <= maxLabelCount
+          ? 1
+          : Math.max(1, Math.ceil((maxAsteroidNumber - 1) / Math.max(1, (maxLabelCount - 1))));
+        const xLabelValues = [];
+        for (let value = 1; value <= maxAsteroidNumber; value += xLabelStep) {
+          xLabelValues.push(value);
+        }
+        if (xLabelValues[xLabelValues.length - 1] !== maxAsteroidNumber) {
+          xLabelValues.push(maxAsteroidNumber);
+        }
+        xLabelValues.forEach((value) => {
+          const label = document.createElement("span");
+          label.className = "material-percent-axis-label";
+          label.textContent = String(value);
+          const x = toX(value);
+          label.style.left = `${((x / width) * 100).toFixed(4)}%`;
+          axis.appendChild(label);
+        });
+        axisRow.appendChild(axis);
+        layout.appendChild(axisRow);
+
+        chartMaterialPercentAmount.appendChild(layout);
+        window.requestAnimationFrame(() => {
+          const svgRect = svg.getBoundingClientRect();
+          const svgWidth = Number(svgRect.width);
+          const svgHeight = Number(svgRect.height);
+          if (Number.isFinite(svgWidth) && svgWidth > 0 && Number.isFinite(svgHeight) && svgHeight > 0) {
+            const labelNodes = Array.from(yAxis.querySelectorAll(".material-percent-y-label"));
+            const rowYByIndex = [];
+            labelNodes.forEach((labelNode, index) => {
+              const labelRect = labelNode.getBoundingClientRect();
+              const centerPx = (labelRect.top + (labelRect.height / 2)) - svgRect.top;
+              const mappedY = (centerPx / svgHeight) * height;
+              rowYByIndex[index] = mappedY;
+            });
+
+            svg.querySelectorAll(".material-percent-grid-line[data-row-index]").forEach((node) => {
+              const rowIndex = Number(node.getAttribute("data-row-index"));
+              const mappedY = rowYByIndex[rowIndex];
+              if (!Number.isFinite(mappedY)) {
+                return;
+              }
+              node.setAttribute("y1", mappedY.toFixed(2));
+              node.setAttribute("y2", mappedY.toFixed(2));
+            });
+
+            svg.querySelectorAll(".material-percent-row-hitbox[data-row-index]").forEach((node) => {
+              const rowIndex = Number(node.getAttribute("data-row-index"));
+              const mappedY = rowYByIndex[rowIndex];
+              if (!Number.isFinite(mappedY)) {
+                return;
+              }
+              node.setAttribute("y1", mappedY.toFixed(2));
+              node.setAttribute("y2", mappedY.toFixed(2));
+            });
+
+            svg.querySelectorAll(".material-percent-dot[data-row-index]").forEach((node) => {
+              const rowIndex = Number(node.getAttribute("data-row-index"));
+              const mappedY = rowYByIndex[rowIndex];
+              if (!Number.isFinite(mappedY)) {
+                return;
+              }
+              node.setAttribute("cy", mappedY.toFixed(2));
+            });
+
+            svg.querySelectorAll(".material-percent-row-highlight[data-row-index]").forEach((node) => {
+              const rowIndex = Number(node.getAttribute("data-row-index"));
+              const mappedY = rowYByIndex[rowIndex];
+              if (!Number.isFinite(mappedY)) {
+                return;
+              }
+              node.setAttribute("y", (mappedY - (selectedHighlightHeight / 2)).toFixed(2));
+              node.setAttribute("height", selectedHighlightHeight.toFixed(2));
+            });
+          }
+
+          const rect = svg.getBoundingClientRect();
+          const rectWidth = Number(rect.width);
+          const rectHeight = Number(rect.height);
+          if (!Number.isFinite(rectWidth) || !Number.isFinite(rectHeight) || rectWidth <= 0 || rectHeight <= 0) {
+            return;
+          }
+          const scaleX = rectWidth / width;
+          const scaleY = rectHeight / height;
+          const compensation = scaleY > 0 ? (scaleX / scaleY) : 1;
+          const dots = svg.querySelectorAll(".material-percent-dot[data-base-r]");
+          dots.forEach((node) => {
+            const baseRadius = Number(node.getAttribute("data-base-r"));
+            if (!Number.isFinite(baseRadius) || baseRadius <= 0) {
+              return;
+            }
+            node.setAttribute("ry", (baseRadius * compensation).toFixed(2));
+          });
+        });
+      }
+
       function normalizeHistogramBinSize(value) {
         const raw = Number(value);
         if (!Number.isFinite(raw)) {
@@ -3048,19 +3725,7 @@
           compareButton.type = "button";
           compareButton.className = "panel-action-button";
           compareButton.textContent = "Compare";
-          compareButton.addEventListener("click", () => {
-            const params = new URLSearchParams();
-            params.set("theme", activeThemeId || DEFAULT_THEME_ID);
-            const selectedCommodity = String(selectedHistogramCommodity || "").trim();
-            if (selectedCommodity) {
-              const commodityKey = selectedCommodity.toLowerCase().replace(/[^a-z0-9]+/g, "");
-              if (commodityKey) {
-                params.set("commodity", commodityKey);
-              }
-            }
-            const url = `/web/compare.html?${params.toString()}`;
-            window.open(url, "_blank", "noopener");
-          });
+          compareButton.addEventListener("click", openCompareRingsPage);
           prospectFrequencyHeaderControls.appendChild(compareButton);
 
           const intervalGroup = document.createElement("div");
@@ -3395,15 +4060,91 @@
         }
         const commodities = model.commodities;
         const binSize = model.binSize;
+        if (!selectedHistogramCommodity && materialPercentHighlightedCommodityKey) {
+          const byKey = commodities.find(
+            (item) => normalizeCommodityKey(item.name) === materialPercentHighlightedCommodityKey
+          );
+          if (byKey) {
+            selectedHistogramCommodity = byKey.name;
+            histogramSelectionClearedByMaterial = false;
+          }
+        }
 
-        if (!commodities.some((item) => item.name === selectedHistogramCommodity)) {
+        if (
+          !histogramSelectionClearedByMaterial
+          && !commodities.some((item) => item.name === selectedHistogramCommodity)
+        ) {
           selectedHistogramCommodity = commodities[0].name;
         }
 
         const renderSelected = () => {
           chartProspectHistogram.innerHTML = "";
-          const selected = commodities.find((item) => item.name === selectedHistogramCommodity) || commodities[0];
+          const selected = commodities.find((item) => item.name === selectedHistogramCommodity) || null;
           if (!selected) {
+            const binsCount = Math.max(1, Math.ceil(100 / binSize));
+            const layout = document.createElement("div");
+            layout.className = "histogram-layout";
+
+            const plot = document.createElement("div");
+            plot.className = "histogram-plot";
+
+            const yAxis = document.createElement("div");
+            yAxis.className = "timeline-y-axis";
+            [1, 0].forEach((value) => {
+              const tick = document.createElement("span");
+              tick.textContent = String(value);
+              yAxis.appendChild(tick);
+            });
+
+            const bars = document.createElement("div");
+            bars.className = "histogram-bars";
+            bars.style.gridTemplateColumns = `repeat(${binsCount}, minmax(0, 1fr))`;
+            const note = document.createElement("span");
+            note.className = "chart-empty";
+            note.textContent = "No collected commodity selected in histogram.";
+            note.style.gridColumn = "1 / -1";
+            note.style.alignSelf = "center";
+            note.style.justifySelf = "center";
+            note.style.textAlign = "center";
+            bars.appendChild(note);
+
+            const labels = document.createElement("div");
+            labels.className = "histogram-bin-labels";
+            labels.style.gridTemplateColumns = `repeat(${binsCount}, minmax(0, 1fr))`;
+            const maxVisibleLabels = 10;
+            const labelStep = Math.max(1, Math.ceil(binsCount / maxVisibleLabels));
+            for (let index = 0; index < binsCount; index += 1) {
+              const label = document.createElement("span");
+              label.className = "histogram-bin-label";
+              const rangeStart = index * binSize;
+              const rangeEnd = Math.min(100, rangeStart + binSize);
+              if ((index % labelStep) === 0 || index === binsCount - 1) {
+                label.textContent = `${rangeStart}-\n${rangeEnd}%`;
+              } else {
+                label.textContent = "";
+              }
+              labels.appendChild(label);
+            }
+            const labelsRow = document.createElement("div");
+            labelsRow.className = "histogram-label-row";
+            const spacer = document.createElement("div");
+            spacer.className = "timeline-y-axis histogram-label-spacer";
+            labelsRow.appendChild(spacer);
+            labelsRow.appendChild(labels);
+
+            const axis = document.createElement("div");
+            axis.className = "timeline-axis";
+            axis.innerHTML = "<span>0%</span><span>100%</span>";
+
+            plot.appendChild(yAxis);
+            plot.appendChild(bars);
+            layout.appendChild(plot);
+            layout.appendChild(labelsRow);
+            layout.appendChild(axis);
+            chartProspectHistogram.appendChild(layout);
+            if (activeSessionData) {
+              void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+            }
             return;
           }
 
@@ -3494,13 +4235,18 @@
             radio.type = "radio";
             radio.name = "commodity-histogram";
             radio.id = `commodity-histogram-${index}`;
-            radio.checked = item.name === selectedHistogramCommodity;
+            radio.checked = !!selectedHistogramCommodity && item.name === selectedHistogramCommodity;
             radio.addEventListener("change", () => {
               if (!radio.checked) {
                 return;
               }
               selectedHistogramCommodity = item.name;
+              materialPercentHighlightedCommodityKey = normalizeCommodityKey(item.name);
+              histogramSelectionClearedByMaterial = false;
               renderSelected();
+              if (activeSessionData) {
+                renderMaterialPercentAmount(activeSessionData);
+              }
             });
 
             const text = document.createElement("span");
@@ -4732,6 +5478,7 @@
         );
         renderContentMix(sessionData);
         renderProspectHistogram(sessionData);
+        renderMaterialPercentAmount(sessionData);
         renderCumulativeCommodities(sessionData);
         renderEstimatedProfitDetails(sessionData);
 
@@ -5135,14 +5882,14 @@
           for (const file of unique) {
             const option = document.createElement("option");
             option.value = file;
-            option.textContent = formatSessionOptionLabel(file, "");
+            option.textContent = formatSessionOptionLabel(file, "", null);
             sessionSelect.appendChild(option);
             void (async () => {
-              const ringLabel = await fetchSessionRingLabel(file);
+              const details = await fetchSessionOptionDetails(file);
               if (listToken !== sessionListRenderToken) {
                 return;
               }
-              option.textContent = formatSessionOptionLabel(file, ringLabel);
+              option.textContent = formatSessionOptionLabel(file, details.ringLabel, details.asteroidCount);
             })();
           }
 
@@ -5171,6 +5918,20 @@
         const selected = target && typeof target.value === "string" ? target.value : "";
         void loadSession(selected);
       });
+
+      if (materialPercentShowCollectedInput) {
+        materialPercentShowCollectedInput.checked = materialPercentShowOnlyCollected;
+        materialPercentShowCollectedInput.addEventListener("change", () => {
+          materialPercentShowOnlyCollected = !!materialPercentShowCollectedInput.checked;
+          if (activeSessionData) {
+            renderMaterialPercentAmount(activeSessionData);
+          }
+        });
+      }
+
+      if (compareRingsButton) {
+        compareRingsButton.addEventListener("click", openCompareRingsPage);
+      }
 
       applyFocusTokenToTitle();
       initializeThemeControl();
