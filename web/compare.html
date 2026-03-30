@@ -194,8 +194,10 @@
 
     .compare-controls {
       display: grid;
-      grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(300px, 1.35fr);
+      grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) max-content max-content;
       gap: 10px;
+      justify-content: start;
+      align-items: start;
       border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
       border-radius: 10px;
       padding: 10px;
@@ -211,6 +213,19 @@
     .compare-control label {
       color: var(--muted);
       font-size: 0.82rem;
+    }
+
+    .compare-control-pill {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      width: max-content;
+      max-width: 100%;
+      justify-self: start;
+      border: 1px solid color-mix(in srgb, var(--fg) 16%, transparent);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
     }
 
     .compare-control select {
@@ -234,7 +249,18 @@
       overflow: visible;
     }
 
-    .compare-reference-option {
+    .compare-population-options {
+      display: grid;
+      grid-template-columns: minmax(0, max-content);
+      gap: 6px;
+      align-items: center;
+      justify-content: flex-start;
+      align-content: start;
+      overflow: visible;
+    }
+
+    .compare-reference-option,
+    .compare-population-option {
       display: inline-flex;
       align-items: center;
       gap: 5px;
@@ -250,7 +276,8 @@
       width: max-content;
     }
 
-    .compare-reference-option input {
+    .compare-reference-option input,
+    .compare-population-option input {
       margin: 0;
       width: 12px;
       height: 12px;
@@ -302,7 +329,7 @@
 
     .ring-row {
       display: grid;
-      grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+      grid-template-columns: minmax(240px, 310px) minmax(0, 1fr);
       gap: 10px;
       border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
       border-radius: 10px;
@@ -326,6 +353,15 @@
       font-size: 0.95rem;
       line-height: 1.25;
       overflow-wrap: anywhere;
+    }
+
+    .ring-title-favorite {
+      display: inline-block;
+      margin-left: 6px;
+      color: #FF6A00;
+      font-size: 0.95em;
+      line-height: 1;
+      vertical-align: baseline;
     }
 
     .info-grid {
@@ -602,8 +638,17 @@
         grid-template-columns: 1fr;
       }
 
+      .compare-control-pill {
+        width: 100%;
+        justify-self: stretch;
+      }
+
       .compare-reference-options {
         grid-template-columns: repeat(2, minmax(0, max-content));
+      }
+
+      .compare-population-options {
+        grid-template-columns: minmax(0, max-content);
       }
     }
   </style>
@@ -638,7 +683,11 @@
           <option value="name_asc">Ring Name (A to Z)</option>
         </select>
       </div>
-      <div class="compare-control">
+      <div class="compare-control compare-control-pill">
+        <label>Yield Basis</label>
+        <div id="compare-population-options" class="compare-population-options" aria-label="Yield calculation basis"></div>
+      </div>
+      <div class="compare-control compare-control-pill">
         <label>Crosshairs</label>
         <div id="compare-reference-options" class="compare-reference-options" aria-label="Crosshair overlays"></div>
       </div>
@@ -655,6 +704,7 @@
       const compareTitle = document.getElementById("compare-title");
       const compareCommoditySelect = document.getElementById("compare-commodity-select");
       const compareSortSelect = document.getElementById("compare-sort-select");
+      const comparePopulationOptions = document.getElementById("compare-population-options");
       const compareReferenceOptions = document.getElementById("compare-reference-options");
       const compareStatus = document.getElementById("compare-status");
       const compareList = document.getElementById("compare-list");
@@ -675,12 +725,18 @@
         { key: "avg", label: "Avg", metricKey: "averageYield", quantile: null },
         { key: "p25", label: "P25", metricKey: "p25", quantile: 0.25 }
       ];
+      const YIELD_POPULATION_MODES = [
+        { key: "all", label: "All asteroids" },
+        { key: "present", label: "Only w/ Commodity" }
+      ];
       let activeThemeId = DEFAULT_THEME_ID;
       let cursorTooltip = null;
       let compareData = null;
       let selectedCommodityKey = "";
       let requestedCommodityKey = "";
-      let selectedReferenceCrosshairs = new Set();
+      let selectedYieldPopulationMode = "all";
+      let selectedReferenceCrosshairs = new Set(["avg"]);
+      let favoriteRingNames = new Set();
 
       function getThemeOption(themeId) {
         return themeOptions.find((option) => option.id === themeId) || null;
@@ -1066,6 +1122,30 @@
         return { rings, commodities };
       }
 
+      async function loadFavoriteRingNames() {
+        favoriteRingNames = new Set();
+        try {
+          const response = await fetch("/config/hotspot_favorite_rings.json", { cache: "no-store" });
+          if (!response.ok) {
+            return;
+          }
+          const payload = await response.json();
+          const rows = Array.isArray(payload)
+            ? payload
+            : ((payload && typeof payload === "object" && Array.isArray(payload.favorite_rings))
+              ? payload.favorite_rings
+              : []);
+          rows.forEach((value) => {
+            const ringName = typeof value === "string" ? value.trim() : "";
+            if (ringName) {
+              favoriteRingNames.add(ringName);
+            }
+          });
+        } catch (_error) {
+          // Optional source; ignore if unavailable.
+        }
+      }
+
       function dominantLabel(countMap) {
         if (!(countMap instanceof Map) || countMap.size === 0) {
           return "--";
@@ -1111,29 +1191,59 @@
         });
       }
 
-      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax) {
-        const asteroids = Array.isArray(ring && ring.asteroidList) ? ring.asteroidList : [];
-        const presentAsteroids = asteroids
-          .map((asteroid) => {
-            const value = Number(asteroid && asteroid.commodityPercentages && asteroid.commodityPercentages.get(commodityKey));
-            if (!Number.isFinite(value)) {
-              return null;
+      function syncYieldPopulationControls() {
+        if (!comparePopulationOptions) {
+          return;
+        }
+        comparePopulationOptions.innerHTML = "";
+        YIELD_POPULATION_MODES.forEach((mode) => {
+          const wrapper = document.createElement("label");
+          wrapper.className = "compare-population-option";
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "compare-yield-population-mode";
+          input.value = mode.key;
+          input.checked = selectedYieldPopulationMode === mode.key;
+          input.addEventListener("change", () => {
+            if (!input.checked) {
+              return;
             }
+            selectedYieldPopulationMode = mode.key;
+            renderComparePanels();
+          });
+          const text = document.createElement("span");
+          text.textContent = mode.label;
+          wrapper.appendChild(input);
+          wrapper.appendChild(text);
+          comparePopulationOptions.appendChild(wrapper);
+        });
+      }
+
+      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, populationMode) {
+        const asteroids = Array.isArray(ring && ring.asteroidList) ? ring.asteroidList : [];
+        const allAsteroids = asteroids
+          .map((asteroid) => {
+            const rawValue = Number(asteroid && asteroid.commodityPercentages && asteroid.commodityPercentages.get(commodityKey));
+            const present = Number.isFinite(rawValue);
+            const value = present ? Math.max(0, rawValue) : 0;
             return {
-              value: Math.max(0, value),
+              value,
+              present,
               sessionGuid: asteroid.sessionGuid
             };
           })
           .filter((row) => !!row);
+        const presentAsteroids = allAsteroids.filter((item) => item.present);
+        const scopedAsteroids = populationMode === "all" ? allAsteroids : presentAsteroids;
         const normalizedForcedXMax = Number.isFinite(forcedXMax) && forcedXMax > 0
           ? Math.max(interval, forcedXMax)
           : null;
-        const percentileValues = presentAsteroids.map((item) => item.value);
+        const percentileValues = scopedAsteroids.map((item) => item.value);
         const p90 = percentileInclusive(percentileValues, 0.9);
         const p75 = percentileInclusive(percentileValues, 0.75);
         const p50 = percentileInclusive(percentileValues, 0.5);
         const p25 = percentileInclusive(percentileValues, 0.25);
-        if (!presentAsteroids.length) {
+        if (!scopedAsteroids.length) {
           return {
             averageYield: null,
             p90: null,
@@ -1147,13 +1257,13 @@
             xMax: normalizedForcedXMax || interval
           };
         }
-        const maxObserved = presentAsteroids.reduce((peak, item) => Math.max(peak, item.value), 0);
+        const maxObserved = scopedAsteroids.reduce((peak, item) => Math.max(peak, item.value), 0);
         const xMax = normalizedForcedXMax || Math.max(interval, Math.ceil(maxObserved / interval) * interval);
         const bins = Math.max(1, Math.ceil(xMax / interval));
         const counts = new Array(bins).fill(0);
         let percentSum = 0;
         const sessionGuids = new Set();
-        presentAsteroids.forEach((item) => {
+        scopedAsteroids.forEach((item) => {
           percentSum += item.value;
           sessionGuids.add(item.sessionGuid);
           let index = item.value >= xMax ? (bins - 1) : Math.floor(item.value / interval);
@@ -1180,12 +1290,12 @@
           });
         }
         return {
-          averageYield: percentSum / presentAsteroids.length,
+          averageYield: percentSum / scopedAsteroids.length,
           p90,
           p75,
           p50,
           p25,
-          asteroidsCount: presentAsteroids.length,
+          asteroidsCount: scopedAsteroids.length,
           sessionsCount: sessionGuids.size,
           points,
           yMax: Math.max(1, running),
@@ -1612,7 +1722,7 @@
         }, 0);
         const sharedXMax = Math.max(interval, Math.ceil(globalCommodityPeak / interval) * interval);
         const rows = compareData.rings.map((ring) => {
-          const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax);
+          const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, selectedYieldPopulationMode);
           return { ring, metric };
         });
         const sharedYMax = rows.reduce((peak, row) => {
@@ -1682,6 +1792,14 @@
           const ringTitle = document.createElement("h2");
           ringTitle.className = "ring-title";
           ringTitle.textContent = ring.ringName;
+          if (favoriteRingNames.has(String(ring.ringName || "").trim())) {
+            const favoriteStar = document.createElement("span");
+            favoriteStar.className = "ring-title-favorite";
+            favoriteStar.textContent = "★";
+            favoriteStar.title = "Favorite rings in the hotspot finder.";
+            favoriteStar.setAttribute("aria-label", "Favorite rings in the hotspot finder.");
+            ringTitle.appendChild(favoriteStar);
+          }
           infoPanel.appendChild(ringTitle);
 
           const chartPanel = document.createElement("section");
@@ -1704,12 +1822,19 @@
 
           const infoGrid = document.createElement("div");
           infoGrid.className = "info-grid";
+          const usingAllAsteroids = selectedYieldPopulationMode === "all";
+          const percentileScopeText = usingAllAsteroids
+            ? "inclusive percentile across all prospected asteroids in this ring; asteroids without this commodity are treated as 0%."
+            : "inclusive percentile across prospected asteroids where this commodity is present.";
+          const averageScopeText = usingAllAsteroids
+            ? "Mean yield across all prospected asteroids in this ring; asteroids without this commodity are treated as 0%."
+            : "Mean yield across prospected asteroids where this commodity is present.";
           const metricRows = [
             {
               label: "P90",
               value: Number(metric.p90),
               display: Number.isFinite(metric.p90) ? `${formatNumber(metric.p90, 2)}%` : "--",
-              tooltip: "P90 is the inclusive 90th percentile: 90% of asteroid yields are at or below this value.",
+              tooltip: `P90 is the ${percentileScopeText}`,
               crosshairKey: "p90",
               crosshairValue: metric.p90
             },
@@ -1717,7 +1842,7 @@
               label: "P75",
               value: Number(metric.p75),
               display: Number.isFinite(metric.p75) ? `${formatNumber(metric.p75, 2)}%` : "--",
-              tooltip: "Top Quartile: P75 is the inclusive 75th percentile: 75% of asteroid yields are at or below this value.",
+              tooltip: `Top Quartile (P75): ${percentileScopeText}`,
               crosshairKey: "p75",
               crosshairValue: metric.p75
             },
@@ -1725,7 +1850,7 @@
               label: "Median (P50)",
               value: Number(metric.p50),
               display: Number.isFinite(metric.p50) ? `${formatNumber(metric.p50, 2)}%` : "--",
-              tooltip: "Median (P50): inclusive 50th percentile. 50% of asteroid yields are at or below this value.",
+              tooltip: `Median (P50): ${percentileScopeText}`,
               crosshairKey: "p50",
               crosshairValue: metric.p50
             },
@@ -1733,7 +1858,7 @@
               label: "Avg Yield (mean)",
               value: Number(metric.averageYield),
               display: Number.isFinite(metric.averageYield) ? `${formatNumber(metric.averageYield, 2)}%` : "--",
-              tooltip: "Mean yield: arithmetic average across asteroids where the commodity is present.",
+              tooltip: averageScopeText,
               crosshairKey: "avg",
               crosshairValue: metric.averageYield
             },
@@ -1741,7 +1866,7 @@
               label: "P25",
               value: Number(metric.p25),
               display: Number.isFinite(metric.p25) ? `${formatNumber(metric.p25, 2)}%` : "--",
-              tooltip: "Bottom Quartile: P25 is the inclusive 25th percentile: 25% of asteroid yields are at or below this value.",
+              tooltip: `Bottom Quartile (P25): ${percentileScopeText}`,
               crosshairKey: "p25",
               crosshairValue: metric.p25
             }
@@ -1847,6 +1972,7 @@
       async function loadCompareData() {
         setStatus("Loading compare data...", false);
         try {
+          await loadFavoriteRingNames();
           const response = await fetch("/session_data/prospected_asteroid_summary.jsonl", { cache: "no-store" });
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
@@ -1883,6 +2009,7 @@
 
       initializeThemeControl();
       requestedCommodityKey = resolveRequestedCommodityKey();
+      syncYieldPopulationControls();
       syncReferenceCrosshairControls();
       if (compareCommoditySelect) {
         compareCommoditySelect.addEventListener("change", (event) => {

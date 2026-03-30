@@ -1996,7 +1996,9 @@
       function renderMetrics(entries) {
         analysisMetrics.innerHTML = "";
 
-        const metricSizeByLabel = {
+        // Width lock: keep existing summary pill widths stable.
+        // New pills can be added without changing these widths; they default to "s" unless explicitly mapped.
+        const metricSizeByLabel = Object.freeze({
           file: "l",
           start: "l",
           end: "l",
@@ -2004,24 +2006,31 @@
           system: "l",
           "body/ring": "l",
           tons: "s",
+          "tons collected": "s",
           "duration (hours)": "s",
           "tons/hour": "s",
           "total est. profit": "s",
+          asteroids: "s",
+          "asteroids prospected": "s",
           prospected: "s",
           "prospectors launched": "s",
+          "collectors launched": "s",
+          "collectors abandoned": "s",
           "duplicate prospectors": "s",
+          "prospectors lost": "s",
           "limpet dumps": "s",
           "highest yield (refined)": "l",
           "commodity types": "s",
-          "commodities ignored": "s"
-        };
+          "commodities ignored": "s",
+          cargo: "s"
+        });
         const metricTooltipByLabel = {
           "limpet dumps": "Limpet dump count based on configured threshold."
         };
 
         for (const [label, value, tooltipOverride] of entries) {
           const normalizedLabel = String(label || "").trim().toLowerCase();
-          const size = metricSizeByLabel[normalizedLabel] || "m";
+          const size = metricSizeByLabel[normalizedLabel] || "s";
           const metricTooltip = String(tooltipOverride || metricTooltipByLabel[normalizedLabel] || "");
           const card = document.createElement("article");
           card.className = `metric metric--${size}`;
@@ -4973,6 +4982,7 @@
         const commodities = sessionData && sessionData.commodities ? Object.keys(sessionData.commodities).length : 0;
         const commoditiesIgnored = computeIgnoredProspectedCommodities(sessionData);
         const highestRefinedYield = computeHighestRefinedYieldCommodity(sessionData);
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
         const limpetDumpThresholdRaw = Number(meta.limpet_dump_threshold);
         const limpetDumpThreshold = Number.isFinite(limpetDumpThresholdRaw)
           ? Math.max(0, Math.floor(limpetDumpThresholdRaw))
@@ -4982,6 +4992,13 @@
         const totalEstProfit = Number.isFinite(totalEstProfitRaw)
           ? `${Math.round(totalEstProfitRaw).toLocaleString()} CR`
           : "--";
+        const prospectedTotalRaw = Number(prospected.total);
+        const prospectedEventCount = events.reduce((count, event) => (
+          event && event.type === "prospected_asteroid" ? count + 1 : count
+        ), 0);
+        const asteroidCount = Number.isFinite(prospectedTotalRaw) && prospectedTotalRaw >= 0
+          ? formatNumber(Math.floor(prospectedTotalRaw), 0)
+          : (prospectedEventCount > 0 ? formatNumber(prospectedEventCount, 0) : "--");
         const tonsValue = Number(overall.tons);
         const durationSeconds = Number(meta.duration_seconds);
         const roundedDurationHours = Number.isFinite(durationSeconds) && durationSeconds >= 0
@@ -4996,6 +5013,22 @@
         )
           ? (tonsValue / roundedDurationHours).toFixed(2)
           : (overall.tons_per_hour ?? "--");
+        const inventoryTonnage = Number(meta.inventory_tonnage);
+        const cargoCapacity = Number(meta.cargo_capacity);
+        const cargoPercentFull = (
+          Number.isFinite(inventoryTonnage)
+          && Number.isFinite(cargoCapacity)
+          && cargoCapacity > 0
+        )
+          ? `${formatNumber((Math.max(0, inventoryTonnage) / cargoCapacity) * 100, 0)}%`
+          : "--";
+        const cargoDisplay = (
+          Number.isFinite(inventoryTonnage)
+          && Number.isFinite(cargoCapacity)
+          && cargoCapacity >= 0
+        )
+          ? `${formatNumber(Math.max(0, inventoryTonnage), 0)}/${formatNumber(cargoCapacity, 0)} (${cargoPercentFull})`
+          : "--";
 
         return [
           ["File", filename],
@@ -5004,21 +5037,26 @@
           ["Ship", meta.ship || "--"],
           ["System", location.system || "--"],
           ["Body/Ring", location.body || location.ring || "--"],
-          ["Tons", overall.tons ?? "--"],
+          ["Tons Collected", overall.tons ?? "--"],
           ["Duration (Hours)", durationDisplay],
           ["Tons/Hour", tonsPerHour],
+          ["Cargo", cargoDisplay],
           ["Total Est. Profit", totalEstProfit],
+          ["Asteroids Prospected", asteroidCount],
           ["Prospectors Launched", meta.prospectors_launched ?? "--"],
           ["Prospected", prospected.total ?? "--"],
           ["Duplicate Prospectors", prospected.duplicates ?? "--"],
+          ["Prospectors Lost", meta.prospectors_lost ?? "--"],
+          ["Collectors Launched", meta.collectors_launched ?? "--"],
+          ["Collectors Abandoned", meta.collectors_abandoned ?? "--"],
           [
             "Limpet Dumps",
             limpetDumps,
             `More than ${limpetDumpThreshold} limpets dumped from inventory between Cargo events`
           ],
-          ["Highest Yield (Refined)", highestRefinedYield],
           ["Commodity Types", commodities],
-          ["Commodities Ignored", commoditiesIgnored]
+          ["Commodities Ignored", commoditiesIgnored],
+          ["Highest Yield (Refined)", highestRefinedYield]
         ];
       }
 

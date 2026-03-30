@@ -9,6 +9,7 @@ def test_build_known_avg_yield_index_aggregates_weighted_by_asteroids() -> None:
             "ring_name": "Ring A",
             "commodity_name": "Platinum",
             "asteroids_prospected": 3,
+            "asteroids_with_commodity_present": 3,
             "sum_percentage": 90.0,
         },
         {
@@ -16,6 +17,7 @@ def test_build_known_avg_yield_index_aggregates_weighted_by_asteroids() -> None:
             "ring_name": "Ring A",
             "commodity_name": "Platinum",
             "asteroids_prospected": 5,
+            "asteroids_with_commodity_present": 5,
             "sum_percentage": 100.0,
         },
         {
@@ -23,14 +25,42 @@ def test_build_known_avg_yield_index_aggregates_weighted_by_asteroids() -> None:
             "ring_name": "Ring A",
             "commodity_name": "Gold",
             "asteroids_prospected": 2,
+            "asteroids_with_commodity_present": 2,
             "sum_percentage": 20.0,
         },
     ]
 
-    index = HotspotSearchWindow._build_known_avg_yield_index(rows)
+    index = HotspotSearchWindow._build_known_avg_yield_index(rows, "all")
 
     assert index[("ring a", "platinum")] == 23.75
     assert index[("ring a", "gold")] == 10.0
+
+
+def test_build_known_avg_yield_index_supports_present_basis() -> None:
+    rows = [
+        {
+            "ring_name": "Ring A",
+            "commodity_name": "Platinum",
+            "asteroids_prospected": 10,
+            "asteroids_with_commodity_present": 4,
+            "sum_percentage": 200.0,
+        },
+        {
+            "ring_name": "Ring A",
+            "commodity_name": "Platinum",
+            "asteroids_prospected": 5,
+            "asteroids_with_commodity_present": 1,
+            "sum_percentage": 20.0,
+        },
+    ]
+
+    index_all = HotspotSearchWindow._build_known_avg_yield_index(rows, "all")
+    index_present = HotspotSearchWindow._build_known_avg_yield_index(rows, "present")
+
+    # All asteroids: 220 / (10 + 5) = 14.666...
+    assert round(index_all[("ring a", "platinum")], 3) == 14.667
+    # Only with commodity: 220 / (4 + 1) = 44
+    assert index_present[("ring a", "platinum")] == 44.0
 
 
 def test_lookup_known_avg_yield_requires_full_ring_match_candidates() -> None:

@@ -104,6 +104,7 @@ class MiningState:
     spansh_last_reserve_levels: Optional[List[str]] = None
     spansh_last_ring_types: Optional[List[str]] = None
     spansh_last_min_hotspots: Optional[int] = None
+    spansh_last_yield_basis: Optional[str] = None
     market_search_has_large_pad: Optional[bool] = None
     market_search_sort_mode: str = "best_price"
     market_search_include_carriers: bool = True

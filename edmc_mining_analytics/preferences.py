@@ -183,6 +183,8 @@ class PreferencesManager:
         state.spansh_last_reserve_levels = self._load_string_list("edmc_mining_spansh_reserve_levels")
         state.spansh_last_ring_types = self._load_string_list("edmc_mining_spansh_ring_types")
         state.spansh_last_min_hotspots = self._get_optional_int("edmc_mining_spansh_min_hotspots")
+        raw_yield_basis = self._get_str("edmc_mining_spansh_yield_basis", "").strip().lower()
+        state.spansh_last_yield_basis = raw_yield_basis if raw_yield_basis in {"all", "present"} else None
 
         market_large_pad_raw = self._get_optional_str("edmc_mining_market_large_pad")
         if market_large_pad_raw is not None and market_large_pad_raw.strip().lower() in ("1", "true", "yes"):
@@ -420,6 +422,14 @@ class PreferencesManager:
             config.set("edmc_mining_spansh_min_hotspots", value)
         except Exception:
             _log.exception("Failed to persist Spansh minimum hotspots")
+
+        try:
+            value = str(state.spansh_last_yield_basis or "").strip().lower()
+            if value not in {"all", "present"}:
+                value = ""
+            config.set("edmc_mining_spansh_yield_basis", value)
+        except Exception:
+            _log.exception("Failed to persist Spansh yield basis")
 
         try:
             value = "1" if state.market_search_has_large_pad else ""
