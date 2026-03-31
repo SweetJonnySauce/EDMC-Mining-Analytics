@@ -136,7 +136,7 @@
     }
 
     .app {
-      width: min(980px, 100%);
+      width: min(1280px, 100%);
       margin: 0 auto;
       background: var(--card);
       border: 1px solid var(--line);
@@ -273,6 +273,24 @@
       flex: 1 1 auto;
       min-width: 0;
       max-width: none;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--accent) 55%, transparent) color-mix(in srgb, var(--fg) 6%, transparent);
+    }
+
+    .session-toolbar-select::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .session-toolbar-select::-webkit-scrollbar-track {
+      background: color-mix(in srgb, var(--fg) 6%, transparent);
+      border-radius: 999px;
+    }
+
+    .session-toolbar-select::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, var(--accent) 58%, transparent);
+      border-radius: 999px;
+      border: 2px solid color-mix(in srgb, var(--fg) 6%, transparent);
     }
 
     .session-toolbar-compare-button {
@@ -465,6 +483,27 @@
       display: grid;
       grid-template-rows: auto 1fr;
       gap: 8px;
+    }
+
+    .chart-card--stack {
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+    }
+
+    .chart-pane {
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      border-radius: 8px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--fg) 2%, transparent);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .chart-pane .panel-header-controls {
+      justify-content: flex-start;
+      width: 100%;
     }
 
     .chart-card--full {
@@ -1120,6 +1159,8 @@
     }
 
     .histogram-plot {
+      --histogram-bars-v-padding: 8px;
+      --histogram-bars-border: 1px;
       min-height: 170px;
       display: grid;
       grid-template-columns: auto auto 1fr;
@@ -1133,9 +1174,9 @@
       grid-template-columns: repeat(10, minmax(0, 1fr));
       align-items: end;
       gap: 3px;
-      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border: var(--histogram-bars-border) solid color-mix(in srgb, var(--fg) 10%, transparent);
       border-radius: 8px;
-      padding: 8px;
+      padding: var(--histogram-bars-v-padding) 8px;
       background: color-mix(in srgb, var(--fg) 3%, transparent);
     }
 
@@ -1211,6 +1252,14 @@
       font-variant-numeric: tabular-nums;
       line-height: 1;
       user-select: none;
+    }
+
+    .histogram-y-axis-ticks {
+      position: absolute;
+      top: calc(var(--histogram-bars-v-padding) + var(--histogram-bars-border));
+      bottom: calc(var(--histogram-bars-v-padding) + var(--histogram-bars-border));
+      left: 0;
+      right: 0;
     }
 
     .histogram-y-axis-tick {
@@ -1442,6 +1491,32 @@
       opacity: 0;
     }
 
+    .prospect-frequency-average-marker {
+      stroke: color-mix(in srgb, var(--accent) 78%, #fff);
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .prospect-frequency-average-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-anchor: start;
+      dominant-baseline: hanging;
+      letter-spacing: 0.1px;
+      fill: color-mix(in srgb, var(--accent) 82%, #fff);
+      paint-order: stroke;
+      stroke: color-mix(in srgb, var(--card) 85%, #000);
+      stroke-width: 2.7;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .prospect-frequency-average-label.prospect-frequency-average-label--reverse {
+      text-anchor: end;
+    }
+
     .prospect-frequency-control {
       display: inline-flex;
       align-items: center;
@@ -1663,24 +1738,49 @@
           <h2>Commodity Throughput (TPH)</h2>
           <div id="chart-commodity-tph" class="chart-body"></div>
         </article>
-        <article class="chart-card">
-          <h2>Raw Engineering Materials</h2>
-          <div id="chart-content-mix" class="chart-body"></div>
+        <article class="chart-card chart-card--stack">
+          <section class="chart-pane">
+            <h2>Display Settings</h2>
+            <div id="material-display-header-controls" class="panel-header-controls">
+              <label class="prospect-frequency-control">
+                <input id="material-percent-show-collected" type="checkbox">
+                <span>Show only collected</span>
+              </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-show-gridlines" type="checkbox">
+                <span>Show gridlines</span>
+              </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-include-duplicates" type="checkbox">
+                <span>Include Duplicates</span>
+              </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-reverse-cumulative" type="checkbox">
+                <span>Reverse Cumulative Freq.</span>
+              </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-flip-cumulative-axis" type="checkbox">
+                <span>Flip Cumulative Axes</span>
+              </label>
+            </div>
+          </section>
+          <section class="chart-pane">
+            <h2>Raw Engineering Materials</h2>
+            <div id="chart-content-mix" class="chart-body"></div>
+          </section>
         </article>
         <article class="chart-card">
-          <h2>Asteroid Percentage Histogram</h2>
+          <div class="panel-header-row">
+            <h2>Asteroid % Histogram</h2>
+            <div id="prospect-histogram-header-controls" class="panel-header-controls"></div>
+          </div>
           <div id="chart-prospect-histogram" class="chart-body"></div>
           <div id="commodity-histogram-filters" class="event-filters"></div>
         </article>
         <article class="chart-card chart-card--full">
           <div class="panel-header-row">
             <h2>Commodity Percent Amount per Asteroid</h2>
-            <div id="material-percent-header-controls" class="panel-header-controls">
-              <label class="prospect-frequency-control">
-                <input id="material-percent-show-collected" type="checkbox">
-                <span>Show only collected</span>
-              </label>
-            </div>
+            <div id="material-percent-header-controls" class="panel-header-controls"></div>
           </div>
           <div id="chart-material-percent-amount" class="chart-body"></div>
         </article>
@@ -1731,9 +1831,14 @@
       const chartCommodityTph = document.getElementById("chart-commodity-tph");
       const chartContentMix = document.getElementById("chart-content-mix");
       const chartProspectHistogram = document.getElementById("chart-prospect-histogram");
+      const prospectHistogramHeaderControls = document.getElementById("prospect-histogram-header-controls");
       const chartMaterialPercentAmount = document.getElementById("chart-material-percent-amount");
       const materialPercentCard = chartMaterialPercentAmount ? chartMaterialPercentAmount.closest(".chart-card") : null;
       const materialPercentShowCollectedInput = document.getElementById("material-percent-show-collected");
+      const materialPercentShowGridlinesInput = document.getElementById("material-percent-show-gridlines");
+      const materialPercentIncludeDuplicatesInput = document.getElementById("material-percent-include-duplicates");
+      const materialPercentReverseCumulativeInput = document.getElementById("material-percent-reverse-cumulative");
+      const materialPercentFlipCumulativeAxisInput = document.getElementById("material-percent-flip-cumulative-axis");
       const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
@@ -1767,12 +1872,18 @@
       let activeSessionData = null;
       let activeSessionFilename = "";
       let materialPercentShowOnlyCollected = false;
+      let materialPercentShowGridlines = true;
+      let histogramShowOnlyCollected = false;
       let commodityLinkMap = new Map();
+      let commodityAbbreviationMap = new Map();
       let commodityLinkLoadPromise = null;
       let prospectSummaryRecords = null;
       let prospectSummaryLoadPromise = null;
       let prospectFrequencyBinSize = 5;
       let prospectFrequencyIncludeDuplicates = true;
+      let prospectFrequencyShowAverageReference = true;
+      let prospectFrequencyReverseCumulative = false;
+      let prospectFrequencyFlipAxes = false;
       let prospectFrequencyRenderToken = 0;
       let sessionListRenderToken = 0;
       let allRefinementEntries = [];
@@ -2301,6 +2412,18 @@
         return null;
       }
 
+      function coerceCommodityAbbreviation(raw) {
+        if (!raw || typeof raw !== "object") {
+          return "";
+        }
+        const candidate = (
+          (typeof raw.abbr === "string" && raw.abbr.trim())
+          || (typeof raw.abbreviation === "string" && raw.abbreviation.trim())
+          || ""
+        );
+        return String(candidate || "");
+      }
+
       async function ensureCommodityLinkMap() {
         if (commodityLinkMap.size > 0) {
           return;
@@ -2317,6 +2440,7 @@
                 return;
               }
               const nextMap = new Map();
+              const nextAbbreviations = new Map();
               Object.entries(payload).forEach(([key, value]) => {
                 const normalized = normalizeCommodityKey(key);
                 if (!normalized) {
@@ -2326,10 +2450,16 @@
                 if (id !== null) {
                   nextMap.set(normalized, id);
                 }
+                const abbreviation = coerceCommodityAbbreviation(value);
+                if (abbreviation) {
+                  nextAbbreviations.set(normalized, abbreviation);
+                }
               });
               commodityLinkMap = nextMap;
+              commodityAbbreviationMap = nextAbbreviations;
             } catch (_error) {
               commodityLinkMap = new Map();
+              commodityAbbreviationMap = new Map();
             } finally {
               commodityLinkLoadPromise = null;
             }
@@ -2469,35 +2599,103 @@
         return counted > 0 ? counted : null;
       }
 
-      function formatSessionOptionLabel(filename, ringLabel, asteroidCount) {
+      function resolveSessionMostCollectedCommodity(sessionData) {
+        const root = sessionData && typeof sessionData === "object" ? sessionData : {};
+        const commodities = root.commodities && typeof root.commodities === "object" ? root.commodities : {};
+        const commodityEntries = Object.entries(commodities)
+          .map(([name, details]) => {
+            const payload = details && typeof details === "object" ? details : {};
+            const gathered = payload.gathered && typeof payload.gathered === "object" ? payload.gathered : {};
+            const tons = Number(gathered.tons);
+            const asteroids = Number(payload.asteroids_prospected);
+            return {
+              name: String(name || "").trim(),
+              tons: Number.isFinite(tons) ? tons : 0,
+              asteroids: Number.isFinite(asteroids) ? asteroids : 0
+            };
+          })
+          .filter((entry) => !!entry.name);
+        if (commodityEntries.length) {
+          commodityEntries.sort((left, right) => {
+            if (right.tons !== left.tons) {
+              return right.tons - left.tons;
+            }
+            if (right.asteroids !== left.asteroids) {
+              return right.asteroids - left.asteroids;
+            }
+            return left.name.localeCompare(right.name);
+          });
+          if (commodityEntries[0].tons > 0) {
+            return commodityEntries[0].name;
+          }
+        }
+
+        const events = Array.isArray(root.events) ? root.events : [];
+        const refinedCounts = new Map();
+        events.forEach((event) => {
+          if (!event || event.type !== "mining_refined") {
+            return;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          const localized = typeof details.type_localised === "string" ? details.type_localised.trim() : "";
+          const rawType = typeof details.type === "string" ? details.type.trim() : "";
+          const name = localized || rawType
+            .replace(/^\$/, "")
+            .replace(/;$/, "")
+            .replace(/_name$/i, "")
+            .replace(/_/g, " ")
+            .trim();
+          if (!name) {
+            return;
+          }
+          refinedCounts.set(name, (refinedCounts.get(name) || 0) + 1);
+        });
+        if (refinedCounts.size > 0) {
+          const ranked = Array.from(refinedCounts.entries()).sort((left, right) => {
+            if (right[1] !== left[1]) {
+              return right[1] - left[1];
+            }
+            return left[0].localeCompare(right[0]);
+          });
+          return ranked[0][0];
+        }
+
+        return "";
+      }
+
+      function formatSessionOptionLabel(filename, ringLabel, asteroidCount, commodityLabel) {
         const when = formatSessionDateTimeFromFilename(filename);
         const ring = typeof ringLabel === "string" && ringLabel.trim() ? ringLabel.trim() : "Unknown";
         const asteroidText = Number.isFinite(asteroidCount)
           ? formatNumber(Math.max(0, Math.floor(asteroidCount)), 0)
           : "--";
+        const commodityText = typeof commodityLabel === "string" && commodityLabel.trim()
+          ? commodityLabel.trim()
+          : "--";
         if (!when.timeLabel) {
-          return `${when.dateLabel}, ${ring}, (Asteroids: ${asteroidText})`;
+          return `${when.dateLabel}, ${ring}, (Asteroids: ${asteroidText}, ${commodityText})`;
         }
-        return `${when.dateLabel}, ${when.timeLabel}, ${ring}, (Asteroids: ${asteroidText})`;
+        return `${when.dateLabel}, ${when.timeLabel}, ${ring}, (Asteroids: ${asteroidText}, ${commodityText})`;
       }
 
       async function fetchSessionOptionDetails(filename) {
         if (!filename) {
-          return { ringLabel: "", asteroidCount: null };
+          return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
         }
         try {
           const response = await fetch(`/session_data/${encodeURIComponent(filename)}`, { cache: "no-store" });
           if (!response.ok) {
-            return { ringLabel: "", asteroidCount: null };
+            return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
           }
           const payload = await response.json();
           const ring = String(resolveSessionRingLabel(payload) || "").trim();
           return {
             ringLabel: ring && ring !== "Unknown" ? ring : "",
-            asteroidCount: resolveSessionAsteroidCount(payload)
+            asteroidCount: resolveSessionAsteroidCount(payload),
+            commodityLabel: resolveSessionMostCollectedCommodity(payload)
           };
         } catch (_error) {
-          return { ringLabel: "", asteroidCount: null };
+          return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
         }
       }
 
@@ -2677,15 +2875,15 @@
         }
         const commodity = String(selectedHistogramCommodity || "").trim();
         const ringLabel = sessionData ? String(resolveSessionRingLabel(sessionData) || "").trim() : "";
+        let baseTitle = "Cumulative Frequency";
         if (commodity && ringLabel && ringLabel !== "Unknown") {
-          prospectFrequencyTitle.textContent = `Cumulative Frequency (${commodity} - ${ringLabel})`;
-          return;
+          baseTitle = `Cumulative Frequency (${commodity} - ${ringLabel})`;
+        } else if (commodity) {
+          baseTitle = `Cumulative Frequency (${commodity})`;
         }
-        if (commodity) {
-          prospectFrequencyTitle.textContent = `Cumulative Frequency (${commodity})`;
-          return;
-        }
-        prospectFrequencyTitle.textContent = "Cumulative Frequency";
+        prospectFrequencyTitle.textContent = prospectFrequencyReverseCumulative
+          ? `${baseTitle} - Reversed`
+          : baseTitle;
       }
 
       function openCompareRingsPage() {
@@ -3298,12 +3496,11 @@
         chartContentMix.appendChild(wrapper);
       }
 
-      function buildMaterialPercentAmountModel(sessionData, showOnlyCollected) {
-        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
-        const commodityMap = new Map();
-        const collectedCommodityKeys = new Set();
-        let asteroidNumber = 0;
-
+      function collectRefinedCommodityKeys(events) {
+        const keys = new Set();
+        if (!Array.isArray(events)) {
+          return keys;
+        }
         events.forEach((event) => {
           if (!event || event.type !== "mining_refined") {
             return;
@@ -3318,16 +3515,27 @@
             .replace(/_/g, " ");
           const key = normalizeCommodityKey(display) || normalizeTextKey(display);
           if (key) {
-            collectedCommodityKeys.add(key);
+            keys.add(key);
           }
         });
+        return keys;
+      }
+
+      function buildMaterialPercentAmountModel(sessionData, showOnlyCollected, includeDuplicates) {
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const commodityMap = new Map();
+        const collectedCommodityKeys = collectRefinedCommodityKeys(events);
+        let asteroidNumber = 0;
 
         events.forEach((event) => {
           if (!event || event.type !== "prospected_asteroid") {
             return;
           }
-          asteroidNumber += 1;
           const details = event.details && typeof event.details === "object" ? event.details : {};
+          if (!includeDuplicates && details.duplicate === true) {
+            return;
+          }
+          asteroidNumber += 1;
           const materials = Array.isArray(details.materials) ? details.materials : [];
           materials.forEach((material) => {
             if (!material || typeof material !== "object") {
@@ -3395,7 +3603,11 @@
           return;
         }
         chartMaterialPercentAmount.innerHTML = "";
-        const model = buildMaterialPercentAmountModel(sessionData, materialPercentShowOnlyCollected);
+        const model = buildMaterialPercentAmountModel(
+          sessionData,
+          materialPercentShowOnlyCollected,
+          prospectFrequencyIncludeDuplicates
+        );
         if (!model) {
           materialPercentHoverContext = {
             commodityKey: "",
@@ -3495,8 +3707,9 @@
           if (commodity.key === selectedCommodityKey) {
             label.classList.add("material-percent-y-label--selected");
           }
-          label.textContent = commodity.name;
-          label.title = commodity.name;
+          const abbreviation = commodityAbbreviationMap.get(commodity.key) || "";
+          label.textContent = abbreviation || commodity.name;
+          label.title = abbreviation ? `${commodity.name} (${abbreviation})` : commodity.name;
           label.addEventListener("click", () => {
             applyMaterialPercentCommoditySelection(commodity.name, commodity.key, commodity.isCollected === true);
           });
@@ -3527,17 +3740,19 @@
 
         model.commodities.forEach((commodity, index) => {
           const y = toPlotY(index);
-          const line = document.createElementNS(ns, "line");
-          line.setAttribute("x1", sidePad.toFixed(2));
-          line.setAttribute("y1", y.toFixed(2));
-          line.setAttribute("x2", (width - sidePad).toFixed(2));
-          line.setAttribute("y2", y.toFixed(2));
-          const lineClass = index === selectedRowIndex
-            ? "material-percent-grid-line material-percent-grid-line--selected"
-            : "material-percent-grid-line";
-          line.setAttribute("class", lineClass);
-          line.setAttribute("data-row-index", String(index));
-          svg.appendChild(line);
+          if (materialPercentShowGridlines) {
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", sidePad.toFixed(2));
+            line.setAttribute("y1", y.toFixed(2));
+            line.setAttribute("x2", (width - sidePad).toFixed(2));
+            line.setAttribute("y2", y.toFixed(2));
+            const lineClass = index === selectedRowIndex
+              ? "material-percent-grid-line material-percent-grid-line--selected"
+              : "material-percent-grid-line";
+            line.setAttribute("class", lineClass);
+            line.setAttribute("data-row-index", String(index));
+            svg.appendChild(line);
+          }
 
           const hitbox = document.createElementNS(ns, "line");
           hitbox.setAttribute("class", "material-percent-row-hitbox");
@@ -3561,16 +3776,18 @@
         if (xTickValues[xTickValues.length - 1] !== maxAsteroidNumber) {
           xTickValues.push(maxAsteroidNumber);
         }
-        xTickValues.forEach((value) => {
-          const x = toX(value);
-          const line = document.createElementNS(ns, "line");
-          line.setAttribute("x1", x.toFixed(2));
-          line.setAttribute("y1", topPad.toFixed(2));
-          line.setAttribute("x2", x.toFixed(2));
-          line.setAttribute("y2", (topPad + drawHeight).toFixed(2));
-          line.setAttribute("class", "material-percent-grid-line");
-          svg.appendChild(line);
-        });
+        if (materialPercentShowGridlines) {
+          xTickValues.forEach((value) => {
+            const x = toX(value);
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", x.toFixed(2));
+            line.setAttribute("y1", topPad.toFixed(2));
+            line.setAttribute("x2", x.toFixed(2));
+            line.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+            line.setAttribute("class", "material-percent-grid-line");
+            svg.appendChild(line);
+          });
+        }
 
         const minDotRadius = 4.4;
         const maxDotRadius = 20.14;
@@ -3748,7 +3965,7 @@
         return Math.max(1, Math.min(100, rounded));
       }
 
-      function buildProspectHistogramModel(sessionData) {
+      function buildProspectHistogramModel(sessionData, includeDuplicates, showOnlyCollected) {
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const configuredBinSize = (
           meta.histogram_bin_size
@@ -3756,9 +3973,78 @@
         );
         const binSize = normalizeHistogramBinSize(configuredBinSize);
         const bins = Math.max(1, Math.ceil(100 / binSize));
+
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const collectedCommodityKeys = collectRefinedCommodityKeys(events);
+        const byCommodity = new Map();
+        events.forEach((event) => {
+          if (!event || event.type !== "prospected_asteroid") {
+            return;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          if (!includeDuplicates && details.duplicate === true) {
+            return;
+          }
+          const materials = Array.isArray(details.materials) ? details.materials : [];
+          materials.forEach((material) => {
+            if (!material || typeof material !== "object") {
+              return;
+            }
+            const name = typeof material.name === "string" ? material.name.trim() : "";
+            const pctRaw = Number(material.percentage);
+            if (!name || !Number.isFinite(pctRaw)) {
+              return;
+            }
+            const key = normalizeCommodityKey(name) || normalizeTextKey(name) || name.toLowerCase();
+            if (!key) {
+              return;
+            }
+            if (showOnlyCollected && !collectedCommodityKeys.has(key)) {
+              return;
+            }
+            let item = byCommodity.get(key);
+            if (!item) {
+              item = {
+                name,
+                counts: new Array(bins).fill(0),
+                total: 0
+              };
+              byCommodity.set(key, item);
+            }
+            const pct = Math.max(0, Math.min(100, pctRaw));
+            let index = pct >= 100 ? (bins - 1) : Math.floor(pct / binSize);
+            if (index < 0) {
+              index = 0;
+            } else if (index >= bins) {
+              index = bins - 1;
+            }
+            item.counts[index] += 1;
+            item.total += 1;
+          });
+        });
+
+        const eventResult = Array.from(byCommodity.values()).filter((item) => item.total > 0);
+        if (eventResult.length) {
+          eventResult.sort((left, right) => {
+            if (right.total !== left.total) {
+              return right.total - left.total;
+            }
+            return left.name.localeCompare(right.name);
+          });
+          return {
+            commodities: eventResult,
+            binSize,
+            bins
+          };
+        }
+
         const source = sessionData && typeof sessionData === "object" ? (sessionData.commodities || {}) : {};
         const result = [];
         Object.entries(source).forEach(([name, details]) => {
+          const commodityKey = normalizeCommodityKey(name) || normalizeTextKey(name) || String(name || "").trim().toLowerCase();
+          if (showOnlyCollected && (!commodityKey || !collectedCommodityKeys.has(commodityKey))) {
+            return;
+          }
           const payload = details && typeof details === "object" ? details : {};
           const breakdown = Array.isArray(payload.percentage_breakdown) ? payload.percentage_breakdown : [];
           const counts = new Array(bins).fill(0);
@@ -3902,28 +4188,10 @@
         if (!Array.isArray(points) || points.length === 0) {
           return "";
         }
-        if (points.length === 1) {
-          const point = points[0];
-          return `M${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-        }
-        if (points.length === 2) {
-          const first = points[0];
-          const second = points[1];
-          return `M${first.x.toFixed(2)} ${first.y.toFixed(2)} L${second.x.toFixed(2)} ${second.y.toFixed(2)}`;
-        }
         let command = `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-        for (let index = 0; index < points.length - 1; index += 1) {
-          const p0 = index > 0 ? points[index - 1] : points[index];
-          const p1 = points[index];
-          const p2 = points[index + 1];
-          const p3 = index + 2 < points.length ? points[index + 2] : p2;
-
-          // Catmull-Rom to cubic Bezier conversion; curve passes through every point.
-          const cp1x = p1.x + ((p2.x - p0.x) / 6);
-          const cp1y = p1.y + ((p2.y - p0.y) / 6);
-          const cp2x = p2.x - ((p3.x - p1.x) / 6);
-          const cp2y = p2.y - ((p3.y - p1.y) / 6);
-          command += ` C${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+        for (let index = 1; index < points.length; index += 1) {
+          const point = points[index];
+          command += ` L${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
         }
         return command;
       }
@@ -3931,7 +4199,7 @@
       function buildProspectCumulativeFrequencyModel(sessionData, filename, summaryRecords) {
         const commodity = String(selectedHistogramCommodity || "").trim();
         if (!commodity) {
-          return { error: "Select a commodity in Asteroid Percentage Histogram to view cumulative frequency." };
+          return { error: "Select a commodity in Asteroid % Histogram to view cumulative frequency." };
         }
         if (!Array.isArray(summaryRecords) || summaryRecords.length === 0) {
           return { error: "No long-term prospect summary data found yet." };
@@ -4157,23 +4425,6 @@
 
           addRadioOption("5%", 5);
           addRadioOption("10%", 10);
-
-          const duplicatesToggle = document.createElement("label");
-          duplicatesToggle.className = "prospect-frequency-control";
-          const duplicateInput = document.createElement("input");
-          duplicateInput.type = "checkbox";
-          duplicateInput.checked = prospectFrequencyIncludeDuplicates;
-          duplicateInput.addEventListener("change", () => {
-            prospectFrequencyIncludeDuplicates = duplicateInput.checked;
-            if (activeSessionData) {
-              void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
-            }
-          });
-          const duplicateText = document.createElement("span");
-          duplicateText.textContent = "Include Duplicates";
-          duplicatesToggle.appendChild(duplicateInput);
-          duplicatesToggle.appendChild(duplicateText);
-          prospectFrequencyHeaderControls.appendChild(duplicatesToggle);
         }
 
         const summaryRecords = await loadProspectedAsteroidSummaryRecords();
@@ -4196,37 +4447,59 @@
         plot.className = "prospect-frequency-plot";
         const yAxis = document.createElement("div");
         yAxis.className = "timeline-y-axis";
-        const yMaxInt = Math.max(1, Math.ceil(model.yMax));
-        const targetTickCount = 7;
-        const minStep = Math.max(1, yMaxInt / (targetTickCount - 1));
-        let magnitude = Math.pow(10, Math.floor(Math.log10(minStep)));
-        if (!Number.isFinite(magnitude) || magnitude <= 0) {
-          magnitude = 1;
-        }
-        let step = 0;
-        for (let attempts = 0; attempts < 8 && step <= 0; attempts += 1) {
-          [1, 2, 5].forEach((multiplier) => {
-            const candidate = multiplier * magnitude;
-            if (candidate >= minStep && (step <= 0 || candidate < step)) {
-              step = candidate;
-            }
-          });
-          magnitude *= 10;
-        }
-        if (step <= 0) {
-          step = 1;
-        }
-        const yScaleMax = Math.max(yMaxInt, Math.ceil(yMaxInt / step) * step);
+        const computeAxisStep = (axisMaxInt) => {
+          const targetTickCount = 7;
+          const minStep = Math.max(1, axisMaxInt / (targetTickCount - 1));
+          let magnitude = Math.pow(10, Math.floor(Math.log10(minStep)));
+          if (!Number.isFinite(magnitude) || magnitude <= 0) {
+            magnitude = 1;
+          }
+          let step = 0;
+          for (let attempts = 0; attempts < 8 && step <= 0; attempts += 1) {
+            [1, 2, 5].forEach((multiplier) => {
+              const candidate = multiplier * magnitude;
+              if (candidate >= minStep && (step <= 0 || candidate < step)) {
+                step = candidate;
+              }
+            });
+            magnitude *= 10;
+          }
+          return step > 0 ? step : 1;
+        };
+        const countAxisMaxInt = Math.max(1, Math.ceil(model.yMax));
+        const countAxisStep = computeAxisStep(countAxisMaxInt);
+        const countAxisScaleMax = Math.max(countAxisMaxInt, Math.ceil(countAxisMaxInt / countAxisStep) * countAxisStep);
+        const percentAxisMaxInt = Math.max(1, Math.ceil(model.xMax));
+        const percentAxisStep = computeAxisStep(percentAxisMaxInt);
+        const percentAxisScaleMax = Math.max(percentAxisMaxInt, Math.ceil(percentAxisMaxInt / percentAxisStep) * percentAxisStep);
         const yTickValues = [];
-        for (let value = yScaleMax; value >= 0; value -= step) {
-          yTickValues.push(value);
-        }
-        if (yTickValues[yTickValues.length - 1] !== 0) {
-          yTickValues.push(0);
+        if (prospectFrequencyFlipAxes) {
+          if (prospectFrequencyReverseCumulative) {
+            for (let value = 0; value <= percentAxisScaleMax; value += percentAxisStep) {
+              yTickValues.push(value);
+            }
+            if (yTickValues[yTickValues.length - 1] !== percentAxisScaleMax) {
+              yTickValues.push(percentAxisScaleMax);
+            }
+          } else {
+            for (let value = percentAxisScaleMax; value >= 0; value -= percentAxisStep) {
+              yTickValues.push(value);
+            }
+            if (yTickValues[yTickValues.length - 1] !== 0) {
+              yTickValues.push(0);
+            }
+          }
+        } else {
+          for (let value = countAxisScaleMax; value >= 0; value -= countAxisStep) {
+            yTickValues.push(value);
+          }
+          if (yTickValues[yTickValues.length - 1] !== 0) {
+            yTickValues.push(0);
+          }
         }
         yTickValues.forEach((value) => {
           const tick = document.createElement("span");
-          tick.textContent = String(value);
+          tick.textContent = prospectFrequencyFlipAxes ? `${value}%` : String(value);
           yAxis.appendChild(tick);
         });
 
@@ -4247,25 +4520,46 @@
         svg.setAttribute("preserveAspectRatio", "none");
 
         const totalBins = Math.max(1, model.points.length);
-        const toX = (index) => sidePad + (((index + 0.5) / totalBins) * drawWidth);
-        const toY = (count) => {
-          const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
+        const toDisplayIndex = (index) => (
+          prospectFrequencyReverseCumulative
+            ? (totalBins - index - 1)
+            : index
+        );
+        const toXForBinIndex = (index) => sidePad + (((toDisplayIndex(index) + 0.5) / totalBins) * drawWidth);
+        const toYForCount = (count) => {
+          const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
           return topPad + (drawHeight * (1 - ratio));
         };
-        yTickValues.forEach((value) => {
-          const y = toY(value);
-          const line = document.createElementNS(ns, "line");
-          line.setAttribute("x1", sidePad.toFixed(2));
-          line.setAttribute("x2", (width - sidePad).toFixed(2));
-          line.setAttribute("y1", y.toFixed(2));
-          line.setAttribute("y2", y.toFixed(2));
-          line.setAttribute("class", "prospect-frequency-grid-line");
-          svg.appendChild(line);
-        });
+        const toXForCount = (count) => {
+          const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
+          return sidePad + (drawWidth * Math.max(0, Math.min(1, ratio)));
+        };
+        const toYForPercent = (percent) => {
+          const ratio = percentAxisScaleMax <= 0 ? 0 : (percent / percentAxisScaleMax);
+          const displayRatio = prospectFrequencyReverseCumulative ? ratio : (1 - ratio);
+          return topPad + (drawHeight * Math.max(0, Math.min(1, displayRatio)));
+        };
+        const toYPlot = (value) => (
+          prospectFrequencyFlipAxes
+            ? toYForPercent(value)
+            : toYForCount(value)
+        );
+        if (materialPercentShowGridlines) {
+          yTickValues.forEach((value) => {
+            const y = toYPlot(value);
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", sidePad.toFixed(2));
+            line.setAttribute("x2", (width - sidePad).toFixed(2));
+            line.setAttribute("y1", y.toFixed(2));
+            line.setAttribute("y2", y.toFixed(2));
+            line.setAttribute("class", "prospect-frequency-grid-line");
+            svg.appendChild(line);
+          });
+        }
         const coordinates = model.points.map((point) => ({
           ...point,
-          x: toX(point.index),
-          y: toY(point.total)
+          x: prospectFrequencyFlipAxes ? toXForCount(point.total) : toXForBinIndex(point.index),
+          y: prospectFrequencyFlipAxes ? toYForPercent(point.center) : toYForCount(point.total)
         }));
         const cumulativePointByIndex = new Map();
         coordinates.forEach((point, pointIndex) => {
@@ -4286,6 +4580,158 @@
         line.setAttribute("class", "prospect-frequency-line");
         line.setAttribute("d", pathData);
         svg.appendChild(line);
+
+        const toXForPercentValue = (rawValue) => {
+          const value = Number(rawValue);
+          if (!Number.isFinite(value)) {
+            return null;
+          }
+          const maxXValue = Math.max(1, Number(model.xMax) || 1);
+          const clamped = Math.max(0, Math.min(maxXValue, value));
+          const ratio = clamped / maxXValue;
+          const displayRatio = prospectFrequencyReverseCumulative ? (1 - ratio) : ratio;
+          return sidePad + (displayRatio * drawWidth);
+        };
+
+        const getYOnLineForX = (targetX) => {
+          if (!Number.isFinite(targetX) || !coordinates.length) {
+            return null;
+          }
+          if (coordinates.length === 1) {
+            return Number.isFinite(coordinates[0].y) ? coordinates[0].y : null;
+          }
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const left = coordinates[index - 1];
+            const right = coordinates[index];
+            const minX = Math.min(left.x, right.x);
+            const maxX = Math.max(left.x, right.x);
+            if (targetX < minX || targetX > maxX) {
+              continue;
+            }
+            const span = right.x - left.x;
+            if (!Number.isFinite(span) || Math.abs(span) <= 0.000001) {
+              return right.y;
+            }
+            const ratio = Math.max(0, Math.min(1, (targetX - left.x) / span));
+            return left.y + ((right.y - left.y) * ratio);
+          }
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.x - targetX);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.x - targetX);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
+            }
+          }
+          return nearest.y;
+        };
+        const getXOnLineForY = (targetY) => {
+          if (!Number.isFinite(targetY) || !coordinates.length) {
+            return null;
+          }
+          if (coordinates.length === 1) {
+            return Number.isFinite(coordinates[0].x) ? coordinates[0].x : null;
+          }
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const left = coordinates[index - 1];
+            const right = coordinates[index];
+            const minY = Math.min(left.y, right.y);
+            const maxY = Math.max(left.y, right.y);
+            if (targetY < minY || targetY > maxY) {
+              continue;
+            }
+            const span = right.y - left.y;
+            if (!Number.isFinite(span) || Math.abs(span) <= 0.000001) {
+              return right.x;
+            }
+            const ratio = Math.max(0, Math.min(1, (targetY - left.y) / span));
+            return left.x + ((right.x - left.x) * ratio);
+          }
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.y - targetY);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.y - targetY);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
+            }
+          }
+          return nearest.x;
+        };
+
+        let averageReferencePoint = null;
+        if (prospectFrequencyShowAverageReference) {
+          const averageMetricValue = Number(model.averageYield);
+          const averageX = prospectFrequencyFlipAxes
+            ? getXOnLineForY(toYForPercent(averageMetricValue))
+            : toXForPercentValue(averageMetricValue);
+          const averageY = prospectFrequencyFlipAxes
+            ? toYForPercent(averageMetricValue)
+            : getYOnLineForX(averageX);
+          if (Number.isFinite(averageX) && Number.isFinite(averageY)) {
+            averageReferencePoint = {
+              kind: "average-reference",
+              x: averageX,
+              y: averageY,
+              averageYield: model.averageYield
+            };
+            const avgHCross = document.createElementNS(ns, "line");
+            avgHCross.setAttribute("class", "prospect-frequency-crosshair");
+            avgHCross.setAttribute("x1", sidePad.toFixed(2));
+            avgHCross.setAttribute("y1", averageY.toFixed(2));
+            avgHCross.setAttribute("x2", averageX.toFixed(2));
+            avgHCross.setAttribute("y2", averageY.toFixed(2));
+            avgHCross.style.opacity = "1";
+            svg.appendChild(avgHCross);
+
+            const avgVCross = document.createElementNS(ns, "line");
+            avgVCross.setAttribute("class", "prospect-frequency-crosshair");
+            avgVCross.setAttribute("x1", averageX.toFixed(2));
+            avgVCross.setAttribute("y1", averageY.toFixed(2));
+            avgVCross.setAttribute("x2", averageX.toFixed(2));
+            avgVCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+            avgVCross.style.opacity = "1";
+            svg.appendChild(avgVCross);
+
+            const markerSize = 6.2;
+            const markerA = document.createElementNS(ns, "line");
+            markerA.setAttribute("class", "prospect-frequency-average-marker");
+            markerA.setAttribute("x1", (averageX - markerSize).toFixed(2));
+            markerA.setAttribute("y1", (averageY - markerSize).toFixed(2));
+            markerA.setAttribute("x2", (averageX + markerSize).toFixed(2));
+            markerA.setAttribute("y2", (averageY + markerSize).toFixed(2));
+            svg.appendChild(markerA);
+
+            const markerB = document.createElementNS(ns, "line");
+            markerB.setAttribute("class", "prospect-frequency-average-marker");
+            markerB.setAttribute("x1", (averageX - markerSize).toFixed(2));
+            markerB.setAttribute("y1", (averageY + markerSize).toFixed(2));
+            markerB.setAttribute("x2", (averageX + markerSize).toFixed(2));
+            markerB.setAttribute("y2", (averageY - markerSize).toFixed(2));
+            svg.appendChild(markerB);
+
+            const avgLabel = document.createElementNS(ns, "text");
+            const avgLabelClasses = ["prospect-frequency-average-label"];
+            if (prospectFrequencyReverseCumulative) {
+              avgLabelClasses.push("prospect-frequency-average-label--reverse");
+            }
+            avgLabel.setAttribute("class", avgLabelClasses.join(" "));
+            const avgLabelOffsetX = prospectFrequencyReverseCumulative ? -16 : 10;
+            const avgLabelOffsetY = 6;
+            const avgLabelMaxWidth = 60;
+            const avgLabelX = prospectFrequencyReverseCumulative
+              ? Math.max(sidePad + avgLabelMaxWidth, Math.min(width - sidePad - 6, averageX + avgLabelOffsetX))
+              : Math.max(sidePad + 6, Math.min(width - sidePad - avgLabelMaxWidth, averageX + avgLabelOffsetX));
+            const avgLabelY = Math.max(topPad + 2, Math.min((topPad + drawHeight) - 8, averageY + avgLabelOffsetY));
+            avgLabel.setAttribute("x", avgLabelX.toFixed(2));
+            avgLabel.setAttribute("y", avgLabelY.toFixed(2));
+            avgLabel.textContent = "Avg";
+            svg.appendChild(avgLabel);
+          }
+        }
 
         const hitbox = document.createElementNS(ns, "path");
         hitbox.setAttribute("class", "prospect-frequency-line-hitbox");
@@ -4360,6 +4806,8 @@
         };
 
         const showCrosshairAt = (point, event) => {
+          const tooltipRangeStart = prospectFrequencyReverseCumulative ? point.intervalEnd : point.intervalStart;
+          const tooltipRangeEnd = prospectFrequencyReverseCumulative ? point.intervalStart : point.intervalEnd;
           hCross.setAttribute("x1", sidePad.toFixed(2));
           hCross.setAttribute("y1", point.y.toFixed(2));
           hCross.setAttribute("x2", point.x.toFixed(2));
@@ -4372,11 +4820,16 @@
           vCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
           vCross.style.opacity = "1";
 
-          const detail = [
-            `${model.commodity} | ${point.intervalStart}% - ${point.intervalEnd}%`,
-            `Cumulative Frequency: ${point.total} (Current: ${point.current}, Other: ${point.other})`,
-            `Bin Frequency: ${point.binTotal} (Current: ${point.binCurrent}, Other: ${point.binOther})`
-          ].join("\n");
+          const detail = point.kind === "average-reference"
+            ? [
+              `${model.commodity} | Average Yield Reference`,
+              `Avg Yield: ${formatNumber(point.averageYield, 2)}%`
+            ].join("\n")
+            : [
+              `${model.commodity} | ${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
+              `Cumulative Frequency: ${point.total} (Current: ${point.current}, Other: ${point.other})`,
+              `Bin Frequency: ${point.binTotal} (Current: ${point.binCurrent}, Other: ${point.binOther})`
+            ].join("\n");
           showCursorTooltip(detail, event);
         };
 
@@ -4388,19 +4841,22 @@
         };
 
         const findNearestPoint = (event) => {
-          if (!coordinates.length) {
+          const snapPoints = averageReferencePoint
+            ? [...coordinates, averageReferencePoint]
+            : coordinates;
+          if (!snapPoints.length) {
             return null;
           }
           const rect = svg.getBoundingClientRect();
           if (!rect.width) {
-            return coordinates[0];
+            return snapPoints[0];
           }
           const ratio = (event.clientX - rect.left) / rect.width;
           const localX = ratio * width;
-          let nearest = coordinates[0];
+          let nearest = snapPoints[0];
           let nearestDistance = Math.abs(nearest.x - localX);
-          for (let index = 1; index < coordinates.length; index += 1) {
-            const candidate = coordinates[index];
+          for (let index = 1; index < snapPoints.length; index += 1) {
+            const candidate = snapPoints[index];
             const distance = Math.abs(candidate.x - localX);
             if (distance < nearestDistance) {
               nearest = candidate;
@@ -4414,14 +4870,22 @@
           const nearest = findNearestPoint(event);
           if (nearest) {
             showCrosshairAt(nearest, event);
-            highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
+            if (nearest.kind === "average-reference") {
+              clearCrossChartHoverHighlights();
+            } else {
+              highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
+            }
           }
         });
         hitbox.addEventListener("mousemove", (event) => {
           const nearest = findNearestPoint(event);
           if (nearest) {
             showCrosshairAt(nearest, event);
-            highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
+            if (nearest.kind === "average-reference") {
+              clearCrossChartHoverHighlights();
+            } else {
+              highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
+            }
           }
         });
         hitbox.addEventListener("mouseleave", () => {
@@ -4483,13 +4947,34 @@
 
         const labels = document.createElement("div");
         labels.className = "histogram-bin-labels";
-        labels.style.gridTemplateColumns = `repeat(${model.points.length}, minmax(0, 1fr))`;
-        const labelStep = Math.max(1, Math.ceil(model.points.length / 12));
-        model.points.forEach((point, index) => {
+        const xTickValues = prospectFrequencyFlipAxes
+          ? (() => {
+            const ticks = [];
+            for (let value = 0; value <= countAxisScaleMax; value += countAxisStep) {
+              ticks.push(value);
+            }
+            if (ticks[ticks.length - 1] !== countAxisScaleMax) {
+              ticks.push(countAxisScaleMax);
+            }
+            return ticks;
+          })()
+          : [];
+        const labelPoints = prospectFrequencyFlipAxes
+          ? xTickValues
+          : (prospectFrequencyReverseCumulative ? [...model.points].reverse() : model.points);
+        labels.style.gridTemplateColumns = `repeat(${labelPoints.length}, minmax(0, 1fr))`;
+        const labelStep = Math.max(1, Math.ceil(labelPoints.length / 12));
+        labelPoints.forEach((point, index) => {
           const label = document.createElement("span");
           label.className = "histogram-bin-label prospect-frequency-bin-label";
-          if ((index % labelStep) === 0 || index === model.points.length - 1) {
-            label.textContent = `${point.intervalStart}-${point.intervalEnd}%`;
+          if ((index % labelStep) === 0 || index === labelPoints.length - 1) {
+            if (prospectFrequencyFlipAxes) {
+              label.textContent = formatNumber(Number(point), 0);
+            } else {
+              const labelRangeStart = prospectFrequencyReverseCumulative ? point.intervalEnd : point.intervalStart;
+              const labelRangeEnd = prospectFrequencyReverseCumulative ? point.intervalStart : point.intervalEnd;
+              label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
+            }
           }
           labels.appendChild(label);
         });
@@ -4519,9 +5004,21 @@
         sessionsLegend.textContent = `Mining Sessions: ${model.sessionsCount}`;
         legend.appendChild(sessionsLegend);
 
-        const averageLegend = document.createElement("span");
-        averageLegend.className = "prospect-frequency-legend-item";
-        averageLegend.textContent = `Average Yield: ${formatNumber(model.averageYield, 2)}%`;
+        const averageLegend = document.createElement("label");
+        averageLegend.className = "prospect-frequency-legend-item prospect-frequency-control";
+        const averageInput = document.createElement("input");
+        averageInput.type = "checkbox";
+        averageInput.checked = prospectFrequencyShowAverageReference;
+        averageInput.addEventListener("change", () => {
+          prospectFrequencyShowAverageReference = averageInput.checked;
+          if (activeSessionData) {
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
+        });
+        const averageText = document.createElement("span");
+        averageText.textContent = `Avg Yield: ${formatNumber(model.averageYield, 2)}%`;
+        averageLegend.appendChild(averageInput);
+        averageLegend.appendChild(averageText);
         legend.appendChild(averageLegend);
 
         const asteroidLegend = document.createElement("span");
@@ -4547,10 +5044,17 @@
           binSize: 10,
           bars: []
         };
+        if (prospectHistogramHeaderControls) {
+          prospectHistogramHeaderControls.innerHTML = "";
+        }
         if (commodityHistogramFilters) {
           commodityHistogramFilters.innerHTML = "";
         }
-        const model = buildProspectHistogramModel(sessionData);
+        const model = buildProspectHistogramModel(
+          sessionData,
+          prospectFrequencyIncludeDuplicates,
+          materialPercentShowOnlyCollected || histogramShowOnlyCollected
+        );
         if (!model || !Array.isArray(model.commodities) || !model.commodities.length) {
           const note = document.createElement("p");
           note.className = "chart-empty";
@@ -4593,17 +5097,35 @@
             const peakInt = Math.max(1, Math.floor(asNumber(peakValue)));
             const maxVisibleTicks = 9;
             if ((peakInt + 1) <= maxVisibleTicks) {
-              return Array.from({ length: peakInt + 1 }, (_unused, offset) => peakInt - offset);
+              const yMax = peakInt;
+              return {
+                yMax,
+                values: Array.from({ length: yMax + 1 }, (_unused, offset) => yMax - offset)
+              };
             }
-            const step = Math.max(1, Math.ceil(peakInt / (maxVisibleTicks - 1)));
-            const values = [];
-            for (let value = peakInt; value >= 0; value -= step) {
-              values.push(value);
+            let step = Math.max(1, Math.round(peakInt / (maxVisibleTicks - 1)));
+            // Avoid a trailing "... 1, 0" pair, which compresses the final interval visually.
+            while (step < peakInt && (peakInt % step) === 1) {
+              step += 1;
             }
-            if (values[values.length - 1] !== 0) {
-              values.push(0);
+            const yMax = peakInt;
+            let values = [];
+            const buildValues = () => {
+              const computed = [];
+              for (let value = yMax; value >= 0; value -= step) {
+                computed.push(value);
+              }
+              if (computed[computed.length - 1] !== 0) {
+                computed.push(0);
+              }
+              return computed.filter((value, index, allValues) => allValues.indexOf(value) === index);
+            };
+            values = buildValues();
+            while (values.length > maxVisibleTicks) {
+              step += 1;
+              values = buildValues();
             }
-            return values.filter((value, index, allValues) => allValues.indexOf(value) === index);
+            return { yMax, values };
           };
 
           const buildHistogramYAxis = (tickValues, yMaxValue) => {
@@ -4613,6 +5135,8 @@
 
             const yAxis = document.createElement("div");
             yAxis.className = "histogram-y-axis";
+            const ticksLayer = document.createElement("div");
+            ticksLayer.className = "histogram-y-axis-ticks";
             const safeYMax = Math.max(1, Math.floor(asNumber(yMaxValue)));
             tickValues.forEach((value) => {
               const tick = document.createElement("span");
@@ -4621,10 +5145,11 @@
               const clampedValue = Math.max(0, Math.min(safeYMax, Math.floor(asNumber(value))));
               const topPercent = 100 - ((clampedValue / safeYMax) * 100);
               tick.style.top = `${topPercent.toFixed(4)}%`;
-              // Keep all tick labels centered on their numeric value position.
+              // Center all ticks on their numeric value positions so spacing is linear.
               tick.style.transform = "translateY(-50%)";
-              yAxis.appendChild(tick);
+              ticksLayer.appendChild(tick);
             });
+            yAxis.appendChild(ticksLayer);
 
             return { yAxisLabel, yAxis };
           };
@@ -4705,8 +5230,10 @@
           const plot = document.createElement("div");
           plot.className = "histogram-plot";
 
-          const yTicks = buildHistogramTickValues(peak);
-          const { yAxisLabel, yAxis } = buildHistogramYAxis(yTicks, peak);
+          const yTickModel = buildHistogramTickValues(peak);
+          const yTicks = yTickModel.values;
+          const yAxisMax = yTickModel.yMax;
+          const { yAxisLabel, yAxis } = buildHistogramYAxis(yTicks, yAxisMax);
 
           const bars = document.createElement("div");
           bars.className = "histogram-bars";
@@ -4715,7 +5242,7 @@
           selected.counts.forEach((count, index) => {
             const bar = document.createElement("div");
             bar.className = "histogram-bar";
-            const ratio = peak > 0 ? (count / peak) : 0;
+            const ratio = yAxisMax > 0 ? (count / yAxisMax) : 0;
             bar.style.height = `${Math.max(2, ratio * 100)}%`;
             const rangeStart = index * binSize;
             const rangeEnd = Math.min(100, rangeStart + binSize);
@@ -4828,6 +5355,10 @@
 
       function buildCumulativeCommoditySeries(sessionData) {
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const cargoCapacityRaw = Number(meta.cargo_capacity);
+        const cargoCapacity = Number.isFinite(cargoCapacityRaw) && cargoCapacityRaw > 0
+          ? cargoCapacityRaw
+          : null;
         const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
         const estimatedSell = meta && typeof meta.estimated_sell === "object" ? meta.estimated_sell : {};
         const byCommodity = Array.isArray(estimatedSell.by_commodity) ? estimatedSell.by_commodity : [];
@@ -4880,6 +5411,24 @@
           }
           return null;
         };
+        const readInventoryCargoExcludingDrones = (inventory) => {
+          const source = inventory && typeof inventory === "object" ? inventory : {};
+          return Object.entries(source).reduce((sum, [name, value]) => {
+            const key = String(name || "").trim().toLowerCase();
+            if (!key || key === "drones") {
+              return sum;
+            }
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric) || numeric <= 0) {
+              return sum;
+            }
+            return sum + numeric;
+          }, 0);
+        };
+        const hasLimpetsInInventory = (inventory) => {
+          const source = inventory && typeof inventory === "object" ? inventory : {};
+          return Object.keys(source).some((name) => String(name || "").trim().toLowerCase() === "limpets");
+        };
         const cargoSnapshots = events
           .map((event, index) => {
             if (!event || event.type !== "cargo") {
@@ -4896,7 +5445,9 @@
               return null;
             }
             const limpetCount = readCargoLimpetCount(details, inventory);
-            return { ms, inventory, index, limpetCount };
+            const totalCargoRaw = Number(details.total_cargo);
+            const totalCargo = Number.isFinite(totalCargoRaw) && totalCargoRaw >= 0 ? totalCargoRaw : null;
+            return { ms, inventory, index, limpetCount, totalCargo };
           })
           .filter((snapshot) => !!snapshot)
           .sort((left, right) => {
@@ -4956,6 +5507,34 @@
           }
           return { name, points };
         });
+
+        if (cargoCapacity !== null) {
+          const points = cargoSnapshots.map((snapshot) => {
+            let occupied = 0;
+            if (Number.isFinite(snapshot.totalCargo) && Number.isFinite(snapshot.limpetCount) && snapshot.limpetCount >= 0) {
+              occupied = Math.max(0, asNumber(snapshot.totalCargo) + asNumber(snapshot.limpetCount));
+            } else {
+              occupied = readInventoryCargoExcludingDrones(snapshot.inventory);
+              if (!hasLimpetsInInventory(snapshot.inventory) && Number.isFinite(snapshot.limpetCount) && snapshot.limpetCount >= 0) {
+                occupied += snapshot.limpetCount;
+              }
+            }
+            const quantity = Math.max(0, cargoCapacity - occupied);
+            return { ms: snapshot.ms, quantity, profit: 0 };
+          });
+          const lastPoint = points[points.length - 1] || null;
+          if (lastPoint && lastPoint.ms < endMs) {
+            points.push({
+              ms: endMs,
+              quantity: asNumber(lastPoint.quantity),
+              profit: 0
+            });
+          }
+          series.push({
+            name: "Empty Cargo Space",
+            points
+          });
+        }
 
         return { startMs, endMs, series };
       }
@@ -5166,12 +5745,21 @@
           hideCursorTooltip();
           const selectedSeries = series.filter((item) => cumulativeCommoditySelection[item.name]);
           const stackedSeries = [...selectedSeries].sort((left, right) => {
-            const leftIsLimpets = String(left && left.name || "").trim().toLowerCase() === "limpets";
-            const rightIsLimpets = String(right && right.name || "").trim().toLowerCase() === "limpets";
-            if (leftIsLimpets === rightIsLimpets) {
+            const rankSeriesForStack = (item) => {
+              const name = String(item && item.name || "").trim().toLowerCase();
+              if (name === "empty cargo space") {
+                return 2;
+              }
+              if (name === "limpets") {
+                return 1;
+              }
               return 0;
+            };
+            const rankDelta = rankSeriesForStack(left) - rankSeriesForStack(right);
+            if (rankDelta !== 0) {
+              return rankDelta;
             }
-            return leftIsLimpets ? 1 : -1;
+            return (seriesIndexByName.get(left.name) || 0) - (seriesIndexByName.get(right.name) || 0);
           });
           const pointCount = selectedSeries.length
             ? Math.min(...selectedSeries.map((item) => item.points.length))
@@ -6455,7 +7043,12 @@
               if (listToken !== sessionListRenderToken) {
                 return;
               }
-              option.textContent = formatSessionOptionLabel(file, details.ringLabel, details.asteroidCount);
+              option.textContent = formatSessionOptionLabel(
+                file,
+                details.ringLabel,
+                details.asteroidCount,
+                details.commodityLabel
+              );
             })();
           }
 
@@ -6489,8 +7082,53 @@
         materialPercentShowCollectedInput.checked = materialPercentShowOnlyCollected;
         materialPercentShowCollectedInput.addEventListener("change", () => {
           materialPercentShowOnlyCollected = !!materialPercentShowCollectedInput.checked;
+          histogramShowOnlyCollected = materialPercentShowOnlyCollected;
+          if (activeSessionData) {
+            renderProspectHistogram(activeSessionData);
+            renderMaterialPercentAmount(activeSessionData);
+          }
+        });
+      }
+
+      if (materialPercentShowGridlinesInput) {
+        materialPercentShowGridlinesInput.checked = materialPercentShowGridlines;
+        materialPercentShowGridlinesInput.addEventListener("change", () => {
+          materialPercentShowGridlines = !!materialPercentShowGridlinesInput.checked;
           if (activeSessionData) {
             renderMaterialPercentAmount(activeSessionData);
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
+        });
+      }
+
+      if (materialPercentIncludeDuplicatesInput) {
+        materialPercentIncludeDuplicatesInput.checked = prospectFrequencyIncludeDuplicates;
+        materialPercentIncludeDuplicatesInput.addEventListener("change", () => {
+          prospectFrequencyIncludeDuplicates = !!materialPercentIncludeDuplicatesInput.checked;
+          if (activeSessionData) {
+            renderProspectHistogram(activeSessionData);
+            renderMaterialPercentAmount(activeSessionData);
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
+        });
+      }
+
+      if (materialPercentReverseCumulativeInput) {
+        materialPercentReverseCumulativeInput.checked = prospectFrequencyReverseCumulative;
+        materialPercentReverseCumulativeInput.addEventListener("change", () => {
+          prospectFrequencyReverseCumulative = !!materialPercentReverseCumulativeInput.checked;
+          if (activeSessionData) {
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
+        });
+      }
+
+      if (materialPercentFlipCumulativeAxisInput) {
+        materialPercentFlipCumulativeAxisInput.checked = prospectFrequencyFlipAxes;
+        materialPercentFlipCumulativeAxisInput.addEventListener("change", () => {
+          prospectFrequencyFlipAxes = !!materialPercentFlipCumulativeAxisInput.checked;
+          if (activeSessionData) {
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
           }
         });
       }

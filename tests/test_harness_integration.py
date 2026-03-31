@@ -204,6 +204,47 @@ def test_session_stops_on_fsd_jump() -> None:
         assert state.mining_end is not None
 
 
+def test_launch_without_system_uses_last_supercruise_exit_starsystem() -> None:
+    with harness_context() as (harness, load, _cfg):
+        _register_handler(harness, load)
+
+        harness.fire_event(
+            {
+                "event": "SupercruiseExit",
+                "StarSystem": "Col 285 Sector VZ-W b15-0",
+                "Body": "Col 285 Sector VZ-W b15-0 1 A Ring",
+                "BodyID": 29,
+                "timestamp": "3300-01-01T00:00:00Z",
+            },
+            state={},
+        )
+
+        # Simulate a later unrelated event that overwrites current_system.
+        harness.fire_event(
+            {
+                "event": "Music",
+                "StarSystem": "Col 285 Sector RT-Y b14-2",
+                "timestamp": "3300-01-01T00:00:05Z",
+            },
+            state={},
+        )
+        assert load._plugin.state.current_system == "Col 285 Sector RT-Y b14-2"
+
+        # Launch event often does not include a system field; mining should fall back
+        # to the most recent SupercruiseExit StarSystem.
+        harness.fire_event(
+            {
+                "event": "LaunchDrone",
+                "Type": "Prospector",
+                "timestamp": "3300-01-01T00:00:10Z",
+            },
+            state={},
+        )
+
+        assert load._plugin.state.is_mining is True
+        assert load._plugin.state.current_system == "Col 285 Sector VZ-W b15-0"
+
+
 def test_shipyard_swap_pending_update_resolves_on_loadout() -> None:
     with harness_context() as (harness, load, _cfg):
         _register_handler(harness, load)

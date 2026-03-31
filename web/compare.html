@@ -13,6 +13,10 @@
       --accent: #ff8a00;
       --card: #171d25;
       --line: color-mix(in srgb, var(--accent) 30%, transparent);
+      --prospect-current-dot-fill: color-mix(in srgb, var(--accent) 78%, #ffffff);
+      --prospect-current-dot-ring: #ffffff;
+      --compare-no-data-dot-fill: color-mix(in srgb, var(--prospect-current-dot-fill) 36%, var(--card));
+      --compare-no-data-dot-stroke: color-mix(in srgb, var(--card) 90%, #000);
       --ref-p90: color-mix(in srgb, var(--accent) 56%, #ff6e3a);
       --ref-p75: color-mix(in srgb, var(--accent) 82%, #fff);
       --ref-p50: color-mix(in srgb, var(--accent) 45%, #53a7ff);
@@ -27,6 +31,9 @@
         --muted: #4b5563;
         --accent: #c45a00;
         --card: #ffffff;
+        --prospect-current-dot-ring: #000000;
+        --compare-no-data-dot-fill: color-mix(in srgb, var(--prospect-current-dot-fill) 56%, var(--card));
+        --compare-no-data-dot-stroke: color-mix(in srgb, var(--prospect-current-dot-fill) 72%, #111);
       }
     }
 
@@ -36,6 +43,9 @@
       --muted: #4b5563;
       --accent: #3f87d4;
       --card: #ffffff;
+      --prospect-current-dot-ring: #000000;
+      --compare-no-data-dot-fill: color-mix(in srgb, var(--prospect-current-dot-fill) 56%, var(--card));
+      --compare-no-data-dot-stroke: color-mix(in srgb, var(--prospect-current-dot-fill) 72%, #111);
     }
 
     :root[data-theme="blue-dark"] {
@@ -44,6 +54,7 @@
       --muted: #97a8bc;
       --accent: #3f87d4;
       --card: #131d2a;
+      --prospect-current-dot-ring: #ffffff;
     }
 
     :root[data-theme="orange-dark"] {
@@ -52,6 +63,7 @@
       --muted: #d4b89c;
       --accent: #d36f00;
       --card: #21180f;
+      --prospect-current-dot-ring: #ffffff;
     }
 
     :root[data-theme="green-light"] {
@@ -60,6 +72,9 @@
       --muted: #4c6348;
       --accent: #3c8223;
       --card: #ffffff;
+      --prospect-current-dot-ring: #000000;
+      --compare-no-data-dot-fill: color-mix(in srgb, var(--prospect-current-dot-fill) 56%, var(--card));
+      --compare-no-data-dot-stroke: color-mix(in srgb, var(--prospect-current-dot-fill) 72%, #111);
     }
 
     :root[data-theme="green-dark"] {
@@ -68,6 +83,7 @@
       --muted: #b5c7bc;
       --accent: #d1d93b;
       --card: #243836;
+      --prospect-current-dot-ring: #ffffff;
     }
 
     * {
@@ -86,7 +102,7 @@
     }
 
     .app {
-      width: min(980px, 100%);
+      width: min(1280px, 100%);
       margin: 0 auto;
       background: var(--card);
       border: 1px solid var(--line);
@@ -194,7 +210,7 @@
 
     .compare-controls {
       display: grid;
-      grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) max-content max-content;
+      grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) max-content max-content max-content;
       gap: 10px;
       justify-content: start;
       align-items: start;
@@ -325,6 +341,46 @@
     .compare-list {
       display: grid;
       gap: 12px;
+    }
+
+    .compare-dot-legend {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.2;
+      justify-self: start;
+    }
+
+    .compare-dot-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .compare-dot-legend-swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .compare-dot-legend-swatch--real {
+      background: var(--prospect-current-dot-fill);
+      border: 1px solid var(--prospect-current-dot-ring);
+    }
+
+    .compare-dot-legend-swatch--no-data {
+      background: var(--compare-no-data-dot-fill);
+      opacity: 0.75;
+      border: 1px solid var(--compare-no-data-dot-stroke);
     }
 
     .ring-row {
@@ -472,18 +528,56 @@
     }
 
     .compare-dot {
-      fill: color-mix(in srgb, var(--cool-3, var(--accent)) 78%, #fff);
-      stroke: color-mix(in srgb, var(--card) 90%, #000);
-      stroke-width: 1;
+      fill: var(--prospect-current-dot-fill);
+      opacity: 1;
+      stroke: var(--prospect-current-dot-ring);
+      stroke-width: 1.8;
       vector-effect: non-scaling-stroke;
+      transition: stroke-width 80ms ease-out, filter 80ms ease-out, fill 80ms ease-out, opacity 80ms ease-out;
     }
 
-    .compare-reference-dot {
-      fill: color-mix(in srgb, var(--accent) 82%, #fff);
-      stroke: color-mix(in srgb, var(--card) 92%, #000);
-      stroke-width: 1.4;
+    .compare-dot.compare-dot--no-data {
+      fill: var(--compare-no-data-dot-fill);
+      opacity: 0.75;
+      stroke: var(--compare-no-data-dot-stroke);
+      stroke-width: 0.9;
+    }
+
+    .compare-dot.compare-dot--linked {
+      opacity: 1;
+      fill: color-mix(in srgb, var(--accent) 72%, #fff);
+      stroke: color-mix(in srgb, #fff 92%, var(--accent));
+      stroke-width: 3.4;
+      filter: drop-shadow(0 0 2px color-mix(in srgb, #fff 72%, transparent))
+        drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 80%, transparent));
+    }
+
+    .compare-reference-marker-line {
+      stroke-width: 1.8;
+      stroke-linecap: round;
       vector-effect: non-scaling-stroke;
       cursor: crosshair;
+      opacity: 1;
+    }
+
+    .compare-reference-marker-line--p90 {
+      stroke: var(--ref-p90);
+    }
+
+    .compare-reference-marker-line--p75 {
+      stroke: var(--ref-p75);
+    }
+
+    .compare-reference-marker-line--p50 {
+      stroke: var(--ref-p50);
+    }
+
+    .compare-reference-marker-line--avg {
+      stroke: var(--ref-avg);
+    }
+
+    .compare-reference-marker-line--p25 {
+      stroke: var(--ref-p25);
     }
 
     .compare-crosshair {
@@ -524,16 +618,20 @@
     }
 
     .compare-reference-label {
-      font-size: 16px;
+      font-size: 12px;
       font-weight: 700;
       text-anchor: start;
       dominant-baseline: hanging;
       letter-spacing: 0.1px;
       paint-order: stroke;
       stroke: color-mix(in srgb, var(--card) 85%, #000);
-      stroke-width: 3.6;
+      stroke-width: 2.7;
       pointer-events: none;
       user-select: none;
+    }
+
+    .compare-reference-label.compare-reference-label--reverse {
+      text-anchor: end;
     }
 
     .compare-reference-label--p90 {
@@ -691,9 +789,23 @@
         <label>Crosshairs</label>
         <div id="compare-reference-options" class="compare-reference-options" aria-label="Crosshair overlays"></div>
       </div>
+      <div class="compare-control compare-control-pill">
+        <label>Display</label>
+        <div id="compare-gridline-options" class="compare-population-options" aria-label="Chart display options"></div>
+      </div>
     </section>
     <p id="compare-status" class="compare-status"></p>
     <section id="compare-list" class="compare-list"></section>
+    <section class="compare-dot-legend" aria-label="Cumulative frequency dot legend">
+      <span class="compare-dot-legend-item">
+        <span class="compare-dot-legend-swatch compare-dot-legend-swatch--real" aria-hidden="true"></span>
+        <span>Real data</span>
+      </span>
+      <span class="compare-dot-legend-item">
+        <span class="compare-dot-legend-swatch compare-dot-legend-swatch--no-data" aria-hidden="true"></span>
+        <span>No data</span>
+      </span>
+    </section>
   </main>
 
   <script>
@@ -706,6 +818,7 @@
       const compareSortSelect = document.getElementById("compare-sort-select");
       const comparePopulationOptions = document.getElementById("compare-population-options");
       const compareReferenceOptions = document.getElementById("compare-reference-options");
+      const compareGridlineOptions = document.getElementById("compare-gridline-options");
       const compareStatus = document.getElementById("compare-status");
       const compareList = document.getElementById("compare-list");
       const THEME_STORAGE_KEY = "edmcma.analysis.theme";
@@ -736,6 +849,11 @@
       let requestedCommodityKey = "";
       let selectedYieldPopulationMode = "all";
       let selectedReferenceCrosshairs = new Set(["avg"]);
+      let compareShowGridlines = true;
+      let compareNormalizeMetrics = false;
+      let compareNormalizeYAxis = false;
+      let compareReverseCumulative = false;
+      let compareFlipCumulativeAxes = false;
       let favoriteRingNames = new Set();
 
       function getThemeOption(themeId) {
@@ -977,26 +1095,10 @@
         if (!Array.isArray(points) || points.length === 0) {
           return "";
         }
-        if (points.length === 1) {
-          const point = points[0];
-          return `M${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-        }
-        if (points.length === 2) {
-          const first = points[0];
-          const second = points[1];
-          return `M${first.x.toFixed(2)} ${first.y.toFixed(2)} L${second.x.toFixed(2)} ${second.y.toFixed(2)}`;
-        }
         let command = `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-        for (let index = 0; index < points.length - 1; index += 1) {
-          const p0 = index > 0 ? points[index - 1] : points[index];
-          const p1 = points[index];
-          const p2 = points[index + 1];
-          const p3 = index + 2 < points.length ? points[index + 2] : p2;
-          const cp1x = p1.x + ((p2.x - p0.x) / 6);
-          const cp1y = p1.y + ((p2.y - p0.y) / 6);
-          const cp2x = p2.x - ((p3.x - p1.x) / 6);
-          const cp2y = p2.y - ((p3.y - p1.y) / 6);
-          command += ` C${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+        for (let index = 1; index < points.length; index += 1) {
+          const point = points[index];
+          command += ` L${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
         }
         return command;
       }
@@ -1219,7 +1321,88 @@
         });
       }
 
-      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, populationMode) {
+      function syncGridlineControls() {
+        if (!compareGridlineOptions) {
+          return;
+        }
+        compareGridlineOptions.innerHTML = "";
+        const wrapper = document.createElement("label");
+        wrapper.className = "compare-population-option";
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = compareShowGridlines;
+        input.addEventListener("change", () => {
+          compareShowGridlines = input.checked;
+          renderComparePanels();
+        });
+        const text = document.createElement("span");
+        text.textContent = "Show gridlines";
+        wrapper.appendChild(input);
+        wrapper.appendChild(text);
+        compareGridlineOptions.appendChild(wrapper);
+
+        const normalizeWrapper = document.createElement("label");
+        normalizeWrapper.className = "compare-population-option";
+        const normalizeInput = document.createElement("input");
+        normalizeInput.type = "checkbox";
+        normalizeInput.checked = compareNormalizeMetrics;
+        normalizeInput.addEventListener("change", () => {
+          compareNormalizeMetrics = normalizeInput.checked;
+          renderComparePanels();
+        });
+        const normalizeText = document.createElement("span");
+        normalizeText.textContent = "Normalize by Sessions";
+        normalizeWrapper.appendChild(normalizeInput);
+        normalizeWrapper.appendChild(normalizeText);
+        compareGridlineOptions.appendChild(normalizeWrapper);
+
+        const normalizeYAxisWrapper = document.createElement("label");
+        normalizeYAxisWrapper.className = "compare-population-option";
+        const normalizeYAxisInput = document.createElement("input");
+        normalizeYAxisInput.type = "checkbox";
+        normalizeYAxisInput.checked = compareNormalizeYAxis;
+        normalizeYAxisInput.addEventListener("change", () => {
+          compareNormalizeYAxis = normalizeYAxisInput.checked;
+          renderComparePanels();
+        });
+        const normalizeYAxisText = document.createElement("span");
+        normalizeYAxisText.textContent = "Normalize Y axis";
+        normalizeYAxisWrapper.appendChild(normalizeYAxisInput);
+        normalizeYAxisWrapper.appendChild(normalizeYAxisText);
+        compareGridlineOptions.appendChild(normalizeYAxisWrapper);
+
+        const reverseWrapper = document.createElement("label");
+        reverseWrapper.className = "compare-population-option";
+        const reverseInput = document.createElement("input");
+        reverseInput.type = "checkbox";
+        reverseInput.checked = compareReverseCumulative;
+        reverseInput.addEventListener("change", () => {
+          compareReverseCumulative = reverseInput.checked;
+          renderComparePanels();
+        });
+        const reverseText = document.createElement("span");
+        reverseText.textContent = "Reverse Cumulative Freq.";
+        reverseWrapper.appendChild(reverseInput);
+        reverseWrapper.appendChild(reverseText);
+        compareGridlineOptions.appendChild(reverseWrapper);
+
+        const flipWrapper = document.createElement("label");
+        flipWrapper.className = "compare-population-option";
+        const flipInput = document.createElement("input");
+        flipInput.type = "checkbox";
+        flipInput.checked = compareFlipCumulativeAxes;
+        flipInput.addEventListener("change", () => {
+          compareFlipCumulativeAxes = flipInput.checked;
+          renderComparePanels();
+        });
+        const flipText = document.createElement("span");
+        flipText.textContent = "Flip Cumulative Axes";
+        flipWrapper.appendChild(flipInput);
+        flipWrapper.appendChild(flipText);
+        compareGridlineOptions.appendChild(flipWrapper);
+      }
+
+      function buildScopedAsteroidRows(ring, commodityKey, populationMode) {
         const asteroids = Array.isArray(ring && ring.asteroidList) ? ring.asteroidList : [];
         const allAsteroids = asteroids
           .map((asteroid) => {
@@ -1235,6 +1418,17 @@
           .filter((row) => !!row);
         const presentAsteroids = allAsteroids.filter((item) => item.present);
         const scopedAsteroids = populationMode === "all" ? allAsteroids : presentAsteroids;
+        return { allAsteroids, presentAsteroids, scopedAsteroids };
+      }
+
+      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, populationMode) {
+        const scopedRows = buildScopedAsteroidRows(ring, commodityKey, populationMode);
+        const presentAsteroids = Array.isArray(scopedRows && scopedRows.presentAsteroids)
+          ? scopedRows.presentAsteroids
+          : [];
+        const scopedAsteroids = Array.isArray(scopedRows && scopedRows.scopedAsteroids)
+          ? scopedRows.scopedAsteroids
+          : [];
         const normalizedForcedXMax = Number.isFinite(forcedXMax) && forcedXMax > 0
           ? Math.max(interval, forcedXMax)
           : null;
@@ -1251,6 +1445,7 @@
             p50: null,
             p25: null,
             asteroidsCount: 0,
+            presentAsteroidsCount: presentAsteroids.length,
             sessionsCount: 0,
             points: [],
             yMax: 1,
@@ -1281,10 +1476,12 @@
           running += counts[index];
           const intervalStart = index * interval;
           const intervalEnd = Math.min(xMax, intervalStart + interval);
+          const center = intervalStart + ((intervalEnd - intervalStart) / 2);
           points.push({
             index,
             intervalStart,
             intervalEnd,
+            center,
             binCount: counts[index],
             total: running
           });
@@ -1296,6 +1493,7 @@
           p50,
           p25,
           asteroidsCount: scopedAsteroids.length,
+          presentAsteroidsCount: presentAsteroids.length,
           sessionsCount: sessionGuids.size,
           points,
           yMax: Math.max(1, running),
@@ -1303,11 +1501,13 @@
         };
       }
 
-      function renderRingChart(chartPanel, ringName, commodityLabel, model, forcedYMax, selectedCrosshairKeys) {
+      function renderRingChart(chartPanel, ringName, commodityLabel, model, forcedYMax, selectedCrosshairKeys, normalizeBySessions, reverseCumulative, flipCumulativeAxes) {
         chartPanel.innerHTML = "";
         const title = document.createElement("p");
         title.className = "ring-chart-title";
-        title.textContent = `Cumulative Frequency (${commodityLabel})`;
+        title.textContent = reverseCumulative
+          ? `Cumulative Frequency (${commodityLabel}) - Reversed`
+          : `Cumulative Frequency (${commodityLabel})`;
         chartPanel.appendChild(title);
 
         if (!model || !Array.isArray(model.points) || model.points.length === 0) {
@@ -1319,24 +1519,51 @@
         }
 
         const width = 1000;
-        const height = 220;
+        let height = 220;
         const topPad = 10;
         const bottomPad = 16;
         const sidePad = 14;
         const drawWidth = Math.max(1, width - (sidePad * 2));
-        const drawHeight = Math.max(1, height - topPad - bottomPad);
+        let drawHeight = Math.max(1, height - topPad - bottomPad);
+        const dotRadius = 8.7;
+        const referenceMarkerHalfExtent = 6.2;
+        const sessionDivisor = normalizeBySessions
+          ? Math.max(1, Number(model && model.sessionsCount) || 0)
+          : 1;
         const normalizedForcedYMax = Number.isFinite(forcedYMax) && forcedYMax > 0
           ? forcedYMax
           : null;
-        const yMaxInt = Math.max(1, Math.ceil(normalizedForcedYMax || model.yMax));
-        const step = inferStep(yMaxInt);
-        const yScaleMax = Math.max(yMaxInt, Math.ceil(yMaxInt / step) * step);
+        const normalizedModelYMax = Number(model && model.yMax) / sessionDivisor;
+        const countAxisMaxInt = Math.max(1, Math.ceil(normalizedForcedYMax || normalizedModelYMax));
+        const countAxisStep = inferStep(countAxisMaxInt);
+        const countAxisScaleMax = Math.max(countAxisMaxInt, Math.ceil(countAxisMaxInt / countAxisStep) * countAxisStep);
+        const percentAxisMaxInt = Math.max(1, Math.ceil(Number(model && model.xMax) || 0));
+        const percentAxisStep = inferStep(percentAxisMaxInt);
+        const percentAxisScaleMax = Math.max(percentAxisMaxInt, Math.ceil(percentAxisMaxInt / percentAxisStep) * percentAxisStep);
         const yTicks = [];
-        for (let value = yScaleMax; value >= 0; value -= step) {
-          yTicks.push(value);
-        }
-        if (yTicks[yTicks.length - 1] !== 0) {
-          yTicks.push(0);
+        if (flipCumulativeAxes) {
+          if (reverseCumulative) {
+            for (let value = 0; value <= percentAxisScaleMax; value += percentAxisStep) {
+              yTicks.push(value);
+            }
+            if (yTicks[yTicks.length - 1] !== percentAxisScaleMax) {
+              yTicks.push(percentAxisScaleMax);
+            }
+          } else {
+            for (let value = percentAxisScaleMax; value >= 0; value -= percentAxisStep) {
+              yTicks.push(value);
+            }
+            if (yTicks[yTicks.length - 1] !== 0) {
+              yTicks.push(0);
+            }
+          }
+        } else {
+          for (let value = countAxisScaleMax; value >= 0; value -= countAxisStep) {
+            yTicks.push(value);
+          }
+          if (yTicks[yTicks.length - 1] !== 0) {
+            yTicks.push(0);
+          }
         }
 
         const plot = document.createElement("div");
@@ -1345,11 +1572,20 @@
         yAxis.className = "compare-y-axis";
         yTicks.forEach((value) => {
           const tick = document.createElement("span");
-          tick.textContent = String(value);
+          tick.textContent = flipCumulativeAxes ? `${value}%` : String(value);
           yAxis.appendChild(tick);
         });
         const surface = document.createElement("div");
         surface.className = "compare-surface";
+        plot.appendChild(yAxis);
+        plot.appendChild(surface);
+        chartPanel.appendChild(plot);
+
+        const surfaceRect = surface.getBoundingClientRect();
+        if (surfaceRect.width > 0 && surfaceRect.height > 0) {
+          height = Math.max(120, Math.round((width * surfaceRect.height) / surfaceRect.width));
+          drawHeight = Math.max(1, height - topPad - bottomPad);
+        }
 
         const ns = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(ns, "svg");
@@ -1357,28 +1593,55 @@
         svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
         svg.setAttribute("preserveAspectRatio", "none");
         const totalBins = Math.max(1, model.points.length);
-        const toX = (index) => sidePad + (((index + 0.5) / totalBins) * drawWidth);
-        const toY = (count) => {
-          const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
+        const toDisplayIndex = (index) => (
+          reverseCumulative
+            ? (totalBins - index - 1)
+            : index
+        );
+        const toXForBinIndex = (index) => sidePad + (((toDisplayIndex(index) + 0.5) / totalBins) * drawWidth);
+        const toYForCount = (count) => {
+          const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
           return topPad + (drawHeight * (1 - ratio));
         };
+        const toXForCount = (count) => {
+          const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
+          return sidePad + (drawWidth * Math.max(0, Math.min(1, ratio)));
+        };
+        const toYForPercent = (percent) => {
+          const ratio = percentAxisScaleMax <= 0 ? 0 : (percent / percentAxisScaleMax);
+          const displayRatio = reverseCumulative ? ratio : (1 - ratio);
+          return topPad + (drawHeight * Math.max(0, Math.min(1, displayRatio)));
+        };
+        const toYPlot = (value) => (
+          flipCumulativeAxes
+            ? toYForPercent(value)
+            : toYForCount(value)
+        );
 
-        yTicks.forEach((value) => {
-          const y = toY(value);
-          const line = document.createElementNS(ns, "line");
-          line.setAttribute("x1", sidePad.toFixed(2));
-          line.setAttribute("x2", (width - sidePad).toFixed(2));
-          line.setAttribute("y1", y.toFixed(2));
-          line.setAttribute("y2", y.toFixed(2));
-          line.setAttribute("class", "compare-grid-line");
-          svg.appendChild(line);
+        if (compareShowGridlines) {
+          yTicks.forEach((value) => {
+            const y = toYPlot(value);
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", sidePad.toFixed(2));
+            line.setAttribute("x2", (width - sidePad).toFixed(2));
+            line.setAttribute("y1", y.toFixed(2));
+            line.setAttribute("y2", y.toFixed(2));
+            line.setAttribute("class", "compare-grid-line");
+            svg.appendChild(line);
+          });
+        }
+
+        const coordinates = model.points.map((point) => {
+          const displayBinCount = Number(point.binCount) / sessionDivisor;
+          const displayTotal = Number(point.total) / sessionDivisor;
+          return {
+            ...point,
+            displayBinCount,
+            displayTotal,
+            x: flipCumulativeAxes ? toXForCount(displayTotal) : toXForBinIndex(point.index),
+            y: flipCumulativeAxes ? toYForPercent(point.center) : toYForCount(displayTotal)
+          };
         });
-
-        const coordinates = model.points.map((point) => ({
-          ...point,
-          x: toX(point.index),
-          y: toY(point.total)
-        }));
 
         const pathData = buildSmoothLinePath(coordinates);
         const line = document.createElementNS(ns, "path");
@@ -1386,48 +1649,93 @@
         line.setAttribute("d", pathData);
         svg.appendChild(line);
 
+        const referenceMetrics = model;
+
         const selectedKeys = selectedCrosshairKeys instanceof Set ? selectedCrosshairKeys : new Set();
-        const maxXValue = Math.max(1, asNumber(model.xMax));
-        const totalCount = Math.max(1, asNumber(model.asteroidsCount));
-        const toXForValue = (rawValue) => {
+        const maxPercentValue = Math.max(1, asNumber(model.xMax));
+        const totalCount = Math.max(
+          1,
+          coordinates.length
+            ? asNumber(coordinates[coordinates.length - 1].displayTotal)
+            : (asNumber(model.asteroidsCount) / sessionDivisor)
+        );
+        const toXForPercentValue = (rawValue) => {
           const value = Number(rawValue);
           if (!Number.isFinite(value)) {
             return null;
           }
-          const clamped = Math.max(0, Math.min(maxXValue, value));
-          return sidePad + ((clamped / maxXValue) * drawWidth);
+          const clamped = Math.max(0, Math.min(maxPercentValue, value));
+          const ratio = clamped / maxPercentValue;
+          const displayRatio = reverseCumulative ? (1 - ratio) : ratio;
+          return sidePad + (displayRatio * drawWidth);
         };
         const getYOnLineForX = (targetX) => {
-          if (!Number.isFinite(targetX) || typeof line.getTotalLength !== "function" || typeof line.getPointAtLength !== "function") {
+          if (!Number.isFinite(targetX) || !coordinates.length) {
             return null;
           }
-          const totalLength = line.getTotalLength();
-          if (!Number.isFinite(totalLength) || totalLength <= 0) {
-            return null;
+          if (coordinates.length === 1) {
+            return Number.isFinite(coordinates[0].y) ? coordinates[0].y : null;
           }
-          let low = 0;
-          let high = totalLength;
-          for (let i = 0; i < 22; i += 1) {
-            const mid = (low + high) / 2;
-            const point = line.getPointAtLength(mid);
-            if (!point || !Number.isFinite(point.x)) {
-              return null;
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const left = coordinates[index - 1];
+            const right = coordinates[index];
+            const minX = Math.min(left.x, right.x);
+            const maxX = Math.max(left.x, right.x);
+            if (targetX < minX || targetX > maxX) {
+              continue;
             }
-            if (point.x < targetX) {
-              low = mid;
-            } else {
-              high = mid;
+            const span = right.x - left.x;
+            if (!Number.isFinite(span) || Math.abs(span) <= 0.000001) {
+              return right.y;
+            }
+            const ratio = Math.max(0, Math.min(1, (targetX - left.x) / span));
+            return left.y + ((right.y - left.y) * ratio);
+          }
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.x - targetX);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.x - targetX);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
             }
           }
-          const lowPoint = line.getPointAtLength(low);
-          const highPoint = line.getPointAtLength(high);
-          if (!lowPoint || !highPoint) {
+          return nearest.y;
+        };
+        const getXOnLineForY = (targetY) => {
+          if (!Number.isFinite(targetY) || !coordinates.length) {
             return null;
           }
-          const pick = Math.abs(asNumber(lowPoint.x) - targetX) <= Math.abs(asNumber(highPoint.x) - targetX)
-            ? lowPoint
-            : highPoint;
-          return Number.isFinite(pick.y) ? pick.y : null;
+          if (coordinates.length === 1) {
+            return Number.isFinite(coordinates[0].x) ? coordinates[0].x : null;
+          }
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const left = coordinates[index - 1];
+            const right = coordinates[index];
+            const minY = Math.min(left.y, right.y);
+            const maxY = Math.max(left.y, right.y);
+            if (targetY < minY || targetY > maxY) {
+              continue;
+            }
+            const span = right.y - left.y;
+            if (!Number.isFinite(span) || Math.abs(span) <= 0.000001) {
+              return right.x;
+            }
+            const ratio = Math.max(0, Math.min(1, (targetY - left.y) / span));
+            return left.x + ((right.x - left.x) * ratio);
+          }
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.y - targetY);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.y - targetY);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
+            }
+          }
+          return nearest.x;
         };
 
         const referencePoints = [];
@@ -1435,24 +1743,39 @@
           if (!selectedKeys.has(entry.key)) {
             return;
           }
-          const metricValue = Number(model[entry.metricKey]);
-          const referenceX = toXForValue(metricValue);
-          if (!Number.isFinite(referenceX)) {
-            return;
-          }
+          const metricValue = Number(referenceMetrics[entry.metricKey]);
           const quantile = Number(entry.quantile);
           const clampedQuantile = Number.isFinite(quantile) ? Math.max(0, Math.min(1, quantile)) : 0;
           const referenceCount = Number.isFinite(quantile) ? (totalCount * clampedQuantile) : null;
-          const referenceY = (() => {
+          let referenceX = null;
+          let referenceY = null;
+          if (flipCumulativeAxes) {
+            referenceY = toYForPercent(metricValue);
+            if (!Number.isFinite(referenceY)) {
+              return;
+            }
+            const xOnLine = getXOnLineForY(referenceY);
+            if (Number.isFinite(xOnLine)) {
+              referenceX = xOnLine;
+            } else if (Number.isFinite(referenceCount)) {
+              referenceX = toXForCount(referenceCount);
+            } else {
+              referenceX = toXForCount(0);
+            }
+          } else {
+            referenceX = toXForPercentValue(metricValue);
+            if (!Number.isFinite(referenceX)) {
+              return;
+            }
             const yOnLine = getYOnLineForX(referenceX);
             if (Number.isFinite(yOnLine)) {
-              return yOnLine;
+              referenceY = yOnLine;
+            } else if (Number.isFinite(referenceCount)) {
+              referenceY = toYForCount(referenceCount);
+            } else {
+              referenceY = toYForCount(0);
             }
-            if (Number.isFinite(referenceCount)) {
-              return toY(referenceCount);
-            }
-            return toY(0);
-          })();
+          }
           referencePoints.push({ entry, referenceX, referenceY, metricValue });
         });
 
@@ -1494,56 +1817,79 @@
           svg.appendChild(vertical);
 
           const label = document.createElementNS(ns, "text");
-          label.setAttribute("class", `compare-reference-label compare-reference-label--${lead.entry.key}`);
-          const labelOffsetX = 14;
-          const labelOffsetY = 10;
-          const clampedX = Math.max(sidePad + 6, Math.min(width - sidePad - 58, group.referenceX + labelOffsetX));
+          const labelClasses = [
+            "compare-reference-label",
+            `compare-reference-label--${lead.entry.key}`
+          ];
+          if (reverseCumulative) {
+            labelClasses.push("compare-reference-label--reverse");
+          }
+          label.setAttribute("class", labelClasses.join(" "));
+          const labelOffsetX = reverseCumulative ? -16 : 10;
+          const labelOffsetY = 6;
+          const maxLabelWidth = 72;
+          const clampedX = reverseCumulative
+            ? Math.max(sidePad + maxLabelWidth, Math.min(width - sidePad - 6, group.referenceX + labelOffsetX))
+            : Math.max(sidePad + 6, Math.min(width - sidePad - maxLabelWidth, group.referenceX + labelOffsetX));
           const clampedY = Math.max(topPad + 2, Math.min((topPad + drawHeight) - 8, group.referenceY + labelOffsetY));
           label.setAttribute("x", clampedX.toFixed(2));
           label.setAttribute("y", clampedY.toFixed(2));
           label.textContent = group.items.map((item) => item.entry.label).join(" & ");
           svg.appendChild(label);
 
-          const hasNearbyDataDot = coordinates.some(
-            (point) => Math.abs(point.x - group.referenceX) <= overlapTolerance
-              && Math.abs(point.y - group.referenceY) <= overlapTolerance
-          );
-          if (hasNearbyDataDot) {
-            return;
-          }
-
-          const marker = document.createElementNS(ns, "circle");
-          marker.setAttribute("class", "compare-reference-dot");
-          marker.setAttribute("cx", group.referenceX.toFixed(2));
-          marker.setAttribute("cy", group.referenceY.toFixed(2));
-          marker.setAttribute("r", "6.2");
+          const markerClass = `compare-reference-marker-line compare-reference-marker-line--${lead.entry.key}`;
+          const markerSize = referenceMarkerHalfExtent;
+          const markerLeft = group.referenceX - markerSize;
+          const markerRight = group.referenceX + markerSize;
+          const markerTop = group.referenceY - markerSize;
+          const markerBottom = group.referenceY + markerSize;
           const markerTooltipText = [
             `${ringName} | ${commodityLabel}`,
             ...group.items.map((item) => `${item.entry.label}: ${formatNumber(item.metricValue, 2)}%`)
           ].join("\n");
-          marker.addEventListener("mouseenter", (event) => {
-            hCross.setAttribute("x1", sidePad.toFixed(2));
-            hCross.setAttribute("y1", group.referenceY.toFixed(2));
-            hCross.setAttribute("x2", group.referenceX.toFixed(2));
-            hCross.setAttribute("y2", group.referenceY.toFixed(2));
-            hCross.style.opacity = "1";
+          const bindMarkerHover = (node) => {
+            node.addEventListener("mouseenter", (event) => {
+              clearLinkedDots();
+              hCross.setAttribute("x1", sidePad.toFixed(2));
+              hCross.setAttribute("y1", group.referenceY.toFixed(2));
+              hCross.setAttribute("x2", group.referenceX.toFixed(2));
+              hCross.setAttribute("y2", group.referenceY.toFixed(2));
+              hCross.style.opacity = "1";
 
-            vCross.setAttribute("x1", group.referenceX.toFixed(2));
-            vCross.setAttribute("y1", group.referenceY.toFixed(2));
-            vCross.setAttribute("x2", group.referenceX.toFixed(2));
-            vCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
-            vCross.style.opacity = "1";
-            showCursorTooltip(markerTooltipText, event);
-          });
-          marker.addEventListener("mousemove", (event) => {
-            showCursorTooltip(markerTooltipText, event);
-          });
-          marker.addEventListener("mouseleave", () => {
-            hCross.style.opacity = "0";
-            vCross.style.opacity = "0";
-            hideCursorTooltip();
-          });
-          svg.appendChild(marker);
+              vCross.setAttribute("x1", group.referenceX.toFixed(2));
+              vCross.setAttribute("y1", group.referenceY.toFixed(2));
+              vCross.setAttribute("x2", group.referenceX.toFixed(2));
+              vCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+              vCross.style.opacity = "1";
+              showCursorTooltip(markerTooltipText, event);
+            });
+            node.addEventListener("mousemove", (event) => {
+              showCursorTooltip(markerTooltipText, event);
+            });
+            node.addEventListener("mouseleave", () => {
+              hCross.style.opacity = "0";
+              vCross.style.opacity = "0";
+              hideCursorTooltip();
+            });
+          };
+
+          const markerA = document.createElementNS(ns, "line");
+          markerA.setAttribute("class", markerClass);
+          markerA.setAttribute("x1", markerLeft.toFixed(2));
+          markerA.setAttribute("y1", markerTop.toFixed(2));
+          markerA.setAttribute("x2", markerRight.toFixed(2));
+          markerA.setAttribute("y2", markerBottom.toFixed(2));
+          bindMarkerHover(markerA);
+          svg.appendChild(markerA);
+
+          const markerB = document.createElementNS(ns, "line");
+          markerB.setAttribute("class", markerClass);
+          markerB.setAttribute("x1", markerLeft.toFixed(2));
+          markerB.setAttribute("y1", markerBottom.toFixed(2));
+          markerB.setAttribute("x2", markerRight.toFixed(2));
+          markerB.setAttribute("y2", markerTop.toFixed(2));
+          bindMarkerHover(markerB);
+          svg.appendChild(markerB);
         });
 
         const snapPoints = [
@@ -1593,6 +1939,32 @@
           return nearest;
         };
 
+        const pointDotsByIndex = new Map();
+        let linkedDots = [];
+        const clearLinkedDots = () => {
+          if (!linkedDots.length) {
+            return;
+          }
+          linkedDots.forEach((dot) => {
+            if (dot) {
+              dot.classList.remove("compare-dot--linked");
+            }
+          });
+          linkedDots = [];
+        };
+        const setLinkedDotsForPoint = (point) => {
+          clearLinkedDots();
+          const pointIndex = Number(point && point.index);
+          if (!Number.isFinite(pointIndex)) {
+            return;
+          }
+          const nodes = pointDotsByIndex.get(pointIndex) || [];
+          nodes.forEach((dot) => {
+            dot.classList.add("compare-dot--linked");
+          });
+          linkedDots = nodes;
+        };
+
         const showPointTooltip = (point, event) => {
           if (point.kind === "reference") {
             const detail = [
@@ -1602,16 +1974,28 @@
             showCursorTooltip(detail, event);
             return;
           }
-          const detail = [
-            `${ringName} | ${commodityLabel}`,
-            `${point.intervalStart}% - ${point.intervalEnd}%`,
-            `Cumulative Frequency: ${point.total}`,
-            `Bin Frequency: ${point.binCount}`
-          ].join("\n");
+          const tooltipRangeStart = reverseCumulative ? point.intervalEnd : point.intervalStart;
+          const tooltipRangeEnd = reverseCumulative ? point.intervalStart : point.intervalEnd;
+          const detail = normalizeBySessions
+            ? [
+              `${ringName} | ${commodityLabel}`,
+              `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
+              `Cumulative Frequency / Session: ${formatNumber(point.displayTotal, 2)}`,
+              `Bin Frequency / Session: ${formatNumber(point.displayBinCount, 2)}`,
+              `Raw cumulative asteroids: ${formatNumber(point.total, 0)}`,
+              `Raw bin asteroids: ${formatNumber(point.binCount, 0)}`
+            ].join("\n")
+            : [
+              `${ringName} | ${commodityLabel}`,
+              `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
+              `Cumulative Frequency: ${formatNumber(point.total, 0)}`,
+              `Bin Frequency: ${formatNumber(point.binCount, 0)}`
+            ].join("\n");
           showCursorTooltip(detail, event);
         };
 
         const showCrosshairAt = (point, event) => {
+          setLinkedDotsForPoint(point);
           hCross.setAttribute("x1", sidePad.toFixed(2));
           hCross.setAttribute("y1", point.y.toFixed(2));
           hCross.setAttribute("x2", point.x.toFixed(2));
@@ -1630,6 +2014,7 @@
         const hideCrosshair = () => {
           hCross.style.opacity = "0";
           vCross.style.opacity = "0";
+          clearLinkedDots();
           hideCursorTooltip();
         };
 
@@ -1650,38 +2035,69 @@
         });
 
         coordinates.forEach((point) => {
+          const bindHoverHandlers = (node) => {
+            node.addEventListener("mouseenter", (event) => {
+              showCrosshairAt(point, event);
+            });
+            node.addEventListener("mousemove", (event) => {
+              showCrosshairAt(point, event);
+            });
+            node.addEventListener("mouseleave", () => {
+              hideCrosshair();
+            });
+          };
+
           const dot = document.createElementNS(ns, "circle");
           dot.setAttribute("class", "compare-dot");
+          if (Number(point.displayBinCount) <= 0) {
+            dot.classList.add("compare-dot--no-data");
+          }
           dot.setAttribute("cx", point.x.toFixed(2));
           dot.setAttribute("cy", point.y.toFixed(2));
-          dot.setAttribute("r", "5.8");
-          dot.addEventListener("mouseenter", (event) => {
-            showCrosshairAt(point, event);
-          });
-          dot.addEventListener("mousemove", (event) => {
-            showCrosshairAt(point, event);
-          });
-          dot.addEventListener("mouseleave", () => {
-            hideCrosshair();
-          });
+          dot.setAttribute("r", dotRadius.toFixed(2));
+          const pointIndex = Number(point.index);
+          if (Number.isFinite(pointIndex)) {
+            const nodes = pointDotsByIndex.get(pointIndex) || [];
+            nodes.push(dot);
+            pointDotsByIndex.set(pointIndex, nodes);
+          }
+          bindHoverHandlers(dot);
           svg.appendChild(dot);
         });
 
         surface.appendChild(svg);
-        plot.appendChild(yAxis);
-        plot.appendChild(surface);
         plot.addEventListener("mouseleave", hideCrosshair);
-        chartPanel.appendChild(plot);
 
         const labels = document.createElement("div");
         labels.className = "compare-bin-labels";
-        labels.style.gridTemplateColumns = `repeat(${model.points.length}, minmax(0, 1fr))`;
-        const labelStep = Math.max(1, Math.ceil(model.points.length / 10));
-        model.points.forEach((point, index) => {
+        const xTickValues = flipCumulativeAxes
+          ? (() => {
+            const ticks = [];
+            for (let value = 0; value <= countAxisScaleMax; value += countAxisStep) {
+              ticks.push(value);
+            }
+            if (ticks[ticks.length - 1] !== countAxisScaleMax) {
+              ticks.push(countAxisScaleMax);
+            }
+            return ticks;
+          })()
+          : [];
+        const labelPoints = flipCumulativeAxes
+          ? xTickValues
+          : (reverseCumulative ? [...model.points].reverse() : model.points);
+        labels.style.gridTemplateColumns = `repeat(${labelPoints.length}, minmax(0, 1fr))`;
+        const labelStep = Math.max(1, Math.ceil(labelPoints.length / 10));
+        labelPoints.forEach((point, index) => {
           const label = document.createElement("span");
           label.className = "compare-bin-label";
-          if ((index % labelStep) === 0 || index === model.points.length - 1) {
-            label.textContent = `${point.intervalStart}-${point.intervalEnd}%`;
+          if ((index % labelStep) === 0 || index === labelPoints.length - 1) {
+            if (flipCumulativeAxes) {
+              label.textContent = formatNumber(Number(point), 0);
+            } else {
+              const labelRangeStart = reverseCumulative ? point.intervalEnd : point.intervalStart;
+              const labelRangeEnd = reverseCumulative ? point.intervalStart : point.intervalEnd;
+              label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
+            }
           }
           labels.appendChild(label);
         });
@@ -1693,10 +2109,6 @@
         labelsRow.appendChild(labels);
         chartPanel.appendChild(labelsRow);
 
-        const axis = document.createElement("div");
-        axis.className = "compare-axis";
-        axis.innerHTML = `<span>0%</span><span>${model.xMax}%</span>`;
-        chartPanel.appendChild(axis);
       }
 
       function renderComparePanels() {
@@ -1724,14 +2136,16 @@
         const rows = compareData.rings.map((ring) => {
           const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, selectedYieldPopulationMode);
           return { ring, metric };
-        });
-        const sharedYMax = rows.reduce((peak, row) => {
-          const yMax = Number(row && row.metric && row.metric.yMax);
-          if (!Number.isFinite(yMax)) {
-            return peak;
-          }
-          return Math.max(peak, yMax);
-        }, 1);
+        }).filter((row) => Number(row && row.metric && row.metric.presentAsteroidsCount) > 0);
+        const sharedYMax = (!compareFlipCumulativeAxes && compareNormalizeYAxis)
+          ? rows.reduce((peak, row) => {
+            const divisor = compareNormalizeMetrics
+              ? Math.max(1, Number(row && row.metric && row.metric.sessionsCount) || 0)
+              : 1;
+            const ringYMax = Number(row && row.metric && row.metric.yMax) / divisor;
+            return Math.max(peak, Number.isFinite(ringYMax) ? ringYMax : 0);
+          }, 0)
+          : null;
         rows.sort((left, right) => {
           if (sortMode === "name_asc") {
             return left.ring.ringName.localeCompare(right.ring.ringName);
@@ -1782,6 +2196,15 @@
         });
 
         compareList.innerHTML = "";
+        if (!rows.length) {
+          const note = document.createElement("p");
+          note.className = "compare-empty";
+          note.textContent = `No rings have ${commodityLabel} data.`;
+          compareList.appendChild(note);
+          setStatus(`Showing 0 rings for ${commodityLabel}.`, false);
+          return;
+        }
+        const pendingChartRenders = [];
         rows.forEach(({ ring, metric }) => {
           const row = document.createElement("article");
           row.className = "ring-row";
@@ -1816,25 +2239,44 @@
               commodityLabel,
               metric,
               sharedYMax,
-              rowCrosshairs
+              rowCrosshairs,
+              compareNormalizeMetrics,
+              compareReverseCumulative,
+              compareFlipCumulativeAxes
             );
           };
 
           const infoGrid = document.createElement("div");
           infoGrid.className = "info-grid";
-          const usingAllAsteroids = selectedYieldPopulationMode === "all";
-          const percentileScopeText = usingAllAsteroids
+          const usingAllAsteroidsForDisplay = selectedYieldPopulationMode === "all";
+          const percentileScopeText = usingAllAsteroidsForDisplay
             ? "inclusive percentile across all prospected asteroids in this ring; asteroids without this commodity are treated as 0%."
             : "inclusive percentile across prospected asteroids where this commodity is present.";
-          const averageScopeText = usingAllAsteroids
+          const averageScopeText = usingAllAsteroidsForDisplay
             ? "Mean yield across all prospected asteroids in this ring; asteroids without this commodity are treated as 0%."
             : "Mean yield across prospected asteroids where this commodity is present.";
+          const buildZeroPercentileTooltip = (baseTooltip, percentileValue) => {
+            const value = Number(percentileValue);
+            if (!Number.isFinite(value) || value !== 0) {
+              return baseTooltip;
+            }
+            if (usingAllAsteroidsForDisplay) {
+              const totalAsteroids = Math.max(0, Number(metric.asteroidsCount));
+              const presentAsteroids = Math.max(0, Number(metric.presentAsteroidsCount));
+              const missingAsteroids = Math.max(0, totalAsteroids - presentAsteroids);
+              if (totalAsteroids > 0 && missingAsteroids > 0) {
+                const missingShare = (missingAsteroids / totalAsteroids) * 100;
+                return `${baseTooltip}\n0% summary: ${formatNumber(missingAsteroids, 0)} of ${formatNumber(totalAsteroids, 0)} asteroids (${formatNumber(missingShare, 1)}%) have no ${commodityLabel}.`;
+              }
+            }
+            return `${baseTooltip}\n0% summary: This percentile lands at 0% yield for ${commodityLabel}.`;
+          };
           const metricRows = [
             {
               label: "P90",
               value: Number(metric.p90),
               display: Number.isFinite(metric.p90) ? `${formatNumber(metric.p90, 2)}%` : "--",
-              tooltip: `P90 is the ${percentileScopeText}`,
+              tooltip: buildZeroPercentileTooltip(`P90 is the ${percentileScopeText}`, metric.p90),
               crosshairKey: "p90",
               crosshairValue: metric.p90
             },
@@ -1842,7 +2284,7 @@
               label: "P75",
               value: Number(metric.p75),
               display: Number.isFinite(metric.p75) ? `${formatNumber(metric.p75, 2)}%` : "--",
-              tooltip: `Top Quartile (P75): ${percentileScopeText}`,
+              tooltip: buildZeroPercentileTooltip(`Top Quartile (P75): ${percentileScopeText}`, metric.p75),
               crosshairKey: "p75",
               crosshairValue: metric.p75
             },
@@ -1850,7 +2292,7 @@
               label: "Median (P50)",
               value: Number(metric.p50),
               display: Number.isFinite(metric.p50) ? `${formatNumber(metric.p50, 2)}%` : "--",
-              tooltip: `Median (P50): ${percentileScopeText}`,
+              tooltip: buildZeroPercentileTooltip(`Median (P50): ${percentileScopeText}`, metric.p50),
               crosshairKey: "p50",
               crosshairValue: metric.p50
             },
@@ -1866,7 +2308,7 @@
               label: "P25",
               value: Number(metric.p25),
               display: Number.isFinite(metric.p25) ? `${formatNumber(metric.p25, 2)}%` : "--",
-              tooltip: `Bottom Quartile (P25): ${percentileScopeText}`,
+              tooltip: buildZeroPercentileTooltip(`Bottom Quartile (P25): ${percentileScopeText}`, metric.p25),
               crosshairKey: "p25",
               crosshairValue: metric.p25
             }
@@ -1932,11 +2374,13 @@
           });
           infoPanel.appendChild(infoGrid);
 
-          renderRowChart();
-
           row.appendChild(infoPanel);
           row.appendChild(chartPanel);
           compareList.appendChild(row);
+          pendingChartRenders.push(renderRowChart);
+        });
+        pendingChartRenders.forEach((renderRowChart) => {
+          renderRowChart();
         });
 
         setStatus(
@@ -2011,6 +2455,7 @@
       requestedCommodityKey = resolveRequestedCommodityKey();
       syncYieldPopulationControls();
       syncReferenceCrosshairControls();
+      syncGridlineControls();
       if (compareCommoditySelect) {
         compareCommoditySelect.addEventListener("change", (event) => {
           const target = event.target;
