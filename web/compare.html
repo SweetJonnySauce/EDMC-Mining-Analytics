@@ -1251,6 +1251,7 @@
             p50: null,
             p25: null,
             asteroidsCount: 0,
+            presentAsteroidsCount: presentAsteroids.length,
             sessionsCount: 0,
             points: [],
             yMax: 1,
@@ -1296,6 +1297,7 @@
           p50,
           p25,
           asteroidsCount: scopedAsteroids.length,
+          presentAsteroidsCount: presentAsteroids.length,
           sessionsCount: sessionGuids.size,
           points,
           yMax: Math.max(1, running),
@@ -1724,7 +1726,7 @@
         const rows = compareData.rings.map((ring) => {
           const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, selectedYieldPopulationMode);
           return { ring, metric };
-        });
+        }).filter((row) => Number(row && row.metric && row.metric.presentAsteroidsCount) > 0);
         const sharedYMax = rows.reduce((peak, row) => {
           const yMax = Number(row && row.metric && row.metric.yMax);
           if (!Number.isFinite(yMax)) {
@@ -1782,6 +1784,14 @@
         });
 
         compareList.innerHTML = "";
+        if (!rows.length) {
+          const note = document.createElement("p");
+          note.className = "compare-empty";
+          note.textContent = `No rings have ${commodityLabel} data.`;
+          compareList.appendChild(note);
+          setStatus(`Showing 0 rings for ${commodityLabel}.`, false);
+          return;
+        }
         rows.forEach(({ ring, metric }) => {
           const row = document.createElement("article");
           row.className = "ring-row";

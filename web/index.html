@@ -1680,6 +1680,10 @@
                 <input id="material-percent-show-collected" type="checkbox">
                 <span>Show only collected</span>
               </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-include-duplicates" type="checkbox">
+                <span>Include Duplicates</span>
+              </label>
             </div>
           </div>
           <div id="chart-material-percent-amount" class="chart-body"></div>
@@ -1734,6 +1738,7 @@
       const chartMaterialPercentAmount = document.getElementById("chart-material-percent-amount");
       const materialPercentCard = chartMaterialPercentAmount ? chartMaterialPercentAmount.closest(".chart-card") : null;
       const materialPercentShowCollectedInput = document.getElementById("material-percent-show-collected");
+      const materialPercentIncludeDuplicatesInput = document.getElementById("material-percent-include-duplicates");
       const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
@@ -3298,7 +3303,7 @@
         chartContentMix.appendChild(wrapper);
       }
 
-      function buildMaterialPercentAmountModel(sessionData, showOnlyCollected) {
+      function buildMaterialPercentAmountModel(sessionData, showOnlyCollected, includeDuplicates) {
         const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
         const commodityMap = new Map();
         const collectedCommodityKeys = new Set();
@@ -3326,8 +3331,11 @@
           if (!event || event.type !== "prospected_asteroid") {
             return;
           }
-          asteroidNumber += 1;
           const details = event.details && typeof event.details === "object" ? event.details : {};
+          if (!includeDuplicates && details.duplicate === true) {
+            return;
+          }
+          asteroidNumber += 1;
           const materials = Array.isArray(details.materials) ? details.materials : [];
           materials.forEach((material) => {
             if (!material || typeof material !== "object") {
@@ -3395,7 +3403,11 @@
           return;
         }
         chartMaterialPercentAmount.innerHTML = "";
-        const model = buildMaterialPercentAmountModel(sessionData, materialPercentShowOnlyCollected);
+        const model = buildMaterialPercentAmountModel(
+          sessionData,
+          materialPercentShowOnlyCollected,
+          prospectFrequencyIncludeDuplicates
+        );
         if (!model) {
           materialPercentHoverContext = {
             commodityKey: "",
@@ -4165,7 +4177,11 @@
           duplicateInput.checked = prospectFrequencyIncludeDuplicates;
           duplicateInput.addEventListener("change", () => {
             prospectFrequencyIncludeDuplicates = duplicateInput.checked;
+            if (materialPercentIncludeDuplicatesInput) {
+              materialPercentIncludeDuplicatesInput.checked = prospectFrequencyIncludeDuplicates;
+            }
             if (activeSessionData) {
+              renderMaterialPercentAmount(activeSessionData);
               void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
             }
           });
@@ -6491,6 +6507,17 @@
           materialPercentShowOnlyCollected = !!materialPercentShowCollectedInput.checked;
           if (activeSessionData) {
             renderMaterialPercentAmount(activeSessionData);
+          }
+        });
+      }
+
+      if (materialPercentIncludeDuplicatesInput) {
+        materialPercentIncludeDuplicatesInput.checked = prospectFrequencyIncludeDuplicates;
+        materialPercentIncludeDuplicatesInput.addEventListener("change", () => {
+          prospectFrequencyIncludeDuplicates = !!materialPercentIncludeDuplicatesInput.checked;
+          if (activeSessionData) {
+            renderMaterialPercentAmount(activeSessionData);
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
           }
         });
       }
