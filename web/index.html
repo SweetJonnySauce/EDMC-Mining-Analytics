@@ -136,7 +136,7 @@
     }
 
     .app {
-      width: min(980px, 100%);
+      width: min(1280px, 100%);
       margin: 0 auto;
       background: var(--card);
       border: 1px solid var(--line);
@@ -483,6 +483,27 @@
       display: grid;
       grid-template-rows: auto 1fr;
       gap: 8px;
+    }
+
+    .chart-card--stack {
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+    }
+
+    .chart-pane {
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      border-radius: 8px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--fg) 2%, transparent);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .chart-pane .panel-header-controls {
+      justify-content: flex-start;
+      width: 100%;
     }
 
     .chart-card--full {
@@ -1470,6 +1491,14 @@
       opacity: 0;
     }
 
+    .prospect-frequency-average-marker {
+      stroke: color-mix(in srgb, var(--accent) 78%, #fff);
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
     .prospect-frequency-control {
       display: inline-flex;
       align-items: center;
@@ -1691,9 +1720,28 @@
           <h2>Commodity Throughput (TPH)</h2>
           <div id="chart-commodity-tph" class="chart-body"></div>
         </article>
-        <article class="chart-card">
-          <h2>Raw Engineering Materials</h2>
-          <div id="chart-content-mix" class="chart-body"></div>
+        <article class="chart-card chart-card--stack">
+          <section class="chart-pane">
+            <h2>Display Settings</h2>
+            <div id="material-display-header-controls" class="panel-header-controls">
+              <label class="prospect-frequency-control">
+                <input id="material-percent-show-collected" type="checkbox">
+                <span>Show only collected</span>
+              </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-show-gridlines" type="checkbox">
+                <span>Show gridlines</span>
+              </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-include-duplicates" type="checkbox">
+                <span>Include Duplicates</span>
+              </label>
+            </div>
+          </section>
+          <section class="chart-pane">
+            <h2>Raw Engineering Materials</h2>
+            <div id="chart-content-mix" class="chart-body"></div>
+          </section>
         </article>
         <article class="chart-card">
           <div class="panel-header-row">
@@ -1706,16 +1754,7 @@
         <article class="chart-card chart-card--full">
           <div class="panel-header-row">
             <h2>Commodity Percent Amount per Asteroid</h2>
-            <div id="material-percent-header-controls" class="panel-header-controls">
-              <label class="prospect-frequency-control">
-                <input id="material-percent-show-collected" type="checkbox">
-                <span>Show only collected</span>
-              </label>
-              <label class="prospect-frequency-control">
-                <input id="material-percent-include-duplicates" type="checkbox">
-                <span>Include Duplicates</span>
-              </label>
-            </div>
+            <div id="material-percent-header-controls" class="panel-header-controls"></div>
           </div>
           <div id="chart-material-percent-amount" class="chart-body"></div>
         </article>
@@ -1770,6 +1809,7 @@
       const chartMaterialPercentAmount = document.getElementById("chart-material-percent-amount");
       const materialPercentCard = chartMaterialPercentAmount ? chartMaterialPercentAmount.closest(".chart-card") : null;
       const materialPercentShowCollectedInput = document.getElementById("material-percent-show-collected");
+      const materialPercentShowGridlinesInput = document.getElementById("material-percent-show-gridlines");
       const materialPercentIncludeDuplicatesInput = document.getElementById("material-percent-include-duplicates");
       const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
@@ -1804,13 +1844,16 @@
       let activeSessionData = null;
       let activeSessionFilename = "";
       let materialPercentShowOnlyCollected = false;
+      let materialPercentShowGridlines = true;
       let histogramShowOnlyCollected = false;
       let commodityLinkMap = new Map();
+      let commodityAbbreviationMap = new Map();
       let commodityLinkLoadPromise = null;
       let prospectSummaryRecords = null;
       let prospectSummaryLoadPromise = null;
       let prospectFrequencyBinSize = 5;
       let prospectFrequencyIncludeDuplicates = true;
+      let prospectFrequencyShowAverageReference = true;
       let prospectFrequencyRenderToken = 0;
       let sessionListRenderToken = 0;
       let allRefinementEntries = [];
@@ -2339,6 +2382,18 @@
         return null;
       }
 
+      function coerceCommodityAbbreviation(raw) {
+        if (!raw || typeof raw !== "object") {
+          return "";
+        }
+        const candidate = (
+          (typeof raw.abbr === "string" && raw.abbr.trim())
+          || (typeof raw.abbreviation === "string" && raw.abbreviation.trim())
+          || ""
+        );
+        return String(candidate || "");
+      }
+
       async function ensureCommodityLinkMap() {
         if (commodityLinkMap.size > 0) {
           return;
@@ -2355,6 +2410,7 @@
                 return;
               }
               const nextMap = new Map();
+              const nextAbbreviations = new Map();
               Object.entries(payload).forEach(([key, value]) => {
                 const normalized = normalizeCommodityKey(key);
                 if (!normalized) {
@@ -2364,10 +2420,16 @@
                 if (id !== null) {
                   nextMap.set(normalized, id);
                 }
+                const abbreviation = coerceCommodityAbbreviation(value);
+                if (abbreviation) {
+                  nextAbbreviations.set(normalized, abbreviation);
+                }
               });
               commodityLinkMap = nextMap;
+              commodityAbbreviationMap = nextAbbreviations;
             } catch (_error) {
               commodityLinkMap = new Map();
+              commodityAbbreviationMap = new Map();
             } finally {
               commodityLinkLoadPromise = null;
             }
@@ -3615,8 +3677,9 @@
           if (commodity.key === selectedCommodityKey) {
             label.classList.add("material-percent-y-label--selected");
           }
-          label.textContent = commodity.name;
-          label.title = commodity.name;
+          const abbreviation = commodityAbbreviationMap.get(commodity.key) || "";
+          label.textContent = abbreviation || commodity.name;
+          label.title = abbreviation ? `${commodity.name} (${abbreviation})` : commodity.name;
           label.addEventListener("click", () => {
             applyMaterialPercentCommoditySelection(commodity.name, commodity.key, commodity.isCollected === true);
           });
@@ -3647,17 +3710,19 @@
 
         model.commodities.forEach((commodity, index) => {
           const y = toPlotY(index);
-          const line = document.createElementNS(ns, "line");
-          line.setAttribute("x1", sidePad.toFixed(2));
-          line.setAttribute("y1", y.toFixed(2));
-          line.setAttribute("x2", (width - sidePad).toFixed(2));
-          line.setAttribute("y2", y.toFixed(2));
-          const lineClass = index === selectedRowIndex
-            ? "material-percent-grid-line material-percent-grid-line--selected"
-            : "material-percent-grid-line";
-          line.setAttribute("class", lineClass);
-          line.setAttribute("data-row-index", String(index));
-          svg.appendChild(line);
+          if (materialPercentShowGridlines) {
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", sidePad.toFixed(2));
+            line.setAttribute("y1", y.toFixed(2));
+            line.setAttribute("x2", (width - sidePad).toFixed(2));
+            line.setAttribute("y2", y.toFixed(2));
+            const lineClass = index === selectedRowIndex
+              ? "material-percent-grid-line material-percent-grid-line--selected"
+              : "material-percent-grid-line";
+            line.setAttribute("class", lineClass);
+            line.setAttribute("data-row-index", String(index));
+            svg.appendChild(line);
+          }
 
           const hitbox = document.createElementNS(ns, "line");
           hitbox.setAttribute("class", "material-percent-row-hitbox");
@@ -3681,16 +3746,18 @@
         if (xTickValues[xTickValues.length - 1] !== maxAsteroidNumber) {
           xTickValues.push(maxAsteroidNumber);
         }
-        xTickValues.forEach((value) => {
-          const x = toX(value);
-          const line = document.createElementNS(ns, "line");
-          line.setAttribute("x1", x.toFixed(2));
-          line.setAttribute("y1", topPad.toFixed(2));
-          line.setAttribute("x2", x.toFixed(2));
-          line.setAttribute("y2", (topPad + drawHeight).toFixed(2));
-          line.setAttribute("class", "material-percent-grid-line");
-          svg.appendChild(line);
-        });
+        if (materialPercentShowGridlines) {
+          xTickValues.forEach((value) => {
+            const x = toX(value);
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", x.toFixed(2));
+            line.setAttribute("y1", topPad.toFixed(2));
+            line.setAttribute("x2", x.toFixed(2));
+            line.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+            line.setAttribute("class", "material-percent-grid-line");
+            svg.appendChild(line);
+          });
+        }
 
         const minDotRadius = 4.4;
         const maxDotRadius = 20.14;
@@ -4091,28 +4158,10 @@
         if (!Array.isArray(points) || points.length === 0) {
           return "";
         }
-        if (points.length === 1) {
-          const point = points[0];
-          return `M${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-        }
-        if (points.length === 2) {
-          const first = points[0];
-          const second = points[1];
-          return `M${first.x.toFixed(2)} ${first.y.toFixed(2)} L${second.x.toFixed(2)} ${second.y.toFixed(2)}`;
-        }
         let command = `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-        for (let index = 0; index < points.length - 1; index += 1) {
-          const p0 = index > 0 ? points[index - 1] : points[index];
-          const p1 = points[index];
-          const p2 = points[index + 1];
-          const p3 = index + 2 < points.length ? points[index + 2] : p2;
-
-          // Catmull-Rom to cubic Bezier conversion; curve passes through every point.
-          const cp1x = p1.x + ((p2.x - p0.x) / 6);
-          const cp1y = p1.y + ((p2.y - p0.y) / 6);
-          const cp2x = p2.x - ((p3.x - p1.x) / 6);
-          const cp2y = p2.y - ((p3.y - p1.y) / 6);
-          command += ` C${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+        for (let index = 1; index < points.length; index += 1) {
+          const point = points[index];
+          command += ` L${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
         }
         return command;
       }
@@ -4346,27 +4395,6 @@
 
           addRadioOption("5%", 5);
           addRadioOption("10%", 10);
-
-          const duplicatesToggle = document.createElement("label");
-          duplicatesToggle.className = "prospect-frequency-control";
-          const duplicateInput = document.createElement("input");
-          duplicateInput.type = "checkbox";
-          duplicateInput.checked = prospectFrequencyIncludeDuplicates;
-          duplicateInput.addEventListener("change", () => {
-            prospectFrequencyIncludeDuplicates = duplicateInput.checked;
-            if (materialPercentIncludeDuplicatesInput) {
-              materialPercentIncludeDuplicatesInput.checked = prospectFrequencyIncludeDuplicates;
-            }
-            if (activeSessionData) {
-              renderProspectHistogram(activeSessionData);
-              renderMaterialPercentAmount(activeSessionData);
-            }
-          });
-          const duplicateText = document.createElement("span");
-          duplicateText.textContent = "Include Duplicates";
-          duplicatesToggle.appendChild(duplicateInput);
-          duplicatesToggle.appendChild(duplicateText);
-          prospectFrequencyHeaderControls.appendChild(duplicatesToggle);
         }
 
         const summaryRecords = await loadProspectedAsteroidSummaryRecords();
@@ -4445,16 +4473,18 @@
           const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
           return topPad + (drawHeight * (1 - ratio));
         };
-        yTickValues.forEach((value) => {
-          const y = toY(value);
-          const line = document.createElementNS(ns, "line");
-          line.setAttribute("x1", sidePad.toFixed(2));
-          line.setAttribute("x2", (width - sidePad).toFixed(2));
-          line.setAttribute("y1", y.toFixed(2));
-          line.setAttribute("y2", y.toFixed(2));
-          line.setAttribute("class", "prospect-frequency-grid-line");
-          svg.appendChild(line);
-        });
+        if (materialPercentShowGridlines) {
+          yTickValues.forEach((value) => {
+            const y = toY(value);
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", sidePad.toFixed(2));
+            line.setAttribute("x2", (width - sidePad).toFixed(2));
+            line.setAttribute("y1", y.toFixed(2));
+            line.setAttribute("y2", y.toFixed(2));
+            line.setAttribute("class", "prospect-frequency-grid-line");
+            svg.appendChild(line);
+          });
+        }
         const coordinates = model.points.map((point) => ({
           ...point,
           x: toX(point.index),
@@ -4479,6 +4509,83 @@
         line.setAttribute("class", "prospect-frequency-line");
         line.setAttribute("d", pathData);
         svg.appendChild(line);
+
+        const toXForValue = (rawValue) => {
+          const value = Number(rawValue);
+          if (!Number.isFinite(value)) {
+            return null;
+          }
+          const maxXValue = Math.max(1, Number(model.xMax) || 1);
+          const clamped = Math.max(0, Math.min(maxXValue, value));
+          return sidePad + ((clamped / maxXValue) * drawWidth);
+        };
+
+        const getYOnLineForX = (targetX) => {
+          if (!Number.isFinite(targetX) || !coordinates.length) {
+            return null;
+          }
+          if (coordinates.length === 1) {
+            return Number.isFinite(coordinates[0].y) ? coordinates[0].y : null;
+          }
+          if (targetX <= coordinates[0].x) {
+            return coordinates[0].y;
+          }
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const left = coordinates[index - 1];
+            const right = coordinates[index];
+            if (targetX > right.x) {
+              continue;
+            }
+            const span = right.x - left.x;
+            if (!Number.isFinite(span) || span <= 0) {
+              return right.y;
+            }
+            const ratio = Math.max(0, Math.min(1, (targetX - left.x) / span));
+            return left.y + ((right.y - left.y) * ratio);
+          }
+          return coordinates[coordinates.length - 1].y;
+        };
+
+        if (prospectFrequencyShowAverageReference) {
+          const averageX = toXForValue(model.averageYield);
+          const averageY = getYOnLineForX(averageX);
+          if (Number.isFinite(averageX) && Number.isFinite(averageY)) {
+            const avgHCross = document.createElementNS(ns, "line");
+            avgHCross.setAttribute("class", "prospect-frequency-crosshair");
+            avgHCross.setAttribute("x1", sidePad.toFixed(2));
+            avgHCross.setAttribute("y1", averageY.toFixed(2));
+            avgHCross.setAttribute("x2", averageX.toFixed(2));
+            avgHCross.setAttribute("y2", averageY.toFixed(2));
+            avgHCross.style.opacity = "1";
+            svg.appendChild(avgHCross);
+
+            const avgVCross = document.createElementNS(ns, "line");
+            avgVCross.setAttribute("class", "prospect-frequency-crosshair");
+            avgVCross.setAttribute("x1", averageX.toFixed(2));
+            avgVCross.setAttribute("y1", averageY.toFixed(2));
+            avgVCross.setAttribute("x2", averageX.toFixed(2));
+            avgVCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+            avgVCross.style.opacity = "1";
+            svg.appendChild(avgVCross);
+
+            const markerSize = 6.2;
+            const markerA = document.createElementNS(ns, "line");
+            markerA.setAttribute("class", "prospect-frequency-average-marker");
+            markerA.setAttribute("x1", (averageX - markerSize).toFixed(2));
+            markerA.setAttribute("y1", (averageY - markerSize).toFixed(2));
+            markerA.setAttribute("x2", (averageX + markerSize).toFixed(2));
+            markerA.setAttribute("y2", (averageY + markerSize).toFixed(2));
+            svg.appendChild(markerA);
+
+            const markerB = document.createElementNS(ns, "line");
+            markerB.setAttribute("class", "prospect-frequency-average-marker");
+            markerB.setAttribute("x1", (averageX - markerSize).toFixed(2));
+            markerB.setAttribute("y1", (averageY + markerSize).toFixed(2));
+            markerB.setAttribute("x2", (averageX + markerSize).toFixed(2));
+            markerB.setAttribute("y2", (averageY - markerSize).toFixed(2));
+            svg.appendChild(markerB);
+          }
+        }
 
         const hitbox = document.createElementNS(ns, "path");
         hitbox.setAttribute("class", "prospect-frequency-line-hitbox");
@@ -4712,9 +4819,21 @@
         sessionsLegend.textContent = `Mining Sessions: ${model.sessionsCount}`;
         legend.appendChild(sessionsLegend);
 
-        const averageLegend = document.createElement("span");
-        averageLegend.className = "prospect-frequency-legend-item";
-        averageLegend.textContent = `Average Yield: ${formatNumber(model.averageYield, 2)}%`;
+        const averageLegend = document.createElement("label");
+        averageLegend.className = "prospect-frequency-legend-item prospect-frequency-control";
+        const averageInput = document.createElement("input");
+        averageInput.type = "checkbox";
+        averageInput.checked = prospectFrequencyShowAverageReference;
+        averageInput.addEventListener("change", () => {
+          prospectFrequencyShowAverageReference = averageInput.checked;
+          if (activeSessionData) {
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
+        });
+        const averageText = document.createElement("span");
+        averageText.textContent = `Avg Yield: ${formatNumber(model.averageYield, 2)}%`;
+        averageLegend.appendChild(averageInput);
+        averageLegend.appendChild(averageText);
         legend.appendChild(averageLegend);
 
         const asteroidLegend = document.createElement("span");
@@ -4742,48 +4861,6 @@
         };
         if (prospectHistogramHeaderControls) {
           prospectHistogramHeaderControls.innerHTML = "";
-          const showCollectedToggle = document.createElement("label");
-          showCollectedToggle.className = "prospect-frequency-control";
-          const showCollectedInput = document.createElement("input");
-          showCollectedInput.type = "checkbox";
-          showCollectedInput.checked = materialPercentShowOnlyCollected || histogramShowOnlyCollected;
-          showCollectedInput.addEventListener("change", () => {
-            materialPercentShowOnlyCollected = showCollectedInput.checked;
-            histogramShowOnlyCollected = showCollectedInput.checked;
-            if (materialPercentShowCollectedInput) {
-              materialPercentShowCollectedInput.checked = showCollectedInput.checked;
-            }
-            if (activeSessionData) {
-              renderProspectHistogram(activeSessionData);
-              renderMaterialPercentAmount(activeSessionData);
-            }
-          });
-          const showCollectedText = document.createElement("span");
-          showCollectedText.textContent = "Show only collected";
-          showCollectedToggle.appendChild(showCollectedInput);
-          showCollectedToggle.appendChild(showCollectedText);
-          prospectHistogramHeaderControls.appendChild(showCollectedToggle);
-
-          const duplicatesToggle = document.createElement("label");
-          duplicatesToggle.className = "prospect-frequency-control";
-          const duplicateInput = document.createElement("input");
-          duplicateInput.type = "checkbox";
-          duplicateInput.checked = prospectFrequencyIncludeDuplicates;
-          duplicateInput.addEventListener("change", () => {
-            prospectFrequencyIncludeDuplicates = duplicateInput.checked;
-            if (materialPercentIncludeDuplicatesInput) {
-              materialPercentIncludeDuplicatesInput.checked = prospectFrequencyIncludeDuplicates;
-            }
-            if (activeSessionData) {
-              renderProspectHistogram(activeSessionData);
-              renderMaterialPercentAmount(activeSessionData);
-            }
-          });
-          const duplicateText = document.createElement("span");
-          duplicateText.textContent = "Include Duplicates";
-          duplicatesToggle.appendChild(duplicateInput);
-          duplicatesToggle.appendChild(duplicateText);
-          prospectHistogramHeaderControls.appendChild(duplicatesToggle);
         }
         if (commodityHistogramFilters) {
           commodityHistogramFilters.innerHTML = "";
@@ -6828,6 +6905,17 @@
         });
       }
 
+      if (materialPercentShowGridlinesInput) {
+        materialPercentShowGridlinesInput.checked = materialPercentShowGridlines;
+        materialPercentShowGridlinesInput.addEventListener("change", () => {
+          materialPercentShowGridlines = !!materialPercentShowGridlinesInput.checked;
+          if (activeSessionData) {
+            renderMaterialPercentAmount(activeSessionData);
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
+        });
+      }
+
       if (materialPercentIncludeDuplicatesInput) {
         materialPercentIncludeDuplicatesInput.checked = prospectFrequencyIncludeDuplicates;
         materialPercentIncludeDuplicatesInput.addEventListener("change", () => {
@@ -6835,6 +6923,7 @@
           if (activeSessionData) {
             renderProspectHistogram(activeSessionData);
             renderMaterialPercentAmount(activeSessionData);
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
           }
         });
       }
