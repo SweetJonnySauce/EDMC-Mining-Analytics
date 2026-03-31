@@ -1499,6 +1499,24 @@
       pointer-events: none;
     }
 
+    .prospect-frequency-average-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-anchor: start;
+      dominant-baseline: hanging;
+      letter-spacing: 0.1px;
+      fill: color-mix(in srgb, var(--accent) 82%, #fff);
+      paint-order: stroke;
+      stroke: color-mix(in srgb, var(--card) 85%, #000);
+      stroke-width: 2.7;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .prospect-frequency-average-label.prospect-frequency-average-label--reverse {
+      text-anchor: end;
+    }
+
     .prospect-frequency-control {
       display: inline-flex;
       align-items: center;
@@ -1736,6 +1754,10 @@
                 <input id="material-percent-include-duplicates" type="checkbox">
                 <span>Include Duplicates</span>
               </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-reverse-cumulative" type="checkbox">
+                <span>Reverse Cumulative Freq.</span>
+              </label>
             </div>
           </section>
           <section class="chart-pane">
@@ -1811,6 +1833,7 @@
       const materialPercentShowCollectedInput = document.getElementById("material-percent-show-collected");
       const materialPercentShowGridlinesInput = document.getElementById("material-percent-show-gridlines");
       const materialPercentIncludeDuplicatesInput = document.getElementById("material-percent-include-duplicates");
+      const materialPercentReverseCumulativeInput = document.getElementById("material-percent-reverse-cumulative");
       const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
@@ -1854,6 +1877,7 @@
       let prospectFrequencyBinSize = 5;
       let prospectFrequencyIncludeDuplicates = true;
       let prospectFrequencyShowAverageReference = true;
+      let prospectFrequencyReverseCumulative = false;
       let prospectFrequencyRenderToken = 0;
       let sessionListRenderToken = 0;
       let allRefinementEntries = [];
@@ -4468,7 +4492,12 @@
         svg.setAttribute("preserveAspectRatio", "none");
 
         const totalBins = Math.max(1, model.points.length);
-        const toX = (index) => sidePad + (((index + 0.5) / totalBins) * drawWidth);
+        const toDisplayIndex = (index) => (
+          prospectFrequencyReverseCumulative
+            ? (totalBins - index - 1)
+            : index
+        );
+        const toX = (index) => sidePad + (((toDisplayIndex(index) + 0.5) / totalBins) * drawWidth);
         const toY = (count) => {
           const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
           return topPad + (drawHeight * (1 - ratio));
@@ -4517,7 +4546,9 @@
           }
           const maxXValue = Math.max(1, Number(model.xMax) || 1);
           const clamped = Math.max(0, Math.min(maxXValue, value));
-          return sidePad + ((clamped / maxXValue) * drawWidth);
+          const ratio = clamped / maxXValue;
+          const displayRatio = prospectFrequencyReverseCumulative ? (1 - ratio) : ratio;
+          return sidePad + (displayRatio * drawWidth);
         };
 
         const getYOnLineForX = (targetX) => {
@@ -4527,29 +4558,45 @@
           if (coordinates.length === 1) {
             return Number.isFinite(coordinates[0].y) ? coordinates[0].y : null;
           }
-          if (targetX <= coordinates[0].x) {
-            return coordinates[0].y;
-          }
           for (let index = 1; index < coordinates.length; index += 1) {
             const left = coordinates[index - 1];
             const right = coordinates[index];
-            if (targetX > right.x) {
+            const minX = Math.min(left.x, right.x);
+            const maxX = Math.max(left.x, right.x);
+            if (targetX < minX || targetX > maxX) {
               continue;
             }
             const span = right.x - left.x;
-            if (!Number.isFinite(span) || span <= 0) {
+            if (!Number.isFinite(span) || Math.abs(span) <= 0.000001) {
               return right.y;
             }
             const ratio = Math.max(0, Math.min(1, (targetX - left.x) / span));
             return left.y + ((right.y - left.y) * ratio);
           }
-          return coordinates[coordinates.length - 1].y;
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.x - targetX);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.x - targetX);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
+            }
+          }
+          return nearest.y;
         };
 
+        let averageReferencePoint = null;
         if (prospectFrequencyShowAverageReference) {
           const averageX = toXForValue(model.averageYield);
           const averageY = getYOnLineForX(averageX);
           if (Number.isFinite(averageX) && Number.isFinite(averageY)) {
+            averageReferencePoint = {
+              kind: "average-reference",
+              x: averageX,
+              y: averageY,
+              averageYield: model.averageYield
+            };
             const avgHCross = document.createElementNS(ns, "line");
             avgHCross.setAttribute("class", "prospect-frequency-crosshair");
             avgHCross.setAttribute("x1", sidePad.toFixed(2));
@@ -4584,6 +4631,24 @@
             markerB.setAttribute("x2", (averageX + markerSize).toFixed(2));
             markerB.setAttribute("y2", (averageY - markerSize).toFixed(2));
             svg.appendChild(markerB);
+
+            const avgLabel = document.createElementNS(ns, "text");
+            const avgLabelClasses = ["prospect-frequency-average-label"];
+            if (prospectFrequencyReverseCumulative) {
+              avgLabelClasses.push("prospect-frequency-average-label--reverse");
+            }
+            avgLabel.setAttribute("class", avgLabelClasses.join(" "));
+            const avgLabelOffsetX = prospectFrequencyReverseCumulative ? -16 : 10;
+            const avgLabelOffsetY = 6;
+            const avgLabelMaxWidth = 60;
+            const avgLabelX = prospectFrequencyReverseCumulative
+              ? Math.max(sidePad + avgLabelMaxWidth, Math.min(width - sidePad - 6, averageX + avgLabelOffsetX))
+              : Math.max(sidePad + 6, Math.min(width - sidePad - avgLabelMaxWidth, averageX + avgLabelOffsetX));
+            const avgLabelY = Math.max(topPad + 2, Math.min((topPad + drawHeight) - 8, averageY + avgLabelOffsetY));
+            avgLabel.setAttribute("x", avgLabelX.toFixed(2));
+            avgLabel.setAttribute("y", avgLabelY.toFixed(2));
+            avgLabel.textContent = "Avg";
+            svg.appendChild(avgLabel);
           }
         }
 
@@ -4660,6 +4725,8 @@
         };
 
         const showCrosshairAt = (point, event) => {
+          const tooltipRangeStart = prospectFrequencyReverseCumulative ? point.intervalEnd : point.intervalStart;
+          const tooltipRangeEnd = prospectFrequencyReverseCumulative ? point.intervalStart : point.intervalEnd;
           hCross.setAttribute("x1", sidePad.toFixed(2));
           hCross.setAttribute("y1", point.y.toFixed(2));
           hCross.setAttribute("x2", point.x.toFixed(2));
@@ -4672,11 +4739,16 @@
           vCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
           vCross.style.opacity = "1";
 
-          const detail = [
-            `${model.commodity} | ${point.intervalStart}% - ${point.intervalEnd}%`,
-            `Cumulative Frequency: ${point.total} (Current: ${point.current}, Other: ${point.other})`,
-            `Bin Frequency: ${point.binTotal} (Current: ${point.binCurrent}, Other: ${point.binOther})`
-          ].join("\n");
+          const detail = point.kind === "average-reference"
+            ? [
+              `${model.commodity} | Average Yield Reference`,
+              `Avg Yield: ${formatNumber(point.averageYield, 2)}%`
+            ].join("\n")
+            : [
+              `${model.commodity} | ${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
+              `Cumulative Frequency: ${point.total} (Current: ${point.current}, Other: ${point.other})`,
+              `Bin Frequency: ${point.binTotal} (Current: ${point.binCurrent}, Other: ${point.binOther})`
+            ].join("\n");
           showCursorTooltip(detail, event);
         };
 
@@ -4688,19 +4760,22 @@
         };
 
         const findNearestPoint = (event) => {
-          if (!coordinates.length) {
+          const snapPoints = averageReferencePoint
+            ? [...coordinates, averageReferencePoint]
+            : coordinates;
+          if (!snapPoints.length) {
             return null;
           }
           const rect = svg.getBoundingClientRect();
           if (!rect.width) {
-            return coordinates[0];
+            return snapPoints[0];
           }
           const ratio = (event.clientX - rect.left) / rect.width;
           const localX = ratio * width;
-          let nearest = coordinates[0];
+          let nearest = snapPoints[0];
           let nearestDistance = Math.abs(nearest.x - localX);
-          for (let index = 1; index < coordinates.length; index += 1) {
-            const candidate = coordinates[index];
+          for (let index = 1; index < snapPoints.length; index += 1) {
+            const candidate = snapPoints[index];
             const distance = Math.abs(candidate.x - localX);
             if (distance < nearestDistance) {
               nearest = candidate;
@@ -4714,14 +4789,22 @@
           const nearest = findNearestPoint(event);
           if (nearest) {
             showCrosshairAt(nearest, event);
-            highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
+            if (nearest.kind === "average-reference") {
+              clearCrossChartHoverHighlights();
+            } else {
+              highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
+            }
           }
         });
         hitbox.addEventListener("mousemove", (event) => {
           const nearest = findNearestPoint(event);
           if (nearest) {
             showCrosshairAt(nearest, event);
-            highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
+            if (nearest.kind === "average-reference") {
+              clearCrossChartHoverHighlights();
+            } else {
+              highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
+            }
           }
         });
         hitbox.addEventListener("mouseleave", () => {
@@ -4783,13 +4866,18 @@
 
         const labels = document.createElement("div");
         labels.className = "histogram-bin-labels";
-        labels.style.gridTemplateColumns = `repeat(${model.points.length}, minmax(0, 1fr))`;
-        const labelStep = Math.max(1, Math.ceil(model.points.length / 12));
-        model.points.forEach((point, index) => {
+        const labelPoints = prospectFrequencyReverseCumulative
+          ? [...model.points].reverse()
+          : model.points;
+        labels.style.gridTemplateColumns = `repeat(${labelPoints.length}, minmax(0, 1fr))`;
+        const labelStep = Math.max(1, Math.ceil(labelPoints.length / 12));
+        labelPoints.forEach((point, index) => {
           const label = document.createElement("span");
           label.className = "histogram-bin-label prospect-frequency-bin-label";
-          if ((index % labelStep) === 0 || index === model.points.length - 1) {
-            label.textContent = `${point.intervalStart}-${point.intervalEnd}%`;
+          if ((index % labelStep) === 0 || index === labelPoints.length - 1) {
+            const labelRangeStart = prospectFrequencyReverseCumulative ? point.intervalEnd : point.intervalStart;
+            const labelRangeEnd = prospectFrequencyReverseCumulative ? point.intervalStart : point.intervalEnd;
+            label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
           }
           labels.appendChild(label);
         });
@@ -6923,6 +7011,16 @@
           if (activeSessionData) {
             renderProspectHistogram(activeSessionData);
             renderMaterialPercentAmount(activeSessionData);
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
+        });
+      }
+
+      if (materialPercentReverseCumulativeInput) {
+        materialPercentReverseCumulativeInput.checked = prospectFrequencyReverseCumulative;
+        materialPercentReverseCumulativeInput.addEventListener("change", () => {
+          prospectFrequencyReverseCumulative = !!materialPercentReverseCumulativeInput.checked;
+          if (activeSessionData) {
             void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
           }
         });

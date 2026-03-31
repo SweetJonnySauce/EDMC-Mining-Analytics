@@ -630,6 +630,10 @@
       user-select: none;
     }
 
+    .compare-reference-label.compare-reference-label--reverse {
+      text-anchor: end;
+    }
+
     .compare-reference-label--p90 {
       fill: var(--ref-p90);
     }
@@ -847,6 +851,7 @@
       let selectedReferenceCrosshairs = new Set(["avg"]);
       let compareShowGridlines = true;
       let compareNormalizeMetrics = false;
+      let compareReverseCumulative = false;
       let favoriteRingNames = new Set();
 
       function getThemeOption(themeId) {
@@ -1348,6 +1353,21 @@
         normalizeWrapper.appendChild(normalizeInput);
         normalizeWrapper.appendChild(normalizeText);
         compareGridlineOptions.appendChild(normalizeWrapper);
+
+        const reverseWrapper = document.createElement("label");
+        reverseWrapper.className = "compare-population-option";
+        const reverseInput = document.createElement("input");
+        reverseInput.type = "checkbox";
+        reverseInput.checked = compareReverseCumulative;
+        reverseInput.addEventListener("change", () => {
+          compareReverseCumulative = reverseInput.checked;
+          renderComparePanels();
+        });
+        const reverseText = document.createElement("span");
+        reverseText.textContent = "Reverse Cumulative Freq.";
+        reverseWrapper.appendChild(reverseInput);
+        reverseWrapper.appendChild(reverseText);
+        compareGridlineOptions.appendChild(reverseWrapper);
       }
 
       function buildScopedAsteroidRows(ring, commodityKey, populationMode) {
@@ -1447,7 +1467,7 @@
         };
       }
 
-      function renderRingChart(chartPanel, ringName, commodityLabel, model, forcedYMax, selectedCrosshairKeys, normalizeBySessions) {
+      function renderRingChart(chartPanel, ringName, commodityLabel, model, forcedYMax, selectedCrosshairKeys, normalizeBySessions, reverseCumulative) {
         chartPanel.innerHTML = "";
         const title = document.createElement("p");
         title.className = "ring-chart-title";
@@ -1516,7 +1536,12 @@
         svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
         svg.setAttribute("preserveAspectRatio", "none");
         const totalBins = Math.max(1, model.points.length);
-        const toX = (index) => sidePad + (((index + 0.5) / totalBins) * drawWidth);
+        const toDisplayIndex = (index) => (
+          reverseCumulative
+            ? (totalBins - index - 1)
+            : index
+        );
+        const toX = (index) => sidePad + (((toDisplayIndex(index) + 0.5) / totalBins) * drawWidth);
         const toY = (count) => {
           const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
           return topPad + (drawHeight * (1 - ratio));
@@ -1569,39 +1594,43 @@
             return null;
           }
           const clamped = Math.max(0, Math.min(maxXValue, value));
-          return sidePad + ((clamped / maxXValue) * drawWidth);
+          const ratio = clamped / maxXValue;
+          const displayRatio = reverseCumulative ? (1 - ratio) : ratio;
+          return sidePad + (displayRatio * drawWidth);
         };
         const getYOnLineForX = (targetX) => {
-          if (!Number.isFinite(targetX) || typeof line.getTotalLength !== "function" || typeof line.getPointAtLength !== "function") {
+          if (!Number.isFinite(targetX) || !coordinates.length) {
             return null;
           }
-          const totalLength = line.getTotalLength();
-          if (!Number.isFinite(totalLength) || totalLength <= 0) {
-            return null;
+          if (coordinates.length === 1) {
+            return Number.isFinite(coordinates[0].y) ? coordinates[0].y : null;
           }
-          let low = 0;
-          let high = totalLength;
-          for (let i = 0; i < 22; i += 1) {
-            const mid = (low + high) / 2;
-            const point = line.getPointAtLength(mid);
-            if (!point || !Number.isFinite(point.x)) {
-              return null;
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const left = coordinates[index - 1];
+            const right = coordinates[index];
+            const minX = Math.min(left.x, right.x);
+            const maxX = Math.max(left.x, right.x);
+            if (targetX < minX || targetX > maxX) {
+              continue;
             }
-            if (point.x < targetX) {
-              low = mid;
-            } else {
-              high = mid;
+            const span = right.x - left.x;
+            if (!Number.isFinite(span) || Math.abs(span) <= 0.000001) {
+              return right.y;
+            }
+            const ratio = Math.max(0, Math.min(1, (targetX - left.x) / span));
+            return left.y + ((right.y - left.y) * ratio);
+          }
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.x - targetX);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.x - targetX);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
             }
           }
-          const lowPoint = line.getPointAtLength(low);
-          const highPoint = line.getPointAtLength(high);
-          if (!lowPoint || !highPoint) {
-            return null;
-          }
-          const pick = Math.abs(asNumber(lowPoint.x) - targetX) <= Math.abs(asNumber(highPoint.x) - targetX)
-            ? lowPoint
-            : highPoint;
-          return Number.isFinite(pick.y) ? pick.y : null;
+          return nearest.y;
         };
 
         const referencePoints = [];
@@ -1668,10 +1697,20 @@
           svg.appendChild(vertical);
 
           const label = document.createElementNS(ns, "text");
-          label.setAttribute("class", `compare-reference-label compare-reference-label--${lead.entry.key}`);
-          const labelOffsetX = 14;
-          const labelOffsetY = 10;
-          const clampedX = Math.max(sidePad + 6, Math.min(width - sidePad - 58, group.referenceX + labelOffsetX));
+          const labelClasses = [
+            "compare-reference-label",
+            `compare-reference-label--${lead.entry.key}`
+          ];
+          if (reverseCumulative) {
+            labelClasses.push("compare-reference-label--reverse");
+          }
+          label.setAttribute("class", labelClasses.join(" "));
+          const labelOffsetX = reverseCumulative ? -16 : 10;
+          const labelOffsetY = 6;
+          const maxLabelWidth = 72;
+          const clampedX = reverseCumulative
+            ? Math.max(sidePad + maxLabelWidth, Math.min(width - sidePad - 6, group.referenceX + labelOffsetX))
+            : Math.max(sidePad + 6, Math.min(width - sidePad - maxLabelWidth, group.referenceX + labelOffsetX));
           const clampedY = Math.max(topPad + 2, Math.min((topPad + drawHeight) - 8, group.referenceY + labelOffsetY));
           label.setAttribute("x", clampedX.toFixed(2));
           label.setAttribute("y", clampedY.toFixed(2));
@@ -1815,10 +1854,12 @@
             showCursorTooltip(detail, event);
             return;
           }
+          const tooltipRangeStart = reverseCumulative ? point.intervalEnd : point.intervalStart;
+          const tooltipRangeEnd = reverseCumulative ? point.intervalStart : point.intervalEnd;
           const detail = normalizeBySessions
             ? [
               `${ringName} | ${commodityLabel}`,
-              `${point.intervalStart}% - ${point.intervalEnd}%`,
+              `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
               `Cumulative Frequency / Session: ${formatNumber(point.displayTotal, 2)}`,
               `Bin Frequency / Session: ${formatNumber(point.displayBinCount, 2)}`,
               `Raw cumulative asteroids: ${formatNumber(point.total, 0)}`,
@@ -1826,7 +1867,7 @@
             ].join("\n")
             : [
               `${ringName} | ${commodityLabel}`,
-              `${point.intervalStart}% - ${point.intervalEnd}%`,
+              `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
               `Cumulative Frequency: ${formatNumber(point.total, 0)}`,
               `Bin Frequency: ${formatNumber(point.binCount, 0)}`
             ].join("\n");
@@ -1909,13 +1950,18 @@
 
         const labels = document.createElement("div");
         labels.className = "compare-bin-labels";
-        labels.style.gridTemplateColumns = `repeat(${model.points.length}, minmax(0, 1fr))`;
-        const labelStep = Math.max(1, Math.ceil(model.points.length / 10));
-        model.points.forEach((point, index) => {
+        const labelPoints = reverseCumulative
+          ? [...model.points].reverse()
+          : model.points;
+        labels.style.gridTemplateColumns = `repeat(${labelPoints.length}, minmax(0, 1fr))`;
+        const labelStep = Math.max(1, Math.ceil(labelPoints.length / 10));
+        labelPoints.forEach((point, index) => {
           const label = document.createElement("span");
           label.className = "compare-bin-label";
-          if ((index % labelStep) === 0 || index === model.points.length - 1) {
-            label.textContent = `${point.intervalStart}-${point.intervalEnd}%`;
+          if ((index % labelStep) === 0 || index === labelPoints.length - 1) {
+            const labelRangeStart = reverseCumulative ? point.intervalEnd : point.intervalStart;
+            const labelRangeEnd = reverseCumulative ? point.intervalStart : point.intervalEnd;
+            label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
           }
           labels.appendChild(label);
         });
@@ -2058,7 +2104,8 @@
               metric,
               sharedYMax,
               rowCrosshairs,
-              compareNormalizeMetrics
+              compareNormalizeMetrics,
+              compareReverseCumulative
             );
           };
 
