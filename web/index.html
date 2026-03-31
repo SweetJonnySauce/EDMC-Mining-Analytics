@@ -1120,6 +1120,8 @@
     }
 
     .histogram-plot {
+      --histogram-bars-v-padding: 8px;
+      --histogram-bars-border: 1px;
       min-height: 170px;
       display: grid;
       grid-template-columns: auto auto 1fr;
@@ -1133,9 +1135,9 @@
       grid-template-columns: repeat(10, minmax(0, 1fr));
       align-items: end;
       gap: 3px;
-      border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      border: var(--histogram-bars-border) solid color-mix(in srgb, var(--fg) 10%, transparent);
       border-radius: 8px;
-      padding: 8px;
+      padding: var(--histogram-bars-v-padding) 8px;
       background: color-mix(in srgb, var(--fg) 3%, transparent);
     }
 
@@ -1211,6 +1213,14 @@
       font-variant-numeric: tabular-nums;
       line-height: 1;
       user-select: none;
+    }
+
+    .histogram-y-axis-ticks {
+      position: absolute;
+      top: calc(var(--histogram-bars-v-padding) + var(--histogram-bars-border));
+      bottom: calc(var(--histogram-bars-v-padding) + var(--histogram-bars-border));
+      left: 0;
+      right: 0;
     }
 
     .histogram-y-axis-tick {
@@ -1668,7 +1678,10 @@
           <div id="chart-content-mix" class="chart-body"></div>
         </article>
         <article class="chart-card">
-          <h2>Asteroid Percentage Histogram</h2>
+          <div class="panel-header-row">
+            <h2>Asteroid Percentage Histogram</h2>
+            <div id="prospect-histogram-header-controls" class="panel-header-controls"></div>
+          </div>
           <div id="chart-prospect-histogram" class="chart-body"></div>
           <div id="commodity-histogram-filters" class="event-filters"></div>
         </article>
@@ -1735,6 +1748,7 @@
       const chartCommodityTph = document.getElementById("chart-commodity-tph");
       const chartContentMix = document.getElementById("chart-content-mix");
       const chartProspectHistogram = document.getElementById("chart-prospect-histogram");
+      const prospectHistogramHeaderControls = document.getElementById("prospect-histogram-header-controls");
       const chartMaterialPercentAmount = document.getElementById("chart-material-percent-amount");
       const materialPercentCard = chartMaterialPercentAmount ? chartMaterialPercentAmount.closest(".chart-card") : null;
       const materialPercentShowCollectedInput = document.getElementById("material-percent-show-collected");
@@ -3760,7 +3774,7 @@
         return Math.max(1, Math.min(100, rounded));
       }
 
-      function buildProspectHistogramModel(sessionData) {
+      function buildProspectHistogramModel(sessionData, includeDuplicates) {
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const configuredBinSize = (
           meta.histogram_bin_size
@@ -3768,6 +3782,67 @@
         );
         const binSize = normalizeHistogramBinSize(configuredBinSize);
         const bins = Math.max(1, Math.ceil(100 / binSize));
+
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const byCommodity = new Map();
+        events.forEach((event) => {
+          if (!event || event.type !== "prospected_asteroid") {
+            return;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          if (!includeDuplicates && details.duplicate === true) {
+            return;
+          }
+          const materials = Array.isArray(details.materials) ? details.materials : [];
+          materials.forEach((material) => {
+            if (!material || typeof material !== "object") {
+              return;
+            }
+            const name = typeof material.name === "string" ? material.name.trim() : "";
+            const pctRaw = Number(material.percentage);
+            if (!name || !Number.isFinite(pctRaw)) {
+              return;
+            }
+            const key = normalizeCommodityKey(name) || normalizeTextKey(name) || name.toLowerCase();
+            if (!key) {
+              return;
+            }
+            let item = byCommodity.get(key);
+            if (!item) {
+              item = {
+                name,
+                counts: new Array(bins).fill(0),
+                total: 0
+              };
+              byCommodity.set(key, item);
+            }
+            const pct = Math.max(0, Math.min(100, pctRaw));
+            let index = pct >= 100 ? (bins - 1) : Math.floor(pct / binSize);
+            if (index < 0) {
+              index = 0;
+            } else if (index >= bins) {
+              index = bins - 1;
+            }
+            item.counts[index] += 1;
+            item.total += 1;
+          });
+        });
+
+        const eventResult = Array.from(byCommodity.values()).filter((item) => item.total > 0);
+        if (eventResult.length) {
+          eventResult.sort((left, right) => {
+            if (right.total !== left.total) {
+              return right.total - left.total;
+            }
+            return left.name.localeCompare(right.name);
+          });
+          return {
+            commodities: eventResult,
+            binSize,
+            bins
+          };
+        }
+
         const source = sessionData && typeof sessionData === "object" ? (sessionData.commodities || {}) : {};
         const result = [];
         Object.entries(source).forEach(([name, details]) => {
@@ -4181,8 +4256,8 @@
               materialPercentIncludeDuplicatesInput.checked = prospectFrequencyIncludeDuplicates;
             }
             if (activeSessionData) {
+              renderProspectHistogram(activeSessionData);
               renderMaterialPercentAmount(activeSessionData);
-              void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
             }
           });
           const duplicateText = document.createElement("span");
@@ -4563,10 +4638,33 @@
           binSize: 10,
           bars: []
         };
+        if (prospectHistogramHeaderControls) {
+          prospectHistogramHeaderControls.innerHTML = "";
+          const duplicatesToggle = document.createElement("label");
+          duplicatesToggle.className = "prospect-frequency-control";
+          const duplicateInput = document.createElement("input");
+          duplicateInput.type = "checkbox";
+          duplicateInput.checked = prospectFrequencyIncludeDuplicates;
+          duplicateInput.addEventListener("change", () => {
+            prospectFrequencyIncludeDuplicates = duplicateInput.checked;
+            if (materialPercentIncludeDuplicatesInput) {
+              materialPercentIncludeDuplicatesInput.checked = prospectFrequencyIncludeDuplicates;
+            }
+            if (activeSessionData) {
+              renderProspectHistogram(activeSessionData);
+              renderMaterialPercentAmount(activeSessionData);
+            }
+          });
+          const duplicateText = document.createElement("span");
+          duplicateText.textContent = "Include Duplicates";
+          duplicatesToggle.appendChild(duplicateInput);
+          duplicatesToggle.appendChild(duplicateText);
+          prospectHistogramHeaderControls.appendChild(duplicatesToggle);
+        }
         if (commodityHistogramFilters) {
           commodityHistogramFilters.innerHTML = "";
         }
-        const model = buildProspectHistogramModel(sessionData);
+        const model = buildProspectHistogramModel(sessionData, prospectFrequencyIncludeDuplicates);
         if (!model || !Array.isArray(model.commodities) || !model.commodities.length) {
           const note = document.createElement("p");
           note.className = "chart-empty";
@@ -4609,17 +4707,35 @@
             const peakInt = Math.max(1, Math.floor(asNumber(peakValue)));
             const maxVisibleTicks = 9;
             if ((peakInt + 1) <= maxVisibleTicks) {
-              return Array.from({ length: peakInt + 1 }, (_unused, offset) => peakInt - offset);
+              const yMax = peakInt;
+              return {
+                yMax,
+                values: Array.from({ length: yMax + 1 }, (_unused, offset) => yMax - offset)
+              };
             }
-            const step = Math.max(1, Math.ceil(peakInt / (maxVisibleTicks - 1)));
-            const values = [];
-            for (let value = peakInt; value >= 0; value -= step) {
-              values.push(value);
+            let step = Math.max(1, Math.round(peakInt / (maxVisibleTicks - 1)));
+            // Avoid a trailing "... 1, 0" pair, which compresses the final interval visually.
+            while (step < peakInt && (peakInt % step) === 1) {
+              step += 1;
             }
-            if (values[values.length - 1] !== 0) {
-              values.push(0);
+            const yMax = peakInt;
+            let values = [];
+            const buildValues = () => {
+              const computed = [];
+              for (let value = yMax; value >= 0; value -= step) {
+                computed.push(value);
+              }
+              if (computed[computed.length - 1] !== 0) {
+                computed.push(0);
+              }
+              return computed.filter((value, index, allValues) => allValues.indexOf(value) === index);
+            };
+            values = buildValues();
+            while (values.length > maxVisibleTicks) {
+              step += 1;
+              values = buildValues();
             }
-            return values.filter((value, index, allValues) => allValues.indexOf(value) === index);
+            return { yMax, values };
           };
 
           const buildHistogramYAxis = (tickValues, yMaxValue) => {
@@ -4629,6 +4745,8 @@
 
             const yAxis = document.createElement("div");
             yAxis.className = "histogram-y-axis";
+            const ticksLayer = document.createElement("div");
+            ticksLayer.className = "histogram-y-axis-ticks";
             const safeYMax = Math.max(1, Math.floor(asNumber(yMaxValue)));
             tickValues.forEach((value) => {
               const tick = document.createElement("span");
@@ -4637,10 +4755,11 @@
               const clampedValue = Math.max(0, Math.min(safeYMax, Math.floor(asNumber(value))));
               const topPercent = 100 - ((clampedValue / safeYMax) * 100);
               tick.style.top = `${topPercent.toFixed(4)}%`;
-              // Keep all tick labels centered on their numeric value position.
+              // Center all ticks on their numeric value positions so spacing is linear.
               tick.style.transform = "translateY(-50%)";
-              yAxis.appendChild(tick);
+              ticksLayer.appendChild(tick);
             });
+            yAxis.appendChild(ticksLayer);
 
             return { yAxisLabel, yAxis };
           };
@@ -4721,8 +4840,10 @@
           const plot = document.createElement("div");
           plot.className = "histogram-plot";
 
-          const yTicks = buildHistogramTickValues(peak);
-          const { yAxisLabel, yAxis } = buildHistogramYAxis(yTicks, peak);
+          const yTickModel = buildHistogramTickValues(peak);
+          const yTicks = yTickModel.values;
+          const yAxisMax = yTickModel.yMax;
+          const { yAxisLabel, yAxis } = buildHistogramYAxis(yTicks, yAxisMax);
 
           const bars = document.createElement("div");
           bars.className = "histogram-bars";
@@ -4731,7 +4852,7 @@
           selected.counts.forEach((count, index) => {
             const bar = document.createElement("div");
             bar.className = "histogram-bar";
-            const ratio = peak > 0 ? (count / peak) : 0;
+            const ratio = yAxisMax > 0 ? (count / yAxisMax) : 0;
             bar.style.height = `${Math.max(2, ratio * 100)}%`;
             const rangeStart = index * binSize;
             const rangeEnd = Math.min(100, rangeStart + binSize);
@@ -6516,8 +6637,8 @@
         materialPercentIncludeDuplicatesInput.addEventListener("change", () => {
           prospectFrequencyIncludeDuplicates = !!materialPercentIncludeDuplicatesInput.checked;
           if (activeSessionData) {
+            renderProspectHistogram(activeSessionData);
             renderMaterialPercentAmount(activeSessionData);
-            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
           }
         });
       }

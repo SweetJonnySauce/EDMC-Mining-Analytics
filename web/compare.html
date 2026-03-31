@@ -478,6 +478,15 @@
       vector-effect: non-scaling-stroke;
     }
 
+    .compare-zero-marker-line {
+      stroke: color-mix(in srgb, var(--cool-3, var(--accent)) 78%, #fff);
+      stroke-width: 1;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+      cursor: crosshair;
+      opacity: 0.95;
+    }
+
     .compare-reference-dot {
       fill: color-mix(in srgb, var(--accent) 82%, #fff);
       stroke: color-mix(in srgb, var(--card) 92%, #000);
@@ -1652,20 +1661,51 @@
         });
 
         coordinates.forEach((point) => {
+          const bindHoverHandlers = (node) => {
+            node.addEventListener("mouseenter", (event) => {
+              showCrosshairAt(point, event);
+            });
+            node.addEventListener("mousemove", (event) => {
+              showCrosshairAt(point, event);
+            });
+            node.addEventListener("mouseleave", () => {
+              hideCrosshair();
+            });
+          };
+
+          if (Number(point.binCount) <= 0) {
+            const size = 5.4;
+            const left = point.x - size;
+            const right = point.x + size;
+            const top = point.y - size;
+            const bottom = point.y + size;
+
+            const lineA = document.createElementNS(ns, "line");
+            lineA.setAttribute("class", "compare-zero-marker-line");
+            lineA.setAttribute("x1", left.toFixed(2));
+            lineA.setAttribute("y1", top.toFixed(2));
+            lineA.setAttribute("x2", right.toFixed(2));
+            lineA.setAttribute("y2", bottom.toFixed(2));
+            bindHoverHandlers(lineA);
+            svg.appendChild(lineA);
+
+            const lineB = document.createElementNS(ns, "line");
+            lineB.setAttribute("class", "compare-zero-marker-line");
+            lineB.setAttribute("x1", left.toFixed(2));
+            lineB.setAttribute("y1", bottom.toFixed(2));
+            lineB.setAttribute("x2", right.toFixed(2));
+            lineB.setAttribute("y2", top.toFixed(2));
+            bindHoverHandlers(lineB);
+            svg.appendChild(lineB);
+            return;
+          }
+
           const dot = document.createElementNS(ns, "circle");
           dot.setAttribute("class", "compare-dot");
           dot.setAttribute("cx", point.x.toFixed(2));
           dot.setAttribute("cy", point.y.toFixed(2));
           dot.setAttribute("r", "5.8");
-          dot.addEventListener("mouseenter", (event) => {
-            showCrosshairAt(point, event);
-          });
-          dot.addEventListener("mousemove", (event) => {
-            showCrosshairAt(point, event);
-          });
-          dot.addEventListener("mouseleave", () => {
-            hideCrosshair();
-          });
+          bindHoverHandlers(dot);
           svg.appendChild(dot);
         });
 
@@ -1695,10 +1735,6 @@
         labelsRow.appendChild(labels);
         chartPanel.appendChild(labelsRow);
 
-        const axis = document.createElement("div");
-        axis.className = "compare-axis";
-        axis.innerHTML = `<span>0%</span><span>${model.xMax}%</span>`;
-        chartPanel.appendChild(axis);
       }
 
       function renderComparePanels() {
