@@ -1122,8 +1122,8 @@
     .histogram-plot {
       min-height: 170px;
       display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 8px;
+      grid-template-columns: auto auto 1fr;
+      gap: 2px;
       align-items: stretch;
     }
 
@@ -1148,6 +1148,12 @@
       opacity: 0.92;
     }
 
+    .histogram-bar.histogram-bar--linked {
+      outline: 2px solid color-mix(in srgb, var(--fg) 76%, var(--accent));
+      outline-offset: 1px;
+      opacity: 1;
+    }
+
     .histogram-bin-labels {
       display: grid;
       gap: 3px;
@@ -1160,13 +1166,14 @@
     .histogram-label-row {
       display: grid;
       grid-template-columns: auto 1fr;
-      gap: 8px;
+      gap: 2px;
       align-items: start;
     }
 
     .histogram-label-spacer {
       visibility: hidden;
       pointer-events: none;
+      width: 36px;
     }
 
     .histogram-bin-label {
@@ -1177,6 +1184,40 @@
       overflow-wrap: anywhere;
       word-break: break-word;
       min-height: 2.1em;
+    }
+
+    .histogram-y-axis-label {
+      width: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.68rem;
+      line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      user-select: none;
+    }
+
+    .histogram-y-axis {
+      width: 26px;
+      min-height: 170px;
+      position: relative;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .histogram-y-axis-tick {
+      position: absolute;
+      right: 0;
+      white-space: nowrap;
+      pointer-events: none;
     }
 
     .material-percent-layout {
@@ -1278,6 +1319,12 @@
       vector-effect: non-scaling-stroke;
     }
 
+    .material-percent-dot.material-percent-dot--linked {
+      fill-opacity: 1;
+      stroke: color-mix(in srgb, var(--fg) 88%, var(--accent));
+      stroke-width: 2.2;
+    }
+
     .material-percent-axis-row {
       display: grid;
       grid-template-columns: auto 1fr;
@@ -1364,6 +1411,7 @@
       stroke: color-mix(in srgb, var(--card) 90%, #000);
       stroke-width: 0.9;
       vector-effect: non-scaling-stroke;
+      transition: stroke-width 80ms ease-out, filter 80ms ease-out, fill 80ms ease-out, opacity 80ms ease-out;
     }
 
     .prospect-frequency-dot--current {
@@ -1372,6 +1420,17 @@
       stroke: var(--prospect-current-dot-ring);
       stroke-width: 1.8;
       vector-effect: non-scaling-stroke;
+      transition: stroke-width 80ms ease-out, filter 80ms ease-out, fill 80ms ease-out, opacity 80ms ease-out;
+    }
+
+    .prospect-frequency-dot--other.prospect-frequency-dot--linked,
+    .prospect-frequency-dot--current.prospect-frequency-dot--linked {
+      opacity: 1;
+      fill: color-mix(in srgb, var(--accent) 72%, #fff);
+      stroke: color-mix(in srgb, #fff 92%, var(--accent));
+      stroke-width: 3.4;
+      filter: drop-shadow(0 0 2px color-mix(in srgb, #fff 72%, transparent))
+        drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 80%, transparent));
     }
 
     .prospect-frequency-crosshair {
@@ -1730,6 +1789,22 @@
       let eventJournalFirstTimeByBin = new Map();
       let activeJournalRow = null;
       let activeTimelineBar = null;
+      let histogramHoverContext = {
+        commodityKey: "",
+        binSize: 10,
+        bars: []
+      };
+      let materialPercentHoverContext = {
+        commodityKey: "",
+        dots: []
+      };
+      let cumulativeHoverContext = {
+        commodityKey: "",
+        points: [],
+        showLinkedCrosshair: null,
+        hideLinkedCrosshair: null
+      };
+      let crossChartHighlightLinks = [];
 
       function applyFocusTokenToTitle() {
         try {
@@ -1899,6 +1974,296 @@
           return;
         }
         cursorTooltip.classList.remove("visible");
+      }
+
+      function trackCrossChartHighlight(element, className) {
+        if (!element || !className) {
+          return;
+        }
+        const alreadyTracked = crossChartHighlightLinks.some((entry) => (
+          entry.element === element && entry.className === className
+        ));
+        if (alreadyTracked) {
+          return;
+        }
+        element.classList.add(className);
+        crossChartHighlightLinks.push({ element, className });
+      }
+
+      function clearCrossChartHoverHighlights() {
+        if (!crossChartHighlightLinks.length) {
+          if (typeof cumulativeHoverContext.hideLinkedCrosshair === "function") {
+            cumulativeHoverContext.hideLinkedCrosshair();
+          }
+          return;
+        }
+        crossChartHighlightLinks.forEach((entry) => {
+          if (entry && entry.element && entry.className) {
+            entry.element.classList.remove(entry.className);
+          }
+        });
+        crossChartHighlightLinks = [];
+        if (typeof cumulativeHoverContext.hideLinkedCrosshair === "function") {
+          cumulativeHoverContext.hideLinkedCrosshair();
+        }
+      }
+
+      function resetCrossChartHoverContexts() {
+        clearCrossChartHoverHighlights();
+        histogramHoverContext = {
+          commodityKey: "",
+          binSize: 10,
+          bars: []
+        };
+        materialPercentHoverContext = {
+          commodityKey: "",
+          dots: []
+        };
+        cumulativeHoverContext = {
+          commodityKey: "",
+          points: [],
+          showLinkedCrosshair: null,
+          hideLinkedCrosshair: null
+        };
+      }
+
+      function showLinkedCumulativeCrosshair(pointEntryOrEntries) {
+        if (typeof cumulativeHoverContext.showLinkedCrosshair !== "function") {
+          return;
+        }
+        cumulativeHoverContext.showLinkedCrosshair(pointEntryOrEntries);
+      }
+
+      function pointEntryHasCurrentDot(pointEntry) {
+        return !!(
+          pointEntry
+          && Array.isArray(pointEntry.currentDots)
+          && pointEntry.currentDots.length > 0
+        );
+      }
+
+      function rangeContainsValue(start, end, isLast, value) {
+        const s = Number(start);
+        const e = Number(end);
+        const v = Number(value);
+        if (!Number.isFinite(s) || !Number.isFinite(e) || !Number.isFinite(v)) {
+          return false;
+        }
+        if (v < s) {
+          return false;
+        }
+        if (isLast) {
+          return v <= (e + 1e-9);
+        }
+        return v < e;
+      }
+
+      function rangesOverlap(startA, endA, isLastA, startB, endB, isLastB) {
+        const aStart = Number(startA);
+        const aEnd = Number(endA);
+        const bStart = Number(startB);
+        const bEnd = Number(endB);
+        if (![aStart, aEnd, bStart, bEnd].every((value) => Number.isFinite(value))) {
+          return false;
+        }
+        const left = Math.max(aStart, bStart);
+        const right = Math.min(aEnd, bEnd);
+        if (left < right) {
+          return true;
+        }
+        if (Math.abs(left - right) > 1e-9) {
+          return false;
+        }
+        const touchingAEnd = Math.abs(left - aEnd) <= 1e-9;
+        const touchingBEnd = Math.abs(left - bEnd) <= 1e-9;
+        if (touchingAEnd && !isLastA) {
+          return false;
+        }
+        if (touchingBEnd && !isLastB) {
+          return false;
+        }
+        return true;
+      }
+
+      function getHistogramBarIndexForPercentage(percentage) {
+        const bars = Array.isArray(histogramHoverContext.bars) ? histogramHoverContext.bars : [];
+        const binsCount = bars.length;
+        if (!binsCount) {
+          return null;
+        }
+        const raw = Number(percentage);
+        if (!Number.isFinite(raw)) {
+          return null;
+        }
+        const binSize = Math.max(1, Number(histogramHoverContext.binSize) || 10);
+        const pct = Math.max(0, Math.min(100, raw));
+        let index = pct >= 100 ? (binsCount - 1) : Math.floor(pct / binSize);
+        if (index < 0) {
+          index = 0;
+        }
+        if (index >= binsCount) {
+          index = binsCount - 1;
+        }
+        return index;
+      }
+
+      function highlightCumulativePointEntry(pointEntry, currentOnly) {
+        if (!pointEntry) {
+          return;
+        }
+        const dots = currentOnly
+          ? (Array.isArray(pointEntry.currentDots) ? pointEntry.currentDots : [])
+          : (Array.isArray(pointEntry.dots) ? pointEntry.dots : []);
+        dots.forEach((dot) => {
+          trackCrossChartHighlight(dot, "prospect-frequency-dot--linked");
+        });
+      }
+
+      function highlightFromHistogramBarEntry(barEntry) {
+        clearCrossChartHoverHighlights();
+        if (!barEntry || !barEntry.element) {
+          return;
+        }
+        trackCrossChartHighlight(barEntry.element, "histogram-bar--linked");
+
+        const selectedKey = normalizeCommodityKey(histogramHoverContext.commodityKey);
+        if (!selectedKey) {
+          return;
+        }
+
+        materialPercentHoverContext.dots.forEach((dotEntry) => {
+          if (!dotEntry || !dotEntry.element) {
+            return;
+          }
+          if (normalizeCommodityKey(dotEntry.commodityKey) !== selectedKey) {
+            return;
+          }
+          if (!rangeContainsValue(barEntry.rangeStart, barEntry.rangeEnd, barEntry.isLast, dotEntry.percentage)) {
+            return;
+          }
+          trackCrossChartHighlight(dotEntry.element, "material-percent-dot--linked");
+        });
+
+        if (normalizeCommodityKey(cumulativeHoverContext.commodityKey) !== selectedKey) {
+          return;
+        }
+        const linkedCrosshairPoints = [];
+        cumulativeHoverContext.points.forEach((pointEntry) => {
+          if (!pointEntry) {
+            return;
+          }
+          if (
+            !rangesOverlap(
+              barEntry.rangeStart,
+              barEntry.rangeEnd,
+              barEntry.isLast,
+              pointEntry.intervalStart,
+              pointEntry.intervalEnd,
+              pointEntry.isLast,
+            )
+          ) {
+            return;
+          }
+          highlightCumulativePointEntry(pointEntry, true);
+          if (pointEntryHasCurrentDot(pointEntry)) {
+            linkedCrosshairPoints.push(pointEntry);
+          }
+        });
+        if (linkedCrosshairPoints.length) {
+          showLinkedCumulativeCrosshair(linkedCrosshairPoints);
+        }
+      }
+
+      function highlightFromMaterialPercentDotEntry(dotEntry) {
+        clearCrossChartHoverHighlights();
+        if (!dotEntry || !dotEntry.element) {
+          return;
+        }
+        trackCrossChartHighlight(dotEntry.element, "material-percent-dot--linked");
+
+        const selectedKey = normalizeCommodityKey(histogramHoverContext.commodityKey);
+        if (!selectedKey) {
+          return;
+        }
+        if (normalizeCommodityKey(dotEntry.commodityKey) !== selectedKey) {
+          return;
+        }
+
+        const barIndex = getHistogramBarIndexForPercentage(dotEntry.percentage);
+        if (barIndex !== null) {
+          const barEntry = histogramHoverContext.bars[barIndex];
+          if (barEntry && barEntry.element) {
+            trackCrossChartHighlight(barEntry.element, "histogram-bar--linked");
+          }
+        }
+
+        if (normalizeCommodityKey(cumulativeHoverContext.commodityKey) !== selectedKey) {
+          return;
+        }
+        const linkedCrosshairPoints = [];
+        cumulativeHoverContext.points.forEach((pointEntry) => {
+          if (!pointEntry) {
+            return;
+          }
+          if (!rangeContainsValue(pointEntry.intervalStart, pointEntry.intervalEnd, pointEntry.isLast, dotEntry.percentage)) {
+            return;
+          }
+          highlightCumulativePointEntry(pointEntry, true);
+          if (pointEntryHasCurrentDot(pointEntry)) {
+            linkedCrosshairPoints.push(pointEntry);
+          }
+        });
+        if (linkedCrosshairPoints.length) {
+          showLinkedCumulativeCrosshair(linkedCrosshairPoints);
+        }
+      }
+
+      function highlightFromCumulativePointEntry(pointEntry) {
+        clearCrossChartHoverHighlights();
+        if (!pointEntry) {
+          return;
+        }
+        highlightCumulativePointEntry(pointEntry);
+
+        const selectedKey = normalizeCommodityKey(histogramHoverContext.commodityKey);
+        if (!selectedKey) {
+          return;
+        }
+        if (normalizeCommodityKey(cumulativeHoverContext.commodityKey) !== selectedKey) {
+          return;
+        }
+
+        histogramHoverContext.bars.forEach((barEntry) => {
+          if (!barEntry || !barEntry.element) {
+            return;
+          }
+          if (
+            !rangesOverlap(
+              barEntry.rangeStart,
+              barEntry.rangeEnd,
+              barEntry.isLast,
+              pointEntry.intervalStart,
+              pointEntry.intervalEnd,
+              pointEntry.isLast,
+            )
+          ) {
+            return;
+          }
+          trackCrossChartHighlight(barEntry.element, "histogram-bar--linked");
+        });
+
+        materialPercentHoverContext.dots.forEach((dotEntry) => {
+          if (!dotEntry || !dotEntry.element) {
+            return;
+          }
+          if (normalizeCommodityKey(dotEntry.commodityKey) !== selectedKey) {
+            return;
+          }
+          if (!rangeContainsValue(pointEntry.intervalStart, pointEntry.intervalEnd, pointEntry.isLast, dotEntry.percentage)) {
+            return;
+          }
+          trackCrossChartHighlight(dotEntry.element, "material-percent-dot--linked");
+        });
       }
 
       async function refreshAnalysisSettings() {
@@ -2358,6 +2723,7 @@
 
       function clearCharts(message) {
         hideCursorTooltip();
+        resetCrossChartHoverContexts();
         const text = message || "No chart data available.";
         if (eventFilters) {
           eventFilters.innerHTML = "";
@@ -3031,6 +3397,10 @@
         chartMaterialPercentAmount.innerHTML = "";
         const model = buildMaterialPercentAmountModel(sessionData, materialPercentShowOnlyCollected);
         if (!model) {
+          materialPercentHoverContext = {
+            commodityKey: "",
+            dots: []
+          };
           if (materialPercentCard) {
             materialPercentCard.style.minHeight = "170px";
           }
@@ -3092,6 +3462,7 @@
         const selectedCommodityKey = model.commodities.some((commodity) => commodity.key === materialPercentHighlightedCommodityKey)
           ? materialPercentHighlightedCommodityKey
           : selectedCommodityKeyFallback;
+        const bubbleDotEntries = [];
         const selectedRowIndex = model.commodities.findIndex((commodity) => commodity.key === selectedCommodityKey);
         const xDivisor = Math.max(1, maxAsteroidNumber - 1);
         const toX = (asteroidNumber) => {
@@ -3225,20 +3596,33 @@
               `${commodity.name} | Asteroid #${point.asteroidNumber}`,
               `Percentage: ${formatNumber(point.percentage, 2)}%`
             ].join("\n");
+            const dotEntry = {
+              element: dot,
+              commodityKey: commodity.key,
+              asteroidNumber: point.asteroidNumber,
+              percentage: point.percentage
+            };
+            bubbleDotEntries.push(dotEntry);
             dot.addEventListener("mouseenter", (event) => {
               showCursorTooltip(detail, event);
+              highlightFromMaterialPercentDotEntry(dotEntry);
             });
             dot.addEventListener("mousemove", (event) => {
               showCursorTooltip(detail, event);
+              highlightFromMaterialPercentDotEntry(dotEntry);
             });
             dot.addEventListener("mouseleave", () => {
               hideCursorTooltip();
+              clearCrossChartHoverHighlights();
             });
             svg.appendChild(dot);
           });
         });
 
-        svg.addEventListener("mouseleave", hideCursorTooltip);
+        svg.addEventListener("mouseleave", () => {
+          hideCursorTooltip();
+          clearCrossChartHoverHighlights();
+        });
         surface.appendChild(svg);
         plot.appendChild(yAxis);
         plot.appendChild(surface);
@@ -3277,6 +3661,10 @@
         layout.appendChild(axisRow);
 
         chartMaterialPercentAmount.appendChild(layout);
+        materialPercentHoverContext = {
+          commodityKey: selectedCommodityKey || "",
+          dots: bubbleDotEntries
+        };
         window.requestAnimationFrame(() => {
           const svgRect = svg.getBoundingClientRect();
           const svgWidth = Number(svgRect.width);
@@ -3715,6 +4103,13 @@
       async function renderProspectCumulativeFrequency(sessionData, filename) {
         const renderToken = ++prospectFrequencyRenderToken;
         chartProspectCumulativeFrequency.innerHTML = "";
+        clearCrossChartHoverHighlights();
+        cumulativeHoverContext = {
+          commodityKey: "",
+          points: [],
+          showLinkedCrosshair: null,
+          hideLinkedCrosshair: null
+        };
         renderProspectFrequencyTitle(sessionData);
         if (prospectFrequencyHeaderControls) {
           prospectFrequencyHeaderControls.innerHTML = "";
@@ -3872,6 +4267,19 @@
           x: toX(point.index),
           y: toY(point.total)
         }));
+        const cumulativePointByIndex = new Map();
+        coordinates.forEach((point, pointIndex) => {
+          cumulativePointByIndex.set(point.index, {
+            index: point.index,
+            intervalStart: point.intervalStart,
+            intervalEnd: point.intervalEnd,
+            isLast: pointIndex === (coordinates.length - 1),
+            dots: [],
+            currentDots: [],
+            x: point.x,
+            y: point.y
+          });
+        });
 
         const pathData = buildSmoothLinePath(coordinates);
         const line = document.createElementNS(ns, "path");
@@ -3891,6 +4299,65 @@
         const vCross = document.createElementNS(ns, "line");
         vCross.setAttribute("class", "prospect-frequency-crosshair");
         svg.appendChild(vCross);
+
+        let linkedCrosshairLines = [];
+
+        const hideLinkedCrosshair = () => {
+          if (!linkedCrosshairLines.length) {
+            return;
+          }
+          linkedCrosshairLines.forEach((lineNode) => {
+            if (lineNode && lineNode.parentNode === svg) {
+              svg.removeChild(lineNode);
+            }
+          });
+          linkedCrosshairLines = [];
+        };
+
+        const showLinkedCrosshairAt = (pointEntryOrEntries) => {
+          hideLinkedCrosshair();
+          const entries = Array.isArray(pointEntryOrEntries)
+            ? pointEntryOrEntries
+            : [pointEntryOrEntries];
+          const seenIndexes = new Set();
+          entries.forEach((pointEntry) => {
+            if (!pointEntry) {
+              return;
+            }
+            const pointIndex = Number(pointEntry.index);
+            if (Number.isFinite(pointIndex) && seenIndexes.has(pointIndex)) {
+              return;
+            }
+            if (Number.isFinite(pointIndex)) {
+              seenIndexes.add(pointIndex);
+            }
+            const x = Number(pointEntry.x);
+            const y = Number(pointEntry.y);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) {
+              return;
+            }
+
+            const linkedHCross = document.createElementNS(ns, "line");
+            linkedHCross.setAttribute("class", "prospect-frequency-crosshair");
+            linkedHCross.setAttribute("x1", sidePad.toFixed(2));
+            linkedHCross.setAttribute("y1", y.toFixed(2));
+            linkedHCross.setAttribute("x2", x.toFixed(2));
+            linkedHCross.setAttribute("y2", y.toFixed(2));
+            linkedHCross.style.opacity = "1";
+            svg.appendChild(linkedHCross);
+            linkedCrosshairLines.push(linkedHCross);
+
+            const linkedVCross = document.createElementNS(ns, "line");
+            linkedVCross.setAttribute("class", "prospect-frequency-crosshair");
+            linkedVCross.setAttribute("x1", x.toFixed(2));
+            linkedVCross.setAttribute("y1", y.toFixed(2));
+            linkedVCross.setAttribute("x2", x.toFixed(2));
+            linkedVCross.setAttribute("y2", (topPad + drawHeight).toFixed(2));
+            linkedVCross.style.opacity = "1";
+            svg.appendChild(linkedVCross);
+            linkedCrosshairLines.push(linkedVCross);
+          });
+        };
 
         const showCrosshairAt = (point, event) => {
           hCross.setAttribute("x1", sidePad.toFixed(2));
@@ -3917,6 +4384,7 @@
           hCross.style.opacity = "0";
           vCross.style.opacity = "0";
           hideCursorTooltip();
+          clearCrossChartHoverHighlights();
         };
 
         const findNearestPoint = (event) => {
@@ -3946,12 +4414,14 @@
           const nearest = findNearestPoint(event);
           if (nearest) {
             showCrosshairAt(nearest, event);
+            highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
           }
         });
         hitbox.addEventListener("mousemove", (event) => {
           const nearest = findNearestPoint(event);
           if (nearest) {
             showCrosshairAt(nearest, event);
+            highlightFromCumulativePointEntry(cumulativePointByIndex.get(nearest.index));
           }
         });
         hitbox.addEventListener("mouseleave", () => {
@@ -3964,6 +4434,19 @@
           otherDot.setAttribute("cx", point.x.toFixed(2));
           otherDot.setAttribute("cy", point.y.toFixed(2));
           otherDot.setAttribute("r", "5.7");
+          const pointEntry = cumulativePointByIndex.get(point.index);
+          if (pointEntry) {
+            pointEntry.dots.push(otherDot);
+          }
+          otherDot.addEventListener("mouseenter", (event) => {
+            showCrosshairAt(point, event);
+            highlightFromCumulativePointEntry(pointEntry);
+          });
+          otherDot.addEventListener("mousemove", (event) => {
+            showCrosshairAt(point, event);
+            highlightFromCumulativePointEntry(pointEntry);
+          });
+          otherDot.addEventListener("mouseleave", hideCrosshair);
           svg.appendChild(otherDot);
         });
 
@@ -3976,6 +4459,20 @@
           currentDot.setAttribute("cx", point.x.toFixed(2));
           currentDot.setAttribute("cy", point.y.toFixed(2));
           currentDot.setAttribute("r", "6.2");
+          const pointEntry = cumulativePointByIndex.get(point.index);
+          if (pointEntry) {
+            pointEntry.dots.push(currentDot);
+            pointEntry.currentDots.push(currentDot);
+          }
+          currentDot.addEventListener("mouseenter", (event) => {
+            showCrosshairAt(point, event);
+            highlightFromCumulativePointEntry(pointEntry);
+          });
+          currentDot.addEventListener("mousemove", (event) => {
+            showCrosshairAt(point, event);
+            highlightFromCumulativePointEntry(pointEntry);
+          });
+          currentDot.addEventListener("mouseleave", hideCrosshair);
           svg.appendChild(currentDot);
         });
 
@@ -4034,10 +4531,22 @@
 
         layout.appendChild(legend);
         chartProspectCumulativeFrequency.appendChild(layout);
+        cumulativeHoverContext = {
+          commodityKey: normalizeCommodityKey(model.commodity),
+          points: Array.from(cumulativePointByIndex.values()),
+          showLinkedCrosshair: showLinkedCrosshairAt,
+          hideLinkedCrosshair
+        };
       }
 
       function renderProspectHistogram(sessionData) {
         chartProspectHistogram.innerHTML = "";
+        clearCrossChartHoverHighlights();
+        histogramHoverContext = {
+          commodityKey: "",
+          binSize: 10,
+          bars: []
+        };
         if (commodityHistogramFilters) {
           commodityHistogramFilters.innerHTML = "";
         }
@@ -4079,6 +4588,47 @@
 
         const renderSelected = () => {
           chartProspectHistogram.innerHTML = "";
+
+          const buildHistogramTickValues = (peakValue) => {
+            const peakInt = Math.max(1, Math.floor(asNumber(peakValue)));
+            const maxVisibleTicks = 9;
+            if ((peakInt + 1) <= maxVisibleTicks) {
+              return Array.from({ length: peakInt + 1 }, (_unused, offset) => peakInt - offset);
+            }
+            const step = Math.max(1, Math.ceil(peakInt / (maxVisibleTicks - 1)));
+            const values = [];
+            for (let value = peakInt; value >= 0; value -= step) {
+              values.push(value);
+            }
+            if (values[values.length - 1] !== 0) {
+              values.push(0);
+            }
+            return values.filter((value, index, allValues) => allValues.indexOf(value) === index);
+          };
+
+          const buildHistogramYAxis = (tickValues, yMaxValue) => {
+            const yAxisLabel = document.createElement("div");
+            yAxisLabel.className = "histogram-y-axis-label";
+            yAxisLabel.textContent = "# of Asteroids";
+
+            const yAxis = document.createElement("div");
+            yAxis.className = "histogram-y-axis";
+            const safeYMax = Math.max(1, Math.floor(asNumber(yMaxValue)));
+            tickValues.forEach((value) => {
+              const tick = document.createElement("span");
+              tick.className = "histogram-y-axis-tick";
+              tick.textContent = String(value);
+              const clampedValue = Math.max(0, Math.min(safeYMax, Math.floor(asNumber(value))));
+              const topPercent = 100 - ((clampedValue / safeYMax) * 100);
+              tick.style.top = `${topPercent.toFixed(4)}%`;
+              // Keep all tick labels centered on their numeric value position.
+              tick.style.transform = "translateY(-50%)";
+              yAxis.appendChild(tick);
+            });
+
+            return { yAxisLabel, yAxis };
+          };
+
           const selected = commodities.find((item) => item.name === selectedHistogramCommodity) || null;
           if (!selected) {
             const binsCount = Math.max(1, Math.ceil(100 / binSize));
@@ -4088,13 +4638,7 @@
             const plot = document.createElement("div");
             plot.className = "histogram-plot";
 
-            const yAxis = document.createElement("div");
-            yAxis.className = "timeline-y-axis";
-            [1, 0].forEach((value) => {
-              const tick = document.createElement("span");
-              tick.textContent = String(value);
-              yAxis.appendChild(tick);
-            });
+            const { yAxisLabel, yAxis } = buildHistogramYAxis([1, 0], 1);
 
             const bars = document.createElement("div");
             bars.className = "histogram-bars";
@@ -4134,14 +4678,20 @@
 
             const axis = document.createElement("div");
             axis.className = "timeline-axis";
-            axis.innerHTML = "<span>0%</span><span>100%</span>";
+            axis.innerHTML = "";
 
+            plot.appendChild(yAxisLabel);
             plot.appendChild(yAxis);
             plot.appendChild(bars);
             layout.appendChild(plot);
             layout.appendChild(labelsRow);
             layout.appendChild(axis);
             chartProspectHistogram.appendChild(layout);
+            histogramHoverContext = {
+              commodityKey: normalizeCommodityKey(selectedHistogramCommodity),
+              binSize,
+              bars: []
+            };
             if (activeSessionData) {
               void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
             }
@@ -4149,24 +4699,19 @@
           }
 
           const peak = Math.max(...selected.counts, 1);
+          const selectedCommodityKey = normalizeCommodityKey(selected.name);
           const layout = document.createElement("div");
           layout.className = "histogram-layout";
           const plot = document.createElement("div");
           plot.className = "histogram-plot";
 
-          const yAxis = document.createElement("div");
-          yAxis.className = "timeline-y-axis";
-          const mid = Math.round(peak / 2);
-          const yTicks = [peak, mid, 0].filter((value, index, values) => values.indexOf(value) === index);
-          yTicks.forEach((value) => {
-            const tick = document.createElement("span");
-            tick.textContent = String(value);
-            yAxis.appendChild(tick);
-          });
+          const yTicks = buildHistogramTickValues(peak);
+          const { yAxisLabel, yAxis } = buildHistogramYAxis(yTicks, peak);
 
           const bars = document.createElement("div");
           bars.className = "histogram-bars";
           bars.style.gridTemplateColumns = `repeat(${selected.counts.length}, minmax(0, 1fr))`;
+          const histogramBarEntries = [];
           selected.counts.forEach((count, index) => {
             const bar = document.createElement("div");
             bar.className = "histogram-bar";
@@ -4175,18 +4720,32 @@
             const rangeStart = index * binSize;
             const rangeEnd = Math.min(100, rangeStart + binSize);
             const detail = `${selected.name}\n${rangeStart}% - ${rangeEnd}%: ${count} prospects`;
+            const barEntry = {
+              element: bar,
+              index,
+              rangeStart,
+              rangeEnd,
+              isLast: index === (selected.counts.length - 1)
+            };
+            histogramBarEntries.push(barEntry);
             bar.addEventListener("mouseenter", (event) => {
               showCursorTooltip(detail, event);
+              highlightFromHistogramBarEntry(barEntry);
             });
             bar.addEventListener("mousemove", (event) => {
               showCursorTooltip(detail, event);
+              highlightFromHistogramBarEntry(barEntry);
             });
             bar.addEventListener("mouseleave", () => {
               hideCursorTooltip();
+              clearCrossChartHoverHighlights();
             });
             bars.appendChild(bar);
           });
-          bars.addEventListener("mouseleave", hideCursorTooltip);
+          bars.addEventListener("mouseleave", () => {
+            hideCursorTooltip();
+            clearCrossChartHoverHighlights();
+          });
 
           const labels = document.createElement("div");
           labels.className = "histogram-bin-labels";
@@ -4214,14 +4773,20 @@
 
           const axis = document.createElement("div");
           axis.className = "timeline-axis";
-          axis.innerHTML = "<span>0%</span><span>100%</span>";
+          axis.innerHTML = "";
 
+          plot.appendChild(yAxisLabel);
           plot.appendChild(yAxis);
           plot.appendChild(bars);
           layout.appendChild(plot);
           layout.appendChild(labelsRow);
           layout.appendChild(axis);
           chartProspectHistogram.appendChild(layout);
+          histogramHoverContext = {
+            commodityKey: selectedCommodityKey,
+            binSize,
+            bars: histogramBarEntries
+          };
           if (activeSessionData) {
             void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
           }
@@ -5466,6 +6031,7 @@
       }
 
       function renderCharts(sessionData) {
+        resetCrossChartHoverContexts();
         const rows = buildCommodityRows(sessionData).sort((a, b) => b.tons - a.tons);
         const useCoolThroughputFill = activeThemeId !== "orange-dark";
         renderBarChart(chartCommodityTons, rows, (row) => row.tons, (value) => `${formatNumber(value, 0)} t`, false);
