@@ -1758,6 +1758,10 @@
                 <input id="material-percent-reverse-cumulative" type="checkbox">
                 <span>Reverse Cumulative Freq.</span>
               </label>
+              <label class="prospect-frequency-control">
+                <input id="material-percent-flip-cumulative-axis" type="checkbox">
+                <span>Flip Cumulative Axes</span>
+              </label>
             </div>
           </section>
           <section class="chart-pane">
@@ -1834,6 +1838,7 @@
       const materialPercentShowGridlinesInput = document.getElementById("material-percent-show-gridlines");
       const materialPercentIncludeDuplicatesInput = document.getElementById("material-percent-include-duplicates");
       const materialPercentReverseCumulativeInput = document.getElementById("material-percent-reverse-cumulative");
+      const materialPercentFlipCumulativeAxisInput = document.getElementById("material-percent-flip-cumulative-axis");
       const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
@@ -1878,6 +1883,7 @@
       let prospectFrequencyIncludeDuplicates = true;
       let prospectFrequencyShowAverageReference = true;
       let prospectFrequencyReverseCumulative = false;
+      let prospectFrequencyFlipAxes = false;
       let prospectFrequencyRenderToken = 0;
       let sessionListRenderToken = 0;
       let allRefinementEntries = [];
@@ -2869,15 +2875,15 @@
         }
         const commodity = String(selectedHistogramCommodity || "").trim();
         const ringLabel = sessionData ? String(resolveSessionRingLabel(sessionData) || "").trim() : "";
+        let baseTitle = "Cumulative Frequency";
         if (commodity && ringLabel && ringLabel !== "Unknown") {
-          prospectFrequencyTitle.textContent = `Cumulative Frequency (${commodity} - ${ringLabel})`;
-          return;
+          baseTitle = `Cumulative Frequency (${commodity} - ${ringLabel})`;
+        } else if (commodity) {
+          baseTitle = `Cumulative Frequency (${commodity})`;
         }
-        if (commodity) {
-          prospectFrequencyTitle.textContent = `Cumulative Frequency (${commodity})`;
-          return;
-        }
-        prospectFrequencyTitle.textContent = "Cumulative Frequency";
+        prospectFrequencyTitle.textContent = prospectFrequencyReverseCumulative
+          ? `${baseTitle} - Reversed`
+          : baseTitle;
       }
 
       function openCompareRingsPage() {
@@ -4441,37 +4447,59 @@
         plot.className = "prospect-frequency-plot";
         const yAxis = document.createElement("div");
         yAxis.className = "timeline-y-axis";
-        const yMaxInt = Math.max(1, Math.ceil(model.yMax));
-        const targetTickCount = 7;
-        const minStep = Math.max(1, yMaxInt / (targetTickCount - 1));
-        let magnitude = Math.pow(10, Math.floor(Math.log10(minStep)));
-        if (!Number.isFinite(magnitude) || magnitude <= 0) {
-          magnitude = 1;
-        }
-        let step = 0;
-        for (let attempts = 0; attempts < 8 && step <= 0; attempts += 1) {
-          [1, 2, 5].forEach((multiplier) => {
-            const candidate = multiplier * magnitude;
-            if (candidate >= minStep && (step <= 0 || candidate < step)) {
-              step = candidate;
-            }
-          });
-          magnitude *= 10;
-        }
-        if (step <= 0) {
-          step = 1;
-        }
-        const yScaleMax = Math.max(yMaxInt, Math.ceil(yMaxInt / step) * step);
+        const computeAxisStep = (axisMaxInt) => {
+          const targetTickCount = 7;
+          const minStep = Math.max(1, axisMaxInt / (targetTickCount - 1));
+          let magnitude = Math.pow(10, Math.floor(Math.log10(minStep)));
+          if (!Number.isFinite(magnitude) || magnitude <= 0) {
+            magnitude = 1;
+          }
+          let step = 0;
+          for (let attempts = 0; attempts < 8 && step <= 0; attempts += 1) {
+            [1, 2, 5].forEach((multiplier) => {
+              const candidate = multiplier * magnitude;
+              if (candidate >= minStep && (step <= 0 || candidate < step)) {
+                step = candidate;
+              }
+            });
+            magnitude *= 10;
+          }
+          return step > 0 ? step : 1;
+        };
+        const countAxisMaxInt = Math.max(1, Math.ceil(model.yMax));
+        const countAxisStep = computeAxisStep(countAxisMaxInt);
+        const countAxisScaleMax = Math.max(countAxisMaxInt, Math.ceil(countAxisMaxInt / countAxisStep) * countAxisStep);
+        const percentAxisMaxInt = Math.max(1, Math.ceil(model.xMax));
+        const percentAxisStep = computeAxisStep(percentAxisMaxInt);
+        const percentAxisScaleMax = Math.max(percentAxisMaxInt, Math.ceil(percentAxisMaxInt / percentAxisStep) * percentAxisStep);
         const yTickValues = [];
-        for (let value = yScaleMax; value >= 0; value -= step) {
-          yTickValues.push(value);
-        }
-        if (yTickValues[yTickValues.length - 1] !== 0) {
-          yTickValues.push(0);
+        if (prospectFrequencyFlipAxes) {
+          if (prospectFrequencyReverseCumulative) {
+            for (let value = 0; value <= percentAxisScaleMax; value += percentAxisStep) {
+              yTickValues.push(value);
+            }
+            if (yTickValues[yTickValues.length - 1] !== percentAxisScaleMax) {
+              yTickValues.push(percentAxisScaleMax);
+            }
+          } else {
+            for (let value = percentAxisScaleMax; value >= 0; value -= percentAxisStep) {
+              yTickValues.push(value);
+            }
+            if (yTickValues[yTickValues.length - 1] !== 0) {
+              yTickValues.push(0);
+            }
+          }
+        } else {
+          for (let value = countAxisScaleMax; value >= 0; value -= countAxisStep) {
+            yTickValues.push(value);
+          }
+          if (yTickValues[yTickValues.length - 1] !== 0) {
+            yTickValues.push(0);
+          }
         }
         yTickValues.forEach((value) => {
           const tick = document.createElement("span");
-          tick.textContent = String(value);
+          tick.textContent = prospectFrequencyFlipAxes ? `${value}%` : String(value);
           yAxis.appendChild(tick);
         });
 
@@ -4497,14 +4525,28 @@
             ? (totalBins - index - 1)
             : index
         );
-        const toX = (index) => sidePad + (((toDisplayIndex(index) + 0.5) / totalBins) * drawWidth);
-        const toY = (count) => {
-          const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
+        const toXForBinIndex = (index) => sidePad + (((toDisplayIndex(index) + 0.5) / totalBins) * drawWidth);
+        const toYForCount = (count) => {
+          const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
           return topPad + (drawHeight * (1 - ratio));
         };
+        const toXForCount = (count) => {
+          const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
+          return sidePad + (drawWidth * Math.max(0, Math.min(1, ratio)));
+        };
+        const toYForPercent = (percent) => {
+          const ratio = percentAxisScaleMax <= 0 ? 0 : (percent / percentAxisScaleMax);
+          const displayRatio = prospectFrequencyReverseCumulative ? ratio : (1 - ratio);
+          return topPad + (drawHeight * Math.max(0, Math.min(1, displayRatio)));
+        };
+        const toYPlot = (value) => (
+          prospectFrequencyFlipAxes
+            ? toYForPercent(value)
+            : toYForCount(value)
+        );
         if (materialPercentShowGridlines) {
           yTickValues.forEach((value) => {
-            const y = toY(value);
+            const y = toYPlot(value);
             const line = document.createElementNS(ns, "line");
             line.setAttribute("x1", sidePad.toFixed(2));
             line.setAttribute("x2", (width - sidePad).toFixed(2));
@@ -4516,8 +4558,8 @@
         }
         const coordinates = model.points.map((point) => ({
           ...point,
-          x: toX(point.index),
-          y: toY(point.total)
+          x: prospectFrequencyFlipAxes ? toXForCount(point.total) : toXForBinIndex(point.index),
+          y: prospectFrequencyFlipAxes ? toYForPercent(point.center) : toYForCount(point.total)
         }));
         const cumulativePointByIndex = new Map();
         coordinates.forEach((point, pointIndex) => {
@@ -4539,7 +4581,7 @@
         line.setAttribute("d", pathData);
         svg.appendChild(line);
 
-        const toXForValue = (rawValue) => {
+        const toXForPercentValue = (rawValue) => {
           const value = Number(rawValue);
           if (!Number.isFinite(value)) {
             return null;
@@ -4585,11 +4627,50 @@
           }
           return nearest.y;
         };
+        const getXOnLineForY = (targetY) => {
+          if (!Number.isFinite(targetY) || !coordinates.length) {
+            return null;
+          }
+          if (coordinates.length === 1) {
+            return Number.isFinite(coordinates[0].x) ? coordinates[0].x : null;
+          }
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const left = coordinates[index - 1];
+            const right = coordinates[index];
+            const minY = Math.min(left.y, right.y);
+            const maxY = Math.max(left.y, right.y);
+            if (targetY < minY || targetY > maxY) {
+              continue;
+            }
+            const span = right.y - left.y;
+            if (!Number.isFinite(span) || Math.abs(span) <= 0.000001) {
+              return right.x;
+            }
+            const ratio = Math.max(0, Math.min(1, (targetY - left.y) / span));
+            return left.x + ((right.x - left.x) * ratio);
+          }
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.y - targetY);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.y - targetY);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
+            }
+          }
+          return nearest.x;
+        };
 
         let averageReferencePoint = null;
         if (prospectFrequencyShowAverageReference) {
-          const averageX = toXForValue(model.averageYield);
-          const averageY = getYOnLineForX(averageX);
+          const averageMetricValue = Number(model.averageYield);
+          const averageX = prospectFrequencyFlipAxes
+            ? getXOnLineForY(toYForPercent(averageMetricValue))
+            : toXForPercentValue(averageMetricValue);
+          const averageY = prospectFrequencyFlipAxes
+            ? toYForPercent(averageMetricValue)
+            : getYOnLineForX(averageX);
           if (Number.isFinite(averageX) && Number.isFinite(averageY)) {
             averageReferencePoint = {
               kind: "average-reference",
@@ -4866,18 +4947,34 @@
 
         const labels = document.createElement("div");
         labels.className = "histogram-bin-labels";
-        const labelPoints = prospectFrequencyReverseCumulative
-          ? [...model.points].reverse()
-          : model.points;
+        const xTickValues = prospectFrequencyFlipAxes
+          ? (() => {
+            const ticks = [];
+            for (let value = 0; value <= countAxisScaleMax; value += countAxisStep) {
+              ticks.push(value);
+            }
+            if (ticks[ticks.length - 1] !== countAxisScaleMax) {
+              ticks.push(countAxisScaleMax);
+            }
+            return ticks;
+          })()
+          : [];
+        const labelPoints = prospectFrequencyFlipAxes
+          ? xTickValues
+          : (prospectFrequencyReverseCumulative ? [...model.points].reverse() : model.points);
         labels.style.gridTemplateColumns = `repeat(${labelPoints.length}, minmax(0, 1fr))`;
         const labelStep = Math.max(1, Math.ceil(labelPoints.length / 12));
         labelPoints.forEach((point, index) => {
           const label = document.createElement("span");
           label.className = "histogram-bin-label prospect-frequency-bin-label";
           if ((index % labelStep) === 0 || index === labelPoints.length - 1) {
-            const labelRangeStart = prospectFrequencyReverseCumulative ? point.intervalEnd : point.intervalStart;
-            const labelRangeEnd = prospectFrequencyReverseCumulative ? point.intervalStart : point.intervalEnd;
-            label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
+            if (prospectFrequencyFlipAxes) {
+              label.textContent = formatNumber(Number(point), 0);
+            } else {
+              const labelRangeStart = prospectFrequencyReverseCumulative ? point.intervalEnd : point.intervalStart;
+              const labelRangeEnd = prospectFrequencyReverseCumulative ? point.intervalStart : point.intervalEnd;
+              label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
+            }
           }
           labels.appendChild(label);
         });
@@ -7020,6 +7117,16 @@
         materialPercentReverseCumulativeInput.checked = prospectFrequencyReverseCumulative;
         materialPercentReverseCumulativeInput.addEventListener("change", () => {
           prospectFrequencyReverseCumulative = !!materialPercentReverseCumulativeInput.checked;
+          if (activeSessionData) {
+            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+          }
+        });
+      }
+
+      if (materialPercentFlipCumulativeAxisInput) {
+        materialPercentFlipCumulativeAxisInput.checked = prospectFrequencyFlipAxes;
+        materialPercentFlipCumulativeAxisInput.addEventListener("change", () => {
+          prospectFrequencyFlipAxes = !!materialPercentFlipCumulativeAxisInput.checked;
           if (activeSessionData) {
             void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
           }

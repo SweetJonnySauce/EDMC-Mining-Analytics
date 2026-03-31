@@ -851,7 +851,9 @@
       let selectedReferenceCrosshairs = new Set(["avg"]);
       let compareShowGridlines = true;
       let compareNormalizeMetrics = false;
+      let compareNormalizeYAxis = false;
       let compareReverseCumulative = false;
+      let compareFlipCumulativeAxes = false;
       let favoriteRingNames = new Set();
 
       function getThemeOption(themeId) {
@@ -1354,6 +1356,21 @@
         normalizeWrapper.appendChild(normalizeText);
         compareGridlineOptions.appendChild(normalizeWrapper);
 
+        const normalizeYAxisWrapper = document.createElement("label");
+        normalizeYAxisWrapper.className = "compare-population-option";
+        const normalizeYAxisInput = document.createElement("input");
+        normalizeYAxisInput.type = "checkbox";
+        normalizeYAxisInput.checked = compareNormalizeYAxis;
+        normalizeYAxisInput.addEventListener("change", () => {
+          compareNormalizeYAxis = normalizeYAxisInput.checked;
+          renderComparePanels();
+        });
+        const normalizeYAxisText = document.createElement("span");
+        normalizeYAxisText.textContent = "Normalize Y axis";
+        normalizeYAxisWrapper.appendChild(normalizeYAxisInput);
+        normalizeYAxisWrapper.appendChild(normalizeYAxisText);
+        compareGridlineOptions.appendChild(normalizeYAxisWrapper);
+
         const reverseWrapper = document.createElement("label");
         reverseWrapper.className = "compare-population-option";
         const reverseInput = document.createElement("input");
@@ -1368,6 +1385,21 @@
         reverseWrapper.appendChild(reverseInput);
         reverseWrapper.appendChild(reverseText);
         compareGridlineOptions.appendChild(reverseWrapper);
+
+        const flipWrapper = document.createElement("label");
+        flipWrapper.className = "compare-population-option";
+        const flipInput = document.createElement("input");
+        flipInput.type = "checkbox";
+        flipInput.checked = compareFlipCumulativeAxes;
+        flipInput.addEventListener("change", () => {
+          compareFlipCumulativeAxes = flipInput.checked;
+          renderComparePanels();
+        });
+        const flipText = document.createElement("span");
+        flipText.textContent = "Flip Cumulative Axes";
+        flipWrapper.appendChild(flipInput);
+        flipWrapper.appendChild(flipText);
+        compareGridlineOptions.appendChild(flipWrapper);
       }
 
       function buildScopedAsteroidRows(ring, commodityKey, populationMode) {
@@ -1444,10 +1476,12 @@
           running += counts[index];
           const intervalStart = index * interval;
           const intervalEnd = Math.min(xMax, intervalStart + interval);
+          const center = intervalStart + ((intervalEnd - intervalStart) / 2);
           points.push({
             index,
             intervalStart,
             intervalEnd,
+            center,
             binCount: counts[index],
             total: running
           });
@@ -1467,11 +1501,13 @@
         };
       }
 
-      function renderRingChart(chartPanel, ringName, commodityLabel, model, forcedYMax, selectedCrosshairKeys, normalizeBySessions, reverseCumulative) {
+      function renderRingChart(chartPanel, ringName, commodityLabel, model, forcedYMax, selectedCrosshairKeys, normalizeBySessions, reverseCumulative, flipCumulativeAxes) {
         chartPanel.innerHTML = "";
         const title = document.createElement("p");
         title.className = "ring-chart-title";
-        title.textContent = `Cumulative Frequency (${commodityLabel})`;
+        title.textContent = reverseCumulative
+          ? `Cumulative Frequency (${commodityLabel}) - Reversed`
+          : `Cumulative Frequency (${commodityLabel})`;
         chartPanel.appendChild(title);
 
         if (!model || !Array.isArray(model.points) || model.points.length === 0) {
@@ -1498,15 +1534,36 @@
           ? forcedYMax
           : null;
         const normalizedModelYMax = Number(model && model.yMax) / sessionDivisor;
-        const yMaxInt = Math.max(1, Math.ceil(normalizedForcedYMax || normalizedModelYMax));
-        const step = inferStep(yMaxInt);
-        const yScaleMax = Math.max(yMaxInt, Math.ceil(yMaxInt / step) * step);
+        const countAxisMaxInt = Math.max(1, Math.ceil(normalizedForcedYMax || normalizedModelYMax));
+        const countAxisStep = inferStep(countAxisMaxInt);
+        const countAxisScaleMax = Math.max(countAxisMaxInt, Math.ceil(countAxisMaxInt / countAxisStep) * countAxisStep);
+        const percentAxisMaxInt = Math.max(1, Math.ceil(Number(model && model.xMax) || 0));
+        const percentAxisStep = inferStep(percentAxisMaxInt);
+        const percentAxisScaleMax = Math.max(percentAxisMaxInt, Math.ceil(percentAxisMaxInt / percentAxisStep) * percentAxisStep);
         const yTicks = [];
-        for (let value = yScaleMax; value >= 0; value -= step) {
-          yTicks.push(value);
-        }
-        if (yTicks[yTicks.length - 1] !== 0) {
-          yTicks.push(0);
+        if (flipCumulativeAxes) {
+          if (reverseCumulative) {
+            for (let value = 0; value <= percentAxisScaleMax; value += percentAxisStep) {
+              yTicks.push(value);
+            }
+            if (yTicks[yTicks.length - 1] !== percentAxisScaleMax) {
+              yTicks.push(percentAxisScaleMax);
+            }
+          } else {
+            for (let value = percentAxisScaleMax; value >= 0; value -= percentAxisStep) {
+              yTicks.push(value);
+            }
+            if (yTicks[yTicks.length - 1] !== 0) {
+              yTicks.push(0);
+            }
+          }
+        } else {
+          for (let value = countAxisScaleMax; value >= 0; value -= countAxisStep) {
+            yTicks.push(value);
+          }
+          if (yTicks[yTicks.length - 1] !== 0) {
+            yTicks.push(0);
+          }
         }
 
         const plot = document.createElement("div");
@@ -1515,7 +1572,7 @@
         yAxis.className = "compare-y-axis";
         yTicks.forEach((value) => {
           const tick = document.createElement("span");
-          tick.textContent = String(value);
+          tick.textContent = flipCumulativeAxes ? `${value}%` : String(value);
           yAxis.appendChild(tick);
         });
         const surface = document.createElement("div");
@@ -1541,15 +1598,29 @@
             ? (totalBins - index - 1)
             : index
         );
-        const toX = (index) => sidePad + (((toDisplayIndex(index) + 0.5) / totalBins) * drawWidth);
-        const toY = (count) => {
-          const ratio = yScaleMax <= 0 ? 0 : (count / yScaleMax);
+        const toXForBinIndex = (index) => sidePad + (((toDisplayIndex(index) + 0.5) / totalBins) * drawWidth);
+        const toYForCount = (count) => {
+          const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
           return topPad + (drawHeight * (1 - ratio));
         };
+        const toXForCount = (count) => {
+          const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
+          return sidePad + (drawWidth * Math.max(0, Math.min(1, ratio)));
+        };
+        const toYForPercent = (percent) => {
+          const ratio = percentAxisScaleMax <= 0 ? 0 : (percent / percentAxisScaleMax);
+          const displayRatio = reverseCumulative ? ratio : (1 - ratio);
+          return topPad + (drawHeight * Math.max(0, Math.min(1, displayRatio)));
+        };
+        const toYPlot = (value) => (
+          flipCumulativeAxes
+            ? toYForPercent(value)
+            : toYForCount(value)
+        );
 
         if (compareShowGridlines) {
           yTicks.forEach((value) => {
-            const y = toY(value);
+            const y = toYPlot(value);
             const line = document.createElementNS(ns, "line");
             line.setAttribute("x1", sidePad.toFixed(2));
             line.setAttribute("x2", (width - sidePad).toFixed(2));
@@ -1567,8 +1638,8 @@
             ...point,
             displayBinCount,
             displayTotal,
-            x: toX(point.index),
-            y: toY(displayTotal)
+            x: flipCumulativeAxes ? toXForCount(displayTotal) : toXForBinIndex(point.index),
+            y: flipCumulativeAxes ? toYForPercent(point.center) : toYForCount(displayTotal)
           };
         });
 
@@ -1581,20 +1652,20 @@
         const referenceMetrics = model;
 
         const selectedKeys = selectedCrosshairKeys instanceof Set ? selectedCrosshairKeys : new Set();
-        const maxXValue = Math.max(1, asNumber(model.xMax));
+        const maxPercentValue = Math.max(1, asNumber(model.xMax));
         const totalCount = Math.max(
           1,
           coordinates.length
             ? asNumber(coordinates[coordinates.length - 1].displayTotal)
             : (asNumber(model.asteroidsCount) / sessionDivisor)
         );
-        const toXForValue = (rawValue) => {
+        const toXForPercentValue = (rawValue) => {
           const value = Number(rawValue);
           if (!Number.isFinite(value)) {
             return null;
           }
-          const clamped = Math.max(0, Math.min(maxXValue, value));
-          const ratio = clamped / maxXValue;
+          const clamped = Math.max(0, Math.min(maxPercentValue, value));
+          const ratio = clamped / maxPercentValue;
           const displayRatio = reverseCumulative ? (1 - ratio) : ratio;
           return sidePad + (displayRatio * drawWidth);
         };
@@ -1632,6 +1703,40 @@
           }
           return nearest.y;
         };
+        const getXOnLineForY = (targetY) => {
+          if (!Number.isFinite(targetY) || !coordinates.length) {
+            return null;
+          }
+          if (coordinates.length === 1) {
+            return Number.isFinite(coordinates[0].x) ? coordinates[0].x : null;
+          }
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const left = coordinates[index - 1];
+            const right = coordinates[index];
+            const minY = Math.min(left.y, right.y);
+            const maxY = Math.max(left.y, right.y);
+            if (targetY < minY || targetY > maxY) {
+              continue;
+            }
+            const span = right.y - left.y;
+            if (!Number.isFinite(span) || Math.abs(span) <= 0.000001) {
+              return right.x;
+            }
+            const ratio = Math.max(0, Math.min(1, (targetY - left.y) / span));
+            return left.x + ((right.x - left.x) * ratio);
+          }
+          let nearest = coordinates[0];
+          let nearestDistance = Math.abs(nearest.y - targetY);
+          for (let index = 1; index < coordinates.length; index += 1) {
+            const candidate = coordinates[index];
+            const distance = Math.abs(candidate.y - targetY);
+            if (distance < nearestDistance) {
+              nearest = candidate;
+              nearestDistance = distance;
+            }
+          }
+          return nearest.x;
+        };
 
         const referencePoints = [];
         REFERENCE_CROSSHAIRS.forEach((entry) => {
@@ -1639,23 +1744,38 @@
             return;
           }
           const metricValue = Number(referenceMetrics[entry.metricKey]);
-          const referenceX = toXForValue(metricValue);
-          if (!Number.isFinite(referenceX)) {
-            return;
-          }
           const quantile = Number(entry.quantile);
           const clampedQuantile = Number.isFinite(quantile) ? Math.max(0, Math.min(1, quantile)) : 0;
           const referenceCount = Number.isFinite(quantile) ? (totalCount * clampedQuantile) : null;
-          const referenceY = (() => {
+          let referenceX = null;
+          let referenceY = null;
+          if (flipCumulativeAxes) {
+            referenceY = toYForPercent(metricValue);
+            if (!Number.isFinite(referenceY)) {
+              return;
+            }
+            const xOnLine = getXOnLineForY(referenceY);
+            if (Number.isFinite(xOnLine)) {
+              referenceX = xOnLine;
+            } else if (Number.isFinite(referenceCount)) {
+              referenceX = toXForCount(referenceCount);
+            } else {
+              referenceX = toXForCount(0);
+            }
+          } else {
+            referenceX = toXForPercentValue(metricValue);
+            if (!Number.isFinite(referenceX)) {
+              return;
+            }
             const yOnLine = getYOnLineForX(referenceX);
             if (Number.isFinite(yOnLine)) {
-              return yOnLine;
+              referenceY = yOnLine;
+            } else if (Number.isFinite(referenceCount)) {
+              referenceY = toYForCount(referenceCount);
+            } else {
+              referenceY = toYForCount(0);
             }
-            if (Number.isFinite(referenceCount)) {
-              return toY(referenceCount);
-            }
-            return toY(0);
-          })();
+          }
           referencePoints.push({ entry, referenceX, referenceY, metricValue });
         });
 
@@ -1950,18 +2070,34 @@
 
         const labels = document.createElement("div");
         labels.className = "compare-bin-labels";
-        const labelPoints = reverseCumulative
-          ? [...model.points].reverse()
-          : model.points;
+        const xTickValues = flipCumulativeAxes
+          ? (() => {
+            const ticks = [];
+            for (let value = 0; value <= countAxisScaleMax; value += countAxisStep) {
+              ticks.push(value);
+            }
+            if (ticks[ticks.length - 1] !== countAxisScaleMax) {
+              ticks.push(countAxisScaleMax);
+            }
+            return ticks;
+          })()
+          : [];
+        const labelPoints = flipCumulativeAxes
+          ? xTickValues
+          : (reverseCumulative ? [...model.points].reverse() : model.points);
         labels.style.gridTemplateColumns = `repeat(${labelPoints.length}, minmax(0, 1fr))`;
         const labelStep = Math.max(1, Math.ceil(labelPoints.length / 10));
         labelPoints.forEach((point, index) => {
           const label = document.createElement("span");
           label.className = "compare-bin-label";
           if ((index % labelStep) === 0 || index === labelPoints.length - 1) {
-            const labelRangeStart = reverseCumulative ? point.intervalEnd : point.intervalStart;
-            const labelRangeEnd = reverseCumulative ? point.intervalStart : point.intervalEnd;
-            label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
+            if (flipCumulativeAxes) {
+              label.textContent = formatNumber(Number(point), 0);
+            } else {
+              const labelRangeStart = reverseCumulative ? point.intervalEnd : point.intervalStart;
+              const labelRangeEnd = reverseCumulative ? point.intervalStart : point.intervalEnd;
+              label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
+            }
           }
           labels.appendChild(label);
         });
@@ -2001,15 +2137,15 @@
           const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, selectedYieldPopulationMode);
           return { ring, metric };
         }).filter((row) => Number(row && row.metric && row.metric.presentAsteroidsCount) > 0);
-        const sharedYMax = rows.reduce((peak, row) => {
-          const yMax = Number(row && row.metric && row.metric.yMax);
-          if (!Number.isFinite(yMax)) {
-            return peak;
-          }
-          const sessionsCount = Math.max(1, Number(row && row.metric && row.metric.sessionsCount) || 0);
-          const displayYMax = compareNormalizeMetrics ? (yMax / sessionsCount) : yMax;
-          return Math.max(peak, displayYMax);
-        }, 1);
+        const sharedYMax = (!compareFlipCumulativeAxes && compareNormalizeYAxis)
+          ? rows.reduce((peak, row) => {
+            const divisor = compareNormalizeMetrics
+              ? Math.max(1, Number(row && row.metric && row.metric.sessionsCount) || 0)
+              : 1;
+            const ringYMax = Number(row && row.metric && row.metric.yMax) / divisor;
+            return Math.max(peak, Number.isFinite(ringYMax) ? ringYMax : 0);
+          }, 0)
+          : null;
         rows.sort((left, right) => {
           if (sortMode === "name_asc") {
             return left.ring.ringName.localeCompare(right.ring.ringName);
@@ -2105,7 +2241,8 @@
               sharedYMax,
               rowCrosshairs,
               compareNormalizeMetrics,
-              compareReverseCumulative
+              compareReverseCumulative,
+              compareFlipCumulativeAxes
             );
           };
 
