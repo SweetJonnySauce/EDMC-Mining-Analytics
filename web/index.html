@@ -278,11 +278,6 @@
       scrollbar-color: color-mix(in srgb, var(--accent) 55%, transparent) color-mix(in srgb, var(--fg) 6%, transparent);
     }
 
-    .session-toolbar-select.session-toolbar-select--expanded {
-      position: relative;
-      z-index: 8;
-    }
-
     .session-toolbar-select::-webkit-scrollbar {
       width: 10px;
     }
@@ -1800,7 +1795,6 @@
         { id: "green-light", label: "Green (light)", swatchBg: "#f4f9f2", swatchAccent: "#3c8223" },
         { id: "green-dark", label: "Green (dark)", swatchBg: "#1a2a29", swatchAccent: "#86c948" }
       ];
-      const SESSION_SELECT_VISIBLE_ROWS = 10;
       let cursorTooltip = null;
       let runtimeAnalysisSettings = {};
       let activeThemeId = DEFAULT_THEME_ID;
@@ -6765,8 +6759,6 @@
           });
 
           sessionSelect.innerHTML = "";
-          sessionSelect.size = 1;
-          sessionSelect.classList.remove("session-toolbar-select--expanded");
           if (unique.length === 0) {
             const option = document.createElement("option");
             option.textContent = "No saved sessions found";
@@ -6803,8 +6795,6 @@
           await loadSession(unique[0]);
         } catch (error) {
           sessionSelect.innerHTML = "";
-          sessionSelect.size = 1;
-          sessionSelect.classList.remove("session-toolbar-select--expanded");
           const option = document.createElement("option");
           option.textContent = "Unable to load session list";
           sessionSelect.appendChild(option);
@@ -6820,53 +6810,9 @@
         }
       }
 
-      function collapseSessionSelectDropdown() {
-        sessionSelect.size = 1;
-        sessionSelect.classList.remove("session-toolbar-select--expanded");
-      }
-
-      function expandSessionSelectDropdown() {
-        if (sessionSelect.disabled) {
-          return;
-        }
-        const optionCount = sessionSelect.options ? sessionSelect.options.length : 0;
-        if (optionCount <= 1) {
-          return;
-        }
-        const visibleRows = Math.min(SESSION_SELECT_VISIBLE_ROWS, optionCount);
-        sessionSelect.size = Math.max(2, visibleRows);
-        sessionSelect.classList.add("session-toolbar-select--expanded");
-      }
-
-      sessionSelect.addEventListener("mousedown", (event) => {
-        if (sessionSelect.size > 1) {
-          return;
-        }
-        event.preventDefault();
-        expandSessionSelectDropdown();
-      });
-
-      sessionSelect.addEventListener("keydown", (event) => {
-        if ((event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") && sessionSelect.size === 1) {
-          event.preventDefault();
-          expandSessionSelectDropdown();
-          return;
-        }
-        if (event.key === "Escape" && sessionSelect.size > 1) {
-          event.preventDefault();
-          collapseSessionSelectDropdown();
-          sessionSelect.blur();
-        }
-      });
-
-      sessionSelect.addEventListener("blur", () => {
-        window.setTimeout(collapseSessionSelectDropdown, 0);
-      });
-
       sessionSelect.addEventListener("change", function (event) {
         const target = event.target;
         const selected = target && typeof target.value === "string" ? target.value : "";
-        collapseSessionSelectDropdown();
         void loadSession(selected);
       });
 
