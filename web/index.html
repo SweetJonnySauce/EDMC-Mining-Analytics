@@ -273,6 +273,29 @@
       flex: 1 1 auto;
       min-width: 0;
       max-width: none;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--accent) 55%, transparent) color-mix(in srgb, var(--fg) 6%, transparent);
+    }
+
+    .session-toolbar-select.session-toolbar-select--expanded {
+      position: relative;
+      z-index: 8;
+    }
+
+    .session-toolbar-select::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .session-toolbar-select::-webkit-scrollbar-track {
+      background: color-mix(in srgb, var(--fg) 6%, transparent);
+      border-radius: 999px;
+    }
+
+    .session-toolbar-select::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, var(--accent) 58%, transparent);
+      border-radius: 999px;
+      border: 2px solid color-mix(in srgb, var(--fg) 6%, transparent);
     }
 
     .session-toolbar-compare-button {
@@ -1679,7 +1702,7 @@
         </article>
         <article class="chart-card">
           <div class="panel-header-row">
-            <h2>Asteroid Percentage Histogram</h2>
+            <h2>Asteroid % Histogram</h2>
             <div id="prospect-histogram-header-controls" class="panel-header-controls"></div>
           </div>
           <div id="chart-prospect-histogram" class="chart-body"></div>
@@ -1777,6 +1800,7 @@
         { id: "green-light", label: "Green (light)", swatchBg: "#f4f9f2", swatchAccent: "#3c8223" },
         { id: "green-dark", label: "Green (dark)", swatchBg: "#1a2a29", swatchAccent: "#86c948" }
       ];
+      const SESSION_SELECT_VISIBLE_ROWS = 10;
       let cursorTooltip = null;
       let runtimeAnalysisSettings = {};
       let activeThemeId = DEFAULT_THEME_ID;
@@ -1786,6 +1810,7 @@
       let activeSessionData = null;
       let activeSessionFilename = "";
       let materialPercentShowOnlyCollected = false;
+      let histogramShowOnlyCollected = false;
       let commodityLinkMap = new Map();
       let commodityLinkLoadPromise = null;
       let prospectSummaryRecords = null;
@@ -2488,35 +2513,103 @@
         return counted > 0 ? counted : null;
       }
 
-      function formatSessionOptionLabel(filename, ringLabel, asteroidCount) {
+      function resolveSessionMostCollectedCommodity(sessionData) {
+        const root = sessionData && typeof sessionData === "object" ? sessionData : {};
+        const commodities = root.commodities && typeof root.commodities === "object" ? root.commodities : {};
+        const commodityEntries = Object.entries(commodities)
+          .map(([name, details]) => {
+            const payload = details && typeof details === "object" ? details : {};
+            const gathered = payload.gathered && typeof payload.gathered === "object" ? payload.gathered : {};
+            const tons = Number(gathered.tons);
+            const asteroids = Number(payload.asteroids_prospected);
+            return {
+              name: String(name || "").trim(),
+              tons: Number.isFinite(tons) ? tons : 0,
+              asteroids: Number.isFinite(asteroids) ? asteroids : 0
+            };
+          })
+          .filter((entry) => !!entry.name);
+        if (commodityEntries.length) {
+          commodityEntries.sort((left, right) => {
+            if (right.tons !== left.tons) {
+              return right.tons - left.tons;
+            }
+            if (right.asteroids !== left.asteroids) {
+              return right.asteroids - left.asteroids;
+            }
+            return left.name.localeCompare(right.name);
+          });
+          if (commodityEntries[0].tons > 0) {
+            return commodityEntries[0].name;
+          }
+        }
+
+        const events = Array.isArray(root.events) ? root.events : [];
+        const refinedCounts = new Map();
+        events.forEach((event) => {
+          if (!event || event.type !== "mining_refined") {
+            return;
+          }
+          const details = event.details && typeof event.details === "object" ? event.details : {};
+          const localized = typeof details.type_localised === "string" ? details.type_localised.trim() : "";
+          const rawType = typeof details.type === "string" ? details.type.trim() : "";
+          const name = localized || rawType
+            .replace(/^\$/, "")
+            .replace(/;$/, "")
+            .replace(/_name$/i, "")
+            .replace(/_/g, " ")
+            .trim();
+          if (!name) {
+            return;
+          }
+          refinedCounts.set(name, (refinedCounts.get(name) || 0) + 1);
+        });
+        if (refinedCounts.size > 0) {
+          const ranked = Array.from(refinedCounts.entries()).sort((left, right) => {
+            if (right[1] !== left[1]) {
+              return right[1] - left[1];
+            }
+            return left[0].localeCompare(right[0]);
+          });
+          return ranked[0][0];
+        }
+
+        return "";
+      }
+
+      function formatSessionOptionLabel(filename, ringLabel, asteroidCount, commodityLabel) {
         const when = formatSessionDateTimeFromFilename(filename);
         const ring = typeof ringLabel === "string" && ringLabel.trim() ? ringLabel.trim() : "Unknown";
         const asteroidText = Number.isFinite(asteroidCount)
           ? formatNumber(Math.max(0, Math.floor(asteroidCount)), 0)
           : "--";
+        const commodityText = typeof commodityLabel === "string" && commodityLabel.trim()
+          ? commodityLabel.trim()
+          : "--";
         if (!when.timeLabel) {
-          return `${when.dateLabel}, ${ring}, (Asteroids: ${asteroidText})`;
+          return `${when.dateLabel}, ${ring}, (Asteroids: ${asteroidText}, ${commodityText})`;
         }
-        return `${when.dateLabel}, ${when.timeLabel}, ${ring}, (Asteroids: ${asteroidText})`;
+        return `${when.dateLabel}, ${when.timeLabel}, ${ring}, (Asteroids: ${asteroidText}, ${commodityText})`;
       }
 
       async function fetchSessionOptionDetails(filename) {
         if (!filename) {
-          return { ringLabel: "", asteroidCount: null };
+          return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
         }
         try {
           const response = await fetch(`/session_data/${encodeURIComponent(filename)}`, { cache: "no-store" });
           if (!response.ok) {
-            return { ringLabel: "", asteroidCount: null };
+            return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
           }
           const payload = await response.json();
           const ring = String(resolveSessionRingLabel(payload) || "").trim();
           return {
             ringLabel: ring && ring !== "Unknown" ? ring : "",
-            asteroidCount: resolveSessionAsteroidCount(payload)
+            asteroidCount: resolveSessionAsteroidCount(payload),
+            commodityLabel: resolveSessionMostCollectedCommodity(payload)
           };
         } catch (_error) {
-          return { ringLabel: "", asteroidCount: null };
+          return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
         }
       }
 
@@ -3317,12 +3410,11 @@
         chartContentMix.appendChild(wrapper);
       }
 
-      function buildMaterialPercentAmountModel(sessionData, showOnlyCollected, includeDuplicates) {
-        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
-        const commodityMap = new Map();
-        const collectedCommodityKeys = new Set();
-        let asteroidNumber = 0;
-
+      function collectRefinedCommodityKeys(events) {
+        const keys = new Set();
+        if (!Array.isArray(events)) {
+          return keys;
+        }
         events.forEach((event) => {
           if (!event || event.type !== "mining_refined") {
             return;
@@ -3337,9 +3429,17 @@
             .replace(/_/g, " ");
           const key = normalizeCommodityKey(display) || normalizeTextKey(display);
           if (key) {
-            collectedCommodityKeys.add(key);
+            keys.add(key);
           }
         });
+        return keys;
+      }
+
+      function buildMaterialPercentAmountModel(sessionData, showOnlyCollected, includeDuplicates) {
+        const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const commodityMap = new Map();
+        const collectedCommodityKeys = collectRefinedCommodityKeys(events);
+        let asteroidNumber = 0;
 
         events.forEach((event) => {
           if (!event || event.type !== "prospected_asteroid") {
@@ -3774,7 +3874,7 @@
         return Math.max(1, Math.min(100, rounded));
       }
 
-      function buildProspectHistogramModel(sessionData, includeDuplicates) {
+      function buildProspectHistogramModel(sessionData, includeDuplicates, showOnlyCollected) {
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const configuredBinSize = (
           meta.histogram_bin_size
@@ -3784,6 +3884,7 @@
         const bins = Math.max(1, Math.ceil(100 / binSize));
 
         const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
+        const collectedCommodityKeys = collectRefinedCommodityKeys(events);
         const byCommodity = new Map();
         events.forEach((event) => {
           if (!event || event.type !== "prospected_asteroid") {
@@ -3805,6 +3906,9 @@
             }
             const key = normalizeCommodityKey(name) || normalizeTextKey(name) || name.toLowerCase();
             if (!key) {
+              return;
+            }
+            if (showOnlyCollected && !collectedCommodityKeys.has(key)) {
               return;
             }
             let item = byCommodity.get(key);
@@ -3846,6 +3950,10 @@
         const source = sessionData && typeof sessionData === "object" ? (sessionData.commodities || {}) : {};
         const result = [];
         Object.entries(source).forEach(([name, details]) => {
+          const commodityKey = normalizeCommodityKey(name) || normalizeTextKey(name) || String(name || "").trim().toLowerCase();
+          if (showOnlyCollected && (!commodityKey || !collectedCommodityKeys.has(commodityKey))) {
+            return;
+          }
           const payload = details && typeof details === "object" ? details : {};
           const breakdown = Array.isArray(payload.percentage_breakdown) ? payload.percentage_breakdown : [];
           const counts = new Array(bins).fill(0);
@@ -4018,7 +4126,7 @@
       function buildProspectCumulativeFrequencyModel(sessionData, filename, summaryRecords) {
         const commodity = String(selectedHistogramCommodity || "").trim();
         if (!commodity) {
-          return { error: "Select a commodity in Asteroid Percentage Histogram to view cumulative frequency." };
+          return { error: "Select a commodity in Asteroid % Histogram to view cumulative frequency." };
         }
         if (!Array.isArray(summaryRecords) || summaryRecords.length === 0) {
           return { error: "No long-term prospect summary data found yet." };
@@ -4640,6 +4748,28 @@
         };
         if (prospectHistogramHeaderControls) {
           prospectHistogramHeaderControls.innerHTML = "";
+          const showCollectedToggle = document.createElement("label");
+          showCollectedToggle.className = "prospect-frequency-control";
+          const showCollectedInput = document.createElement("input");
+          showCollectedInput.type = "checkbox";
+          showCollectedInput.checked = materialPercentShowOnlyCollected || histogramShowOnlyCollected;
+          showCollectedInput.addEventListener("change", () => {
+            materialPercentShowOnlyCollected = showCollectedInput.checked;
+            histogramShowOnlyCollected = showCollectedInput.checked;
+            if (materialPercentShowCollectedInput) {
+              materialPercentShowCollectedInput.checked = showCollectedInput.checked;
+            }
+            if (activeSessionData) {
+              renderProspectHistogram(activeSessionData);
+              renderMaterialPercentAmount(activeSessionData);
+            }
+          });
+          const showCollectedText = document.createElement("span");
+          showCollectedText.textContent = "Show only collected";
+          showCollectedToggle.appendChild(showCollectedInput);
+          showCollectedToggle.appendChild(showCollectedText);
+          prospectHistogramHeaderControls.appendChild(showCollectedToggle);
+
           const duplicatesToggle = document.createElement("label");
           duplicatesToggle.className = "prospect-frequency-control";
           const duplicateInput = document.createElement("input");
@@ -4664,7 +4794,11 @@
         if (commodityHistogramFilters) {
           commodityHistogramFilters.innerHTML = "";
         }
-        const model = buildProspectHistogramModel(sessionData, prospectFrequencyIncludeDuplicates);
+        const model = buildProspectHistogramModel(
+          sessionData,
+          prospectFrequencyIncludeDuplicates,
+          materialPercentShowOnlyCollected || histogramShowOnlyCollected
+        );
         if (!model || !Array.isArray(model.commodities) || !model.commodities.length) {
           const note = document.createElement("p");
           note.className = "chart-empty";
@@ -4965,6 +5099,10 @@
 
       function buildCumulativeCommoditySeries(sessionData) {
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
+        const cargoCapacityRaw = Number(meta.cargo_capacity);
+        const cargoCapacity = Number.isFinite(cargoCapacityRaw) && cargoCapacityRaw > 0
+          ? cargoCapacityRaw
+          : null;
         const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
         const estimatedSell = meta && typeof meta.estimated_sell === "object" ? meta.estimated_sell : {};
         const byCommodity = Array.isArray(estimatedSell.by_commodity) ? estimatedSell.by_commodity : [];
@@ -5017,6 +5155,24 @@
           }
           return null;
         };
+        const readInventoryCargoExcludingDrones = (inventory) => {
+          const source = inventory && typeof inventory === "object" ? inventory : {};
+          return Object.entries(source).reduce((sum, [name, value]) => {
+            const key = String(name || "").trim().toLowerCase();
+            if (!key || key === "drones") {
+              return sum;
+            }
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric) || numeric <= 0) {
+              return sum;
+            }
+            return sum + numeric;
+          }, 0);
+        };
+        const hasLimpetsInInventory = (inventory) => {
+          const source = inventory && typeof inventory === "object" ? inventory : {};
+          return Object.keys(source).some((name) => String(name || "").trim().toLowerCase() === "limpets");
+        };
         const cargoSnapshots = events
           .map((event, index) => {
             if (!event || event.type !== "cargo") {
@@ -5033,7 +5189,9 @@
               return null;
             }
             const limpetCount = readCargoLimpetCount(details, inventory);
-            return { ms, inventory, index, limpetCount };
+            const totalCargoRaw = Number(details.total_cargo);
+            const totalCargo = Number.isFinite(totalCargoRaw) && totalCargoRaw >= 0 ? totalCargoRaw : null;
+            return { ms, inventory, index, limpetCount, totalCargo };
           })
           .filter((snapshot) => !!snapshot)
           .sort((left, right) => {
@@ -5093,6 +5251,34 @@
           }
           return { name, points };
         });
+
+        if (cargoCapacity !== null) {
+          const points = cargoSnapshots.map((snapshot) => {
+            let occupied = 0;
+            if (Number.isFinite(snapshot.totalCargo) && Number.isFinite(snapshot.limpetCount) && snapshot.limpetCount >= 0) {
+              occupied = Math.max(0, asNumber(snapshot.totalCargo) + asNumber(snapshot.limpetCount));
+            } else {
+              occupied = readInventoryCargoExcludingDrones(snapshot.inventory);
+              if (!hasLimpetsInInventory(snapshot.inventory) && Number.isFinite(snapshot.limpetCount) && snapshot.limpetCount >= 0) {
+                occupied += snapshot.limpetCount;
+              }
+            }
+            const quantity = Math.max(0, cargoCapacity - occupied);
+            return { ms: snapshot.ms, quantity, profit: 0 };
+          });
+          const lastPoint = points[points.length - 1] || null;
+          if (lastPoint && lastPoint.ms < endMs) {
+            points.push({
+              ms: endMs,
+              quantity: asNumber(lastPoint.quantity),
+              profit: 0
+            });
+          }
+          series.push({
+            name: "Empty Cargo Space",
+            points
+          });
+        }
 
         return { startMs, endMs, series };
       }
@@ -5303,12 +5489,21 @@
           hideCursorTooltip();
           const selectedSeries = series.filter((item) => cumulativeCommoditySelection[item.name]);
           const stackedSeries = [...selectedSeries].sort((left, right) => {
-            const leftIsLimpets = String(left && left.name || "").trim().toLowerCase() === "limpets";
-            const rightIsLimpets = String(right && right.name || "").trim().toLowerCase() === "limpets";
-            if (leftIsLimpets === rightIsLimpets) {
+            const rankSeriesForStack = (item) => {
+              const name = String(item && item.name || "").trim().toLowerCase();
+              if (name === "empty cargo space") {
+                return 2;
+              }
+              if (name === "limpets") {
+                return 1;
+              }
               return 0;
+            };
+            const rankDelta = rankSeriesForStack(left) - rankSeriesForStack(right);
+            if (rankDelta !== 0) {
+              return rankDelta;
             }
-            return leftIsLimpets ? 1 : -1;
+            return (seriesIndexByName.get(left.name) || 0) - (seriesIndexByName.get(right.name) || 0);
           });
           const pointCount = selectedSeries.length
             ? Math.min(...selectedSeries.map((item) => item.points.length))
@@ -6570,6 +6765,8 @@
           });
 
           sessionSelect.innerHTML = "";
+          sessionSelect.size = 1;
+          sessionSelect.classList.remove("session-toolbar-select--expanded");
           if (unique.length === 0) {
             const option = document.createElement("option");
             option.textContent = "No saved sessions found";
@@ -6592,7 +6789,12 @@
               if (listToken !== sessionListRenderToken) {
                 return;
               }
-              option.textContent = formatSessionOptionLabel(file, details.ringLabel, details.asteroidCount);
+              option.textContent = formatSessionOptionLabel(
+                file,
+                details.ringLabel,
+                details.asteroidCount,
+                details.commodityLabel
+              );
             })();
           }
 
@@ -6601,6 +6803,8 @@
           await loadSession(unique[0]);
         } catch (error) {
           sessionSelect.innerHTML = "";
+          sessionSelect.size = 1;
+          sessionSelect.classList.remove("session-toolbar-select--expanded");
           const option = document.createElement("option");
           option.textContent = "Unable to load session list";
           sessionSelect.appendChild(option);
@@ -6616,9 +6820,53 @@
         }
       }
 
+      function collapseSessionSelectDropdown() {
+        sessionSelect.size = 1;
+        sessionSelect.classList.remove("session-toolbar-select--expanded");
+      }
+
+      function expandSessionSelectDropdown() {
+        if (sessionSelect.disabled) {
+          return;
+        }
+        const optionCount = sessionSelect.options ? sessionSelect.options.length : 0;
+        if (optionCount <= 1) {
+          return;
+        }
+        const visibleRows = Math.min(SESSION_SELECT_VISIBLE_ROWS, optionCount);
+        sessionSelect.size = Math.max(2, visibleRows);
+        sessionSelect.classList.add("session-toolbar-select--expanded");
+      }
+
+      sessionSelect.addEventListener("mousedown", (event) => {
+        if (sessionSelect.size > 1) {
+          return;
+        }
+        event.preventDefault();
+        expandSessionSelectDropdown();
+      });
+
+      sessionSelect.addEventListener("keydown", (event) => {
+        if ((event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") && sessionSelect.size === 1) {
+          event.preventDefault();
+          expandSessionSelectDropdown();
+          return;
+        }
+        if (event.key === "Escape" && sessionSelect.size > 1) {
+          event.preventDefault();
+          collapseSessionSelectDropdown();
+          sessionSelect.blur();
+        }
+      });
+
+      sessionSelect.addEventListener("blur", () => {
+        window.setTimeout(collapseSessionSelectDropdown, 0);
+      });
+
       sessionSelect.addEventListener("change", function (event) {
         const target = event.target;
         const selected = target && typeof target.value === "string" ? target.value : "";
+        collapseSessionSelectDropdown();
         void loadSession(selected);
       });
 
@@ -6626,7 +6874,9 @@
         materialPercentShowCollectedInput.checked = materialPercentShowOnlyCollected;
         materialPercentShowCollectedInput.addEventListener("change", () => {
           materialPercentShowOnlyCollected = !!materialPercentShowCollectedInput.checked;
+          histogramShowOnlyCollected = materialPercentShowOnlyCollected;
           if (activeSessionData) {
+            renderProspectHistogram(activeSessionData);
             renderMaterialPercentAmount(activeSessionData);
           }
         });
