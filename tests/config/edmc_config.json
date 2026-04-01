@@ -1,1 +1,7 @@
-{}
+{
+  "loglevel": "DEBUG",
+  "theme": 0,
+  "overlay": {},
+  "Plugin_status": "Yes",
+  "Plygin_config_item": "Test"
+}
