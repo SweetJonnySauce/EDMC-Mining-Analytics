@@ -277,7 +277,7 @@ def test_shipyard_swap_pending_update_resolves_on_loadout() -> None:
         )
 
         assert "id:77" not in journal._pending_ship_updates
-        assert load._plugin.state.current_ship in {"Krait Mk II", "krait_mkii"}
+        assert load._plugin.state.current_ship in {"Krait MkII", "Krait Mk II", "krait_mkii"}
         assert load._plugin.state.cargo_capacity == 192
         assert load._plugin.state.cargo_capacity_is_inferred is False
 

@@ -52,7 +52,15 @@ def get_shared_session() -> requests.Session:
             session = new_session()
         else:  # pragma: no cover - fallback for tests
             session = requests.Session()
-        session.headers["User-Agent"] = _build_user_agent(session.headers.get("User-Agent"))
+        headers = getattr(session, "headers", None)
+        if headers is not None and hasattr(headers, "get") and hasattr(headers, "__setitem__"):
+            try:
+                existing = headers.get("User-Agent")
+                existing_text = existing if isinstance(existing, str) else None
+                headers["User-Agent"] = _build_user_agent(existing_text)
+            except Exception:
+                # Some harness/session doubles expose a minimal surface without mutable headers.
+                pass
         _SESSION = session
     return _SESSION
 

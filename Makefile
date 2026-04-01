@@ -5,7 +5,7 @@ PYTHON := $(VENV)/bin/python
 PIP := $(PYTHON) -m pip
 PYTEST := $(PYTHON) -m pytest
 
-.PHONY: help venv install-dev test test-harness check clean
+.PHONY: help venv install-dev test test-harness sync-harness check clean
 
 help:
 	@echo "Targets:"
@@ -13,6 +13,7 @@ help:
 	@echo "  install-dev   Install/update dev dependencies"
 	@echo "  test          Run full pytest suite"
 	@echo "  test-harness  Run harness smoke test only"
+	@echo "  sync-harness  Re-vendor tests/harness.py + tests/edmc from upstream"
 	@echo "  check         Run project checks (currently: pytest)"
 	@echo "  clean         Remove test/bytecode caches"
 
@@ -28,6 +29,9 @@ test:
 
 test-harness:
 	$(PYTEST) -q tests/test_harness_smoke.py
+
+sync-harness:
+	./scripts/sync_harness.sh
 
 check: test
 
