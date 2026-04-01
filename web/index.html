@@ -486,8 +486,14 @@
     }
 
     .chart-card--stack {
-      grid-template-rows: auto 1fr;
+      grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+      grid-template-rows: 1fr;
       gap: 10px;
+      align-items: stretch;
+    }
+
+    .chart-card--stack .chart-pane {
+      min-height: 0;
     }
 
     .chart-pane {
@@ -1152,6 +1158,8 @@
     }
 
     .histogram-layout {
+      --histogram-side-pad-left: 17px;
+      --histogram-side-pad-right: 14px;
       height: 100%;
       display: grid;
       grid-template-rows: 1fr auto auto;
@@ -1176,7 +1184,7 @@
       gap: 3px;
       border: var(--histogram-bars-border) solid color-mix(in srgb, var(--fg) 10%, transparent);
       border-radius: 8px;
-      padding: var(--histogram-bars-v-padding) 8px;
+      padding: var(--histogram-bars-v-padding) var(--histogram-side-pad-right) var(--histogram-bars-v-padding) var(--histogram-side-pad-left);
       background: color-mix(in srgb, var(--fg) 3%, transparent);
     }
 
@@ -1198,6 +1206,7 @@
     .histogram-bin-labels {
       display: grid;
       gap: 3px;
+      padding: 0 var(--histogram-side-pad-right, 0px) 0 var(--histogram-side-pad-left, 0px);
       color: var(--muted);
       font-size: 0.72rem;
       font-variant-numeric: tabular-nums;
@@ -1610,12 +1619,30 @@
     }
 
     .prospect-frequency-bin-label {
-      white-space: nowrap;
-      overflow-wrap: normal;
-      word-break: normal;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      min-height: 1.2em;
+      white-space: pre-line;
+      overflow: visible;
+      text-overflow: unset;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-height: 2.1em;
+    }
+
+    .prospect-frequency-bin-labels {
+      gap: 0;
+      padding: 0 14px;
+    }
+
+    .prospect-frequency-label-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .prospect-frequency-label-spacer {
+      visibility: hidden;
+      pointer-events: none;
+      width: 34px;
     }
 
     .cursor-tooltip {
@@ -1683,6 +1710,11 @@
 
       .mix-layout {
         grid-template-columns: 1fr;
+      }
+
+      .chart-card--stack {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
       }
 
       .title-row {
@@ -1758,6 +1790,17 @@
                 <input id="material-percent-reverse-cumulative" type="checkbox">
                 <span>Reverse Cumulative Freq.</span>
               </label>
+              <div class="prospect-frequency-interval-group">
+                <span class="prospect-frequency-interval-prefix">Interval:</span>
+                <label class="prospect-frequency-control">
+                  <input id="material-percent-interval-5" type="radio" name="material-percent-interval" value="5">
+                  <span>5%</span>
+                </label>
+                <label class="prospect-frequency-control">
+                  <input id="material-percent-interval-10" type="radio" name="material-percent-interval" value="10">
+                  <span>10%</span>
+                </label>
+              </div>
             </div>
           </section>
           <section class="chart-pane">
@@ -1765,20 +1808,20 @@
             <div id="chart-content-mix" class="chart-body"></div>
           </section>
         </article>
-        <article class="chart-card">
-          <div class="panel-header-row">
-            <h2>Asteroid % Histogram</h2>
-            <div id="prospect-histogram-header-controls" class="panel-header-controls"></div>
-          </div>
-          <div id="chart-prospect-histogram" class="chart-body"></div>
-          <div id="commodity-histogram-filters" class="event-filters"></div>
-        </article>
         <article class="chart-card chart-card--full">
           <div class="panel-header-row">
             <h2>Commodity Percent Amount per Asteroid</h2>
             <div id="material-percent-header-controls" class="panel-header-controls"></div>
           </div>
           <div id="chart-material-percent-amount" class="chart-body"></div>
+        </article>
+        <article class="chart-card chart-card--full">
+          <div class="panel-header-row">
+            <h2>Asteroid Percentage Histogram</h2>
+            <div id="prospect-histogram-header-controls" class="panel-header-controls"></div>
+          </div>
+          <div id="chart-prospect-histogram" class="chart-body"></div>
+          <div id="commodity-histogram-filters" class="event-filters"></div>
         </article>
         <article class="chart-card chart-card--full">
           <div class="panel-header-row">
@@ -1834,6 +1877,7 @@
       const materialPercentShowGridlinesInput = document.getElementById("material-percent-show-gridlines");
       const materialPercentIncludeDuplicatesInput = document.getElementById("material-percent-include-duplicates");
       const materialPercentReverseCumulativeInput = document.getElementById("material-percent-reverse-cumulative");
+      const materialPercentIntervalInputs = document.querySelectorAll("input[name=\"material-percent-interval\"]");
       const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
@@ -1879,6 +1923,7 @@
       let prospectFrequencyShowAverageReference = true;
       let prospectFrequencyReverseCumulative = false;
       let prospectFrequencyRenderToken = 0;
+      let adaptiveLabelResizeTimer = null;
       let sessionListRenderToken = 0;
       let allRefinementEntries = [];
       let refinementTimelineOptions = null;
@@ -2192,24 +2237,24 @@
 
       function getHistogramBarIndexForPercentage(percentage) {
         const bars = Array.isArray(histogramHoverContext.bars) ? histogramHoverContext.bars : [];
-        const binsCount = bars.length;
-        if (!binsCount) {
+        if (!bars.length) {
           return null;
         }
         const raw = Number(percentage);
         if (!Number.isFinite(raw)) {
           return null;
         }
-        const binSize = Math.max(1, Number(histogramHoverContext.binSize) || 10);
-        const pct = Math.max(0, Math.min(100, raw));
-        let index = pct >= 100 ? (binsCount - 1) : Math.floor(pct / binSize);
-        if (index < 0) {
-          index = 0;
+        const pct = Math.max(0, raw);
+        for (let index = 0; index < bars.length; index += 1) {
+          const barEntry = bars[index];
+          if (!barEntry) {
+            continue;
+          }
+          if (rangeContainsValue(barEntry.rangeStart, barEntry.rangeEnd, barEntry.isLast, pct)) {
+            return index;
+          }
         }
-        if (index >= binsCount) {
-          index = binsCount - 1;
-        }
-        return index;
+        return null;
       }
 
       function highlightCumulativePointEntry(pointEntry, currentOnly) {
@@ -3959,14 +4004,107 @@
         return Math.max(1, Math.min(100, rounded));
       }
 
-      function buildProspectHistogramModel(sessionData, includeDuplicates, showOnlyCollected) {
+      function buildAdaptiveLabelStepCandidates(count) {
+        const total = Math.max(1, Math.floor(Number(count) || 1));
+        if (total <= 1) {
+          return [1];
+        }
+        const baseCandidates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40, 50, 60, 80, 100];
+        const candidates = new Set();
+        baseCandidates.forEach((value) => {
+          const step = Math.max(1, Math.floor(Number(value) || 1));
+          if (step <= total) {
+            candidates.add(step);
+          }
+        });
+        let powerOfTwo = 1;
+        while (powerOfTwo <= total) {
+          candidates.add(powerOfTwo);
+          powerOfTwo *= 2;
+        }
+        candidates.add(total);
+        return Array.from(candidates.values()).sort((left, right) => left - right);
+      }
+
+      function shouldShowAdaptiveBinLabel(index, totalCount, step) {
+        const total = Math.max(1, Math.floor(Number(totalCount) || 1));
+        const safeIndex = Math.max(0, Math.floor(Number(index) || 0));
+        const safeStep = Math.max(1, Math.floor(Number(step) || 1));
+        return (safeIndex % safeStep) === 0 || safeIndex === (total - 1);
+      }
+
+      function adaptiveLabelsFitWithoutOverlap(labelNodes, minGapPx) {
+        if (!Array.isArray(labelNodes) || !labelNodes.length) {
+          return true;
+        }
+        const minGap = Math.max(0, Number(minGapPx) || 0);
+        let previousRight = Number.NEGATIVE_INFINITY;
+        const range = document.createRange();
+        for (const node of labelNodes) {
+          if (!(node instanceof HTMLElement)) {
+            continue;
+          }
+          const text = String(node.textContent || "").trim();
+          if (!text) {
+            continue;
+          }
+          range.selectNodeContents(node);
+          let rect = range.getBoundingClientRect();
+          if (!Number.isFinite(rect.left) || !Number.isFinite(rect.right) || rect.width <= 0) {
+            rect = node.getBoundingClientRect();
+          }
+          if (!Number.isFinite(rect.left) || !Number.isFinite(rect.right) || rect.width <= 0) {
+            continue;
+          }
+          if (rect.left < (previousRight + minGap)) {
+            range.detach?.();
+            return false;
+          }
+          previousRight = rect.right;
+        }
+        range.detach?.();
+        return true;
+      }
+
+      function applyAdaptiveBinLabels(labelsContainer, labelTexts, minGapPx) {
+        if (!(labelsContainer instanceof HTMLElement)) {
+          return 1;
+        }
+        const texts = Array.isArray(labelTexts) ? labelTexts.map((text) => String(text || "")) : [];
+        const total = texts.length;
+        const labelNodes = Array.from(labelsContainer.children).filter((node) => node instanceof HTMLElement);
+        if (!total || !labelNodes.length) {
+          return 1;
+        }
+        const setStep = (step) => {
+          labelNodes.forEach((node, index) => {
+            node.textContent = shouldShowAdaptiveBinLabel(index, total, step) ? texts[index] : "";
+          });
+        };
+        const candidates = buildAdaptiveLabelStepCandidates(total);
+        for (const step of candidates) {
+          setStep(step);
+          if (adaptiveLabelsFitWithoutOverlap(labelNodes, minGapPx)) {
+            return step;
+          }
+        }
+        const fallback = candidates[candidates.length - 1] || 1;
+        setStep(fallback);
+        return fallback;
+      }
+
+      function shouldReverseProspectHistogram() {
+        return prospectFrequencyReverseCumulative;
+      }
+
+      function buildProspectHistogramModel(sessionData, includeDuplicates, showOnlyCollected, histogramBinSizeOverride) {
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const configuredBinSize = (
-          meta.histogram_bin_size
+          histogramBinSizeOverride
+          ?? meta.histogram_bin_size
           ?? (runtimeAnalysisSettings && runtimeAnalysisSettings.histogram_bin_size)
         );
         const binSize = normalizeHistogramBinSize(configuredBinSize);
-        const bins = Math.max(1, Math.ceil(100 / binSize));
 
         const events = Array.isArray(sessionData && sessionData.events) ? sessionData.events : [];
         const collectedCommodityKeys = collectRefinedCommodityKeys(events);
@@ -4000,24 +4138,40 @@
             if (!item) {
               item = {
                 name,
-                counts: new Array(bins).fill(0),
+                percentages: [],
                 total: 0
               };
               byCommodity.set(key, item);
             }
-            const pct = Math.max(0, Math.min(100, pctRaw));
-            let index = pct >= 100 ? (bins - 1) : Math.floor(pct / binSize);
-            if (index < 0) {
-              index = 0;
-            } else if (index >= bins) {
-              index = bins - 1;
-            }
-            item.counts[index] += 1;
+            const pct = Math.max(0, pctRaw);
+            item.percentages.push(pct);
             item.total += 1;
           });
         });
 
-        const eventResult = Array.from(byCommodity.values()).filter((item) => item.total > 0);
+        const eventResult = Array.from(byCommodity.values())
+          .filter((item) => item.total > 0 && Array.isArray(item.percentages) && item.percentages.length > 0)
+          .map((item) => {
+            const maxObserved = item.percentages.reduce((peak, value) => Math.max(peak, value), 0);
+            const xMax = Math.max(binSize, Math.ceil(maxObserved / binSize) * binSize);
+            const bins = Math.max(1, Math.ceil(xMax / binSize));
+            const counts = new Array(bins).fill(0);
+            item.percentages.forEach((pct) => {
+              let index = pct >= xMax ? (bins - 1) : Math.floor(pct / binSize);
+              if (index < 0) {
+                index = 0;
+              } else if (index >= bins) {
+                index = bins - 1;
+              }
+              counts[index] += 1;
+            });
+            return {
+              name: item.name,
+              counts,
+              total: item.total,
+              xMax
+            };
+          });
         if (eventResult.length) {
           eventResult.sort((left, right) => {
             if (right.total !== left.total) {
@@ -4028,7 +4182,7 @@
           return {
             commodities: eventResult,
             binSize,
-            bins
+            bins: Math.max(1, ...eventResult.map((item) => item.counts.length))
           };
         }
 
@@ -4041,7 +4195,7 @@
           }
           const payload = details && typeof details === "object" ? details : {};
           const breakdown = Array.isArray(payload.percentage_breakdown) ? payload.percentage_breakdown : [];
-          const counts = new Array(bins).fill(0);
+          const percentages = [];
           let total = 0;
           breakdown.forEach((entry) => {
             if (!entry || typeof entry !== "object") {
@@ -4053,18 +4207,27 @@
             }
             const qtyRaw = Number(entry.count);
             const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? Math.floor(qtyRaw) : 1;
-            const pct = Math.max(0, Math.min(100, pctRaw));
-            let index = pct >= 100 ? (bins - 1) : Math.floor(pct / binSize);
-            if (index < 0) {
-              index = 0;
-            } else if (index >= bins) {
-              index = bins - 1;
+            const pct = Math.max(0, pctRaw);
+            for (let offset = 0; offset < qty; offset += 1) {
+              percentages.push(pct);
             }
-            counts[index] += qty;
             total += qty;
           });
-          if (total > 0) {
-            result.push({ name, counts, total });
+          if (total > 0 && percentages.length > 0) {
+            const maxObserved = percentages.reduce((peak, value) => Math.max(peak, value), 0);
+            const xMax = Math.max(binSize, Math.ceil(maxObserved / binSize) * binSize);
+            const bins = Math.max(1, Math.ceil(xMax / binSize));
+            const counts = new Array(bins).fill(0);
+            percentages.forEach((pct) => {
+              let index = pct >= xMax ? (bins - 1) : Math.floor(pct / binSize);
+              if (index < 0) {
+                index = 0;
+              } else if (index >= bins) {
+                index = bins - 1;
+              }
+              counts[index] += 1;
+            });
+            result.push({ name, counts, total, xMax });
           }
         });
         result.sort((left, right) => {
@@ -4076,7 +4239,7 @@
         return {
           commodities: result,
           binSize,
-          bins
+          bins: Math.max(1, ...result.map((item) => item.counts.length))
         };
       }
 
@@ -4193,7 +4356,7 @@
       function buildProspectCumulativeFrequencyModel(sessionData, filename, summaryRecords) {
         const commodity = String(selectedHistogramCommodity || "").trim();
         if (!commodity) {
-          return { error: "Select a commodity in Asteroid % Histogram to view cumulative frequency." };
+          return { error: "Select a commodity in Asteroid Percentage Histogram to view cumulative frequency." };
         }
         if (!Array.isArray(summaryRecords) || summaryRecords.length === 0) {
           return { error: "No long-term prospect summary data found yet." };
@@ -4329,8 +4492,31 @@
           cumulativeCurrentCounts.push(runningCurrent);
           cumulativeOtherCounts.push(runningOther);
         }
+        const reverseCumulativeTotalCounts = new Array(bins).fill(0);
+        const reverseCumulativeCurrentCounts = new Array(bins).fill(0);
+        const reverseCumulativeOtherCounts = new Array(bins).fill(0);
+        let reverseRunningTotal = 0;
+        let reverseRunningCurrent = 0;
+        let reverseRunningOther = 0;
+        for (let index = bins - 1; index >= 0; index -= 1) {
+          reverseRunningTotal += totalCounts[index];
+          reverseRunningCurrent += currentCounts[index];
+          reverseRunningOther += otherCounts[index];
+          reverseCumulativeTotalCounts[index] = reverseRunningTotal;
+          reverseCumulativeCurrentCounts[index] = reverseRunningCurrent;
+          reverseCumulativeOtherCounts[index] = reverseRunningOther;
+        }
+        const selectedCumulativeTotalCounts = prospectFrequencyReverseCumulative
+          ? reverseCumulativeTotalCounts
+          : cumulativeTotalCounts;
+        const selectedCumulativeCurrentCounts = prospectFrequencyReverseCumulative
+          ? reverseCumulativeCurrentCounts
+          : cumulativeCurrentCounts;
+        const selectedCumulativeOtherCounts = prospectFrequencyReverseCumulative
+          ? reverseCumulativeOtherCounts
+          : cumulativeOtherCounts;
 
-        const points = cumulativeTotalCounts.map((total, index) => {
+        const points = selectedCumulativeTotalCounts.map((total, index) => {
           const intervalStart = index * interval;
           const intervalEnd = Math.min(xMax, intervalStart + interval);
           const center = intervalStart + ((intervalEnd - intervalStart) / 2);
@@ -4343,8 +4529,8 @@
             binCurrent: currentCounts[index],
             binOther: otherCounts[index],
             total,
-            current: cumulativeCurrentCounts[index],
-            other: cumulativeOtherCounts[index]
+            current: selectedCumulativeCurrentCounts[index],
+            other: selectedCumulativeOtherCounts[index]
           };
         });
         const yMax = Math.max(1, runningTotal);
@@ -4384,41 +4570,6 @@
           compareButton.textContent = "Compare";
           compareButton.addEventListener("click", openCompareRingsPage);
           prospectFrequencyHeaderControls.appendChild(compareButton);
-
-          const intervalGroup = document.createElement("div");
-          intervalGroup.className = "prospect-frequency-interval-group";
-          const intervalPrefix = document.createElement("span");
-          intervalPrefix.className = "prospect-frequency-interval-prefix";
-          intervalPrefix.textContent = "Interval:";
-          intervalGroup.appendChild(intervalPrefix);
-          prospectFrequencyHeaderControls.appendChild(intervalGroup);
-
-          const addRadioOption = (labelText, value) => {
-            const option = document.createElement("label");
-            option.className = "prospect-frequency-control";
-            const input = document.createElement("input");
-            input.type = "radio";
-            input.name = "prospect-frequency-interval";
-            input.value = String(value);
-            input.checked = prospectFrequencyBinSize === value;
-            input.addEventListener("change", () => {
-              if (!input.checked) {
-                return;
-              }
-              prospectFrequencyBinSize = value;
-              if (activeSessionData) {
-                void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
-              }
-            });
-            const text = document.createElement("span");
-            text.textContent = `${labelText}`;
-            option.appendChild(input);
-            option.appendChild(text);
-            intervalGroup.appendChild(option);
-          };
-
-          addRadioOption("5%", 5);
-          addRadioOption("10%", 10);
         }
 
         const summaryRecords = await loadProspectedAsteroidSummaryRecords();
@@ -4640,7 +4791,7 @@
             }
             avgLabel.setAttribute("class", avgLabelClasses.join(" "));
             const avgLabelOffsetX = prospectFrequencyReverseCumulative ? -16 : 10;
-            const avgLabelOffsetY = 6;
+            const avgLabelOffsetY = prospectFrequencyReverseCumulative ? -16 : 6;
             const avgLabelMaxWidth = 60;
             const avgLabelX = prospectFrequencyReverseCumulative
               ? Math.max(sidePad + avgLabelMaxWidth, Math.min(width - sidePad - 6, averageX + avgLabelOffsetX))
@@ -4866,24 +5017,22 @@
         layout.appendChild(plot);
 
         const labels = document.createElement("div");
-        labels.className = "histogram-bin-labels";
+        labels.className = "histogram-bin-labels prospect-frequency-bin-labels";
         const labelPoints = prospectFrequencyReverseCumulative ? [...model.points].reverse() : model.points;
         labels.style.gridTemplateColumns = `repeat(${labelPoints.length}, minmax(0, 1fr))`;
-        const labelStep = Math.max(1, Math.ceil(labelPoints.length / 12));
+        const cumulativeLabelTexts = [];
         labelPoints.forEach((point, index) => {
           const label = document.createElement("span");
           label.className = "histogram-bin-label prospect-frequency-bin-label";
-          if ((index % labelStep) === 0 || index === labelPoints.length - 1) {
-            const labelRangeStart = prospectFrequencyReverseCumulative ? point.intervalEnd : point.intervalStart;
-            const labelRangeEnd = prospectFrequencyReverseCumulative ? point.intervalStart : point.intervalEnd;
-            label.textContent = `${labelRangeStart}-${labelRangeEnd}%`;
-          }
+          const labelRangeStart = prospectFrequencyReverseCumulative ? point.intervalEnd : point.intervalStart;
+          const labelRangeEnd = prospectFrequencyReverseCumulative ? point.intervalStart : point.intervalEnd;
+          cumulativeLabelTexts.push(`${labelRangeStart}-\n${labelRangeEnd}%`);
           labels.appendChild(label);
         });
         const labelsRow = document.createElement("div");
-        labelsRow.className = "histogram-label-row";
+        labelsRow.className = "prospect-frequency-label-row";
         const spacer = document.createElement("div");
-        spacer.className = "timeline-y-axis histogram-label-spacer";
+        spacer.className = "prospect-frequency-label-spacer";
         labelsRow.appendChild(spacer);
         labelsRow.appendChild(labels);
         layout.appendChild(labelsRow);
@@ -4930,6 +5079,7 @@
 
         layout.appendChild(legend);
         chartProspectCumulativeFrequency.appendChild(layout);
+        applyAdaptiveBinLabels(labels, cumulativeLabelTexts, 4);
         cumulativeHoverContext = {
           commodityKey: normalizeCommodityKey(model.commodity),
           points: Array.from(cumulativePointByIndex.values()),
@@ -4955,7 +5105,8 @@
         const model = buildProspectHistogramModel(
           sessionData,
           prospectFrequencyIncludeDuplicates,
-          materialPercentShowOnlyCollected || histogramShowOnlyCollected
+          materialPercentShowOnlyCollected || histogramShowOnlyCollected,
+          prospectFrequencyBinSize
         );
         if (!model || !Array.isArray(model.commodities) || !model.commodities.length) {
           const note = document.createElement("p");
@@ -4994,6 +5145,7 @@
 
         const renderSelected = () => {
           chartProspectHistogram.innerHTML = "";
+          const reverseHistogram = shouldReverseProspectHistogram();
 
           const buildHistogramTickValues = (peakValue) => {
             const peakInt = Math.max(1, Math.floor(asNumber(peakValue)));
@@ -5058,7 +5210,14 @@
 
           const selected = commodities.find((item) => item.name === selectedHistogramCommodity) || null;
           if (!selected) {
-            const binsCount = Math.max(1, Math.ceil(100 / binSize));
+            const binsCount = Math.max(
+              1,
+              ...commodities.map((item) => (
+                item && Array.isArray(item.counts)
+                  ? item.counts.length
+                  : 0
+              ))
+            );
             const layout = document.createElement("div");
             layout.className = "histogram-layout";
 
@@ -5082,20 +5241,20 @@
             const labels = document.createElement("div");
             labels.className = "histogram-bin-labels";
             labels.style.gridTemplateColumns = `repeat(${binsCount}, minmax(0, 1fr))`;
-            const maxVisibleLabels = 10;
-            const labelStep = Math.max(1, Math.ceil(binsCount / maxVisibleLabels));
-            for (let index = 0; index < binsCount; index += 1) {
+            const displayBinIndexes = reverseHistogram
+              ? Array.from({ length: binsCount }, (_unused, index) => binsCount - index - 1)
+              : Array.from({ length: binsCount }, (_unused, index) => index);
+            const histogramLabelTexts = [];
+            displayBinIndexes.forEach((binIndex, displayIndex) => {
               const label = document.createElement("span");
               label.className = "histogram-bin-label";
-              const rangeStart = index * binSize;
-              const rangeEnd = Math.min(100, rangeStart + binSize);
-              if ((index % labelStep) === 0 || index === binsCount - 1) {
-                label.textContent = `${rangeStart}-\n${rangeEnd}%`;
-              } else {
-                label.textContent = "";
-              }
+              const rangeStart = binIndex * binSize;
+              const rangeEnd = rangeStart + binSize;
+              const labelRangeStart = reverseHistogram ? rangeEnd : rangeStart;
+              const labelRangeEnd = reverseHistogram ? rangeStart : rangeEnd;
+              histogramLabelTexts[displayIndex] = `${labelRangeStart}-\n${labelRangeEnd}%`;
               labels.appendChild(label);
-            }
+            });
             const labelsRow = document.createElement("div");
             labelsRow.className = "histogram-label-row";
             const spacer = document.createElement("div");
@@ -5114,6 +5273,7 @@
             layout.appendChild(labelsRow);
             layout.appendChild(axis);
             chartProspectHistogram.appendChild(layout);
+            applyAdaptiveBinLabels(labels, histogramLabelTexts, 4);
             histogramHoverContext = {
               commodityKey: normalizeCommodityKey(selectedHistogramCommodity),
               binSize,
@@ -5141,20 +5301,26 @@
           bars.className = "histogram-bars";
           bars.style.gridTemplateColumns = `repeat(${selected.counts.length}, minmax(0, 1fr))`;
           const histogramBarEntries = [];
-          selected.counts.forEach((count, index) => {
+          const displayBinIndexes = reverseHistogram
+            ? Array.from({ length: selected.counts.length }, (_unused, index) => selected.counts.length - index - 1)
+            : Array.from({ length: selected.counts.length }, (_unused, index) => index);
+          displayBinIndexes.forEach((binIndex) => {
+            const count = selected.counts[binIndex];
             const bar = document.createElement("div");
             bar.className = "histogram-bar";
             const ratio = yAxisMax > 0 ? (count / yAxisMax) : 0;
             bar.style.height = `${Math.max(2, ratio * 100)}%`;
-            const rangeStart = index * binSize;
-            const rangeEnd = Math.min(100, rangeStart + binSize);
-            const detail = `${selected.name}\n${rangeStart}% - ${rangeEnd}%: ${count} prospects`;
+            const rangeStart = binIndex * binSize;
+            const rangeEnd = rangeStart + binSize;
+            const labelRangeStart = reverseHistogram ? rangeEnd : rangeStart;
+            const labelRangeEnd = reverseHistogram ? rangeStart : rangeEnd;
+            const detail = `${selected.name}\n${labelRangeStart}% - ${labelRangeEnd}%: ${count} prospects`;
             const barEntry = {
               element: bar,
-              index,
+              index: binIndex,
               rangeStart,
               rangeEnd,
-              isLast: index === (selected.counts.length - 1)
+              isLast: binIndex === (selected.counts.length - 1)
             };
             histogramBarEntries.push(barEntry);
             bar.addEventListener("mouseenter", (event) => {
@@ -5179,18 +5345,15 @@
           const labels = document.createElement("div");
           labels.className = "histogram-bin-labels";
           labels.style.gridTemplateColumns = `repeat(${selected.counts.length}, minmax(0, 1fr))`;
-          const maxVisibleLabels = 10;
-          const labelStep = Math.max(1, Math.ceil(selected.counts.length / maxVisibleLabels));
-          selected.counts.forEach((_count, index) => {
+          const histogramLabelTexts = [];
+          displayBinIndexes.forEach((binIndex, displayIndex) => {
             const label = document.createElement("span");
             label.className = "histogram-bin-label";
-            const rangeStart = index * binSize;
-            const rangeEnd = Math.min(100, rangeStart + binSize);
-            if ((index % labelStep) === 0 || index === selected.counts.length - 1) {
-              label.textContent = `${rangeStart}-\n${rangeEnd}%`;
-            } else {
-              label.textContent = "";
-            }
+            const rangeStart = binIndex * binSize;
+            const rangeEnd = rangeStart + binSize;
+            const labelRangeStart = reverseHistogram ? rangeEnd : rangeStart;
+            const labelRangeEnd = reverseHistogram ? rangeStart : rangeEnd;
+            histogramLabelTexts[displayIndex] = `${labelRangeStart}-\n${labelRangeEnd}%`;
             labels.appendChild(label);
           });
           const labelsRow = document.createElement("div");
@@ -5211,6 +5374,7 @@
           layout.appendChild(labelsRow);
           layout.appendChild(axis);
           chartProspectHistogram.appendChild(layout);
+          applyAdaptiveBinLabels(labels, histogramLabelTexts, 4);
           histogramHoverContext = {
             commodityKey: selectedCommodityKey,
             binSize,
@@ -7015,12 +7179,31 @@
         });
       }
 
+      if (materialPercentIntervalInputs && materialPercentIntervalInputs.length) {
+        materialPercentIntervalInputs.forEach((input) => {
+          if (!(input instanceof HTMLInputElement)) {
+            return;
+          }
+          const value = Number(input.value);
+          input.checked = value === prospectFrequencyBinSize;
+          input.addEventListener("change", () => {
+            if (!input.checked) {
+              return;
+            }
+            prospectFrequencyBinSize = value === 10 ? 10 : 5;
+            if (activeSessionData) {
+              renderProspectHistogram(activeSessionData);
+            }
+          });
+        });
+      }
+
       if (materialPercentReverseCumulativeInput) {
         materialPercentReverseCumulativeInput.checked = prospectFrequencyReverseCumulative;
         materialPercentReverseCumulativeInput.addEventListener("change", () => {
           prospectFrequencyReverseCumulative = !!materialPercentReverseCumulativeInput.checked;
           if (activeSessionData) {
-            void renderProspectCumulativeFrequency(activeSessionData, activeSessionFilename);
+            renderProspectHistogram(activeSessionData);
           }
         });
       }
@@ -7028,6 +7211,22 @@
       if (compareRingsButton) {
         compareRingsButton.addEventListener("click", openCompareRingsPage);
       }
+
+      window.addEventListener("resize", () => {
+        if (!activeSessionData) {
+          return;
+        }
+        if (adaptiveLabelResizeTimer !== null) {
+          window.clearTimeout(adaptiveLabelResizeTimer);
+        }
+        adaptiveLabelResizeTimer = window.setTimeout(() => {
+          adaptiveLabelResizeTimer = null;
+          if (!activeSessionData) {
+            return;
+          }
+          renderProspectHistogram(activeSessionData);
+        }, 140);
+      });
 
       applyFocusTokenToTitle();
       initializeThemeControl();

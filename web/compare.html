@@ -1439,9 +1439,19 @@
           counts[index] += 1;
         });
         const points = [];
+        const cumulativeForwardCounts = new Array(bins).fill(0);
+        const cumulativeReverseCounts = new Array(bins).fill(0);
         let running = 0;
         for (let index = 0; index < bins; index += 1) {
           running += counts[index];
+          cumulativeForwardCounts[index] = running;
+        }
+        let reverseRunning = 0;
+        for (let index = bins - 1; index >= 0; index -= 1) {
+          reverseRunning += counts[index];
+          cumulativeReverseCounts[index] = reverseRunning;
+        }
+        for (let index = 0; index < bins; index += 1) {
           const intervalStart = index * interval;
           const intervalEnd = Math.min(xMax, intervalStart + interval);
           const center = intervalStart + ((intervalEnd - intervalStart) / 2);
@@ -1451,7 +1461,9 @@
             intervalEnd,
             center,
             binCount: counts[index],
-            total: running
+            total: cumulativeForwardCounts[index],
+            totalForward: cumulativeForwardCounts[index],
+            totalReverse: cumulativeReverseCounts[index]
           });
         }
         return {
@@ -1563,11 +1575,15 @@
 
         const coordinates = model.points.map((point) => {
           const displayBinCount = Number(point.binCount) / sessionDivisor;
-          const displayTotal = Number(point.total) / sessionDivisor;
+          const rawDisplayTotal = reverseCumulative
+            ? Number(point.totalReverse)
+            : Number(point.totalForward);
+          const displayTotal = rawDisplayTotal / sessionDivisor;
           return {
             ...point,
             displayBinCount,
             displayTotal,
+            rawDisplayTotal,
             x: toXForBinIndex(point.index),
             y: toYForCount(displayTotal)
           };
@@ -1585,9 +1601,8 @@
         const maxPercentValue = Math.max(1, asNumber(model.xMax));
         const totalCount = Math.max(
           1,
-          coordinates.length
-            ? asNumber(coordinates[coordinates.length - 1].displayTotal)
-            : (asNumber(model.asteroidsCount) / sessionDivisor)
+          coordinates.reduce((peak, point) => Math.max(peak, asNumber(point.displayTotal)), 0),
+          (asNumber(model.asteroidsCount) / sessionDivisor)
         );
         const toXForPercentValue = (rawValue) => {
           const value = Number(rawValue);
@@ -1699,8 +1714,13 @@
             labelClasses.push("compare-reference-label--reverse");
           }
           label.setAttribute("class", labelClasses.join(" "));
-          const labelOffsetX = reverseCumulative ? -16 : 10;
-          const labelOffsetY = 6;
+          const includesAverage = group.items.some((item) => item && item.entry && item.entry.key === "avg");
+          const labelOffsetX = reverseCumulative
+            ? (includesAverage ? -10 : -16)
+            : 10;
+          const labelOffsetY = reverseCumulative
+            ? (includesAverage ? -26 : -16)
+            : 6;
           const maxLabelWidth = 72;
           const clampedX = reverseCumulative
             ? Math.max(sidePad + maxLabelWidth, Math.min(width - sidePad - 6, group.referenceX + labelOffsetX))
@@ -1856,13 +1876,13 @@
               `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
               `Cumulative Frequency / Session: ${formatNumber(point.displayTotal, 2)}`,
               `Bin Frequency / Session: ${formatNumber(point.displayBinCount, 2)}`,
-              `Raw cumulative asteroids: ${formatNumber(point.total, 0)}`,
+              `Raw cumulative asteroids: ${formatNumber(point.rawDisplayTotal, 0)}`,
               `Raw bin asteroids: ${formatNumber(point.binCount, 0)}`
             ].join("\n")
             : [
               `${ringName} | ${commodityLabel}`,
               `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
-              `Cumulative Frequency: ${formatNumber(point.total, 0)}`,
+              `Cumulative Frequency: ${formatNumber(point.rawDisplayTotal, 0)}`,
               `Bin Frequency: ${formatNumber(point.binCount, 0)}`
             ].join("\n");
           showCursorTooltip(detail, event);
