@@ -5,6 +5,7 @@ import semantic_version
 import logging
 from pathlib import Path
 from unittest.mock import patch
+from tests.edmc import requests as edmc_requests
 
 # We keep a copy of edmc_data here.
 this_dir:Path = Path(__file__).parent
@@ -92,6 +93,7 @@ theme_mod.theme.name = "default"
 theme_mod.theme.dark = False
 sys.modules['theme'] = theme_mod
 
+
 class MockCAPIData:
     def __init__(self, data = None, source_host = None, source_endpoint = None, request_cmdr = None) -> None:
         pass
@@ -124,7 +126,10 @@ sys.modules['monitor'] = _monitor
 _plug = _types.ModuleType('Plugin')
 class MockPlugin:    
     def __init__(self) -> None:
-        pass        
+        pass
+    @staticmethod        
+    def show_error(message:str) -> None:
+        print(f"Plugin error: {message}")
 
 for name, val in MockPlugin.__dict__.items():
     if not name.startswith('__'):
@@ -185,12 +190,17 @@ class Mockedmcoverlay:
             self.messages:dict = {}
             self.shapes:dict = {}
         
-        def send_message(self, *args, **kw):             
-            print(f"Overlay send_message called with {args} {kw}")
-            self.messages[args[0]] = [*args, kw]
+        def send_message(self, *args, **kw):
+            msgid = args[0] if args else kw.get('msgid')
+            if not msgid:
+                print("send_message called with no msgid")
+                return
+            self.messages[msgid] = [*args, kw]
 
-        def send_shape(self, *args, **kw):             
-            print(f"Overlay send_shape called with {args} {kw}")
+        def send_shape(self, *args, **kw):
+            if not args:
+                print("send_shape called with no positional arguments")
+                return             
             self.shapes[args[0]] = [*args, kw]
 
 _edmcoverlay = _types.ModuleType('EDMCOverlay')
