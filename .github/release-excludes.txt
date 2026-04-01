@@ -1,0 +1,11 @@
+# One pattern per line. Blank lines and comments are ignored.
+# Directory patterns end with '/'.
+# Glob patterns (*, ?, []) are matched against the full tracked path.
+
+*.md
+*.code-workspace
+.github/
+tests/
+session_data/
+.gitignore
+tmp/
