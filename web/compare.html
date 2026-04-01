@@ -851,7 +851,6 @@
       let selectedReferenceCrosshairs = new Set(["avg"]);
       let compareShowGridlines = true;
       let compareNormalizeMetrics = false;
-      let compareNormalizeYAxis = false;
       let compareReverseCumulative = false;
       let favoriteRingNames = new Set();
 
@@ -1355,21 +1354,6 @@
         normalizeWrapper.appendChild(normalizeText);
         compareGridlineOptions.appendChild(normalizeWrapper);
 
-        const normalizeYAxisWrapper = document.createElement("label");
-        normalizeYAxisWrapper.className = "compare-population-option";
-        const normalizeYAxisInput = document.createElement("input");
-        normalizeYAxisInput.type = "checkbox";
-        normalizeYAxisInput.checked = compareNormalizeYAxis;
-        normalizeYAxisInput.addEventListener("change", () => {
-          compareNormalizeYAxis = normalizeYAxisInput.checked;
-          renderComparePanels();
-        });
-        const normalizeYAxisText = document.createElement("span");
-        normalizeYAxisText.textContent = "Normalize Y axis";
-        normalizeYAxisWrapper.appendChild(normalizeYAxisInput);
-        normalizeYAxisWrapper.appendChild(normalizeYAxisText);
-        compareGridlineOptions.appendChild(normalizeYAxisWrapper);
-
         const reverseWrapper = document.createElement("label");
         reverseWrapper.className = "compare-population-option";
         const reverseInput = document.createElement("input");
@@ -1485,7 +1469,7 @@
         };
       }
 
-      function renderRingChart(chartPanel, ringName, commodityLabel, model, forcedYMax, selectedCrosshairKeys, normalizeBySessions, reverseCumulative) {
+      function renderRingChart(chartPanel, ringName, commodityLabel, model, selectedCrosshairKeys, normalizeBySessions, reverseCumulative) {
         chartPanel.innerHTML = "";
         const title = document.createElement("p");
         title.className = "ring-chart-title";
@@ -1514,11 +1498,8 @@
         const sessionDivisor = normalizeBySessions
           ? Math.max(1, Number(model && model.sessionsCount) || 0)
           : 1;
-        const normalizedForcedYMax = Number.isFinite(forcedYMax) && forcedYMax > 0
-          ? forcedYMax
-          : null;
         const normalizedModelYMax = Number(model && model.yMax) / sessionDivisor;
-        const countAxisMaxInt = Math.max(1, Math.ceil(normalizedForcedYMax || normalizedModelYMax));
+        const countAxisMaxInt = Math.max(1, Math.ceil(normalizedModelYMax));
         const countAxisStep = inferStep(countAxisMaxInt);
         const countAxisScaleMax = Math.max(countAxisMaxInt, Math.ceil(countAxisMaxInt / countAxisStep) * countAxisStep);
         const yTicks = [];
@@ -2012,15 +1993,6 @@
           const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, selectedYieldPopulationMode);
           return { ring, metric };
         }).filter((row) => Number(row && row.metric && row.metric.presentAsteroidsCount) > 0);
-        const sharedYMax = compareNormalizeYAxis
-          ? rows.reduce((peak, row) => {
-            const divisor = compareNormalizeMetrics
-              ? Math.max(1, Number(row && row.metric && row.metric.sessionsCount) || 0)
-              : 1;
-            const ringYMax = Number(row && row.metric && row.metric.yMax) / divisor;
-            return Math.max(peak, Number.isFinite(ringYMax) ? ringYMax : 0);
-          }, 0)
-          : null;
         rows.sort((left, right) => {
           if (sortMode === "name_asc") {
             return left.ring.ringName.localeCompare(right.ring.ringName);
@@ -2113,7 +2085,6 @@
               ring.ringName,
               commodityLabel,
               metric,
-              sharedYMax,
               rowCrosshairs,
               compareNormalizeMetrics,
               compareReverseCumulative
