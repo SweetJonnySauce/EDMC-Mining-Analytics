@@ -4,8 +4,15 @@
 
 *.md
 *.code-workspace
+config/
 .github/
 tests/
+scripts/
 session_data/
 .gitignore
 tmp/
+.vscode/
+Makefile
+requirements-dev.txt
+.codex
+pytest.ini
