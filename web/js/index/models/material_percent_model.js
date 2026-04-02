@@ -18,6 +18,24 @@ export function buildMaterialPercentAmountModel(options) {
   const normalizeText = typeof normalizeTextKey === "function"
     ? normalizeTextKey
     : ((value) => String(value || "").trim().toLowerCase());
+  const sourceCommodities = sessionData && typeof sessionData === "object" && sessionData.commodities && typeof sessionData.commodities === "object"
+    ? sessionData.commodities
+    : {};
+  const refinedTonsByCommodity = new Map();
+  Object.entries(sourceCommodities).forEach(([name, details]) => {
+    const commodityKey = normalizeCommodity(name) || normalizeText(name) || String(name || "").trim().toLowerCase();
+    if (!commodityKey) {
+      return;
+    }
+    const gathered = details && typeof details === "object" && details.gathered && typeof details.gathered === "object"
+      ? details.gathered
+      : {};
+    const tons = Number(gathered.tons);
+    if (!Number.isFinite(tons) || tons <= 0) {
+      return;
+    }
+    refinedTonsByCommodity.set(commodityKey, (refinedTonsByCommodity.get(commodityKey) || 0) + tons);
+  });
   let asteroidNumber = 0;
 
   events.forEach((event) => {
@@ -53,6 +71,7 @@ export function buildMaterialPercentAmountModel(options) {
           key: commodityKey,
           name,
           isCollected: commodityIsCollected,
+          refinedTons: Number(refinedTonsByCommodity.get(commodityKey) || 0),
           totalPercentage: 0,
           count: 0,
           points: []
@@ -72,11 +91,16 @@ export function buildMaterialPercentAmountModel(options) {
   });
 
   const commodities = Array.from(commodityMap.values()).sort((left, right) => {
-    if (right.totalPercentage !== left.totalPercentage) {
-      return right.totalPercentage - left.totalPercentage;
+    const leftRefinedTons = Number(left && left.refinedTons);
+    const rightRefinedTons = Number(right && right.refinedTons);
+    if (rightRefinedTons !== leftRefinedTons) {
+      return rightRefinedTons - leftRefinedTons;
     }
     if (right.count !== left.count) {
       return right.count - left.count;
+    }
+    if (right.totalPercentage !== left.totalPercentage) {
+      return right.totalPercentage - left.totalPercentage;
     }
     return left.name.localeCompare(right.name);
   });

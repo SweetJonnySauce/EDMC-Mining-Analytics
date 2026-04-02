@@ -17,6 +17,11 @@ from .logging_utils import get_logger
 
 _log = get_logger("preferences")
 
+OVERLAY_SHOW_BARS_KEY = "edmc_mining_overlay_show_bars"
+OVERLAY_BARS_MAX_ROWS_KEY = "edmc_mining_overlay_bars_max_rows"
+LEGACY_OVERLAY_SHOW_BARS_KEY = "overlay_show_bars"
+LEGACY_OVERLAY_BARS_MAX_ROWS_KEY = "overlay_bars_max_rows"
+
 
 def clamp_bin_size(value: int) -> int:
     try:
@@ -171,9 +176,11 @@ class PreferencesManager:
             self._get_int("edmc_mining_overlay_refresh_ms", state.overlay_refresh_interval_ms),
             state.overlay_refresh_interval_ms,
         )
-        state.overlay_show_bars = bool(self._get_int("overlay_show_bars", int(state.overlay_show_bars)))
+        overlay_show_bars_default = self._get_int(LEGACY_OVERLAY_SHOW_BARS_KEY, int(state.overlay_show_bars))
+        state.overlay_show_bars = bool(self._get_int(OVERLAY_SHOW_BARS_KEY, overlay_show_bars_default))
+        overlay_bars_max_rows_default = self._get_int(LEGACY_OVERLAY_BARS_MAX_ROWS_KEY, state.overlay_bars_max_rows)
         state.overlay_bars_max_rows = clamp_positive_int(
-            self._get_int("overlay_bars_max_rows", state.overlay_bars_max_rows),
+            self._get_int(OVERLAY_BARS_MAX_ROWS_KEY, overlay_bars_max_rows_default),
             state.overlay_bars_max_rows,
             maximum=50,
         )
@@ -367,13 +374,13 @@ class PreferencesManager:
             _log.exception("Failed to persist overlay refresh interval preference")
 
         try:
-            config.set("overlay_show_bars", int(state.overlay_show_bars))
+            config.set(OVERLAY_SHOW_BARS_KEY, int(state.overlay_show_bars))
         except Exception:
             _log.exception("Failed to persist overlay show bars preference")
 
         try:
             config.set(
-                "overlay_bars_max_rows",
+                OVERLAY_BARS_MAX_ROWS_KEY,
                 clamp_positive_int(state.overlay_bars_max_rows, 10, maximum=50),
             )
         except Exception:

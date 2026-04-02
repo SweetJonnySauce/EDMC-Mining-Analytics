@@ -39,7 +39,7 @@
           <h2>Commodity Throughput (TPH)</h2>
           <div id="chart-commodity-tph" class="chart-body"></div>
         </article>
-        <article class="chart-card chart-card--stack">
+        <article class="chart-card chart-card--stack chart-card--full">
           <section class="chart-pane">
             <h2>Display Settings</h2>
             <div id="material-display-header-controls" class="panel-header-controls">
@@ -70,7 +70,19 @@
                   <span>10%</span>
                 </label>
               </div>
+              <div class="prospect-frequency-interval-group">
+                <span class="prospect-frequency-interval-prefix">Yield Analysis:</span>
+                <label class="prospect-frequency-control">
+                  <input id="material-percent-yield-mode-all" type="radio" name="material-percent-yield-mode" value="all">
+                  <span>All asteroids</span>
+                </label>
+                <label class="prospect-frequency-control">
+                  <input id="material-percent-yield-mode-present" type="radio" name="material-percent-yield-mode" value="present">
+                  <span>Only w/ Commodity</span>
+                </label>
+              </div>
             </div>
+            <div id="commodity-histogram-filters" class="event-filters"></div>
           </section>
           <section class="chart-pane">
             <h2>Raw Engineering Materials</h2>
@@ -90,7 +102,6 @@
             <div id="prospect-histogram-header-controls" class="panel-header-controls"></div>
           </div>
           <div id="chart-prospect-histogram" class="chart-body"></div>
-          <div id="commodity-histogram-filters" class="event-filters"></div>
         </article>
         <article class="chart-card chart-card--full">
           <div class="panel-header-row">

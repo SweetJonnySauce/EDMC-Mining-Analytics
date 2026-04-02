@@ -29,6 +29,7 @@ import { createIndexStore } from "./state/store.js";
 import { createIndexStateController } from "./state/controller.js";
 import {
   fetchAnalysisSettings,
+  saveAnalysisReportSettings,
   fetchCommodityLinks,
   fetchProspectedAsteroidSummary,
   fetchSessionDirectoryListing,
@@ -53,6 +54,7 @@ import {
       const materialPercentIncludeDuplicatesInput = document.getElementById("material-percent-include-duplicates");
       const materialPercentReverseCumulativeInput = document.getElementById("material-percent-reverse-cumulative");
       const materialPercentIntervalInputs = document.querySelectorAll("input[name=\"material-percent-interval\"]");
+      const materialPercentYieldPopulationInputs = document.querySelectorAll("input[name=\"material-percent-yield-mode\"]");
       const chartProspectCumulativeFrequency = document.getElementById("chart-prospect-cumulative-frequency");
       const chartEvents = document.getElementById("chart-events");
       const chartRefinements = document.getElementById("chart-refinements");
@@ -88,9 +90,12 @@ import {
       let prospectFrequencyIncludeDuplicates = true;
       let prospectFrequencyShowAverageReference = true;
       let prospectFrequencyReverseCumulative = false;
+      let selectedYieldPopulationMode = "all";
       let prospectFrequencyRenderToken = 0;
       let adaptiveLabelResizeTimer = null;
       let sessionListRenderToken = 0;
+      let hasAppliedPersistedIndexReportSettings = false;
+      let indexReportSettingsSaveTimer = null;
       let allRefinementEntries = [];
       let refinementTimelineOptions = null;
       let refinementSelection = {};
@@ -129,7 +134,8 @@ import {
         prospectFrequencyBinSize,
         prospectFrequencyIncludeDuplicates,
         prospectFrequencyShowAverageReference,
-        prospectFrequencyReverseCumulative
+        prospectFrequencyReverseCumulative,
+        selectedYieldPopulationMode
       });
       const indexStateController = createIndexStateController(indexStore);
       const syncIndexStateMirrors = (nextState) => {
@@ -155,6 +161,9 @@ import {
         prospectFrequencyIncludeDuplicates = state.prospectFrequencyIncludeDuplicates !== false;
         prospectFrequencyShowAverageReference = state.prospectFrequencyShowAverageReference !== false;
         prospectFrequencyReverseCumulative = !!state.prospectFrequencyReverseCumulative;
+        selectedYieldPopulationMode = String(state.selectedYieldPopulationMode || "").trim().toLowerCase() === "present"
+          ? "present"
+          : "all";
       };
       syncIndexStateMirrors(indexStateController.getState());
       indexStateController.subscribe((nextState) => {
@@ -185,6 +194,9 @@ import {
           prospectFrequencyIncludeDuplicates: !(state && state.prospectFrequencyIncludeDuplicates === false),
           prospectFrequencyShowAverageReference: !(state && state.prospectFrequencyShowAverageReference === false),
           prospectFrequencyReverseCumulative: !!(state && state.prospectFrequencyReverseCumulative),
+          selectedYieldPopulationMode: String(state && state.selectedYieldPopulationMode || "").trim().toLowerCase() === "present"
+            ? "present"
+            : "all",
           activeThemeId
         };
       }
@@ -540,6 +552,19 @@ import {
             return;
           }
           indexStateController.setRuntimeAnalysisSettings(payload);
+          if (!hasAppliedPersistedIndexReportSettings) {
+            const reportSettings = payload.report_settings && typeof payload.report_settings === "object"
+              ? payload.report_settings
+              : {};
+            const indexReportSettings = reportSettings.index && typeof reportSettings.index === "object"
+              ? reportSettings.index
+              : null;
+            if (indexReportSettings) {
+              applyPersistedIndexReportSettings(indexReportSettings);
+              syncDisplaySettingInputs(getIndexRenderState());
+            }
+            hasAppliedPersistedIndexReportSettings = true;
+          }
         } catch (_error) {
           // Keep defaults when settings endpoint is unavailable.
         }
@@ -635,6 +660,159 @@ import {
           return null;
         }
         return numeric;
+      }
+
+      function normalizeBooleanSetting(value, fallback) {
+        if (value === true || value === false) {
+          return value;
+        }
+        if (value === 1 || value === "1" || value === "true") {
+          return true;
+        }
+        if (value === 0 || value === "0" || value === "false") {
+          return false;
+        }
+        return !!fallback;
+      }
+
+      function normalizeBinSizeSetting(value, fallback) {
+        const numeric = Number(value);
+        if (numeric === 10 || numeric === 5) {
+          return numeric;
+        }
+        return Number(fallback) === 10 ? 10 : 5;
+      }
+
+      function normalizeCumulativeRenderModeSetting(value, fallback) {
+        const text = String(value || "").trim().toLowerCase();
+        if (text === "line" || text === "stacked-area") {
+          return text;
+        }
+        return String(fallback || "").trim().toLowerCase() === "stacked-area" ? "stacked-area" : "line";
+      }
+
+      function normalizeCumulativeValueModeSetting(value, fallback) {
+        const text = String(value || "").trim().toLowerCase();
+        if (text === "quantity" || text === "profit") {
+          return text;
+        }
+        return String(fallback || "").trim().toLowerCase() === "profit" ? "profit" : "quantity";
+      }
+
+      function normalizeYieldPopulationModeSetting(value, fallback) {
+        const text = String(value || "").trim().toLowerCase();
+        if (text === "all" || text === "present") {
+          return text;
+        }
+        return String(fallback || "").trim().toLowerCase() === "present" ? "present" : "all";
+      }
+
+      function buildPersistedIndexReportSettings(stateSnapshot) {
+        const renderState = stateSnapshot || getIndexRenderState();
+        return {
+          materialPercentShowOnlyCollected: !!renderState.materialPercentShowOnlyCollected,
+          materialPercentShowGridlines: renderState.materialPercentShowGridlines !== false,
+          prospectFrequencyIncludeDuplicates: renderState.prospectFrequencyIncludeDuplicates !== false,
+          prospectFrequencyBinSize: Number(renderState.prospectFrequencyBinSize) === 10 ? 10 : 5,
+          prospectFrequencyReverseCumulative: !!renderState.prospectFrequencyReverseCumulative,
+          prospectFrequencyShowAverageReference: renderState.prospectFrequencyShowAverageReference !== false,
+          selectedYieldPopulationMode: normalizeYieldPopulationModeSetting(
+            renderState.selectedYieldPopulationMode,
+            "all"
+          ),
+          cumulativeRenderMode: normalizeCumulativeRenderModeSetting(cumulativeRenderMode, "line"),
+          cumulativeValueMode: normalizeCumulativeValueModeSetting(cumulativeValueMode, "quantity"),
+        };
+      }
+
+      function applyPersistedIndexReportSettings(rawSettings) {
+        const defaults = buildPersistedIndexReportSettings(getIndexRenderState());
+        const source = rawSettings && typeof rawSettings === "object" ? rawSettings : {};
+        indexStateController.setMaterialPercentCollectedMode(
+          normalizeBooleanSetting(source.materialPercentShowOnlyCollected, defaults.materialPercentShowOnlyCollected)
+        );
+        indexStateController.setMaterialPercentGridlines(
+          normalizeBooleanSetting(source.materialPercentShowGridlines, defaults.materialPercentShowGridlines)
+        );
+        indexStateController.setProspectFrequencyIncludeDuplicates(
+          normalizeBooleanSetting(source.prospectFrequencyIncludeDuplicates, defaults.prospectFrequencyIncludeDuplicates)
+        );
+        indexStateController.setProspectFrequencyBinSize(
+          normalizeBinSizeSetting(source.prospectFrequencyBinSize, defaults.prospectFrequencyBinSize)
+        );
+        indexStateController.setProspectFrequencyReverseCumulative(
+          normalizeBooleanSetting(source.prospectFrequencyReverseCumulative, defaults.prospectFrequencyReverseCumulative)
+        );
+        indexStateController.setProspectFrequencyShowAverageReference(
+          normalizeBooleanSetting(
+            source.prospectFrequencyShowAverageReference,
+            defaults.prospectFrequencyShowAverageReference
+          )
+        );
+        indexStateController.setSelectedYieldPopulationMode(
+          normalizeYieldPopulationModeSetting(
+            source.selectedYieldPopulationMode,
+            defaults.selectedYieldPopulationMode
+          )
+        );
+        cumulativeRenderMode = normalizeCumulativeRenderModeSetting(
+          source.cumulativeRenderMode,
+          defaults.cumulativeRenderMode
+        );
+        cumulativeValueMode = normalizeCumulativeValueModeSetting(
+          source.cumulativeValueMode,
+          defaults.cumulativeValueMode
+        );
+      }
+
+      function syncDisplaySettingInputs(stateSnapshot) {
+        const renderState = stateSnapshot || getIndexRenderState();
+        if (materialPercentShowCollectedInput) {
+          materialPercentShowCollectedInput.checked = !!renderState.materialPercentShowOnlyCollected;
+        }
+        if (materialPercentShowGridlinesInput) {
+          materialPercentShowGridlinesInput.checked = renderState.materialPercentShowGridlines !== false;
+        }
+        if (materialPercentIncludeDuplicatesInput) {
+          materialPercentIncludeDuplicatesInput.checked = renderState.prospectFrequencyIncludeDuplicates !== false;
+        }
+        if (materialPercentReverseCumulativeInput) {
+          materialPercentReverseCumulativeInput.checked = !!renderState.prospectFrequencyReverseCumulative;
+        }
+        if (materialPercentIntervalInputs && materialPercentIntervalInputs.length) {
+          const selectedBinSize = Number(renderState.prospectFrequencyBinSize) === 10 ? 10 : 5;
+          materialPercentIntervalInputs.forEach((input) => {
+            if (!(input instanceof HTMLInputElement)) {
+              return;
+            }
+            input.checked = Number(input.value) === selectedBinSize;
+          });
+        }
+        if (materialPercentYieldPopulationInputs && materialPercentYieldPopulationInputs.length) {
+          const selectedMode = renderState.selectedYieldPopulationMode === "present" ? "present" : "all";
+          materialPercentYieldPopulationInputs.forEach((input) => {
+            if (!(input instanceof HTMLInputElement)) {
+              return;
+            }
+            input.checked = String(input.value || "").trim().toLowerCase() === selectedMode;
+          });
+        }
+      }
+
+      function schedulePersistIndexReportSettings() {
+        if (indexReportSettingsSaveTimer !== null) {
+          window.clearTimeout(indexReportSettingsSaveTimer);
+        }
+        indexReportSettingsSaveTimer = window.setTimeout(async () => {
+          indexReportSettingsSaveTimer = null;
+          try {
+            await saveAnalysisReportSettings({
+              index: buildPersistedIndexReportSettings(getIndexRenderState()),
+            });
+          } catch (_error) {
+            // Keep the UI responsive if saving settings fails.
+          }
+        }, 350);
       }
 
       function buildInaraCommoditySearchUrl(options) {
@@ -1723,6 +1901,7 @@ import {
           includeDuplicates,
           showOnlyCollected,
           histogramBinSizeOverride,
+          selectedYieldPopulationMode: renderState.selectedYieldPopulationMode,
           runtimeAnalysisSettings: renderState.runtimeAnalysisSettings,
           collectRefinedCommodityKeys,
           normalizeCommodityKey,
@@ -1779,6 +1958,7 @@ import {
           prospectFrequencyIncludeDuplicates: renderState.prospectFrequencyIncludeDuplicates,
           prospectFrequencyReverseCumulative: renderState.prospectFrequencyReverseCumulative,
           prospectFrequencyBinSize: renderState.prospectFrequencyBinSize,
+          selectedYieldPopulationMode: renderState.selectedYieldPopulationMode,
           normalizeCommodityKey,
           normalizeTextKey,
         });
@@ -1838,6 +2018,7 @@ import {
           normalizeCommodityKey,
           onAverageReferenceChange: (checked) => {
             indexStateController.setProspectFrequencyShowAverageReference(checked);
+            schedulePersistIndexReportSettings();
             const nextState = getIndexRenderState();
             if (nextState.activeSessionData) {
               void renderProspectCumulativeFrequency(nextState.activeSessionData, nextState.activeSessionFilename, nextState);
@@ -1888,7 +2069,49 @@ import {
           }
           return;
         }
-        const commodities = model.commodities;
+        const buildRefinedTonsByCommodity = (payload) => {
+          const source = payload && typeof payload === "object" && payload.commodities && typeof payload.commodities === "object"
+            ? payload.commodities
+            : {};
+          const totals = new Map();
+          Object.entries(source).forEach(([name, details]) => {
+            const commodityKey = normalizeCommodityKey(name) || normalizeTextKey(name) || String(name || "").trim().toLowerCase();
+            if (!commodityKey) {
+              return;
+            }
+            const gathered = details && typeof details === "object" && details.gathered && typeof details.gathered === "object"
+              ? details.gathered
+              : {};
+            const tons = Number(gathered.tons);
+            if (!Number.isFinite(tons) || tons <= 0) {
+              return;
+            }
+            totals.set(commodityKey, (totals.get(commodityKey) || 0) + tons);
+          });
+          return totals;
+        };
+        const refinedTonsByCommodity = buildRefinedTonsByCommodity(sessionData);
+        const commodities = [...model.commodities];
+        commodities.sort((left, right) => {
+          const leftKey = normalizeCommodityKey(left && left.name);
+          const rightKey = normalizeCommodityKey(right && right.name);
+          const leftRefined = Number(refinedTonsByCommodity.get(leftKey) || 0);
+          const rightRefined = Number(refinedTonsByCommodity.get(rightKey) || 0);
+          if (rightRefined !== leftRefined) {
+            return rightRefined - leftRefined;
+          }
+          const leftPresent = Number.isFinite(Number(left && left.presentTotal)) ? Number(left.presentTotal) : Number(left && left.total);
+          const rightPresent = Number.isFinite(Number(right && right.presentTotal)) ? Number(right.presentTotal) : Number(right && right.total);
+          if (rightPresent !== leftPresent) {
+            return rightPresent - leftPresent;
+          }
+          const leftTotal = Number(left && left.total);
+          const rightTotal = Number(right && right.total);
+          if (rightTotal !== leftTotal) {
+            return rightTotal - leftTotal;
+          }
+          return String(left && left.name || "").localeCompare(String(right && right.name || ""));
+        });
         const binSize = model.binSize;
         let selectedCommodity = initialRenderState.selectedHistogramCommodity;
         const highlightedCommodityKey = initialRenderState.materialPercentHighlightedCommodityKey;
@@ -1963,7 +2186,10 @@ import {
             });
 
             const text = document.createElement("span");
-            text.textContent = `${item.name} (${item.total})`;
+            const collectedCount = Number.isFinite(Number(item.presentTotal))
+              ? Number(item.presentTotal)
+              : Number(item.total);
+            text.textContent = `${item.name} (${collectedCount})`;
 
             wrapper.appendChild(radio);
             wrapper.appendChild(text);
@@ -1998,10 +2224,12 @@ import {
           getRenderMode: () => cumulativeRenderMode,
           setRenderMode: (mode) => {
             cumulativeRenderMode = mode;
+            schedulePersistIndexReportSettings();
           },
           getValueMode: () => cumulativeValueMode,
           setValueMode: (mode) => {
             cumulativeValueMode = mode;
+            schedulePersistIndexReportSettings();
           },
           asNumber,
           formatNumber,
@@ -2415,6 +2643,12 @@ import {
         const meta = sessionData && typeof sessionData === "object" ? (sessionData.meta || {}) : {};
         const overall = meta.overall_tph || {};
         const location = meta.location || {};
+        const resolvedRingLabel = String(resolveSessionRingLabel(sessionData) || "").trim();
+        const bodyRingLabel = (
+          resolvedRingLabel && resolvedRingLabel !== "Unknown"
+            ? resolvedRingLabel
+            : (location.ring || location.body || "--")
+        );
         const prospected = meta.prospected || {};
         const estimatedSell = meta.estimated_sell || {};
         const commodities = sessionData && sessionData.commodities ? Object.keys(sessionData.commodities).length : 0;
@@ -2474,7 +2708,7 @@ import {
           ["End", formatLocalDateTime(meta.end_time)],
           ["Ship", meta.ship || "--"],
           ["System", location.system || "--"],
-          ["Body/Ring", location.body || location.ring || "--"],
+          ["Body/Ring", bodyRingLabel],
           ["Tons Collected", overall.tons ?? "--"],
           ["Duration (Hours)", durationDisplay],
           ["Tons/Hour", tonsPerHour],
@@ -2622,9 +2856,11 @@ import {
         materialPercentIncludeDuplicatesInput,
         materialPercentIntervalInputs,
         materialPercentReverseCumulativeInput,
+        materialPercentYieldPopulationInputs,
         initialState: initialRenderState,
         onCollectedModeToggle: (checked) => {
           indexStateController.setMaterialPercentCollectedMode(checked);
+          schedulePersistIndexReportSettings();
           const renderState = getIndexRenderState();
           if (renderState.activeSessionData) {
             renderProspectHistogram(renderState.activeSessionData, renderState);
@@ -2633,6 +2869,7 @@ import {
         },
         onGridlinesToggle: (checked) => {
           indexStateController.setMaterialPercentGridlines(checked);
+          schedulePersistIndexReportSettings();
           const renderState = getIndexRenderState();
           if (renderState.activeSessionData) {
             renderMaterialPercentAmount(renderState.activeSessionData, renderState);
@@ -2645,6 +2882,7 @@ import {
         },
         onIncludeDuplicatesToggle: (checked) => {
           indexStateController.setProspectFrequencyIncludeDuplicates(checked);
+          schedulePersistIndexReportSettings();
           const renderState = getIndexRenderState();
           if (renderState.activeSessionData) {
             renderProspectHistogram(renderState.activeSessionData, renderState);
@@ -2659,6 +2897,7 @@ import {
         },
         onBinSizeSelect: (value) => {
           indexStateController.setProspectFrequencyBinSize(value);
+          schedulePersistIndexReportSettings();
           const renderState = getIndexRenderState();
           if (renderState.activeSessionData) {
             renderProspectHistogram(renderState.activeSessionData, renderState);
@@ -2666,6 +2905,15 @@ import {
         },
         onReverseCumulativeToggle: (checked) => {
           indexStateController.setProspectFrequencyReverseCumulative(checked);
+          schedulePersistIndexReportSettings();
+          const renderState = getIndexRenderState();
+          if (renderState.activeSessionData) {
+            renderProspectHistogram(renderState.activeSessionData, renderState);
+          }
+        },
+        onYieldPopulationSelect: (mode) => {
+          indexStateController.setSelectedYieldPopulationMode(mode);
+          schedulePersistIndexReportSettings();
           const renderState = getIndexRenderState();
           if (renderState.activeSessionData) {
             renderProspectHistogram(renderState.activeSessionData, renderState);

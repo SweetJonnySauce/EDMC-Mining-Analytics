@@ -479,7 +479,7 @@
     }
 
     .chart-card--stack {
-      grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       grid-template-rows: 1fr;
       gap: 10px;
       align-items: stretch;
@@ -503,6 +503,7 @@
     .chart-pane .panel-header-controls {
       justify-content: flex-start;
       width: 100%;
+      align-content: flex-start;
     }
 
     .chart-card--full {
@@ -523,6 +524,12 @@
       gap: 6px;
       align-items: center;
       min-height: 24px;
+    }
+
+    #commodity-histogram-filters {
+      margin-top: 2px;
+      padding-top: 6px;
+      border-top: 1px dashed color-mix(in srgb, var(--fg) 14%, transparent);
     }
 
     .event-filter-item {
@@ -623,8 +630,14 @@
 
     .estimated-profit-settings {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
+    }
+
+    @media (max-width: 1100px) {
+      .estimated-profit-settings {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     .estimated-profit-setting {
@@ -1164,8 +1177,8 @@
       --histogram-bars-border: 1px;
       min-height: 170px;
       display: grid;
-      grid-template-columns: auto auto 1fr;
-      gap: 2px;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
       align-items: stretch;
     }
 
@@ -1209,14 +1222,14 @@
     .histogram-label-row {
       display: grid;
       grid-template-columns: auto 1fr;
-      gap: 2px;
+      gap: 8px;
       align-items: start;
     }
 
     .histogram-label-spacer {
       visibility: hidden;
       pointer-events: none;
-      width: 36px;
+      width: 34px;
     }
 
     .histogram-bin-label {
@@ -1229,24 +1242,8 @@
       min-height: 2.1em;
     }
 
-    .histogram-y-axis-label {
-      width: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--muted);
-      font-size: 0.68rem;
-      line-height: 1;
-      text-align: center;
-      white-space: nowrap;
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      transform: rotate(180deg);
-      user-select: none;
-    }
-
     .histogram-y-axis {
-      width: 26px;
+      width: 34px;
       min-height: 170px;
       position: relative;
       color: var(--muted);
@@ -1418,6 +1415,32 @@
       grid-template-columns: auto 1fr;
       gap: 8px;
       align-items: stretch;
+    }
+
+    .prospect-frequency-y-axis {
+      width: 34px;
+      position: relative;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .prospect-frequency-y-axis-ticks {
+      position: absolute;
+      top: 1px;
+      bottom: 1px;
+      left: 0;
+      right: 0;
+    }
+
+    .prospect-frequency-y-axis-tick {
+      position: absolute;
+      right: 0;
+      white-space: nowrap;
+      pointer-events: none;
+      transform: translateY(-50%);
     }
 
     .prospect-frequency-surface {

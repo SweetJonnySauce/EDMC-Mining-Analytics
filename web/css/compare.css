@@ -496,16 +496,28 @@
 
     .compare-y-axis {
       width: 34px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: flex-end;
+      position: relative;
       color: var(--muted);
       font-size: 0.76rem;
       font-variant-numeric: tabular-nums;
       line-height: 1;
-      padding: 2px 0;
       user-select: none;
+    }
+
+    .compare-y-axis-ticks {
+      position: absolute;
+      top: 1px;
+      bottom: 1px;
+      left: 0;
+      right: 0;
+    }
+
+    .compare-y-axis-tick {
+      position: absolute;
+      right: 0;
+      white-space: nowrap;
+      pointer-events: none;
+      transform: translateY(-50%);
     }
 
     .compare-surface {

@@ -55,8 +55,17 @@ export function renderProspectCumulativeFrequencyChart(options) {
   layout.className = "prospect-frequency-layout";
   const plot = document.createElement("div");
   plot.className = "prospect-frequency-plot";
+  const width = 1000;
+  const height = 240;
+  const topPad = 10;
+  const bottomPad = 18;
+  const sidePad = 14;
+  const drawWidth = Math.max(1, width - (sidePad * 2));
+  const drawHeight = Math.max(1, height - topPad - bottomPad);
   const yAxis = document.createElement("div");
-  yAxis.className = "timeline-y-axis";
+  yAxis.className = "prospect-frequency-y-axis";
+  const yAxisTicks = document.createElement("div");
+  yAxisTicks.className = "prospect-frequency-y-axis-ticks";
   const computeAxisStep = (axisMaxInt) => {
     const targetTickCount = 7;
     const minStep = Math.max(1, axisMaxInt / (targetTickCount - 1));
@@ -88,20 +97,17 @@ export function renderProspectCumulativeFrequencyChart(options) {
   }
   yTickValues.forEach((value) => {
     const tick = document.createElement("span");
+    tick.className = "prospect-frequency-y-axis-tick";
     tick.textContent = String(value);
-    yAxis.appendChild(tick);
+    const ratio = countAxisScaleMax <= 0 ? 0 : (value / countAxisScaleMax);
+    const tickY = topPad + (drawHeight * (1 - ratio));
+    tick.style.top = `${((tickY / height) * 100).toFixed(4)}%`;
+    yAxisTicks.appendChild(tick);
   });
+  yAxis.appendChild(yAxisTicks);
 
   const surface = document.createElement("div");
   surface.className = "prospect-frequency-surface";
-
-  const width = 1000;
-  const height = 240;
-  const topPad = 10;
-  const bottomPad = 18;
-  const sidePad = 14;
-  const drawWidth = Math.max(1, width - (sidePad * 2));
-  const drawHeight = Math.max(1, height - topPad - bottomPad);
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
   svg.classList.add("prospect-frequency-svg");

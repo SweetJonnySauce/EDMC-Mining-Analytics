@@ -86,11 +86,17 @@ function renderHistogramSection(options) {
   plot.className = "compare-plot compare-plot--histogram";
   const yAxis = document.createElement("div");
   yAxis.className = "compare-y-axis";
+  const yAxisTicks = document.createElement("div");
+  yAxisTicks.className = "compare-y-axis-ticks";
   yTicks.forEach((value) => {
     const tick = document.createElement("span");
+    tick.className = "compare-y-axis-tick";
     tick.textContent = String(value);
-    yAxis.appendChild(tick);
+    const y = toYForCount(value);
+    tick.style.top = `${((y / height) * 100).toFixed(4)}%`;
+    yAxisTicks.appendChild(tick);
   });
+  yAxis.appendChild(yAxisTicks);
   const surface = document.createElement("div");
   surface.className = "compare-surface compare-surface--histogram";
   plot.appendChild(yAxis);
@@ -102,6 +108,15 @@ function renderHistogramSection(options) {
     height = Math.max(120, Math.round((width * surfaceRect.height) / surfaceRect.width));
     drawHeight = Math.max(1, height - topPad - bottomPad);
   }
+
+  yTicks.forEach((value, index) => {
+    const y = toYForCount(value);
+    const tick = yAxisTicks.children[index];
+    if (!(tick instanceof HTMLElement)) {
+      return;
+    }
+    tick.style.top = `${((y / height) * 100).toFixed(4)}%`;
+  });
 
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
@@ -329,11 +344,15 @@ export function renderRingChart(options) {
   plot.className = "compare-plot";
   const yAxis = document.createElement("div");
   yAxis.className = "compare-y-axis";
+  const yAxisTicks = document.createElement("div");
+  yAxisTicks.className = "compare-y-axis-ticks";
   yTicks.forEach((value) => {
     const tick = document.createElement("span");
+    tick.className = "compare-y-axis-tick";
     tick.textContent = String(value);
-    yAxis.appendChild(tick);
+    yAxisTicks.appendChild(tick);
   });
+  yAxis.appendChild(yAxisTicks);
   const surface = document.createElement("div");
   surface.className = "compare-surface";
   plot.appendChild(yAxis);
@@ -362,6 +381,15 @@ export function renderRingChart(options) {
     const ratio = countAxisScaleMax <= 0 ? 0 : (count / countAxisScaleMax);
     return topPad + (drawHeight * (1 - ratio));
   };
+
+  yTicks.forEach((value, index) => {
+    const y = toYForCount(value);
+    const tick = yAxisTicks.children[index];
+    if (!(tick instanceof HTMLElement)) {
+      return;
+    }
+    tick.style.top = `${((y / height) * 100).toFixed(4)}%`;
+  });
 
   if (showGridlines) {
     yTicks.forEach((value) => {

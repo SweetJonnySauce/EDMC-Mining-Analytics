@@ -6,6 +6,20 @@ export async function fetchAnalysisSettings() {
   return fetchJson("/analysis_settings.json", NO_STORE);
 }
 
+export async function saveAnalysisReportSettings(reportSettingsUpdate) {
+  const payload = reportSettingsUpdate && typeof reportSettingsUpdate === "object"
+    ? reportSettingsUpdate
+    : {};
+  return fetchJson("/analysis_report_settings.json", {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function fetchCommodityLinks() {
   return fetchJson("/commodity_links.json", NO_STORE);
 }

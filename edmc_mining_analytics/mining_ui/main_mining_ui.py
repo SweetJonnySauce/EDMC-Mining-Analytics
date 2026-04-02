@@ -57,6 +57,7 @@ from ..edmc_mining_analytics_version import (
     is_newer_version,
 )
 from ..browser_utils import did_open, open_analysis_url
+from ..report_settings import load_report_settings, save_report_settings
 from .components.button_factory import (
     ButtonType,
     CheckboxType,
@@ -2119,6 +2120,7 @@ class edmcmaMiningUI:
                     payload = {
                         "histogram_bin_size": max(1, int(getattr(ui_state, "histogram_bin_size", 10))),
                         "limpet_dump_threshold": max(1, int(getattr(ui_state, "limpet_dump_threshold", 5))),
+                        "report_settings": load_report_settings(),
                         "market_search_criteria": {
                             "sort_mode": str(getattr(ui_state, "market_search_sort_mode", "best_price") or "best_price"),
                             "has_large_pad": bool(getattr(ui_state, "market_search_has_large_pad", False) is True),
@@ -2139,6 +2141,40 @@ class edmcmaMiningUI:
                     self.wfile.write(body)
                     return
                 super().do_GET()
+
+            def do_POST(self) -> None:  # noqa: N802
+                path = (self.path or "").split("?", 1)[0]
+                if path == "/analysis_report_settings.json":
+                    try:
+                        length = int(self.headers.get("Content-Length", "0") or "0")
+                    except (TypeError, ValueError):
+                        length = 0
+                    try:
+                        raw_body = self.rfile.read(max(0, length))
+                    except Exception:
+                        raw_body = b""
+                    payload: dict[str, Any]
+                    if not raw_body.strip():
+                        payload = {}
+                    else:
+                        try:
+                            parsed = json.loads(raw_body.decode("utf-8"))
+                        except Exception:
+                            parsed = None
+                        payload = parsed if isinstance(parsed, dict) else {}
+                    persisted = save_report_settings(payload)
+                    response_body = json.dumps(
+                        {"ok": True, "report_settings": persisted},
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("Content-Length", str(len(response_body)))
+                    self.end_headers()
+                    self.wfile.write(response_body)
+                    return
+                super().do_POST()
 
         try:
             handler = partial(_LocalHandler, directory=str(plugin_dir))

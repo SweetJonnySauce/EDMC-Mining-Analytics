@@ -7,6 +7,10 @@ export function normalizeHistogramBinSize(value) {
   return Math.max(1, Math.min(100, rounded));
 }
 
+function normalizeYieldPopulationMode(value) {
+  return String(value || "").trim().toLowerCase() === "present" ? "present" : "all";
+}
+
 export function resolveSessionGuid(meta, filename) {
   const source = meta && typeof meta === "object" ? meta : {};
   const direct = typeof source.session_guid === "string" ? source.session_guid.trim() : "";
@@ -79,6 +83,7 @@ export function buildProspectHistogramModel(options) {
     includeDuplicates,
     showOnlyCollected,
     histogramBinSizeOverride,
+    selectedYieldPopulationMode,
     runtimeAnalysisSettings,
     collectRefinedCommodityKeys,
     normalizeCommodityKey,
@@ -98,12 +103,14 @@ export function buildProspectHistogramModel(options) {
   const normalizeText = typeof normalizeTextKey === "function"
     ? normalizeTextKey
     : ((value) => String(value || "").trim().toLowerCase());
+  const yieldPopulationMode = normalizeYieldPopulationMode(selectedYieldPopulationMode);
 
   const events = Array.isArray(payload.events) ? payload.events : [];
   const collectedCommodityKeys = typeof collectRefinedCommodityKeys === "function"
     ? collectRefinedCommodityKeys(events)
     : new Set();
-  const byCommodity = new Map();
+  const commodityLabelByKey = new Map();
+  const asteroids = [];
   events.forEach((event) => {
     if (!event || event.type !== "prospected_asteroid") {
       return;
@@ -113,6 +120,9 @@ export function buildProspectHistogramModel(options) {
       return;
     }
     const materials = Array.isArray(details.materials) ? details.materials : [];
+    const asteroid = {
+      commodityPercentages: new Map()
+    };
     materials.forEach((material) => {
       if (!material || typeof material !== "object") {
         return;
@@ -126,25 +136,51 @@ export function buildProspectHistogramModel(options) {
       if (!key) {
         return;
       }
+      if (!commodityLabelByKey.has(key)) {
+        commodityLabelByKey.set(key, name);
+      }
+      const pct = Math.max(0, pctRaw);
+      const prior = asteroid.commodityPercentages.get(key);
+      if (!Number.isFinite(prior) || pct > prior) {
+        asteroid.commodityPercentages.set(key, pct);
+      }
+    });
+    asteroids.push(asteroid);
+  });
+
+  const eventCommodityMap = new Map();
+  asteroids.forEach((asteroid) => {
+    asteroid.commodityPercentages.forEach((_value, key) => {
       if (showOnlyCollected && !collectedCommodityKeys.has(key)) {
         return;
       }
-      let item = byCommodity.get(key);
-      if (!item) {
-        item = {
-          name,
+      if (!eventCommodityMap.has(key)) {
+        eventCommodityMap.set(key, {
+          name: commodityLabelByKey.get(key) || key,
           percentages: [],
-          total: 0
-        };
-        byCommodity.set(key, item);
+          total: 0,
+          presentTotal: 0
+        });
       }
-      const pct = Math.max(0, pctRaw);
-      item.percentages.push(pct);
+    });
+  });
+  asteroids.forEach((asteroid) => {
+    eventCommodityMap.forEach((item, key) => {
+      const raw = Number(asteroid.commodityPercentages.get(key));
+      const present = Number.isFinite(raw);
+      if (!present && yieldPopulationMode === "present") {
+        return;
+      }
+      const value = present ? Math.max(0, raw) : 0;
+      item.percentages.push(value);
       item.total += 1;
+      if (present) {
+        item.presentTotal += 1;
+      }
     });
   });
 
-  const eventResult = Array.from(byCommodity.values())
+  const eventResult = Array.from(eventCommodityMap.values())
     .filter((item) => item.total > 0 && Array.isArray(item.percentages) && item.percentages.length > 0)
     .map((item) => {
       const maxObserved = item.percentages.reduce((peak, value) => Math.max(peak, value), 0);
@@ -164,11 +200,17 @@ export function buildProspectHistogramModel(options) {
         name: item.name,
         counts,
         total: item.total,
+        presentTotal: item.presentTotal,
         xMax
       };
     });
   if (eventResult.length) {
     eventResult.sort((left, right) => {
+      const leftPresent = Number.isFinite(Number(left.presentTotal)) ? Number(left.presentTotal) : Number(left.total);
+      const rightPresent = Number.isFinite(Number(right.presentTotal)) ? Number(right.presentTotal) : Number(right.total);
+      if (rightPresent !== leftPresent) {
+        return rightPresent - leftPresent;
+      }
       if (right.total !== left.total) {
         return right.total - left.total;
       }
@@ -182,6 +224,15 @@ export function buildProspectHistogramModel(options) {
   }
 
   const source = payload.commodities && typeof payload.commodities === "object" ? payload.commodities : {};
+  const totalAsteroidsRaw = Number(
+    payload
+    && payload.meta
+    && payload.meta.prospected
+    && payload.meta.prospected.total
+  );
+  const totalAsteroids = Number.isFinite(totalAsteroidsRaw) && totalAsteroidsRaw > 0
+    ? Math.floor(totalAsteroidsRaw)
+    : null;
   const result = [];
   Object.entries(source).forEach(([name, details]) => {
     const commodityKey = normalizeCommodity(name) || normalizeText(name) || String(name || "").trim().toLowerCase();
@@ -192,6 +243,7 @@ export function buildProspectHistogramModel(options) {
     const breakdown = Array.isArray(model.percentage_breakdown) ? model.percentage_breakdown : [];
     const percentages = [];
     let total = 0;
+    let presentTotal = 0;
     breakdown.forEach((entry) => {
       if (!entry || typeof entry !== "object") {
         return;
@@ -207,8 +259,16 @@ export function buildProspectHistogramModel(options) {
         percentages.push(pct);
       }
       total += qty;
+      presentTotal += qty;
     });
     if (total > 0 && percentages.length > 0) {
+      if (yieldPopulationMode === "all" && Number.isFinite(totalAsteroids) && totalAsteroids > total) {
+        const zeroCount = totalAsteroids - total;
+        for (let offset = 0; offset < zeroCount; offset += 1) {
+          percentages.push(0);
+        }
+        total += zeroCount;
+      }
       const maxObserved = percentages.reduce((peak, value) => Math.max(peak, value), 0);
       const xMax = Math.max(binSize, Math.ceil(maxObserved / binSize) * binSize);
       const bins = Math.max(1, Math.ceil(xMax / binSize));
@@ -222,10 +282,15 @@ export function buildProspectHistogramModel(options) {
         }
         counts[index] += 1;
       });
-      result.push({ name, counts, total, xMax });
+      result.push({ name, counts, total, presentTotal, xMax });
     }
   });
   result.sort((left, right) => {
+    const leftPresent = Number.isFinite(Number(left.presentTotal)) ? Number(left.presentTotal) : Number(left.total);
+    const rightPresent = Number.isFinite(Number(right.presentTotal)) ? Number(right.presentTotal) : Number(right.total);
+    if (rightPresent !== leftPresent) {
+      return rightPresent - leftPresent;
+    }
     if (right.total !== left.total) {
       return right.total - left.total;
     }
@@ -247,6 +312,7 @@ export function buildProspectCumulativeFrequencyModel(options) {
     prospectFrequencyIncludeDuplicates,
     prospectFrequencyReverseCumulative,
     prospectFrequencyBinSize,
+    selectedYieldPopulationMode,
     normalizeCommodityKey,
     normalizeTextKey,
   } = options || {};
@@ -256,6 +322,7 @@ export function buildProspectCumulativeFrequencyModel(options) {
   const normalizeText = typeof normalizeTextKey === "function"
     ? normalizeTextKey
     : ((value) => String(value || "").trim().toLowerCase());
+  const yieldPopulationMode = normalizeYieldPopulationMode(selectedYieldPopulationMode);
 
   const commodity = String(selectedHistogramCommodity || "").trim();
   if (!commodity) {
@@ -321,43 +388,35 @@ export function buildProspectCumulativeFrequencyModel(options) {
     return { error: "No asteroid records match the current ring and duplicate filter." };
   }
 
-  const presentAsteroids = asteroids
+  const allAsteroids = asteroids
     .map((asteroid) => {
       const raw = Number(asteroid.commodityPercentages.get(commodityKey));
-      if (!Number.isFinite(raw)) {
-        return null;
-      }
       return {
-        value: Math.max(0, raw),
+        value: Number.isFinite(raw) ? Math.max(0, raw) : 0,
+        present: Number.isFinite(raw),
         sessionGuid: asteroid.sessionGuid,
         isCurrentSession: currentSessionGuid ? asteroid.sessionGuid === currentSessionGuid : false
       };
-    })
-    .filter((asteroid) => !!asteroid);
-  if (!presentAsteroids.length) {
+    });
+  const sessionGuidsWithCommodityPresent = new Set(
+    allAsteroids
+      .filter((asteroid) => asteroid.present)
+      .map((asteroid) => asteroid.sessionGuid)
+      .filter((value) => !!value)
+  );
+  const eligibleAllAsteroids = allAsteroids.filter((asteroid) => (
+    !!asteroid.sessionGuid && sessionGuidsWithCommodityPresent.has(asteroid.sessionGuid)
+  ));
+  const presentAsteroids = eligibleAllAsteroids.filter((asteroid) => asteroid.present);
+  const scopedAsteroids = yieldPopulationMode === "present" ? presentAsteroids : eligibleAllAsteroids;
+  if (!scopedAsteroids.length) {
     return { error: "No asteroids in this ring contain the selected commodity for the current duplicate filter." };
   }
 
-  const sessionGuids = new Set();
-  summaryRecords.forEach((row) => {
-    if (!row || typeof row !== "object") {
-      return;
-    }
-    if (normalizeText(row.commodity_name) !== commodityKey) {
-      return;
-    }
-    if (!prospectFrequencyIncludeDuplicates && row.duplicate_prospector === true) {
-      return;
-    }
-    const sessionGuid = typeof row.session_guid === "string" ? row.session_guid.trim() : "";
-    if (!sessionGuid) {
-      return;
-    }
-    sessionGuids.add(sessionGuid);
-  });
+  const sessionGuids = new Set(scopedAsteroids.map((asteroid) => asteroid.sessionGuid).filter((value) => !!value));
 
   const interval = Number(prospectFrequencyBinSize) === 10 ? 10 : 5;
-  const maxObserved = presentAsteroids.reduce((peak, item) => Math.max(peak, item.value), 0);
+  const maxObserved = scopedAsteroids.reduce((peak, item) => Math.max(peak, item.value), 0);
   const xMax = Math.max(interval, Math.ceil(maxObserved / interval) * interval);
   const bins = Math.max(1, Math.ceil(xMax / interval));
   const totalCounts = new Array(bins).fill(0);
@@ -365,7 +424,7 @@ export function buildProspectCumulativeFrequencyModel(options) {
   const otherCounts = new Array(bins).fill(0);
   let percentSum = 0;
 
-  presentAsteroids.forEach((item) => {
+  scopedAsteroids.forEach((item) => {
     percentSum += item.value;
     let index = item.value >= xMax ? (bins - 1) : Math.floor(item.value / interval);
     if (index < 0) {
@@ -438,7 +497,7 @@ export function buildProspectCumulativeFrequencyModel(options) {
     };
   });
   const yMax = Math.max(1, runningTotal);
-  const averageYield = presentAsteroids.length > 0 ? (percentSum / presentAsteroids.length) : 0;
+  const averageYield = scopedAsteroids.length > 0 ? (percentSum / scopedAsteroids.length) : 0;
 
   return {
     ringLabel,
@@ -447,7 +506,8 @@ export function buildProspectCumulativeFrequencyModel(options) {
     xMax,
     yMax,
     sessionsCount: sessionGuids.size,
-    asteroidsCount: presentAsteroids.length,
+    asteroidsCount: scopedAsteroids.length,
+    presentAsteroidsCount: presentAsteroids.length,
     averageYield
   };
 }
