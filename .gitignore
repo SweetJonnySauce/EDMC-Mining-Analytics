@@ -17,3 +17,5 @@ updates/**
 
 .venv/
 .venv/**
+
+*.log

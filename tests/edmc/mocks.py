@@ -283,8 +283,11 @@ from edmc_data import ship_name_map
 ship_map = ship_name_map.copy()
 
 # Ship masses
-with open(parent / "config" / "ships.json", encoding="utf-8") as ships_file_handle:
-    ships = json.load(ships_file_handle)
+try:
+    with open(parent / "config" / "ships.json", encoding="utf-8") as ships_file_handle:
+        ships = json.load(ships_file_handle)
+except FileNotFoundError:
+    ships = {}
 
 _edshipyard = _types.ModuleType('edshipyard')
 setattr(_edshipyard, 'ship_name_map', ship_map)
