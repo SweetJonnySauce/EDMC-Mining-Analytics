@@ -136,6 +136,19 @@ class MockSession:
                                  'head': {}, 'options': {}}
         self.sticky_responses = {'get': {}, 'post': {}, 'put': {}, 'patch': {}, 'delete': {},
                                  'head': {}, 'options': {}}
+
+        # Session attributes matching requests.Session
+        self.headers = {}
+        self.cookies = {}
+        self.params = {}
+        self.auth = None
+        self.proxies = {}
+        self.hooks = {}
+        self.verify = True
+        self.cert = None
+        self.timeout = None
+        self.trust_env = True
+
         self._initialized = True
 
     def _mock_request(self, method: str, url: str, **kwargs) -> MockResponse:
@@ -183,52 +196,23 @@ class MockSession:
 
     def mount(self, *args, **kwargs) -> None:
         return None
-
-
-class RequestsSession:
-    def __init__(self) -> None:
-        self._session = None
-
-    def _backend(self):
-        if not _use_live or _live_requests is None:
-            return _mock_requests
-
-        if self._session is None:
-            self._session = _live_requests.Session()
-        return self._session
-
-    def get(self, url: str, **kwargs):
-        return self._backend().get(url, **kwargs)
-
-    def post(self, url: str, **kwargs):
-        return self._backend().post(url, **kwargs)
-
-    def put(self, url: str, **kwargs):
-        return self._backend().put(url, **kwargs)
-
-    def patch(self, url: str, **kwargs):
-        return self._backend().patch(url, **kwargs)
-
-    def delete(self, url: str, **kwargs):
-        return self._backend().delete(url, **kwargs)
-
-    def head(self, url: str, **kwargs):
-        return self._backend().head(url, **kwargs)
-
-    def options(self, url: str, **kwargs):
-        return self._backend().options(url, **kwargs)
-
-    def close(self) -> None:
-        backend = self._backend()
-        if hasattr(backend, 'close'):
-            backend.close()
-
-    def mount(self, *args, **kwargs) -> None:
-        backend = self._backend()
-        if hasattr(backend, 'mount'):
-            backend.mount(*args, **kwargs)
-
 _mock_requests = MockSession()
+_live_session = None
+
+def RequestsSession():
+    """Factory function: returns either a live or mock requests.Session.
+
+    Returns the appropriate session object (mock or live) directly, ensuring
+    that all session attributes like headers, cookies, params, etc. work
+    correctly on the returned object.
+    """
+    global _live_session
+    if not _use_live or _live_requests is None:
+        return _mock_requests
+
+    if _live_session is None:
+        _live_session = _live_requests.Session()
+    return _live_session
 
 def _request(method: str, url: str, **kwargs):
     """ Call the appropriate live or mock request method """
