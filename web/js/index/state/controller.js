@@ -6,6 +6,10 @@ function normalizeBinSize(value) {
   return Number(value) === 10 ? 10 : 5;
 }
 
+function normalizeYieldPopulationMode(value) {
+  return String(value || "").trim().toLowerCase() === "present" ? "present" : "all";
+}
+
 function normalizeKey(value, normalizeCommodityKey) {
   const normalize = typeof normalizeCommodityKey === "function"
     ? normalizeCommodityKey
@@ -96,6 +100,9 @@ export function createIndexStateController(store) {
     },
     setProspectFrequencyShowAverageReference: (enabled) => {
       patch({ prospectFrequencyShowAverageReference: !!enabled });
+    },
+    setSelectedYieldPopulationMode: (mode) => {
+      patch({ selectedYieldPopulationMode: normalizeYieldPopulationMode(mode) });
     }
   };
 }

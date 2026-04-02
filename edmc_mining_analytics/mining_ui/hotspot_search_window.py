@@ -425,7 +425,7 @@ class HotspotSearchWindow:
     FAVORITES_FILENAME = "hotspot_favorite_rings.json"
     FAVORITE_COLUMN_WIDTH = 40
     RESULTS_PER_PAGE = DEFAULT_RESULT_SIZE
-    SIGNALS_COLUMN_HEADING = "Signals (qty) (known avg yield)"
+    SIGNALS_COLUMN_HEADING = "Signals (qty) (known avg yield: all asteroids)"
 
     FALLBACK_RING_SIGNALS = [
         "Platinum",
@@ -764,8 +764,7 @@ class HotspotSearchWindow:
         min_hotspots_initial = filters.min_hotspots or self.DEFAULT_MIN_HOTSPOTS
         min_hotspots_initial = max(1, int(min_hotspots_initial or self.DEFAULT_MIN_HOTSPOTS))
         self._min_hotspots_var = tk.StringVar(master=self._toplevel, value=str(min_hotspots_initial))
-        yield_basis_initial = self._normalise_yield_basis(filters.yield_basis)
-        self._yield_basis_var = tk.StringVar(master=self._toplevel, value=yield_basis_initial)
+        self._yield_basis_var = tk.StringVar(master=self._toplevel, value=self.YIELD_BASIS_ALL)
         min_hotspots_frame = tk.LabelFrame(secondary_controls_frame, text="Minimum Hotspots")
         min_hotspots_frame.grid(row=1, column=0, sticky="ew", pady=(8, 0))
         self._theme.register(min_hotspots_frame)
@@ -783,23 +782,6 @@ class HotspotSearchWindow:
         min_hotspots_spin.grid(row=0, column=0, padx=6, pady=6, sticky="w")
         self._theme.register(min_hotspots_spin)
         self._min_hotspots_var.trace_add("write", self._on_filters_changed)
-
-        yield_basis_frame = tk.LabelFrame(secondary_controls_frame, text="Yield Basis")
-        yield_basis_frame.grid(row=2, column=0, sticky="ew", pady=(8, 0))
-        self._theme.register(yield_basis_frame)
-        for row_index, (basis_key, basis_text) in enumerate(self.YIELD_BASIS_OPTIONS):
-            basis_button = tk.Radiobutton(
-                yield_basis_frame,
-                text=basis_text,
-                variable=self._yield_basis_var,
-                value=basis_key,
-                anchor="w",
-                highlightthickness=0,
-                bd=0,
-                command=self._on_filters_changed,
-            )
-            basis_button.grid(row=row_index, column=0, sticky="w", padx=6, pady=2)
-            self._theme.register(basis_button)
 
         signal_frame = tk.LabelFrame(layout_frame, text="Ring Signals")
         signal_frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
@@ -1618,9 +1600,7 @@ class HotspotSearchWindow:
             self._min_hotspots_var.get() if self._min_hotspots_var else None,
             self.DEFAULT_MIN_HOTSPOTS,
         )
-        yield_basis = self._normalise_yield_basis(
-            self._yield_basis_var.get() if self._yield_basis_var else None
-        )
+        yield_basis = self.YIELD_BASIS_ALL
 
         return min_distance, max_distance, signals, reserves, ring_types, min_hotspots, yield_basis
 
@@ -1773,9 +1753,7 @@ class HotspotSearchWindow:
             self._min_hotspots_var.get() if self._min_hotspots_var else None,
             self.DEFAULT_MIN_HOTSPOTS,
         )
-        yield_basis = self._normalise_yield_basis(
-            self._yield_basis_var.get() if self._yield_basis_var else None
-        )
+        yield_basis = self.YIELD_BASIS_ALL
 
         self._controller.persist_filters_from_ui(
             distance_min_text,
@@ -1885,11 +1863,7 @@ class HotspotSearchWindow:
             tree.delete(item)
         self._result_item_ring_names = {}
 
-        yield_basis = self._normalise_yield_basis(
-            (self._active_params.yield_basis if self._active_params else None)
-            or (self._yield_basis_var.get() if self._yield_basis_var else None)
-        )
-        known_avg_index = self._load_known_avg_yield_index(yield_basis)
+        known_avg_index = self._load_known_avg_yield_index(self.YIELD_BASIS_ALL)
         entries = list(result.entries)
         system_labels: List[str] = []
         signals_labels: List[str] = []

@@ -32,7 +32,7 @@ sys.path.insert(0, str(test_dir))
 import tests.edmc.requests
 import tests.edmc.mocks
 from tests.edmc.mocks import MockConfig
-
+from tests.edmc.monitor import monitor
 class TestHarness:
     """ Main test harness. """
     # Prevent pytest from trying to collect this helper class as a test class
@@ -52,6 +52,9 @@ class TestHarness:
 
         self.plugin_dir:Path = Path(plugin_dir).resolve()
         self.plugin:Any = None
+
+        self.monitor = monitor
+
         # Event handlers registered by plugins
         self.journal_handlers: list[Callable] = []
         self.config = MockConfig()
@@ -111,6 +114,22 @@ class TestHarness:
             print(f"Warning: Could not load {format} config file {config_path}: {e}")
             return
 
+    def load_state(self, source:str) -> dict:
+        """ Load monitor state from a json file. """
+        state_file = Path(self.plugin_dir, "config", source)
+        logging.info(f"State file: {state_file}")
+        if not state_file.exists():
+            print(f" State file {state_file} not found")
+            return {}
+        try:
+            with open(state_file, 'r') as f:
+                state = json.load(f)
+                self.monitor.state.update(state)
+                return state
+        except Exception as e:
+            print(f"Warning: Could not load {state_file}: {e}")
+            return {}
+
     def load_events(self, source:str) -> dict:
         """ Load journal events from events.json file. """
 
@@ -157,29 +176,34 @@ class TestHarness:
         self.system = system
         self.is_beta = is_beta
 
-    def fire_event(self, event:dict, state:Optional[dict] = None) -> None:
+    def fire_event(self, event:dict, state:dict = {}) -> None:
         """ Fire a journal event through the harness. """
-        if state is None: state = {}
-        sys:str = event.get("StarSystem", event.get("System", ""))
-        if sys != "": self.system = sys
-        event['timestamp'] = event.get('timestamp', datetime.now(timezone.utc).isoformat())
-        # Call all registered handlers
+
+        # Update monitor state with provided state data before firing the event
+        for k, v in state.items():
+            self.monitor.state[k] = v
+        # Add a timestamp if not provided.
+        if 'timestamp' not in event:
+            event['timestamp'] = datetime.now(timezone.utc).isoformat()
+        self.monitor.parse_entry(json.dumps(event).encode("utf-8"))
+
+        # Call registered handlers
         for handler in self.journal_handlers:
             try:
                 handler(
-                    cmdr=self.commander,
-                    is_beta=self.is_beta,
-                    system=self.system,
-                    station="",
+                    cmdr=self.monitor.cmdr,
+                    is_beta=self.monitor.is_beta,
+                    system=self.monitor.state['SystemName'],
+                    station=self.monitor.state['StationName'],
                     entry=event,
                     state=state
                 )
             except Exception as e:
                 print(f"Error in journal handler: {e}")
                 raise
-            sleep(0.5)  # Allow time for any asynchronous processing (if applicable)
 
-    def play_sequence(self, name:str) -> None:
+    def play_sequence(self, name:str, delay:float = 0.5) -> None:
         """ Fire a sequence of events """
         for event in self.events.get(name, []):
             self.fire_event(event)
+            sleep(delay)

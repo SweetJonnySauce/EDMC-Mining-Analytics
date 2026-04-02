@@ -5,12 +5,14 @@ export function wireDisplaySettingsControls(options) {
     materialPercentIncludeDuplicatesInput,
     materialPercentIntervalInputs,
     materialPercentReverseCumulativeInput,
+    materialPercentYieldPopulationInputs,
     initialState,
     onCollectedModeToggle,
     onGridlinesToggle,
     onIncludeDuplicatesToggle,
     onBinSizeSelect,
     onReverseCumulativeToggle,
+    onYieldPopulationSelect,
   } = options || {};
 
   const state = initialState && typeof initialState === "object" ? initialState : {};
@@ -66,6 +68,26 @@ export function wireDisplaySettingsControls(options) {
       if (typeof onReverseCumulativeToggle === "function") {
         onReverseCumulativeToggle(!!materialPercentReverseCumulativeInput.checked);
       }
+    });
+  }
+
+  if (materialPercentYieldPopulationInputs && materialPercentYieldPopulationInputs.length) {
+    const selectedMode = String(state.selectedYieldPopulationMode || "").trim().toLowerCase() === "present"
+      ? "present"
+      : "all";
+    materialPercentYieldPopulationInputs.forEach((input) => {
+      if (!(input instanceof HTMLInputElement)) {
+        return;
+      }
+      input.checked = input.value === selectedMode;
+      input.addEventListener("change", () => {
+        if (!input.checked) {
+          return;
+        }
+        if (typeof onYieldPopulationSelect === "function") {
+          onYieldPopulationSelect(input.value);
+        }
+      });
     });
   }
 }

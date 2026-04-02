@@ -32,10 +32,7 @@ def _build_user_agent(existing: Optional[str]) -> str:
 
     config_agent = None
     if config is not None:
-        try:
-            config_agent = getattr(config, "user_agent", None)
-        except Exception:
-            config_agent = None
+        config_agent = getattr(config, "user_agent", None)
 
     if config_agent:
         return f"{config_agent} {_PLUGIN_AGENT}"
@@ -54,13 +51,9 @@ def get_shared_session() -> requests.Session:
             session = requests.Session()
         headers = getattr(session, "headers", None)
         if headers is not None and hasattr(headers, "get") and hasattr(headers, "__setitem__"):
-            try:
-                existing = headers.get("User-Agent")
-                existing_text = existing if isinstance(existing, str) else None
-                headers["User-Agent"] = _build_user_agent(existing_text)
-            except Exception:
-                # Some harness/session doubles expose a minimal surface without mutable headers.
-                pass
+            existing = headers.get("User-Agent")
+            existing_text = existing if isinstance(existing, str) else None
+            headers["User-Agent"] = _build_user_agent(existing_text)
         _SESSION = session
     return _SESSION
 

@@ -85,10 +85,6 @@ export function renderProspectHistogramSelection(options) {
   };
 
   const buildHistogramYAxis = (tickValues, yMaxValue) => {
-    const yAxisLabel = document.createElement("div");
-    yAxisLabel.className = "histogram-y-axis-label";
-    yAxisLabel.textContent = "# of Asteroids";
-
     const yAxis = document.createElement("div");
     yAxis.className = "histogram-y-axis";
     const ticksLayer = document.createElement("div");
@@ -107,7 +103,7 @@ export function renderProspectHistogramSelection(options) {
     });
     yAxis.appendChild(ticksLayer);
 
-    return { yAxisLabel, yAxis };
+    return { yAxis };
   };
 
   const selected = items.find((item) => item && item.name === selectedHistogramCommodity) || null;
@@ -126,7 +122,7 @@ export function renderProspectHistogramSelection(options) {
     const plot = document.createElement("div");
     plot.className = "histogram-plot";
 
-    const { yAxisLabel, yAxis } = buildHistogramYAxis([1, 0], 1);
+    const { yAxis } = buildHistogramYAxis([1, 0], 1);
 
     const bars = document.createElement("div");
     bars.className = "histogram-bars";
@@ -160,7 +156,7 @@ export function renderProspectHistogramSelection(options) {
     const labelsRow = document.createElement("div");
     labelsRow.className = "histogram-label-row";
     const spacer = document.createElement("div");
-    spacer.className = "timeline-y-axis histogram-label-spacer";
+    spacer.className = "histogram-label-spacer";
     labelsRow.appendChild(spacer);
     labelsRow.appendChild(labels);
 
@@ -168,7 +164,6 @@ export function renderProspectHistogramSelection(options) {
     axis.className = "timeline-axis";
     axis.innerHTML = "";
 
-    plot.appendChild(yAxisLabel);
     plot.appendChild(yAxis);
     plot.appendChild(bars);
     layout.appendChild(plot);
@@ -193,7 +188,7 @@ export function renderProspectHistogramSelection(options) {
   const yTickModel = buildHistogramTickValues(peak);
   const yTicks = yTickModel.values;
   const yAxisMax = yTickModel.yMax;
-  const { yAxisLabel, yAxis } = buildHistogramYAxis(yTicks, yAxisMax);
+  const { yAxis } = buildHistogramYAxis(yTicks, yAxisMax);
 
   const bars = document.createElement("div");
   bars.className = "histogram-bars";
@@ -257,7 +252,7 @@ export function renderProspectHistogramSelection(options) {
   const labelsRow = document.createElement("div");
   labelsRow.className = "histogram-label-row";
   const spacer = document.createElement("div");
-  spacer.className = "timeline-y-axis histogram-label-spacer";
+  spacer.className = "histogram-label-spacer";
   labelsRow.appendChild(spacer);
   labelsRow.appendChild(labels);
 
@@ -265,7 +260,6 @@ export function renderProspectHistogramSelection(options) {
   axis.className = "timeline-axis";
   axis.innerHTML = "";
 
-  plot.appendChild(yAxisLabel);
   plot.appendChild(yAxis);
   plot.appendChild(bars);
   layout.appendChild(plot);

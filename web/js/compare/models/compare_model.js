@@ -149,9 +149,18 @@ export function buildScopedAsteroidRows(options) {
       };
     })
     .filter((row) => !!row);
-  const presentAsteroids = allAsteroids.filter((item) => item.present);
-  const scopedAsteroids = populationMode === "all" ? allAsteroids : presentAsteroids;
-  return { allAsteroids, presentAsteroids, scopedAsteroids };
+  const sessionGuidsWithCommodityPresent = new Set(
+    allAsteroids
+      .filter((item) => item.present)
+      .map((item) => item.sessionGuid)
+      .filter((value) => !!value)
+  );
+  const eligibleAllAsteroids = allAsteroids.filter((item) => (
+    !!item.sessionGuid && sessionGuidsWithCommodityPresent.has(item.sessionGuid)
+  ));
+  const presentAsteroids = eligibleAllAsteroids.filter((item) => item.present);
+  const scopedAsteroids = populationMode === "all" ? eligibleAllAsteroids : presentAsteroids;
+  return { allAsteroids: eligibleAllAsteroids, presentAsteroids, scopedAsteroids };
 }
 
 export function buildRingCommodityModel(options) {
