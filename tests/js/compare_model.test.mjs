@@ -37,7 +37,6 @@ test("buildAboveThresholdPlanRows projects mine and prospect counts by cutoff", 
       prospect: row.asteroidsToProspect,
     })),
     [
-      { cutoff: 0, mine: 8, prospect: 8 },
       { cutoff: 10, mine: 8, prospect: 8 },
       { cutoff: 20, mine: 7, prospect: 10 },
       { cutoff: 30, mine: 6, prospect: 12 },
@@ -79,6 +78,36 @@ test("buildRingCommodityModel cutoff plan uses all prospected asteroids for pros
   assert.equal(cutoff20.asteroidsToProspect, 101);
 });
 
+test("buildRingCommodityModel respects a custom cargo target for above-threshold projections", () => {
+  const ring = {
+    asteroidList: [
+      {
+        sessionGuid: "session-1",
+        commodityPercentages: new Map([["platinum", 20]]),
+      },
+      {
+        sessionGuid: "session-1",
+        commodityPercentages: new Map([["platinum", 40]]),
+      },
+    ],
+  };
+
+  const model = buildRingCommodityModel({
+    ring,
+    commodityKey: "platinum",
+    interval: 20,
+    forcedXMax: 40,
+    populationMode: "present",
+    targetTons: 104,
+  });
+
+  const cutoff20 = model.aboveThresholdPlanRows.find((row) => row.cutoffYieldPercent === 20);
+  assert.ok(cutoff20);
+  assert.equal(model.targetTons, 104);
+  assert.equal(cutoff20.asteroidsToMine, 14);
+  assert.equal(cutoff20.asteroidsToProspect, 14);
+});
+
 test("buildAboveThresholdPlanRows preserves a column for every cutoff even when no asteroids qualify", () => {
   const rows = buildAboveThresholdPlanRows({
     allAsteroids: [
@@ -98,7 +127,6 @@ test("buildAboveThresholdPlanRows preserves a column for every cutoff even when 
       prospect: row.asteroidsToProspect,
     })),
     [
-      { cutoff: 0, mine: 10, prospect: 10 },
       { cutoff: 5, mine: 10, prospect: 10 },
       { cutoff: 10, mine: 10, prospect: 10 },
       { cutoff: 15, mine: 10, prospect: 10 },

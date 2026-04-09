@@ -34,6 +34,7 @@ DEFAULT_COMPARE_SETTINGS = {
     "selectedReferenceCrosshairs": ["avg"],
     "compareShowGridlines": True,
     "compareUseCdf": False,
+    "compareTargetTons": 522,
     "compareNormalizeMetrics": False,
     "compareReverseCumulative": False,
     "compareShowHistogram": False,
@@ -90,6 +91,14 @@ def _coerce_choice(value: Any, allowed: set[str], fallback: str) -> str:
     if text in allowed:
         return text
     return fallback
+
+
+def _coerce_positive_int(value: Any, fallback: int) -> int:
+    try:
+        numeric = int(value)
+    except (TypeError, ValueError):
+        numeric = fallback
+    return numeric if numeric > 0 else fallback
 
 
 def _coerce_reference_crosshairs(value: Any, fallback: list[str]) -> list[str]:
@@ -207,6 +216,10 @@ def sanitize_compare_report_settings(value: Any) -> dict[str, Any]:
             fallback["compareShowGridlines"],
         ),
         "compareUseCdf": compare_use_cdf,
+        "compareTargetTons": _coerce_positive_int(
+            source.get("compareTargetTons"),
+            fallback["compareTargetTons"],
+        ),
         "compareNormalizeMetrics": False if compare_use_cdf else _coerce_bool(
             source.get("compareNormalizeMetrics"),
             fallback["compareNormalizeMetrics"],

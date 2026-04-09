@@ -1,6 +1,6 @@
 import { interpolateMissingValuesBetweenRealBins } from "../models/compare_model.js";
 
-function buildCompareBinLabelsRow(points, reverseCumulative, applyAdaptiveBinLabels) {
+function buildCompareBinLabelsRow(points, reverseCumulative, applyAdaptiveBinLabels, useThresholdLabels) {
   const labels = document.createElement("div");
   labels.className = "compare-bin-labels";
   const labelPoints = reverseCumulative ? [...points].reverse() : points;
@@ -11,7 +11,9 @@ function buildCompareBinLabelsRow(points, reverseCumulative, applyAdaptiveBinLab
     label.className = "compare-bin-label";
     const labelRangeStart = reverseCumulative ? point.intervalEnd : point.intervalStart;
     const labelRangeEnd = reverseCumulative ? point.intervalStart : point.intervalEnd;
-    labelTexts[index] = `${labelRangeStart}-${labelRangeEnd}%`;
+    labelTexts[index] = useThresholdLabels
+      ? `${formatThresholdLabel(point, reverseCumulative)}%`
+      : `${labelRangeStart}-${labelRangeEnd}%`;
     labels.appendChild(label);
   });
   applyAdaptiveBinLabels(labels, labelTexts, 4);
@@ -22,6 +24,14 @@ function buildCompareBinLabelsRow(points, reverseCumulative, applyAdaptiveBinLab
   labelsRow.appendChild(spacer);
   labelsRow.appendChild(labels);
   return labelsRow;
+}
+
+function formatThresholdLabel(point, reverseCumulative) {
+  if (!point || typeof point !== "object") {
+    return "0";
+  }
+  const value = reverseCumulative ? Number(point.intervalEnd) : Number(point.intervalStart);
+  return Number.isFinite(value) ? String(value) : "0";
 }
 
 function renderHistogramSection(options) {
@@ -229,9 +239,9 @@ function renderAboveThresholdGridSection(options) {
   const rawRows = Array.isArray(model && model.aboveThresholdPlanRows)
     ? model.aboveThresholdPlanRows
     : [];
-  const points = Array.isArray(model && model.points)
+  const points = (Array.isArray(model && model.points)
     ? model.points
-    : [];
+    : []).filter((point) => Number(point && point.intervalStart) > 0);
   const rowsByCutoff = new Map();
   rawRows.forEach((row) => {
     const cutoff = Number(row && row.cutoffYieldPercent);
@@ -512,7 +522,20 @@ export function renderRingChart(options) {
   svg.classList.add("compare-svg");
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("preserveAspectRatio", "none");
-  const totalBins = Math.max(1, model.points.length);
+  const sourcePoints = useCdf
+    ? model.points.filter((point) => Number(point && point.intervalStart) > 0)
+    : model.points;
+  if (!sourcePoints.length) {
+    const empty = document.createElement("p");
+    empty.className = "compare-empty";
+    empty.textContent = useCdf
+      ? "No above-threshold cutoffs available above 0%."
+      : "No asteroids for this commodity in this ring.";
+    section.appendChild(empty);
+    chartPanel.appendChild(section);
+    return;
+  }
+  const totalBins = Math.max(1, sourcePoints.length);
   const toDisplayIndex = (index) => (
     displayReverseAxis
       ? (totalBins - index - 1)
@@ -546,7 +569,7 @@ export function renderRingChart(options) {
     });
   }
 
-  const coordinates = model.points.map((point) => {
+  const coordinates = sourcePoints.map((point, displayIndex) => {
     const displayBinCount = Number(point.binCount) / sessionDivisor;
     const rawDisplayTotal = effectiveReverseCumulative
       ? Number(point.totalReverse)
@@ -560,7 +583,7 @@ export function renderRingChart(options) {
       displayTotal: actualDisplayTotal,
       actualDisplayTotal,
       rawDisplayTotal,
-      x: toXForBinIndex(point.index),
+      x: toXForBinIndex(displayIndex),
       y: toYForCount(actualDisplayTotal)
     };
   });
@@ -600,6 +623,12 @@ export function renderRingChart(options) {
 
   const selectedKeys = selectedCrosshairKeys instanceof Set ? selectedCrosshairKeys : new Set();
   const maxPercentValue = Math.max(1, asNumber(model.xMax));
+  const minThresholdValue = useCdf && sourcePoints.length
+    ? Math.max(0, Number(sourcePoints[0].intervalStart))
+    : 0;
+  const maxThresholdValue = useCdf && sourcePoints.length
+    ? Math.max(minThresholdValue, Number(sourcePoints[sourcePoints.length - 1].intervalStart))
+    : maxPercentValue;
   const totalCount = useCdf
     ? 1
     : Math.max(
@@ -611,6 +640,17 @@ export function renderRingChart(options) {
     const value = Number(rawValue);
     if (!Number.isFinite(value)) {
       return null;
+    }
+    if (useCdf) {
+      if (sourcePoints.length <= 1) {
+        return coordinates.length ? coordinates[0].x : null;
+      }
+      const clamped = Math.max(minThresholdValue, Math.min(maxThresholdValue, value));
+      const leftX = coordinates[0].x;
+      const rightX = coordinates[coordinates.length - 1].x;
+      const span = maxThresholdValue - minThresholdValue;
+      const ratio = span > 0 ? ((clamped - minThresholdValue) / span) : 0;
+      return leftX + ((rightX - leftX) * ratio);
     }
     const clamped = Math.max(0, Math.min(maxPercentValue, value));
     const ratio = clamped / maxPercentValue;
@@ -900,7 +940,7 @@ export function renderRingChart(options) {
     const detail = useCdf
       ? [
         `${ringName} | ${commodityLabel}`,
-        `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
+        `Cutoff Yield: ${formatThresholdLabel(point, displayReverseAxis)}%`,
         `${point.inferredDisplayTotal ? "Above-Threshold % (inferred)" : "Above-Threshold %"}: ${formatNumber(point.displayTotal * 100, 1)}%`,
         `Raw cumulative asteroids: ${formatNumber(point.rawDisplayTotal, 0)}`,
         `Bin Frequency: ${formatNumber(point.binCount, 0)}`
@@ -1005,6 +1045,6 @@ export function renderRingChart(options) {
   surface.appendChild(svg);
   plot.addEventListener("mouseleave", hideCrosshair);
 
-  section.appendChild(buildCompareBinLabelsRow(model.points, displayReverseAxis, applyAdaptiveBinLabels));
+  section.appendChild(buildCompareBinLabelsRow(sourcePoints, displayReverseAxis, applyAdaptiveBinLabels, useCdf));
   chartPanel.appendChild(section);
 }

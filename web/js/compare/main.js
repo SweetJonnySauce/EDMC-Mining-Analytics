@@ -12,13 +12,15 @@ import {
 } from "../data/session_api.js";
 import {
   buildCompareData as buildCompareDataModel,
-  buildRingCommodityModel as buildRingCommodityModelModel
+  buildRingCommodityModel as buildRingCommodityModelModel,
+  DEFAULT_COMPARE_TARGET_TONS,
 } from "./models/compare_model.js";
 import { renderRingChart as renderRingChartModule } from "./charts/ring_chart.js";
 import {
   renderReferenceCrosshairControls,
   renderYieldPopulationControls,
   renderCompareModeControls,
+  renderCompareTargetControl,
   renderGridlineControls,
   syncCommoditySelect as syncCommoditySelectControl,
 } from "./ui/controls.js";
@@ -35,6 +37,7 @@ import { createCompareStateController } from "./state/controller.js";
       const comparePopulationOptions = document.getElementById("compare-population-options");
       const compareReferenceOptions = document.getElementById("compare-reference-options");
       const compareModeOptions = document.getElementById("compare-mode-options");
+      const compareTargetOptions = document.getElementById("compare-target-options");
       const compareGridlineOptions = document.getElementById("compare-gridline-options");
       const compareStatus = document.getElementById("compare-status");
       const compareList = document.getElementById("compare-list");
@@ -71,6 +74,7 @@ import { createCompareStateController } from "./state/controller.js";
       let selectedReferenceCrosshairs = new Set(["avg"]);
       let compareShowGridlines = true;
       let compareUseCdf = false;
+      let compareTargetTons = DEFAULT_COMPARE_TARGET_TONS;
       let compareNormalizeMetrics = false;
       let compareReverseCumulative = false;
       let compareShowHistogram = false;
@@ -86,6 +90,7 @@ import { createCompareStateController } from "./state/controller.js";
         selectedReferenceCrosshairs,
         compareShowGridlines,
         compareUseCdf,
+        compareTargetTons,
         compareNormalizeMetrics,
         compareReverseCumulative,
         compareShowHistogram,
@@ -111,6 +116,9 @@ import { createCompareStateController } from "./state/controller.js";
           : new Set(["avg"]);
         compareShowGridlines = state.compareShowGridlines !== false;
         compareUseCdf = !!state.compareUseCdf;
+        compareTargetTons = Number.isFinite(Number(state.compareTargetTons)) && Number(state.compareTargetTons) > 0
+          ? Math.round(Number(state.compareTargetTons))
+          : DEFAULT_COMPARE_TARGET_TONS;
         compareNormalizeMetrics = !!state.compareNormalizeMetrics;
         compareReverseCumulative = !!state.compareReverseCumulative;
         compareShowHistogram = !!state.compareShowHistogram;
@@ -137,6 +145,9 @@ import { createCompareStateController } from "./state/controller.js";
             : new Set(["avg"]),
           compareShowGridlines: !(state && state.compareShowGridlines === false),
           compareUseCdf: !!(state && state.compareUseCdf),
+          compareTargetTons: Number.isFinite(Number(state && state.compareTargetTons)) && Number(state && state.compareTargetTons) > 0
+            ? Math.round(Number(state.compareTargetTons))
+            : DEFAULT_COMPARE_TARGET_TONS,
           compareNormalizeMetrics: !!(state && state.compareNormalizeMetrics),
           compareReverseCumulative: !!(state && state.compareReverseCumulative),
           compareShowHistogram: !!(state && state.compareShowHistogram),
@@ -245,6 +256,14 @@ import { createCompareStateController } from "./state/controller.js";
           : "avg_desc";
       }
 
+      function normalizePositiveIntegerSetting(value, fallback) {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric) || numeric <= 0) {
+          return fallback;
+        }
+        return Math.max(1, Math.round(numeric));
+      }
+
       function normalizeThemeIdSetting(value, fallback) {
         const themeId = String(value || "").trim();
         if (COMPARE_THEME_IDS.has(themeId)) {
@@ -264,6 +283,7 @@ import { createCompareStateController } from "./state/controller.js";
           selectedReferenceCrosshairs: Array.from(renderState.selectedReferenceCrosshairs || new Set(["avg"])),
           compareShowGridlines: renderState.compareShowGridlines !== false,
           compareUseCdf: !!renderState.compareUseCdf,
+          compareTargetTons: normalizePositiveIntegerSetting(renderState.compareTargetTons, DEFAULT_COMPARE_TARGET_TONS),
           compareNormalizeMetrics: renderState.compareUseCdf ? false : !!renderState.compareNormalizeMetrics,
           compareReverseCumulative: !!renderState.compareReverseCumulative,
           compareShowHistogram: !!renderState.compareShowHistogram,
@@ -291,6 +311,9 @@ import { createCompareStateController } from "./state/controller.js";
           normalizeBooleanSetting(source.compareShowGridlines, defaults.compareShowGridlines)
         );
         compareStateController.setCompareUseCdf(nextCompareUseCdf);
+        compareStateController.setCompareTargetTons(
+          normalizePositiveIntegerSetting(source.compareTargetTons, defaults.compareTargetTons)
+        );
         compareStateController.setCompareNormalizeMetrics(
           nextCompareUseCdf
             ? false
@@ -417,13 +440,14 @@ import { createCompareStateController } from "./state/controller.js";
         });
       }
 
-      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, populationMode) {
+      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, populationMode, targetTons) {
         return buildRingCommodityModelModel({
           ring,
           commodityKey,
           interval,
           forcedXMax,
-          populationMode
+          populationMode,
+          targetTons,
         });
       }
 
@@ -538,7 +562,28 @@ import { createCompareStateController } from "./state/controller.js";
             compareStateController.setCompareUseCdf(modeKey === "above-threshold");
             schedulePersistCompareReportSettings();
             syncCompareModeControls();
+            syncCompareTargetControl();
             syncGridlineControls();
+            renderComparePanels(getCompareRenderState());
+          }
+        });
+      }
+
+      function syncCompareTargetControl() {
+        if (!compareTargetOptions) {
+          return;
+        }
+        const renderState = getCompareRenderState();
+        renderCompareTargetControl({
+          container: compareTargetOptions,
+          compareUseCdf: renderState.compareUseCdf,
+          compareTargetTons: renderState.compareTargetTons,
+          onTargetTonsChange: (value) => {
+            compareStateController.setCompareTargetTons(
+              normalizePositiveIntegerSetting(value, renderState.compareTargetTons)
+            );
+            schedulePersistCompareReportSettings();
+            syncCompareTargetControl();
             renderComparePanels(getCompareRenderState());
           }
         });
@@ -604,8 +649,8 @@ import { createCompareStateController } from "./state/controller.js";
         }, 0);
         const sharedXMax = Math.max(interval, Math.ceil(globalCommodityPeak / interval) * interval);
         const rows = data.rings.map((ring) => {
-          const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, renderState.selectedYieldPopulationMode);
-          return { ring, metric };
+          const targetTons = renderState.compareTargetTons;
+          return { ring, metric: buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, renderState.selectedYieldPopulationMode, targetTons) };
         }).filter((row) => Number(row && row.metric && row.metric.presentAsteroidsCount) > 0);
         rows.sort((left, right) => {
           if (sortMode === "name_asc") {
@@ -919,6 +964,7 @@ import { createCompareStateController } from "./state/controller.js";
         syncYieldPopulationControls();
         syncReferenceCrosshairControls();
         syncCompareModeControls();
+        syncCompareTargetControl();
         syncGridlineControls();
         if (compareCommoditySelect) {
           compareCommoditySelect.addEventListener("change", (event) => {

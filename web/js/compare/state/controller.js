@@ -1,5 +1,15 @@
+import { DEFAULT_COMPARE_TARGET_TONS } from "../models/compare_model.js";
+
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizePositiveInteger(value, fallback) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return fallback;
+  }
+  return Math.max(1, Math.round(numeric));
 }
 
 function normalizeSet(value, fallbackValues) {
@@ -75,6 +85,9 @@ export function createCompareStateController(store) {
     },
     setCompareReverseCumulative: (enabled) => {
       patch({ compareReverseCumulative: !!enabled });
+    },
+    setCompareTargetTons: (value) => {
+      patch({ compareTargetTons: normalizePositiveInteger(value, DEFAULT_COMPARE_TARGET_TONS) });
     },
     setCompareShowHistogram: (enabled) => {
       patch({ compareShowHistogram: !!enabled });

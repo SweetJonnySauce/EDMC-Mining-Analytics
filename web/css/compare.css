@@ -203,10 +203,10 @@
 
     .compare-controls {
       display: grid;
-      grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) max-content max-content max-content;
+      grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) max-content max-content max-content max-content;
       grid-template-areas:
-        "commodity sort yield-basis crosshairs display"
-        ". . . mode display";
+        "commodity sort yield-basis crosshairs . display"
+        ". . . mode target display";
       gap: 10px;
       justify-content: start;
       align-items: start;
@@ -242,6 +242,10 @@
       grid-area: mode;
     }
 
+    .compare-control--target {
+      grid-area: target;
+    }
+
     .compare-control--display {
       grid-area: display;
       align-self: stretch;
@@ -263,6 +267,10 @@
       border-radius: 10px;
       padding: 8px 10px;
       background: color-mix(in srgb, var(--fg) 3%, transparent);
+    }
+
+    .compare-control-pill--disabled {
+      opacity: 0.58;
     }
 
     .compare-control select {
@@ -328,6 +336,48 @@
 
     .compare-population-option--disabled input {
       cursor: not-allowed;
+    }
+
+    .compare-text-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      width: max-content;
+      max-width: 100%;
+    }
+
+    .compare-text-control--disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .compare-text-input {
+      width: 72px;
+      min-width: 0;
+      padding: 5px 7px;
+      border-radius: 7px;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      background: color-mix(in srgb, var(--card) 88%, #000);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.82rem;
+      line-height: 1.2;
+      text-align: right;
+    }
+
+    .compare-text-input:disabled {
+      cursor: not-allowed;
+      opacity: 0.8;
+    }
+
+    .compare-text-input-suffix {
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1;
     }
 
     .compare-reference-swatch {
@@ -867,6 +917,7 @@
           "yield-basis"
           "crosshairs"
           "mode"
+          "target"
           "display";
       }
 

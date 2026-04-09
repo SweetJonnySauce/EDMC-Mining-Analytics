@@ -110,6 +110,65 @@ export function renderCompareModeControls(options) {
   });
 }
 
+export function renderCompareTargetControl(options) {
+  const {
+    container,
+    compareUseCdf,
+    compareTargetTons,
+    onTargetTonsChange,
+  } = options || {};
+  if (!container) {
+    return;
+  }
+  container.innerHTML = "";
+  const panel = container.parentElement;
+  if (panel) {
+    panel.classList.toggle("compare-control-pill--disabled", !compareUseCdf);
+    panel.title = !compareUseCdf
+      ? "Cargo target only applies to Above-Threshold % projections."
+      : "";
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "compare-text-control";
+  if (!compareUseCdf) {
+    wrapper.classList.add("compare-text-control--disabled");
+  }
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.inputMode = "numeric";
+  input.className = "compare-text-input";
+  input.value = String(compareTargetTons || "");
+  input.disabled = !compareUseCdf;
+  input.setAttribute("aria-label", "Cargo target in tons");
+
+  const suffix = document.createElement("span");
+  suffix.className = "compare-text-input-suffix";
+  suffix.textContent = "t";
+
+  const commitValue = () => {
+    if (typeof onTargetTonsChange !== "function") {
+      return;
+    }
+    onTargetTonsChange(input.value);
+  };
+
+  input.addEventListener("change", commitValue);
+  input.addEventListener("blur", commitValue);
+  input.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    input.blur();
+  });
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(suffix);
+  container.appendChild(wrapper);
+}
+
 export function renderGridlineControls(options) {
   const {
     container,

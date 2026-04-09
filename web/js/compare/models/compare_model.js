@@ -195,7 +195,7 @@ export function buildAboveThresholdPlanRows(options) {
   const bins = Math.max(1, Math.ceil(safeXMax / safeInterval));
   const targetPercentTotal = safeTargetTons / safeTonsPerPercent;
   const rows = [];
-  for (let index = 0; index < bins; index += 1) {
+  for (let index = 1; index < bins; index += 1) {
     const cutoff = index * safeInterval;
     const qualifying = asteroidRows.filter((item) => Number(item && item.value) >= cutoff);
     const qualifyingCount = qualifying.length;
@@ -281,8 +281,12 @@ export function buildRingCommodityModel(options) {
     interval,
     forcedXMax,
     populationMode,
+    targetTons,
   } = options || {};
   const safeInterval = Math.max(1, Number(interval) || 1);
+  const safeTargetTons = Number(targetTons) > 0
+    ? Number(targetTons)
+    : DEFAULT_COMPARE_TARGET_TONS;
   const scopedRows = buildScopedAsteroidRows({ ring, commodityKey, populationMode });
   const allAsteroids = Array.isArray(scopedRows && scopedRows.allAsteroids)
     ? scopedRows.allAsteroids
@@ -313,7 +317,7 @@ export function buildRingCommodityModel(options) {
       sessionsCount: 0,
       points: [],
       aboveThresholdPlanRows: [],
-      targetTons: DEFAULT_COMPARE_TARGET_TONS,
+      targetTons: safeTargetTons,
       tonsPerPercentagePoint: DEFAULT_COMPARE_TONS_PER_PERCENT,
       yMax: 1,
       xMax: normalizedForcedXMax || safeInterval
@@ -370,7 +374,7 @@ export function buildRingCommodityModel(options) {
     allAsteroids,
     interval: safeInterval,
     xMax,
-    targetTons: DEFAULT_COMPARE_TARGET_TONS,
+    targetTons: safeTargetTons,
     tonsPerPercentagePoint: DEFAULT_COMPARE_TONS_PER_PERCENT,
   });
   return {
@@ -384,7 +388,7 @@ export function buildRingCommodityModel(options) {
     sessionsCount: sessionGuids.size,
     points,
     aboveThresholdPlanRows,
-    targetTons: DEFAULT_COMPARE_TARGET_TONS,
+    targetTons: safeTargetTons,
     tonsPerPercentagePoint: DEFAULT_COMPARE_TONS_PER_PERCENT,
     yMax: Math.max(1, running),
     xMax

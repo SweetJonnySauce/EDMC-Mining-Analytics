@@ -24,6 +24,7 @@ def test_sanitize_index_report_settings_rejects_invalid_mode() -> None:
 def test_sanitize_compare_report_settings_defaults_theme() -> None:
     settings = sanitize_compare_report_settings({})
     assert settings["compareUseCdf"] == DEFAULT_COMPARE_SETTINGS["compareUseCdf"]
+    assert settings["compareTargetTons"] == DEFAULT_COMPARE_SETTINGS["compareTargetTons"]
     assert settings["compareThemeId"] == DEFAULT_COMPARE_SETTINGS["compareThemeId"]
 
 
@@ -36,6 +37,16 @@ def test_sanitize_compare_report_settings_accepts_cdf_toggle() -> None:
     settings = sanitize_compare_report_settings({"compareUseCdf": True})
     assert settings["compareUseCdf"] is True
     assert settings["compareNormalizeMetrics"] is False
+
+
+def test_sanitize_compare_report_settings_accepts_target_tons() -> None:
+    settings = sanitize_compare_report_settings({"compareTargetTons": 640})
+    assert settings["compareTargetTons"] == 640
+
+
+def test_sanitize_compare_report_settings_rejects_invalid_target_tons() -> None:
+    settings = sanitize_compare_report_settings({"compareTargetTons": 0})
+    assert settings["compareTargetTons"] == DEFAULT_COMPARE_SETTINGS["compareTargetTons"]
 
 
 def test_sanitize_compare_report_settings_rejects_invalid_cdf_toggle() -> None:
