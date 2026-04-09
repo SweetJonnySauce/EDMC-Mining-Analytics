@@ -1,3 +1,5 @@
+import { interpolateMissingValuesBetweenRealBins } from "../models/compare_model.js";
+
 function buildCompareBinLabelsRow(points, reverseCumulative, applyAdaptiveBinLabels) {
   const labels = document.createElement("div");
   labels.className = "compare-bin-labels";
@@ -202,6 +204,122 @@ function renderHistogramSection(options) {
   chartPanel.appendChild(section);
 }
 
+function renderAboveThresholdGridSection(options) {
+  const {
+    chartPanel,
+    commodityLabel,
+    model,
+    formatNumber,
+  } = options || {};
+  const section = document.createElement("div");
+  section.className = "compare-chart-section compare-chart-section--data-grid";
+
+  const title = document.createElement("p");
+  title.className = "ring-chart-title";
+  title.textContent = `Cutoff Mining Plan (${commodityLabel})`;
+  section.appendChild(title);
+
+  const note = document.createElement("p");
+  note.className = "compare-grid-note";
+  const targetTons = Number(model && model.targetTons);
+  const tonsPerPercentagePoint = Number(model && model.tonsPerPercentagePoint);
+  note.textContent = `Projected to fill ${formatNumber(targetTons, 0)}t using ${formatNumber(tonsPerPercentagePoint, 2)}t per percentage point outside RES. Prospect estimates use all prospected asteroids.`;
+  section.appendChild(note);
+
+  const rawRows = Array.isArray(model && model.aboveThresholdPlanRows)
+    ? model.aboveThresholdPlanRows
+    : [];
+  const points = Array.isArray(model && model.points)
+    ? model.points
+    : [];
+  const rowsByCutoff = new Map();
+  rawRows.forEach((row) => {
+    const cutoff = Number(row && row.cutoffYieldPercent);
+    if (Number.isFinite(cutoff)) {
+      rowsByCutoff.set(cutoff, row);
+    }
+  });
+  const rows = points.map((point) => {
+    const cutoff = Number(point && point.intervalStart);
+    const matchedRow = rowsByCutoff.get(cutoff);
+    if (matchedRow) {
+      return matchedRow;
+    }
+    return {
+      cutoffYieldPercent: cutoff,
+      asteroidsToMine: null,
+      asteroidsToProspect: null,
+    };
+  });
+  if (!rows.length) {
+    const empty = document.createElement("p");
+    empty.className = "compare-empty";
+    empty.textContent = "No above-threshold plan rows available.";
+    section.appendChild(empty);
+    chartPanel.appendChild(section);
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "compare-plan-grid";
+  const prospectDisplayValues = interpolateMissingValuesBetweenRealBins({
+    entries: rows,
+    readValue: (row) => row && row.asteroidsToProspect,
+    isRealEntry: (_row, index) => !!(points[index] && points[index].hasRealData),
+  });
+  const mineDisplayValues = interpolateMissingValuesBetweenRealBins({
+    entries: rows,
+    readValue: (row) => row && row.asteroidsToMine,
+    isRealEntry: (_row, index) => !!(points[index] && points[index].hasRealData),
+  });
+  const rowDefinitions = [
+    {
+      label: "#P",
+      title: "# Asteroids to Prospect",
+      readValue: (_row, index) => {
+        const value = prospectDisplayValues[index] && prospectDisplayValues[index].value;
+        return Number.isFinite(value) ? formatNumber(value, 0) : "--";
+      },
+    },
+    {
+      label: "#M",
+      title: "# Asteroids to Mine",
+      readValue: (_row, index) => {
+        const value = mineDisplayValues[index] && mineDisplayValues[index].value;
+        return Number.isFinite(value) ? formatNumber(value, 0) : "--";
+      },
+    },
+    {
+      label: "%Y",
+      title: "Cutoff Yield %",
+      readValue: (row) => `${formatNumber(row && row.cutoffYieldPercent, 0)}%`,
+    },
+  ];
+  rowDefinitions.forEach((definition) => {
+    const row = document.createElement("div");
+    row.className = "compare-plan-grid-row";
+    const label = document.createElement("div");
+    label.className = "compare-plan-grid-key";
+    label.textContent = definition.label;
+    label.title = definition.title;
+    label.setAttribute("aria-label", definition.title);
+    const values = document.createElement("div");
+    values.className = "compare-plan-grid-values";
+    values.style.gridTemplateColumns = `repeat(${rows.length}, minmax(0, 1fr))`;
+    rows.forEach((planRow, index) => {
+      const cell = document.createElement("span");
+      cell.className = "compare-plan-grid-value";
+      cell.textContent = definition.readValue(planRow, index);
+      values.appendChild(cell);
+    });
+    row.appendChild(label);
+    row.appendChild(values);
+    wrapper.appendChild(row);
+  });
+  section.appendChild(wrapper);
+  chartPanel.appendChild(section);
+}
+
 export function renderRingChart(options) {
   const {
     chartPanel,
@@ -210,6 +328,7 @@ export function renderRingChart(options) {
     model,
     selectedCrosshairKeys,
     normalizeBySessions,
+    useCdf,
     reverseCumulative,
     showHistogram,
     showGridlines,
@@ -231,6 +350,9 @@ export function renderRingChart(options) {
     chartPanel.appendChild(note);
     return;
   }
+  const effectiveReverseCumulative = useCdf ? true : reverseCumulative;
+  const displayReverseAxis = useCdf ? false : reverseCumulative;
+  const effectiveNormalizeBySessions = useCdf ? false : normalizeBySessions;
   const histogramBarsByIndex = new Map();
   let linkedHistogramBars = [];
   const registerHistogramBar = (binIndex, node) => {
@@ -285,14 +407,21 @@ export function renderRingChart(options) {
   const handleHistogramBinLeave = () => {
     hideLinkedCrosshair();
   };
-  if (showHistogram) {
+  if (showHistogram && useCdf) {
+    renderAboveThresholdGridSection({
+      chartPanel,
+      commodityLabel,
+      model,
+      formatNumber,
+    });
+  } else if (showHistogram) {
     renderHistogramSection({
       chartPanel,
       ringName,
       commodityLabel,
       model,
-      normalizeBySessions,
-      reverseCumulative,
+      normalizeBySessions: effectiveNormalizeBySessions,
+      reverseCumulative: displayReverseAxis,
       interactions: {
         registerBar: registerHistogramBar,
         onBinHover: handleHistogramBinHover,
@@ -311,9 +440,11 @@ export function renderRingChart(options) {
   section.className = "compare-chart-section";
   const title = document.createElement("p");
   title.className = "ring-chart-title";
-  title.textContent = reverseCumulative
-    ? `Cumulative Frequency (${commodityLabel}) - Reversed`
-    : `Cumulative Frequency (${commodityLabel})`;
+  title.textContent = useCdf
+    ? `Above-Threshold % (${commodityLabel})`
+    : (effectiveReverseCumulative
+      ? `Cumulative Frequency (${commodityLabel}) - Reversed`
+      : `Cumulative Frequency (${commodityLabel})`);
   section.appendChild(title);
 
   const width = 1000;
@@ -325,16 +456,27 @@ export function renderRingChart(options) {
   let drawHeight = Math.max(1, height - topPad - bottomPad);
   const dotRadius = 8.7;
   const referenceMarkerHalfExtent = 6.2;
-  const sessionDivisor = normalizeBySessions
+  const sessionDivisor = effectiveNormalizeBySessions
     ? Math.max(1, Number(model && model.sessionsCount) || 0)
     : 1;
-  const normalizedModelYMax = Number(model && model.yMax) / sessionDivisor;
-  const countAxisMaxInt = Math.max(1, Math.ceil(normalizedModelYMax));
-  const countAxisStep = inferStep(countAxisMaxInt);
-  const countAxisScaleMax = Math.max(countAxisMaxInt, Math.ceil(countAxisMaxInt / countAxisStep) * countAxisStep);
+  const totalPopulation = Math.max(1, asNumber(model && model.asteroidsCount));
+  const axisScaleMax = useCdf ? 1 : Math.max(
+    1,
+    Math.ceil((Number(model && model.yMax) / sessionDivisor) || 0)
+  );
+  const countAxisStep = useCdf ? 0.25 : inferStep(axisScaleMax);
+  const countAxisScaleMax = useCdf
+    ? 1
+    : Math.max(axisScaleMax, Math.ceil(axisScaleMax / countAxisStep) * countAxisStep);
   const yTicks = [];
-  for (let value = countAxisScaleMax; value >= 0; value -= countAxisStep) {
-    yTicks.push(value);
+  if (useCdf) {
+    [1, 0.75, 0.5, 0.25, 0].forEach((value) => {
+      yTicks.push(value);
+    });
+  } else {
+    for (let value = countAxisScaleMax; value >= 0; value -= countAxisStep) {
+      yTicks.push(value);
+    }
   }
   if (yTicks[yTicks.length - 1] !== 0) {
     yTicks.push(0);
@@ -349,7 +491,7 @@ export function renderRingChart(options) {
   yTicks.forEach((value) => {
     const tick = document.createElement("span");
     tick.className = "compare-y-axis-tick";
-    tick.textContent = String(value);
+    tick.textContent = useCdf ? formatNumber(value, 2) : String(value);
     yAxisTicks.appendChild(tick);
   });
   yAxis.appendChild(yAxisTicks);
@@ -372,7 +514,7 @@ export function renderRingChart(options) {
   svg.setAttribute("preserveAspectRatio", "none");
   const totalBins = Math.max(1, model.points.length);
   const toDisplayIndex = (index) => (
-    reverseCumulative
+    displayReverseAxis
       ? (totalBins - index - 1)
       : index
   );
@@ -406,18 +548,38 @@ export function renderRingChart(options) {
 
   const coordinates = model.points.map((point) => {
     const displayBinCount = Number(point.binCount) / sessionDivisor;
-    const rawDisplayTotal = reverseCumulative
+    const rawDisplayTotal = effectiveReverseCumulative
       ? Number(point.totalReverse)
       : Number(point.totalForward);
-    const displayTotal = rawDisplayTotal / sessionDivisor;
+    const actualDisplayTotal = useCdf
+      ? (rawDisplayTotal / totalPopulation)
+      : (rawDisplayTotal / sessionDivisor);
     return {
       ...point,
       displayBinCount,
-      displayTotal,
+      displayTotal: actualDisplayTotal,
+      actualDisplayTotal,
       rawDisplayTotal,
       x: toXForBinIndex(point.index),
-      y: toYForCount(displayTotal)
+      y: toYForCount(actualDisplayTotal)
     };
+  });
+  const interpolatedDisplayTotals = interpolateMissingValuesBetweenRealBins({
+    entries: coordinates,
+    readValue: (point) => point && point.actualDisplayTotal,
+    isRealEntry: (point) => !!(point && point.hasRealData),
+  });
+  interpolatedDisplayTotals.forEach((entry, index) => {
+    const point = coordinates[index];
+    if (!point) {
+      return;
+    }
+    const nextDisplayTotal = Number.isFinite(entry && entry.value)
+      ? entry.value
+      : point.actualDisplayTotal;
+    point.displayTotal = nextDisplayTotal;
+    point.inferredDisplayTotal = !!(entry && entry.inferred);
+    point.y = toYForCount(nextDisplayTotal);
   });
   pointByIndex = new Map();
   coordinates.forEach((point) => {
@@ -438,11 +600,13 @@ export function renderRingChart(options) {
 
   const selectedKeys = selectedCrosshairKeys instanceof Set ? selectedCrosshairKeys : new Set();
   const maxPercentValue = Math.max(1, asNumber(model.xMax));
-  const totalCount = Math.max(
-    1,
-    coordinates.reduce((peak, point) => Math.max(peak, asNumber(point.displayTotal)), 0),
-    (asNumber(model.asteroidsCount) / sessionDivisor)
-  );
+  const totalCount = useCdf
+    ? 1
+    : Math.max(
+      1,
+      coordinates.reduce((peak, point) => Math.max(peak, asNumber(point.displayTotal)), 0),
+      (asNumber(model.asteroidsCount) / sessionDivisor)
+    );
   const toXForPercentValue = (rawValue) => {
     const value = Number(rawValue);
     if (!Number.isFinite(value)) {
@@ -450,7 +614,7 @@ export function renderRingChart(options) {
     }
     const clamped = Math.max(0, Math.min(maxPercentValue, value));
     const ratio = clamped / maxPercentValue;
-    const displayRatio = reverseCumulative ? (1 - ratio) : ratio;
+    const displayRatio = displayReverseAxis ? (1 - ratio) : ratio;
     return sidePad + (displayRatio * drawWidth);
   };
   const getYOnLineForX = (targetX) => {
@@ -550,19 +714,19 @@ export function renderRingChart(options) {
       "compare-reference-label",
       `compare-reference-label--${lead.entry.key}`
     ];
-    if (reverseCumulative) {
+    if (displayReverseAxis) {
       labelClasses.push("compare-reference-label--reverse");
     }
     label.setAttribute("class", labelClasses.join(" "));
     const includesAverage = group.items.some((item) => item && item.entry && item.entry.key === "avg");
-    const labelOffsetX = reverseCumulative
+    const labelOffsetX = displayReverseAxis
       ? (includesAverage ? -10 : -16)
       : 10;
-    const labelOffsetY = reverseCumulative
+    const labelOffsetY = displayReverseAxis
       ? (includesAverage ? -26 : -16)
       : 6;
     const maxLabelWidth = 72;
-    const clampedX = reverseCumulative
+    const clampedX = displayReverseAxis
       ? Math.max(sidePad + maxLabelWidth, Math.min(width - sidePad - 6, group.referenceX + labelOffsetX))
       : Math.max(sidePad + 6, Math.min(width - sidePad - maxLabelWidth, group.referenceX + labelOffsetX));
     const clampedY = Math.max(topPad + 2, Math.min((topPad + drawHeight) - 8, group.referenceY + labelOffsetY));
@@ -731,9 +895,17 @@ export function renderRingChart(options) {
       showCursorTooltip(detail, event);
       return;
     }
-    const tooltipRangeStart = reverseCumulative ? point.intervalEnd : point.intervalStart;
-    const tooltipRangeEnd = reverseCumulative ? point.intervalStart : point.intervalEnd;
-    const detail = normalizeBySessions
+    const tooltipRangeStart = displayReverseAxis ? point.intervalEnd : point.intervalStart;
+    const tooltipRangeEnd = displayReverseAxis ? point.intervalStart : point.intervalEnd;
+    const detail = useCdf
+      ? [
+        `${ringName} | ${commodityLabel}`,
+        `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
+        `${point.inferredDisplayTotal ? "Above-Threshold % (inferred)" : "Above-Threshold %"}: ${formatNumber(point.displayTotal * 100, 1)}%`,
+        `Raw cumulative asteroids: ${formatNumber(point.rawDisplayTotal, 0)}`,
+        `Bin Frequency: ${formatNumber(point.binCount, 0)}`
+      ].join("\n")
+      : effectiveNormalizeBySessions
       ? [
         `${ringName} | ${commodityLabel}`,
         `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
@@ -833,6 +1005,6 @@ export function renderRingChart(options) {
   surface.appendChild(svg);
   plot.addEventListener("mouseleave", hideCrosshair);
 
-  section.appendChild(buildCompareBinLabelsRow(model.points, reverseCumulative, applyAdaptiveBinLabels));
+  section.appendChild(buildCompareBinLabelsRow(model.points, displayReverseAxis, applyAdaptiveBinLabels));
   chartPanel.appendChild(section);
 }

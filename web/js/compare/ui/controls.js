@@ -71,10 +71,50 @@ export function renderYieldPopulationControls(options) {
   });
 }
 
+export function renderCompareModeControls(options) {
+  const {
+    container,
+    compareUseCdf,
+    onModeChange,
+  } = options || {};
+  if (!container) {
+    return;
+  }
+  container.innerHTML = "";
+  const entries = [
+    { key: "cumulative", label: "Cumulative Frequency" },
+    { key: "above-threshold", label: "Above-Threshold %" }
+  ];
+  const selectedMode = compareUseCdf ? "above-threshold" : "cumulative";
+  entries.forEach((entry) => {
+    const wrapper = document.createElement("label");
+    wrapper.className = "compare-population-option";
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "compare-chart-mode";
+    input.value = entry.key;
+    input.checked = selectedMode === entry.key;
+    input.addEventListener("change", () => {
+      if (!input.checked) {
+        return;
+      }
+      if (typeof onModeChange === "function") {
+        onModeChange(entry.key);
+      }
+    });
+    const text = document.createElement("span");
+    text.textContent = entry.label;
+    wrapper.appendChild(input);
+    wrapper.appendChild(text);
+    container.appendChild(wrapper);
+  });
+}
+
 export function renderGridlineControls(options) {
   const {
     container,
     compareShowGridlines,
+    compareUseCdf,
     compareNormalizeMetrics,
     compareReverseCumulative,
     compareShowHistogram,
@@ -108,6 +148,7 @@ export function renderGridlineControls(options) {
   normalizeWrapper.className = "compare-population-option";
   const normalizeInput = document.createElement("input");
   normalizeInput.type = "checkbox";
+  normalizeInput.disabled = !!compareUseCdf;
   normalizeInput.checked = !!compareNormalizeMetrics;
   normalizeInput.addEventListener("change", () => {
     if (typeof onNormalizeChange === "function") {
@@ -116,6 +157,10 @@ export function renderGridlineControls(options) {
   });
   const normalizeText = document.createElement("span");
   normalizeText.textContent = "Normalize by Sessions";
+  if (compareUseCdf) {
+    normalizeWrapper.classList.add("compare-population-option--disabled");
+    normalizeWrapper.title = "Above-Threshold % already uses a normalized 0-1 probability scale.";
+  }
   normalizeWrapper.appendChild(normalizeInput);
   normalizeWrapper.appendChild(normalizeText);
   container.appendChild(normalizeWrapper);
@@ -124,7 +169,8 @@ export function renderGridlineControls(options) {
   reverseWrapper.className = "compare-population-option";
   const reverseInput = document.createElement("input");
   reverseInput.type = "checkbox";
-  reverseInput.checked = !!compareReverseCumulative;
+  reverseInput.disabled = !!compareUseCdf;
+  reverseInput.checked = compareUseCdf ? true : !!compareReverseCumulative;
   reverseInput.addEventListener("change", () => {
     if (typeof onReverseChange === "function") {
       onReverseChange(reverseInput.checked);
@@ -132,6 +178,10 @@ export function renderGridlineControls(options) {
   });
   const reverseText = document.createElement("span");
   reverseText.textContent = "Reverse Cumulative Freq.";
+  if (compareUseCdf) {
+    reverseWrapper.classList.add("compare-population-option--disabled");
+    reverseWrapper.title = "Above-Threshold % uses the normalized above-threshold view from EliteMiners graphs.";
+  }
   reverseWrapper.appendChild(reverseInput);
   reverseWrapper.appendChild(reverseText);
   container.appendChild(reverseWrapper);
@@ -147,7 +197,7 @@ export function renderGridlineControls(options) {
     }
   });
   const histogramText = document.createElement("span");
-  histogramText.textContent = "Show Histogram";
+  histogramText.textContent = compareUseCdf ? "Show Data Grid" : "Show Histogram";
   histogramWrapper.appendChild(histogramInput);
   histogramWrapper.appendChild(histogramText);
   container.appendChild(histogramWrapper);

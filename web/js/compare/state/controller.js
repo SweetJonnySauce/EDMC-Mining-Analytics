@@ -58,7 +58,19 @@ export function createCompareStateController(store) {
     setCompareShowGridlines: (enabled) => {
       patch({ compareShowGridlines: !!enabled });
     },
+    setCompareUseCdf: (enabled) => {
+      const nextUseCdf = !!enabled;
+      patch({
+        compareUseCdf: nextUseCdf,
+        compareNormalizeMetrics: nextUseCdf ? false : !!(targetStore.getState() && targetStore.getState().compareNormalizeMetrics)
+      });
+    },
     setCompareNormalizeMetrics: (enabled) => {
+      const current = targetStore.getState();
+      if (current && current.compareUseCdf) {
+        patch({ compareNormalizeMetrics: false });
+        return;
+      }
       patch({ compareNormalizeMetrics: !!enabled });
     },
     setCompareReverseCumulative: (enabled) => {

@@ -33,6 +33,7 @@ DEFAULT_COMPARE_SETTINGS = {
     "selectedYieldPopulationMode": "all",
     "selectedReferenceCrosshairs": ["avg"],
     "compareShowGridlines": True,
+    "compareUseCdf": False,
     "compareNormalizeMetrics": False,
     "compareReverseCumulative": False,
     "compareShowHistogram": False,
@@ -187,6 +188,10 @@ def sanitize_index_report_settings(value: Any) -> dict[str, Any]:
 def sanitize_compare_report_settings(value: Any) -> dict[str, Any]:
     source = value if isinstance(value, Mapping) else {}
     fallback = DEFAULT_COMPARE_SETTINGS
+    compare_use_cdf = _coerce_bool(
+        source.get("compareUseCdf"),
+        fallback["compareUseCdf"],
+    )
     return {
         "selectedYieldPopulationMode": _coerce_choice(
             source.get("selectedYieldPopulationMode"),
@@ -201,7 +206,8 @@ def sanitize_compare_report_settings(value: Any) -> dict[str, Any]:
             source.get("compareShowGridlines"),
             fallback["compareShowGridlines"],
         ),
-        "compareNormalizeMetrics": _coerce_bool(
+        "compareUseCdf": compare_use_cdf,
+        "compareNormalizeMetrics": False if compare_use_cdf else _coerce_bool(
             source.get("compareNormalizeMetrics"),
             fallback["compareNormalizeMetrics"],
         ),

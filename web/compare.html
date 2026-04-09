@@ -16,11 +16,11 @@
       </div>
     </div>
     <section class="compare-controls">
-      <div class="compare-control">
+      <div class="compare-control compare-control--commodity">
         <label for="compare-commodity-select">Commodity</label>
         <select id="compare-commodity-select" aria-label="Commodity filter"></select>
       </div>
-      <div class="compare-control">
+      <div class="compare-control compare-control--sort">
         <label for="compare-sort-select">Sort</label>
         <select id="compare-sort-select" aria-label="Sort rings">
           <option value="avg_desc">Avg Yield (mean, High to Low)</option>
@@ -36,15 +36,19 @@
           <option value="name_asc">Ring Name (A to Z)</option>
         </select>
       </div>
-      <div class="compare-control compare-control-pill">
+      <div class="compare-control compare-control-pill compare-control--yield-basis">
         <label>Yield Basis</label>
         <div id="compare-population-options" class="compare-population-options" aria-label="Yield calculation basis"></div>
       </div>
-      <div class="compare-control compare-control-pill">
+      <div class="compare-control compare-control-pill compare-control--crosshairs">
         <label>Crosshairs</label>
         <div id="compare-reference-options" class="compare-reference-options" aria-label="Crosshair overlays"></div>
       </div>
-      <div class="compare-control compare-control-pill">
+      <div class="compare-control compare-control-pill compare-control--mode">
+        <label>Chart Mode</label>
+        <div id="compare-mode-options" class="compare-population-options" aria-label="Chart mode"></div>
+      </div>
+      <div class="compare-control compare-control-pill compare-control--display">
         <label>Display</label>
         <div id="compare-gridline-options" class="compare-population-options" aria-label="Chart display options"></div>
       </div>

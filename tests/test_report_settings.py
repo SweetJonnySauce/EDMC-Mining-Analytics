@@ -23,12 +23,33 @@ def test_sanitize_index_report_settings_rejects_invalid_mode() -> None:
 
 def test_sanitize_compare_report_settings_defaults_theme() -> None:
     settings = sanitize_compare_report_settings({})
+    assert settings["compareUseCdf"] == DEFAULT_COMPARE_SETTINGS["compareUseCdf"]
     assert settings["compareThemeId"] == DEFAULT_COMPARE_SETTINGS["compareThemeId"]
 
 
 def test_sanitize_compare_report_settings_accepts_valid_theme() -> None:
     settings = sanitize_compare_report_settings({"compareThemeId": "blue-dark"})
     assert settings["compareThemeId"] == "blue-dark"
+
+
+def test_sanitize_compare_report_settings_accepts_cdf_toggle() -> None:
+    settings = sanitize_compare_report_settings({"compareUseCdf": True})
+    assert settings["compareUseCdf"] is True
+    assert settings["compareNormalizeMetrics"] is False
+
+
+def test_sanitize_compare_report_settings_rejects_invalid_cdf_toggle() -> None:
+    settings = sanitize_compare_report_settings({"compareUseCdf": "unexpected"})
+    assert settings["compareUseCdf"] == DEFAULT_COMPARE_SETTINGS["compareUseCdf"]
+
+
+def test_sanitize_compare_report_settings_disables_normalize_when_using_cdf() -> None:
+    settings = sanitize_compare_report_settings({
+        "compareUseCdf": True,
+        "compareNormalizeMetrics": True,
+    })
+    assert settings["compareUseCdf"] is True
+    assert settings["compareNormalizeMetrics"] is False
 
 
 def test_sanitize_compare_report_settings_rejects_invalid_theme() -> None:

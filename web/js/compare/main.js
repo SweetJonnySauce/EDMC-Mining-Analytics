@@ -18,6 +18,7 @@ import { renderRingChart as renderRingChartModule } from "./charts/ring_chart.js
 import {
   renderReferenceCrosshairControls,
   renderYieldPopulationControls,
+  renderCompareModeControls,
   renderGridlineControls,
   syncCommoditySelect as syncCommoditySelectControl,
 } from "./ui/controls.js";
@@ -33,6 +34,7 @@ import { createCompareStateController } from "./state/controller.js";
       const compareSortSelect = document.getElementById("compare-sort-select");
       const comparePopulationOptions = document.getElementById("compare-population-options");
       const compareReferenceOptions = document.getElementById("compare-reference-options");
+      const compareModeOptions = document.getElementById("compare-mode-options");
       const compareGridlineOptions = document.getElementById("compare-gridline-options");
       const compareStatus = document.getElementById("compare-status");
       const compareList = document.getElementById("compare-list");
@@ -68,6 +70,7 @@ import { createCompareStateController } from "./state/controller.js";
       let selectedYieldPopulationMode = "all";
       let selectedReferenceCrosshairs = new Set(["avg"]);
       let compareShowGridlines = true;
+      let compareUseCdf = false;
       let compareNormalizeMetrics = false;
       let compareReverseCumulative = false;
       let compareShowHistogram = false;
@@ -82,6 +85,7 @@ import { createCompareStateController } from "./state/controller.js";
         selectedYieldPopulationMode,
         selectedReferenceCrosshairs,
         compareShowGridlines,
+        compareUseCdf,
         compareNormalizeMetrics,
         compareReverseCumulative,
         compareShowHistogram,
@@ -106,6 +110,7 @@ import { createCompareStateController } from "./state/controller.js";
           ? new Set(state.selectedReferenceCrosshairs)
           : new Set(["avg"]);
         compareShowGridlines = state.compareShowGridlines !== false;
+        compareUseCdf = !!state.compareUseCdf;
         compareNormalizeMetrics = !!state.compareNormalizeMetrics;
         compareReverseCumulative = !!state.compareReverseCumulative;
         compareShowHistogram = !!state.compareShowHistogram;
@@ -131,6 +136,7 @@ import { createCompareStateController } from "./state/controller.js";
             ? new Set(state.selectedReferenceCrosshairs)
             : new Set(["avg"]),
           compareShowGridlines: !(state && state.compareShowGridlines === false),
+          compareUseCdf: !!(state && state.compareUseCdf),
           compareNormalizeMetrics: !!(state && state.compareNormalizeMetrics),
           compareReverseCumulative: !!(state && state.compareReverseCumulative),
           compareShowHistogram: !!(state && state.compareShowHistogram),
@@ -257,7 +263,8 @@ import { createCompareStateController } from "./state/controller.js";
           selectedYieldPopulationMode: renderState.selectedYieldPopulationMode === "present" ? "present" : "all",
           selectedReferenceCrosshairs: Array.from(renderState.selectedReferenceCrosshairs || new Set(["avg"])),
           compareShowGridlines: renderState.compareShowGridlines !== false,
-          compareNormalizeMetrics: !!renderState.compareNormalizeMetrics,
+          compareUseCdf: !!renderState.compareUseCdf,
+          compareNormalizeMetrics: renderState.compareUseCdf ? false : !!renderState.compareNormalizeMetrics,
           compareReverseCumulative: !!renderState.compareReverseCumulative,
           compareShowHistogram: !!renderState.compareShowHistogram,
           compareSortMode: normalizeCompareSortModeSetting(compareSortSelect ? compareSortSelect.value : "avg_desc", "avg_desc"),
@@ -268,6 +275,7 @@ import { createCompareStateController } from "./state/controller.js";
       function applyPersistedCompareReportSettings(rawSettings) {
         const defaults = buildPersistedCompareReportSettings(getCompareRenderState());
         const source = rawSettings && typeof rawSettings === "object" ? rawSettings : {};
+        const nextCompareUseCdf = normalizeBooleanSetting(source.compareUseCdf, defaults.compareUseCdf);
         compareStateController.setSelectedYieldPopulationMode(
           normalizeYieldPopulationModeSetting(source.selectedYieldPopulationMode, defaults.selectedYieldPopulationMode)
         );
@@ -282,8 +290,11 @@ import { createCompareStateController } from "./state/controller.js";
         compareStateController.setCompareShowGridlines(
           normalizeBooleanSetting(source.compareShowGridlines, defaults.compareShowGridlines)
         );
+        compareStateController.setCompareUseCdf(nextCompareUseCdf);
         compareStateController.setCompareNormalizeMetrics(
-          normalizeBooleanSetting(source.compareNormalizeMetrics, defaults.compareNormalizeMetrics)
+          nextCompareUseCdf
+            ? false
+            : normalizeBooleanSetting(source.compareNormalizeMetrics, defaults.compareNormalizeMetrics)
         );
         compareStateController.setCompareReverseCumulative(
           normalizeBooleanSetting(source.compareReverseCumulative, defaults.compareReverseCumulative)
@@ -416,7 +427,7 @@ import { createCompareStateController } from "./state/controller.js";
         });
       }
 
-      function renderRingChart(chartPanel, ringName, commodityLabel, model, selectedCrosshairKeys, normalizeBySessions, reverseCumulative, showHistogram, stateSnapshot) {
+      function renderRingChart(chartPanel, ringName, commodityLabel, model, selectedCrosshairKeys, normalizeBySessions, useCdf, reverseCumulative, showHistogram, stateSnapshot) {
         const renderState = stateSnapshot || getCompareRenderState();
         renderRingChartModule({
           chartPanel,
@@ -425,6 +436,7 @@ import { createCompareStateController } from "./state/controller.js";
           model,
           selectedCrosshairKeys,
           normalizeBySessions,
+          useCdf,
           reverseCumulative,
           showHistogram,
           showGridlines: renderState.compareShowGridlines,
@@ -514,6 +526,24 @@ import { createCompareStateController } from "./state/controller.js";
         });
       }
 
+      function syncCompareModeControls() {
+        if (!compareModeOptions) {
+          return;
+        }
+        const renderState = getCompareRenderState();
+        renderCompareModeControls({
+          container: compareModeOptions,
+          compareUseCdf: renderState.compareUseCdf,
+          onModeChange: (modeKey) => {
+            compareStateController.setCompareUseCdf(modeKey === "above-threshold");
+            schedulePersistCompareReportSettings();
+            syncCompareModeControls();
+            syncGridlineControls();
+            renderComparePanels(getCompareRenderState());
+          }
+        });
+      }
+
       function syncGridlineControls() {
         if (!compareGridlineOptions) {
           return;
@@ -522,6 +552,7 @@ import { createCompareStateController } from "./state/controller.js";
         renderGridlineControls({
           container: compareGridlineOptions,
           compareShowGridlines: renderState.compareShowGridlines,
+          compareUseCdf: renderState.compareUseCdf,
           compareNormalizeMetrics: renderState.compareNormalizeMetrics,
           compareReverseCumulative: renderState.compareReverseCumulative,
           compareShowHistogram: renderState.compareShowHistogram,
@@ -670,6 +701,7 @@ import { createCompareStateController } from "./state/controller.js";
               metric,
               rowCrosshairs,
               renderState.compareNormalizeMetrics,
+              renderState.compareUseCdf,
               renderState.compareReverseCumulative,
               renderState.compareShowHistogram,
               renderState
@@ -886,6 +918,7 @@ import { createCompareStateController } from "./state/controller.js";
         compareThemePersistenceReady = true;
         syncYieldPopulationControls();
         syncReferenceCrosshairControls();
+        syncCompareModeControls();
         syncGridlineControls();
         if (compareCommoditySelect) {
           compareCommoditySelect.addEventListener("change", (event) => {
