@@ -67,7 +67,6 @@ test("buildRingCommodityModel cutoff plan uses all prospected asteroids for pros
     commodityKey: "platinum",
     interval: 20,
     forcedXMax: 40,
-    populationMode: "present",
   });
 
   const cutoff20 = model.aboveThresholdPlanRows.find((row) => row.cutoffYieldPercent === 20);
@@ -97,7 +96,6 @@ test("buildRingCommodityModel respects a custom cargo target for above-threshold
     commodityKey: "platinum",
     interval: 20,
     forcedXMax: 40,
-    populationMode: "present",
     targetTons: 104,
   });
 
@@ -106,6 +104,45 @@ test("buildRingCommodityModel respects a custom cargo target for above-threshold
   assert.equal(model.targetTons, 104);
   assert.equal(cutoff20.asteroidsToMine, 14);
   assert.equal(cutoff20.asteroidsToProspect, 14);
+});
+
+test("buildRingCommodityModel counts zero-hit asteroids from sessions with no commodity presence", () => {
+  const ring = {
+    asteroidList: [
+      {
+        sessionGuid: "session-1",
+        commodityPercentages: new Map([["platinum", 20]]),
+      },
+      {
+        sessionGuid: "session-1",
+        commodityPercentages: new Map([["platinum", 40]]),
+      },
+      {
+        sessionGuid: "session-2",
+        commodityPercentages: new Map([["gold", 30]]),
+      },
+      {
+        sessionGuid: "session-2",
+        commodityPercentages: new Map([["silver", 15]]),
+      },
+    ],
+  };
+
+  const model = buildRingCommodityModel({
+    ring,
+    commodityKey: "platinum",
+    interval: 20,
+    forcedXMax: 40,
+  });
+
+  const cutoff20 = model.aboveThresholdPlanRows.find((row) => row.cutoffYieldPercent === 20);
+  assert.ok(cutoff20);
+  assert.equal(model.asteroidsCount, 4);
+  assert.equal(model.presentAsteroidsCount, 2);
+  assert.equal(cutoff20.totalAsteroidsCount, 4);
+  assert.equal(cutoff20.qualifyingAsteroidsCount, 2);
+  assert.equal(cutoff20.asteroidsToMine, 10);
+  assert.equal(cutoff20.asteroidsToProspect, 20);
 });
 
 test("buildAboveThresholdPlanRows preserves a column for every cutoff even when no asteroids qualify", () => {
@@ -196,6 +233,72 @@ test("interpolateMissingValuesBetweenRealBins fills non-real bins between adjace
       { value: 0.3, inferred: true },
       { value: 0.2, inferred: true },
       { value: 0.1, inferred: false },
+    ]
+  );
+});
+
+test("interpolateMissingValuesBetweenRealBins can hold the previous real value for cumulative displays", () => {
+  const entries = [
+    { value: 6, hasRealData: true },
+    { value: 6, hasRealData: false },
+    { value: 10, hasRealData: true },
+    { value: 10, hasRealData: false },
+    { value: 10, hasRealData: false },
+    { value: 20, hasRealData: true },
+  ];
+
+  const interpolated = interpolateMissingValuesBetweenRealBins({
+    entries,
+    readValue: (entry) => entry.value,
+    isRealEntry: (entry) => entry.hasRealData,
+    strategy: "previous",
+  });
+
+  assert.deepEqual(
+    interpolated.map((entry) => ({
+      value: entry.value,
+      inferred: entry.inferred,
+    })),
+    [
+      { value: 6, inferred: false },
+      { value: 6, inferred: true },
+      { value: 10, inferred: false },
+      { value: 10, inferred: true },
+      { value: 10, inferred: true },
+      { value: 20, inferred: false },
+    ]
+  );
+});
+
+test("interpolateMissingValuesBetweenRealBins can hold the next real value for reversed cumulative displays", () => {
+  const entries = [
+    { value: 1, hasRealData: true },
+    { value: 2, hasRealData: true },
+    { value: 4, hasRealData: true },
+    { value: 6, hasRealData: true },
+    { value: 6, hasRealData: false },
+    { value: 10, hasRealData: true },
+  ];
+
+  const interpolated = interpolateMissingValuesBetweenRealBins({
+    entries,
+    readValue: (entry) => entry.value,
+    isRealEntry: (entry) => entry.hasRealData,
+    strategy: "next",
+  });
+
+  assert.deepEqual(
+    interpolated.map((entry) => ({
+      value: entry.value,
+      inferred: entry.inferred,
+    })),
+    [
+      { value: 1, inferred: false },
+      { value: 2, inferred: false },
+      { value: 4, inferred: false },
+      { value: 6, inferred: false },
+      { value: 10, inferred: true },
+      { value: 10, inferred: false },
     ]
   );
 });

@@ -137,7 +137,6 @@ export function buildScopedAsteroidRows(options) {
   const {
     ring,
     commodityKey,
-    populationMode,
   } = options || {};
   const asteroids = Array.isArray(ring && ring.asteroidList) ? ring.asteroidList : [];
   const allAsteroids = asteroids
@@ -152,18 +151,9 @@ export function buildScopedAsteroidRows(options) {
       };
     })
     .filter((row) => !!row);
-  const sessionGuidsWithCommodityPresent = new Set(
-    allAsteroids
-      .filter((item) => item.present)
-      .map((item) => item.sessionGuid)
-      .filter((value) => !!value)
-  );
-  const eligibleAllAsteroids = allAsteroids.filter((item) => (
-    !!item.sessionGuid && sessionGuidsWithCommodityPresent.has(item.sessionGuid)
-  ));
-  const presentAsteroids = eligibleAllAsteroids.filter((item) => item.present);
-  const scopedAsteroids = populationMode === "all" ? eligibleAllAsteroids : presentAsteroids;
-  return { allAsteroids: eligibleAllAsteroids, presentAsteroids, scopedAsteroids };
+  const presentAsteroids = allAsteroids.filter((item) => item.present);
+  const scopedAsteroids = allAsteroids;
+  return { allAsteroids, presentAsteroids, scopedAsteroids };
 }
 
 export function buildAboveThresholdPlanRows(options) {
@@ -232,6 +222,7 @@ export function interpolateMissingValuesBetweenRealBins(options) {
     entries,
     readValue,
     isRealEntry,
+    strategy,
   } = options || {};
   const items = Array.isArray(entries) ? entries : [];
   const getValue = typeof readValue === "function"
@@ -240,6 +231,9 @@ export function interpolateMissingValuesBetweenRealBins(options) {
   const getIsReal = typeof isRealEntry === "function"
     ? isRealEntry
     : ((entry) => !!(entry && entry.hasRealData));
+  const interpolationStrategy = strategy === "previous" || strategy === "next"
+    ? strategy
+    : "linear";
   const rawValues = items.map((entry, index) => {
     const value = Number(getValue(entry, index));
     return Number.isFinite(value) ? value : null;
@@ -257,6 +251,20 @@ export function interpolateMissingValuesBetweenRealBins(options) {
     let nextRealIndex = index + 1;
     while (nextRealIndex < items.length && !realFlags[nextRealIndex]) {
       nextRealIndex += 1;
+    }
+    if (
+      interpolationStrategy === "previous"
+      && previousRealIndex >= 0
+      && Number.isFinite(rawValues[previousRealIndex])
+    ) {
+      return { value: rawValues[previousRealIndex], inferred: true };
+    }
+    if (
+      interpolationStrategy === "next"
+      && nextRealIndex < items.length
+      && Number.isFinite(rawValues[nextRealIndex])
+    ) {
+      return { value: rawValues[nextRealIndex], inferred: true };
     }
     if (
       previousRealIndex >= 0
@@ -280,14 +288,13 @@ export function buildRingCommodityModel(options) {
     commodityKey,
     interval,
     forcedXMax,
-    populationMode,
     targetTons,
   } = options || {};
   const safeInterval = Math.max(1, Number(interval) || 1);
   const safeTargetTons = Number(targetTons) > 0
     ? Number(targetTons)
     : DEFAULT_COMPARE_TARGET_TONS;
-  const scopedRows = buildScopedAsteroidRows({ ring, commodityKey, populationMode });
+  const scopedRows = buildScopedAsteroidRows({ ring, commodityKey });
   const allAsteroids = Array.isArray(scopedRows && scopedRows.allAsteroids)
     ? scopedRows.allAsteroids
     : [];

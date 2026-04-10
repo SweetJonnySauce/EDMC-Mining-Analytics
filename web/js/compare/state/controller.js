@@ -44,10 +44,6 @@ export function createCompareStateController(store) {
     setSelectedCommodityKey: (commodityKey) => {
       patch({ selectedCommodityKey: normalizeString(commodityKey) });
     },
-    setSelectedYieldPopulationMode: (mode) => {
-      const nextMode = normalizeString(mode);
-      patch({ selectedYieldPopulationMode: nextMode || "all" });
-    },
     setSelectedReferenceCrosshairs: (crosshairs) => {
       patch({ selectedReferenceCrosshairs: normalizeSet(crosshairs, ["avg"]) });
     },

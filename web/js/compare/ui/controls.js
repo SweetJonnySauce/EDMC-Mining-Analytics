@@ -35,42 +35,6 @@ export function renderReferenceCrosshairControls(options) {
   });
 }
 
-export function renderYieldPopulationControls(options) {
-  const {
-    container,
-    modes,
-    selectedYieldPopulationMode,
-    onSelect,
-  } = options || {};
-  if (!container) {
-    return;
-  }
-  const entries = Array.isArray(modes) ? modes : [];
-  container.innerHTML = "";
-  entries.forEach((mode) => {
-    const wrapper = document.createElement("label");
-    wrapper.className = "compare-population-option";
-    const input = document.createElement("input");
-    input.type = "radio";
-    input.name = "compare-yield-population-mode";
-    input.value = mode.key;
-    input.checked = selectedYieldPopulationMode === mode.key;
-    input.addEventListener("change", () => {
-      if (!input.checked) {
-        return;
-      }
-      if (typeof onSelect === "function") {
-        onSelect(mode.key);
-      }
-    });
-    const text = document.createElement("span");
-    text.textContent = mode.label;
-    wrapper.appendChild(input);
-    wrapper.appendChild(text);
-    container.appendChild(wrapper);
-  });
-}
-
 export function renderCompareModeControls(options) {
   const {
     container,
@@ -81,9 +45,11 @@ export function renderCompareModeControls(options) {
     return;
   }
   container.innerHTML = "";
+  const group = document.createElement("div");
+  group.className = "compare-mode-toggle";
   const entries = [
-    { key: "cumulative", label: "Cumulative Frequency" },
-    { key: "above-threshold", label: "Above-Threshold %" }
+    { key: "above-threshold", label: "CDFb / Above-Threshold %" },
+    { key: "cumulative", label: "Cumulative Frequency" }
   ];
   const selectedMode = compareUseCdf ? "above-threshold" : "cumulative";
   entries.forEach((entry) => {
@@ -106,8 +72,9 @@ export function renderCompareModeControls(options) {
     text.textContent = entry.label;
     wrapper.appendChild(input);
     wrapper.appendChild(text);
-    container.appendChild(wrapper);
+    group.appendChild(wrapper);
   });
+  container.appendChild(group);
 }
 
 export function renderCompareTargetControl(options) {
@@ -125,7 +92,7 @@ export function renderCompareTargetControl(options) {
   if (panel) {
     panel.classList.toggle("compare-control-pill--disabled", !compareUseCdf);
     panel.title = !compareUseCdf
-      ? "Cargo target only applies to Above-Threshold % projections."
+      ? "Cargo target only applies to CDFb / Above-Threshold % projections."
       : "";
   }
 
@@ -192,6 +159,22 @@ export function renderGridlineControls(options) {
   }
   container.innerHTML = "";
 
+  const histogramWrapper = document.createElement("label");
+  histogramWrapper.className = "compare-population-option";
+  const histogramInput = document.createElement("input");
+  histogramInput.type = "checkbox";
+  histogramInput.checked = !!compareShowHistogram;
+  histogramInput.addEventListener("change", () => {
+    if (typeof onHistogramChange === "function") {
+      onHistogramChange(histogramInput.checked);
+    }
+  });
+  const histogramText = document.createElement("span");
+  histogramText.textContent = compareUseCdf ? "Show Data Grid" : "Show Histogram";
+  histogramWrapper.appendChild(histogramInput);
+  histogramWrapper.appendChild(histogramText);
+  container.appendChild(histogramWrapper);
+
   const gridlineWrapper = document.createElement("label");
   gridlineWrapper.className = "compare-population-option";
   const gridlineInput = document.createElement("input");
@@ -223,7 +206,7 @@ export function renderGridlineControls(options) {
   normalizeText.textContent = "Normalize by Sessions";
   if (compareUseCdf) {
     normalizeWrapper.classList.add("compare-population-option--disabled");
-    normalizeWrapper.title = "Above-Threshold % already uses a normalized 0-1 probability scale.";
+    normalizeWrapper.title = "CDFb / Above-Threshold % already uses a normalized 0-1 probability scale.";
   }
   normalizeWrapper.appendChild(normalizeInput);
   normalizeWrapper.appendChild(normalizeText);
@@ -244,27 +227,11 @@ export function renderGridlineControls(options) {
   reverseText.textContent = "Reverse Cumulative Freq.";
   if (compareUseCdf) {
     reverseWrapper.classList.add("compare-population-option--disabled");
-    reverseWrapper.title = "Above-Threshold % uses the normalized above-threshold view from EliteMiners graphs.";
+    reverseWrapper.title = "CDFb / Above-Threshold % uses the normalized above-threshold view from EliteMiners graphs.";
   }
   reverseWrapper.appendChild(reverseInput);
   reverseWrapper.appendChild(reverseText);
   container.appendChild(reverseWrapper);
-
-  const histogramWrapper = document.createElement("label");
-  histogramWrapper.className = "compare-population-option";
-  const histogramInput = document.createElement("input");
-  histogramInput.type = "checkbox";
-  histogramInput.checked = !!compareShowHistogram;
-  histogramInput.addEventListener("change", () => {
-    if (typeof onHistogramChange === "function") {
-      onHistogramChange(histogramInput.checked);
-    }
-  });
-  const histogramText = document.createElement("span");
-  histogramText.textContent = compareUseCdf ? "Show Data Grid" : "Show Histogram";
-  histogramWrapper.appendChild(histogramInput);
-  histogramWrapper.appendChild(histogramText);
-  container.appendChild(histogramWrapper);
 }
 
 export function syncCommoditySelect(options) {

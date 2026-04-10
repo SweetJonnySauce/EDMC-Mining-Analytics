@@ -8,6 +8,7 @@ function buildCompareBinLabelsRow(
   useThresholdLabels,
   showCursorTooltip,
   hideCursorTooltip,
+  axisTooltipText,
 ) {
   const labels = document.createElement("div");
   labels.className = "compare-bin-labels";
@@ -22,14 +23,15 @@ function buildCompareBinLabelsRow(
     labelTexts[index] = useThresholdLabels
       ? `${formatThresholdLabel(point, reverseCumulative)}%`
       : `${labelRangeStart}-${labelRangeEnd}%`;
-    if (useThresholdLabels) {
-      label.setAttribute("aria-label", "% content");
+    const tooltipText = useThresholdLabels ? "% content" : String(axisTooltipText || "").trim();
+    if (tooltipText) {
+      label.setAttribute("aria-label", tooltipText);
       if (typeof showCursorTooltip === "function" && typeof hideCursorTooltip === "function") {
         label.addEventListener("mouseenter", (event) => {
-          showCursorTooltip("% content", event);
+          showCursorTooltip(tooltipText, event);
         });
         label.addEventListener("mousemove", (event) => {
-          showCursorTooltip("% content", event);
+          showCursorTooltip(tooltipText, event);
         });
         label.addEventListener("mouseleave", () => {
           hideCursorTooltip();
@@ -54,6 +56,109 @@ function formatThresholdLabel(point, reverseCumulative) {
   }
   const value = reverseCumulative ? Number(point.intervalEnd) : Number(point.intervalStart);
   return Number.isFinite(value) ? String(value) : "0";
+}
+
+function buildAboveThresholdDisplayPoints(model) {
+  const sourcePoints = (Array.isArray(model && model.points)
+    ? model.points
+    : []).filter((point) => Number(point && point.intervalStart) > 0);
+  if (!sourcePoints.length) {
+    return [];
+  }
+
+  let trailingZeroStart = sourcePoints.length;
+  for (let index = sourcePoints.length - 1; index >= 0; index -= 1) {
+    if (Number(sourcePoints[index] && sourcePoints[index].totalReverse) > 0) {
+      break;
+    }
+    trailingZeroStart = index;
+  }
+  if ((sourcePoints.length - trailingZeroStart) > 1) {
+    sourcePoints.splice(trailingZeroStart + 1);
+  }
+
+  const lastPoint = sourcePoints[sourcePoints.length - 1];
+  if (lastPoint && lastPoint.hasRealData) {
+    const lastStart = Number(lastPoint.intervalStart);
+    const lastEnd = Number(lastPoint.intervalEnd);
+    const inferredStep = Number.isFinite(lastEnd - lastStart) && (lastEnd - lastStart) > 0
+      ? (lastEnd - lastStart)
+      : 5;
+    sourcePoints.push({
+      ...lastPoint,
+      index: Number.isFinite(Number(lastPoint.index)) ? (Number(lastPoint.index) + 1) : sourcePoints.length,
+      intervalStart: lastEnd,
+      intervalEnd: lastEnd + inferredStep,
+      center: lastEnd + (inferredStep / 2),
+      binCount: 0,
+      hasRealData: false,
+      total: 0,
+      totalForward: Number(lastPoint.totalForward),
+      totalReverse: 0,
+      syntheticTrailingPoint: true,
+    });
+  }
+
+  return sourcePoints;
+}
+
+function buildAboveThresholdPlanDisplayModel(model) {
+  const points = buildAboveThresholdDisplayPoints(model);
+  const rawRows = Array.isArray(model && model.aboveThresholdPlanRows)
+    ? model.aboveThresholdPlanRows
+    : [];
+  const rowsByCutoff = new Map();
+  rawRows.forEach((row) => {
+    const cutoff = Number(row && row.cutoffYieldPercent);
+    if (Number.isFinite(cutoff)) {
+      rowsByCutoff.set(cutoff, row);
+    }
+  });
+  const rows = points.map((point) => {
+    const cutoff = Number(point && point.intervalStart);
+    const matchedRow = rowsByCutoff.get(cutoff);
+    if (matchedRow) {
+      return matchedRow;
+    }
+    return {
+      cutoffYieldPercent: cutoff,
+      asteroidsToMine: null,
+      asteroidsToProspect: null,
+    };
+  });
+  const prospectDisplayValues = interpolateMissingValuesBetweenRealBins({
+    entries: rows,
+    readValue: (row) => row && row.asteroidsToProspect,
+    isRealEntry: (_row, index) => !!(points[index] && points[index].hasRealData),
+  });
+  const mineDisplayValues = interpolateMissingValuesBetweenRealBins({
+    entries: rows,
+    readValue: (row) => row && row.asteroidsToMine,
+    isRealEntry: (_row, index) => !!(points[index] && points[index].hasRealData),
+  });
+  return {
+    points,
+    rows,
+    prospectDisplayValues,
+    mineDisplayValues,
+  };
+}
+
+function buildCumulativeDisplayPoints(points, reverseCumulative) {
+  const sourcePoints = Array.isArray(points) ? [...points] : [];
+  if (!sourcePoints.length) {
+    return [];
+  }
+  const displayPoints = reverseCumulative ? [...sourcePoints].reverse() : sourcePoints;
+  let lastRealDisplayIndex = displayPoints.length - 1;
+  while (lastRealDisplayIndex >= 0 && !displayPoints[lastRealDisplayIndex].hasRealData) {
+    lastRealDisplayIndex -= 1;
+  }
+  if (lastRealDisplayIndex < 0) {
+    return [];
+  }
+  const trimmedDisplayPoints = displayPoints.slice(0, lastRealDisplayIndex + 1);
+  return reverseCumulative ? trimmedDisplayPoints.reverse() : trimmedDisplayPoints;
 }
 
 function buildResInfoDialog(showCursorTooltip, hideCursorTooltip) {
@@ -235,6 +340,7 @@ function renderHistogramSection(options) {
     ringName,
     commodityLabel,
     model,
+    displayPoints,
     normalizeBySessions,
     reverseCumulative,
     interactions,
@@ -245,6 +351,9 @@ function renderHistogramSection(options) {
     hideCursorTooltip,
     applyAdaptiveBinLabels,
   } = options || {};
+  const histogramPoints = Array.isArray(displayPoints) && displayPoints.length
+    ? displayPoints
+    : (Array.isArray(model && model.points) ? model.points : []);
   const section = document.createElement("div");
   section.className = "compare-chart-section";
 
@@ -260,7 +369,7 @@ function renderHistogramSection(options) {
   const sidePad = 14;
   const drawWidth = Math.max(1, width - (sidePad * 2));
   let drawHeight = Math.max(1, height - topPad - bottomPad);
-  const totalBins = Math.max(1, model.points.length);
+  const totalBins = Math.max(1, histogramPoints.length);
   const toDisplayIndex = (index) => (
     reverseCumulative
       ? (totalBins - index - 1)
@@ -271,7 +380,7 @@ function renderHistogramSection(options) {
   const sessionDivisor = normalizeBySessions
     ? Math.max(1, Number(model && model.sessionsCount) || 0)
     : 1;
-  const displayPeak = model.points.reduce((peak, point) => (
+  const displayPeak = histogramPoints.reduce((peak, point) => (
     Math.max(peak, Number(point.binCount) / sessionDivisor)
   ), 0);
   const countAxisMaxInt = Math.max(1, Math.ceil(displayPeak));
@@ -299,6 +408,16 @@ function renderHistogramSection(options) {
     const tick = document.createElement("span");
     tick.className = "compare-y-axis-tick";
     tick.textContent = String(value);
+    tick.setAttribute("aria-label", "# of asteroids");
+    tick.addEventListener("mouseenter", (event) => {
+      showCursorTooltip("# of asteroids", event);
+    });
+    tick.addEventListener("mousemove", (event) => {
+      showCursorTooltip("# of asteroids", event);
+    });
+    tick.addEventListener("mouseleave", () => {
+      hideCursorTooltip();
+    });
     const y = toYForCount(value);
     tick.style.top = `${((y / height) * 100).toFixed(4)}%`;
     yAxisTicks.appendChild(tick);
@@ -345,11 +464,11 @@ function renderHistogramSection(options) {
   }
 
   const baselineY = topPad + drawHeight;
-  model.points.forEach((point) => {
+  histogramPoints.forEach((point, displayIndex) => {
     const displayBinCount = Number(point.binCount) / sessionDivisor;
     const y = toYForCount(displayBinCount);
-    const barStart = toXForBinStart(point.index);
-    const barEnd = toXForBinEnd(point.index);
+    const barStart = toXForBinStart(displayIndex);
+    const barEnd = toXForBinEnd(displayIndex);
     const barInset = 1.2;
     const x = Math.min(barStart, barEnd) + barInset;
     const barWidth = Math.max(1, Math.abs(barEnd - barStart) - (barInset * 2));
@@ -407,12 +526,13 @@ function renderHistogramSection(options) {
   });
   section.appendChild(
     buildCompareBinLabelsRow(
-      model.points,
+      histogramPoints,
       reverseCumulative,
       applyAdaptiveBinLabels,
       false,
       showCursorTooltip,
       hideCursorTooltip,
+      "% content range",
     )
   );
   chartPanel.appendChild(section);
@@ -426,6 +546,7 @@ function renderAboveThresholdGridSection(options) {
     formatNumber,
     showCursorTooltip,
     hideCursorTooltip,
+    interactions,
   } = options || {};
   const section = document.createElement("div");
   section.className = "compare-chart-section compare-chart-section--data-grid";
@@ -444,38 +565,18 @@ function renderAboveThresholdGridSection(options) {
     hideCursorTooltip,
   );
   note.append(
-    `Projected to fill ${formatNumber(targetTons, 0)}t using ${formatNumber(tonsPerPercentagePoint, 2)}t per percentage point outside RES`
+    `Projected # of prospected (#P) and mined (#M) asteroids needed to fill ${formatNumber(targetTons, 0)}t using ${formatNumber(tonsPerPercentagePoint, 2)}t per percentage point outside RES`
   );
   note.appendChild(resInfoButton);
-  note.append(". Prospect estimates use all prospected asteroids.");
   section.appendChild(note);
   section.appendChild(resInfoDialog);
 
-  const rawRows = Array.isArray(model && model.aboveThresholdPlanRows)
-    ? model.aboveThresholdPlanRows
-    : [];
-  const points = (Array.isArray(model && model.points)
-    ? model.points
-    : []).filter((point) => Number(point && point.intervalStart) > 0);
-  const rowsByCutoff = new Map();
-  rawRows.forEach((row) => {
-    const cutoff = Number(row && row.cutoffYieldPercent);
-    if (Number.isFinite(cutoff)) {
-      rowsByCutoff.set(cutoff, row);
-    }
-  });
-  const rows = points.map((point) => {
-    const cutoff = Number(point && point.intervalStart);
-    const matchedRow = rowsByCutoff.get(cutoff);
-    if (matchedRow) {
-      return matchedRow;
-    }
-    return {
-      cutoffYieldPercent: cutoff,
-      asteroidsToMine: null,
-      asteroidsToProspect: null,
-    };
-  });
+  const {
+    points,
+    rows,
+    prospectDisplayValues,
+    mineDisplayValues,
+  } = buildAboveThresholdPlanDisplayModel(model);
   if (!rows.length) {
     const empty = document.createElement("p");
     empty.className = "compare-empty";
@@ -487,20 +588,17 @@ function renderAboveThresholdGridSection(options) {
 
   const wrapper = document.createElement("div");
   wrapper.className = "compare-plan-grid";
-  const prospectDisplayValues = interpolateMissingValuesBetweenRealBins({
-    entries: rows,
-    readValue: (row) => row && row.asteroidsToProspect,
-    isRealEntry: (_row, index) => !!(points[index] && points[index].hasRealData),
-  });
-  const mineDisplayValues = interpolateMissingValuesBetweenRealBins({
-    entries: rows,
-    readValue: (row) => row && row.asteroidsToMine,
-    isRealEntry: (_row, index) => !!(points[index] && points[index].hasRealData),
-  });
+  const linkedPane = document.createElement("div");
+  linkedPane.className = "compare-plan-grid-linked-pane";
+  wrapper.appendChild(linkedPane);
+  if (interactions && typeof interactions.registerPane === "function") {
+    interactions.registerPane(wrapper, linkedPane);
+  }
   const rowDefinitions = [
     {
       label: "#P",
       title: "# Asteroids to Prospect",
+      cellClassName: "compare-plan-grid-value--top",
       readValue: (_row, index) => {
         const value = prospectDisplayValues[index] && prospectDisplayValues[index].value;
         return Number.isFinite(value) ? formatNumber(value, 0) : "--";
@@ -509,6 +607,7 @@ function renderAboveThresholdGridSection(options) {
     {
       label: "#M",
       title: "# Asteroids to Mine",
+      cellClassName: "compare-plan-grid-value--middle",
       readValue: (_row, index) => {
         const value = mineDisplayValues[index] && mineDisplayValues[index].value;
         return Number.isFinite(value) ? formatNumber(value, 0) : "--";
@@ -517,6 +616,7 @@ function renderAboveThresholdGridSection(options) {
     {
       label: "%Y",
       title: "Cutoff Yield %",
+      cellClassName: "compare-plan-grid-value--bottom",
       readValue: (row) => `${formatNumber(row && row.cutoffYieldPercent, 0)}%`,
     },
   ];
@@ -526,15 +626,45 @@ function renderAboveThresholdGridSection(options) {
     const label = document.createElement("div");
     label.className = "compare-plan-grid-key";
     label.textContent = definition.label;
-    label.title = definition.title;
     label.setAttribute("aria-label", definition.title);
+    if (typeof showCursorTooltip === "function" && typeof hideCursorTooltip === "function") {
+      label.addEventListener("mouseenter", (event) => {
+        showCursorTooltip(definition.title, event);
+      });
+      label.addEventListener("mousemove", (event) => {
+        showCursorTooltip(definition.title, event);
+      });
+      label.addEventListener("mouseleave", () => {
+        hideCursorTooltip();
+      });
+    }
     const values = document.createElement("div");
     values.className = "compare-plan-grid-values";
     values.style.gridTemplateColumns = `repeat(${rows.length}, minmax(0, 1fr))`;
     rows.forEach((planRow, index) => {
       const cell = document.createElement("span");
-      cell.className = "compare-plan-grid-value";
+      cell.className = `compare-plan-grid-value compare-plan-grid-value--interactive ${definition.cellClassName || ""}`.trim();
       cell.textContent = definition.readValue(planRow, index);
+      const point = points[index];
+      const pointIndex = Number(point && point.index);
+      if (Number.isFinite(pointIndex)) {
+        if (interactions && typeof interactions.registerCell === "function") {
+          interactions.registerCell(pointIndex, cell);
+        }
+        if (interactions && typeof interactions.onCellHover === "function") {
+          cell.addEventListener("mouseenter", (event) => {
+            interactions.onCellHover(pointIndex, event);
+          });
+          cell.addEventListener("mousemove", (event) => {
+            interactions.onCellHover(pointIndex, event);
+          });
+        }
+        if (interactions && typeof interactions.onCellLeave === "function") {
+          cell.addEventListener("mouseleave", () => {
+            interactions.onCellLeave();
+          });
+        }
+      }
       values.appendChild(cell);
     });
     row.appendChild(label);
@@ -578,8 +708,85 @@ export function renderRingChart(options) {
   const effectiveReverseCumulative = useCdf ? true : reverseCumulative;
   const displayReverseAxis = useCdf ? false : reverseCumulative;
   const effectiveNormalizeBySessions = useCdf ? false : normalizeBySessions;
+  const aboveThresholdPlanDisplayModel = useCdf
+    ? buildAboveThresholdPlanDisplayModel(model)
+    : null;
+  const cumulativeDisplayPoints = useCdf
+    ? []
+    : buildCumulativeDisplayPoints(model.points, displayReverseAxis);
+  const planGridCellsByIndex = new Map();
+  let planGridWrapper = null;
+  let planGridLinkedPane = null;
+  let linkedPlanGridCells = [];
   const histogramBarsByIndex = new Map();
   let linkedHistogramBars = [];
+  const registerPlanGridCell = (pointIndex, node) => {
+    const index = Number(pointIndex);
+    if (!Number.isFinite(index) || !node) {
+      return;
+    }
+    const existing = planGridCellsByIndex.get(index) || [];
+    existing.push(node);
+    planGridCellsByIndex.set(index, existing);
+  };
+  const clearLinkedPlanGridCells = () => {
+    if (!linkedPlanGridCells.length) {
+      if (planGridLinkedPane) {
+        planGridLinkedPane.classList.remove("compare-plan-grid-linked-pane--visible");
+      }
+      return;
+    }
+    linkedPlanGridCells.forEach((node) => {
+      if (node) {
+        node.classList.remove("compare-plan-grid-value--linked");
+      }
+    });
+    linkedPlanGridCells = [];
+    if (planGridLinkedPane) {
+      planGridLinkedPane.classList.remove("compare-plan-grid-linked-pane--visible");
+    }
+  };
+  const positionLinkedPlanGridPane = (nodes) => {
+    if (!planGridWrapper || !planGridLinkedPane || !Array.isArray(nodes) || !nodes.length) {
+      return;
+    }
+    const wrapperRect = planGridWrapper.getBoundingClientRect();
+    if (!wrapperRect.width || !wrapperRect.height) {
+      return;
+    }
+    const cellRects = nodes
+      .map((node) => (node ? node.getBoundingClientRect() : null))
+      .filter((rect) => rect && rect.width && rect.height);
+    if (!cellRects.length) {
+      return;
+    }
+    const left = Math.min(...cellRects.map((rect) => rect.left)) - wrapperRect.left + planGridWrapper.scrollLeft;
+    const right = Math.max(...cellRects.map((rect) => rect.right)) - wrapperRect.left + planGridWrapper.scrollLeft;
+    const top = Math.min(...cellRects.map((rect) => rect.top)) - wrapperRect.top + planGridWrapper.scrollTop;
+    const bottom = Math.max(...cellRects.map((rect) => rect.bottom)) - wrapperRect.top + planGridWrapper.scrollTop;
+    planGridLinkedPane.style.left = `${left}px`;
+    planGridLinkedPane.style.top = `${top}px`;
+    planGridLinkedPane.style.width = `${Math.max(0, right - left)}px`;
+    planGridLinkedPane.style.height = `${Math.max(0, bottom - top)}px`;
+    planGridLinkedPane.classList.add("compare-plan-grid-linked-pane--visible");
+  };
+  const setLinkedPlanGridCellsForIndex = (pointIndex) => {
+    clearLinkedPlanGridCells();
+    const index = Number(pointIndex);
+    if (!Number.isFinite(index)) {
+      return;
+    }
+    const nodes = planGridCellsByIndex.get(index) || [];
+    nodes.forEach((node) => {
+      node.classList.add("compare-plan-grid-value--linked");
+    });
+    linkedPlanGridCells = nodes;
+    positionLinkedPlanGridPane(nodes);
+  };
+  const registerPlanGridPane = (wrapper, pane) => {
+    planGridWrapper = wrapper || null;
+    planGridLinkedPane = pane || null;
+  };
   const registerHistogramBar = (binIndex, node) => {
     const index = Number(binIndex);
     if (!Number.isFinite(index) || !node) {
@@ -615,7 +822,25 @@ export function renderRingChart(options) {
   let pointByIndex = new Map();
   let showLinkedCrosshairAt = (_point) => {};
   let hideLinkedCrosshair = () => {
+    clearLinkedPlanGridCells();
     clearLinkedHistogramBars();
+  };
+  const handlePlanGridCellHover = (pointIndex, event) => {
+    const index = Number(pointIndex);
+    if (!Number.isFinite(index)) {
+      return;
+    }
+    const point = pointByIndex.get(index);
+    if (point) {
+      showLinkedCrosshairAt(point);
+      hideCursorTooltip();
+      return;
+    }
+    setLinkedPlanGridCellsForIndex(index);
+  };
+  const handlePlanGridCellLeave = () => {
+    hideCursorTooltip();
+    hideCrosshair();
   };
   const handleHistogramBinHover = (binIndex) => {
     const index = Number(binIndex);
@@ -640,6 +865,12 @@ export function renderRingChart(options) {
       formatNumber,
       showCursorTooltip,
       hideCursorTooltip,
+      interactions: {
+        registerCell: registerPlanGridCell,
+        registerPane: registerPlanGridPane,
+        onCellHover: handlePlanGridCellHover,
+        onCellLeave: handlePlanGridCellLeave,
+      },
     });
   } else if (showHistogram) {
     renderHistogramSection({
@@ -647,6 +878,7 @@ export function renderRingChart(options) {
       ringName,
       commodityLabel,
       model,
+      displayPoints: cumulativeDisplayPoints,
       normalizeBySessions: effectiveNormalizeBySessions,
       reverseCumulative: displayReverseAxis,
       interactions: {
@@ -668,7 +900,7 @@ export function renderRingChart(options) {
   const title = document.createElement("p");
   title.className = "ring-chart-title";
   title.textContent = useCdf
-    ? `Above-Threshold % (${commodityLabel})`
+    ? `CDFb / Above-Threshold % (${commodityLabel})`
     : (effectiveReverseCumulative
       ? `Cumulative Frequency (${commodityLabel}) - Reversed`
       : `Cumulative Frequency (${commodityLabel})`);
@@ -730,6 +962,18 @@ export function renderRingChart(options) {
       tick.addEventListener("mouseleave", () => {
         hideCursorTooltip();
       });
+    } else {
+      const cumulativeAxisTooltip = "# of asteroids";
+      tick.setAttribute("aria-label", cumulativeAxisTooltip);
+      tick.addEventListener("mouseenter", (event) => {
+        showCursorTooltip(cumulativeAxisTooltip, event);
+      });
+      tick.addEventListener("mousemove", (event) => {
+        showCursorTooltip(cumulativeAxisTooltip, event);
+      });
+      tick.addEventListener("mouseleave", () => {
+        hideCursorTooltip();
+      });
     }
     yAxisTicks.appendChild(tick);
   });
@@ -752,8 +996,9 @@ export function renderRingChart(options) {
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("preserveAspectRatio", "none");
   const sourcePoints = useCdf
-    ? model.points.filter((point) => Number(point && point.intervalStart) > 0)
-    : model.points;
+    ? aboveThresholdPlanDisplayModel.points
+    : cumulativeDisplayPoints;
+  const labelPoints = sourcePoints;
   if (!sourcePoints.length) {
     const empty = document.createElement("p");
     empty.className = "compare-empty";
@@ -808,6 +1053,7 @@ export function renderRingChart(options) {
       : (rawDisplayTotal / sessionDivisor);
     return {
       ...point,
+      planDisplayIndex: displayIndex,
       displayBinCount,
       displayTotal: actualDisplayTotal,
       actualDisplayTotal,
@@ -820,6 +1066,7 @@ export function renderRingChart(options) {
     entries: coordinates,
     readValue: (point) => point && point.actualDisplayTotal,
     isRealEntry: (point) => !!(point && point.hasRealData),
+    strategy: useCdf ? "linear" : (displayReverseAxis ? "next" : "previous"),
   });
   interpolatedDisplayTotals.forEach((entry, index) => {
     const point = coordinates[index];
@@ -829,9 +1076,12 @@ export function renderRingChart(options) {
     const nextDisplayTotal = Number.isFinite(entry && entry.value)
       ? entry.value
       : point.actualDisplayTotal;
-    point.displayTotal = nextDisplayTotal;
-    point.inferredDisplayTotal = !!(entry && entry.inferred);
+    point.displayTotal = point.syntheticTrailingPoint ? 0 : nextDisplayTotal;
+    point.inferredDisplayTotal = !!(entry && entry.inferred) || !!point.syntheticTrailingPoint;
     point.y = toYForCount(nextDisplayTotal);
+    if (point.syntheticTrailingPoint) {
+      point.y = toYForCount(0);
+    }
   });
   pointByIndex = new Map();
   coordinates.forEach((point) => {
@@ -1138,15 +1388,18 @@ export function renderRingChart(options) {
   };
   const clearLinkedHighlights = () => {
     clearLinkedDots();
+    clearLinkedPlanGridCells();
     clearLinkedHistogramBars();
   };
   const setLinkedHighlightsForPoint = (point) => {
     setLinkedDotsForPoint(point);
     const pointIndex = Number(point && point.index);
     if (!Number.isFinite(pointIndex)) {
+      clearLinkedPlanGridCells();
       clearLinkedHistogramBars();
       return;
     }
+    setLinkedPlanGridCellsForIndex(pointIndex);
     setLinkedHistogramBarsForIndex(pointIndex);
   };
 
@@ -1174,8 +1427,33 @@ export function renderRingChart(options) {
           ? model.aboveThresholdPlanRows
           : [];
         const matchedPlanRow = planRows.find((row) => Number(row && row.cutoffYieldPercent) === cutoffValue);
-        const asteroidsToProspect = Number(matchedPlanRow && matchedPlanRow.asteroidsToProspect);
-        const asteroidsToMine = Number(matchedPlanRow && matchedPlanRow.asteroidsToMine);
+        const planDisplayIndex = Number(point && point.planDisplayIndex);
+        const inferredProspectValue = Number.isFinite(planDisplayIndex)
+          ? Number(
+            aboveThresholdPlanDisplayModel
+            && aboveThresholdPlanDisplayModel.prospectDisplayValues
+            && aboveThresholdPlanDisplayModel.prospectDisplayValues[planDisplayIndex]
+            && aboveThresholdPlanDisplayModel.prospectDisplayValues[planDisplayIndex].value
+          )
+          : Number.NaN;
+        const inferredMineValue = Number.isFinite(planDisplayIndex)
+          ? Number(
+            aboveThresholdPlanDisplayModel
+            && aboveThresholdPlanDisplayModel.mineDisplayValues
+            && aboveThresholdPlanDisplayModel.mineDisplayValues[planDisplayIndex]
+            && aboveThresholdPlanDisplayModel.mineDisplayValues[planDisplayIndex].value
+          )
+          : Number.NaN;
+        const asteroidsToProspect = point.syntheticTrailingPoint
+          ? 0
+          : (point.inferredDisplayTotal
+            ? inferredProspectValue
+            : Number(matchedPlanRow && matchedPlanRow.asteroidsToProspect));
+        const asteroidsToMine = point.syntheticTrailingPoint
+          ? 0
+          : (point.inferredDisplayTotal
+            ? inferredMineValue
+            : Number(matchedPlanRow && matchedPlanRow.asteroidsToMine));
         const targetTons = Number(model && model.targetTons);
         const lead = point.inferredDisplayTotal ? "Estimated: " : "";
         const planMessage = (
@@ -1190,14 +1468,19 @@ export function renderRingChart(options) {
         ].join("\n");
       })()
       : effectiveNormalizeBySessions
-      ? [
-        `${ringName} | ${commodityLabel}`,
-        `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
-        `Cumulative Frequency / Session: ${formatNumber(point.displayTotal, 2)}`,
-        `Bin Frequency / Session: ${formatNumber(point.displayBinCount, 2)}`,
-        `Raw cumulative asteroids: ${formatNumber(point.rawDisplayTotal, 0)}`,
-        `Raw bin asteroids: ${formatNumber(point.binCount, 0)}`
-      ].join("\n")
+      ? (() => {
+        const detailLines = [
+          `${ringName} | ${commodityLabel}`,
+          `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
+          `Cumulative Frequency / Session: ${formatNumber(point.displayTotal, 2)}`,
+          `Bin Frequency / Session: ${formatNumber(point.displayBinCount, 2)}`,
+        ];
+        if (Number(model && model.sessionsCount) > 1) {
+          detailLines.push(`Raw cumulative asteroids: ${formatNumber(point.rawDisplayTotal, 0)}`);
+          detailLines.push(`Raw bin asteroids: ${formatNumber(point.binCount, 0)}`);
+        }
+        return detailLines.join("\n");
+      })()
       : [
         `${ringName} | ${commodityLabel}`,
         `${tooltipRangeStart}% - ${tooltipRangeEnd}%`,
@@ -1291,12 +1574,13 @@ export function renderRingChart(options) {
 
   section.appendChild(
     buildCompareBinLabelsRow(
-      sourcePoints,
+      labelPoints,
       displayReverseAxis,
       applyAdaptiveBinLabels,
       useCdf,
       showCursorTooltip,
       hideCursorTooltip,
+      useCdf ? "% content" : "% content range",
     )
   );
   chartPanel.appendChild(section);

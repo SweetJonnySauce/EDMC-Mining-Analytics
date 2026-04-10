@@ -10,6 +10,7 @@
       --prospect-current-dot-ring: #ffffff;
       --compare-no-data-dot-fill: color-mix(in srgb, var(--prospect-current-dot-fill) 36%, var(--card));
       --compare-no-data-dot-stroke: color-mix(in srgb, var(--card) 90%, #000);
+      --compare-plan-grid-linked-fg: color-mix(in srgb, #fff 88%, var(--accent));
       --ref-p90: color-mix(in srgb, var(--accent) 56%, #ff6e3a);
       --ref-p75: color-mix(in srgb, var(--accent) 82%, #fff);
       --ref-p50: color-mix(in srgb, var(--accent) 45%, #53a7ff);
@@ -27,6 +28,7 @@
         --prospect-current-dot-ring: #000000;
         --compare-no-data-dot-fill: color-mix(in srgb, var(--prospect-current-dot-fill) 56%, var(--card));
         --compare-no-data-dot-stroke: color-mix(in srgb, var(--prospect-current-dot-fill) 72%, #111);
+        --compare-plan-grid-linked-fg: #111111;
       }
     }
 
@@ -39,6 +41,7 @@
       --prospect-current-dot-ring: #000000;
       --compare-no-data-dot-fill: color-mix(in srgb, var(--prospect-current-dot-fill) 56%, var(--card));
       --compare-no-data-dot-stroke: color-mix(in srgb, var(--prospect-current-dot-fill) 72%, #111);
+      --compare-plan-grid-linked-fg: #111111;
     }
 
     :root[data-theme="blue-dark"] {
@@ -68,6 +71,7 @@
       --prospect-current-dot-ring: #000000;
       --compare-no-data-dot-fill: color-mix(in srgb, var(--prospect-current-dot-fill) 56%, var(--card));
       --compare-no-data-dot-stroke: color-mix(in srgb, var(--prospect-current-dot-fill) 72%, #111);
+      --compare-plan-grid-linked-fg: #111111;
     }
 
     :root[data-theme="green-dark"] {
@@ -203,13 +207,13 @@
 
     .compare-controls {
       display: grid;
-      grid-template-columns: minmax(220px, 250px) minmax(260px, 320px) max-content max-content;
+      grid-template-columns: minmax(220px, 250px) minmax(260px, 320px) 1fr 240px max-content;
       grid-template-areas:
-        "commodity crosshairs mode display"
-        "sort yield-basis . display";
+        "commodity sort . mode display"
+        ". . . crosshairs display";
       gap: 12px;
       align-items: stretch;
-      justify-content: space-between;
+      justify-content: stretch;
       border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
       border-radius: 12px;
       padding: 12px;
@@ -230,10 +234,6 @@
       grid-area: sort;
     }
 
-    .compare-control--yield-basis {
-      grid-area: yield-basis;
-    }
-
     .compare-control--crosshairs {
       grid-area: crosshairs;
     }
@@ -248,8 +248,7 @@
 
     .compare-control--commodity,
     .compare-control--sort,
-    .compare-control--crosshairs,
-    .compare-control--yield-basis {
+    .compare-control--crosshairs {
       align-content: start;
     }
 
@@ -275,8 +274,11 @@
     }
 
     .compare-control--crosshairs,
-    .compare-control--yield-basis,
-    .compare-control--mode,
+    .compare-control--mode {
+      justify-self: stretch;
+      width: auto;
+    }
+
     .compare-control--display {
       justify-self: end;
     }
@@ -354,9 +356,20 @@
       grid-template-columns: repeat(3, minmax(0, max-content));
     }
 
-    .compare-control--yield-basis .compare-population-options,
     .compare-control--mode .compare-population-options {
       justify-items: start;
+    }
+
+    .compare-mode-toggle {
+      display: inline-grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 3px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      width: max-content;
+      max-width: 100%;
     }
 
     .compare-reference-option,
@@ -375,6 +388,23 @@
       user-select: none;
       white-space: nowrap;
       width: max-content;
+    }
+
+    .compare-mode-toggle .compare-population-option {
+      justify-content: flex-start;
+      min-height: 28px;
+      padding: 2px 0;
+      border: 0;
+      background: transparent;
+      width: 100%;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .compare-population-option--selected {
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      color: var(--fg);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
     }
 
     .compare-population-option--disabled {
@@ -663,7 +693,9 @@
       font-weight: 700;
       line-height: 1;
       cursor: pointer;
-      vertical-align: middle;
+      vertical-align: text-bottom;
+      position: relative;
+      top: -1px;
     }
 
     .compare-info-button:hover {
@@ -813,6 +845,24 @@
       background: color-mix(in srgb, var(--fg) 2%, transparent);
       padding: 8px 0;
       overflow-x: auto;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .compare-plan-grid-linked-pane {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      border: 1px solid color-mix(in srgb, var(--accent) 48%, transparent);
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
+      transition: opacity 80ms ease-out;
+    }
+
+    .compare-plan-grid-linked-pane.compare-plan-grid-linked-pane--visible {
+      opacity: 1;
     }
 
     .compare-plan-grid-row {
@@ -850,6 +900,20 @@
       text-align: center;
       white-space: nowrap;
       font-variant-numeric: tabular-nums;
+      padding: 2px 4px;
+      border-radius: 0;
+      position: relative;
+      z-index: 1;
+      transition: background-color 80ms ease-out, box-shadow 80ms ease-out, color 80ms ease-out;
+    }
+
+    .compare-plan-grid-value--interactive {
+      cursor: crosshair;
+    }
+
+    .compare-plan-grid-value.compare-plan-grid-value--linked {
+      color: var(--compare-plan-grid-linked-fg);
+      font-weight: 600;
     }
 
     .compare-plot.compare-plot--histogram {
@@ -1162,9 +1226,8 @@
         grid-template-areas:
           "commodity"
           "sort"
-          "yield-basis"
-          "crosshairs"
           "mode"
+          "crosshairs"
           "display";
       }
 

@@ -26,6 +26,7 @@ def test_sanitize_compare_report_settings_defaults_theme() -> None:
     assert settings["compareUseCdf"] == DEFAULT_COMPARE_SETTINGS["compareUseCdf"]
     assert settings["compareTargetTons"] == DEFAULT_COMPARE_SETTINGS["compareTargetTons"]
     assert settings["compareThemeId"] == DEFAULT_COMPARE_SETTINGS["compareThemeId"]
+    assert "selectedYieldPopulationMode" not in settings
 
 
 def test_sanitize_compare_report_settings_accepts_valid_theme() -> None:
@@ -66,3 +67,8 @@ def test_sanitize_compare_report_settings_disables_normalize_when_using_cdf() ->
 def test_sanitize_compare_report_settings_rejects_invalid_theme() -> None:
     settings = sanitize_compare_report_settings({"compareThemeId": "invalid-theme"})
     assert settings["compareThemeId"] == DEFAULT_COMPARE_SETTINGS["compareThemeId"]
+
+
+def test_sanitize_compare_report_settings_ignores_legacy_yield_population_mode() -> None:
+    settings = sanitize_compare_report_settings({"selectedYieldPopulationMode": "present"})
+    assert "selectedYieldPopulationMode" not in settings

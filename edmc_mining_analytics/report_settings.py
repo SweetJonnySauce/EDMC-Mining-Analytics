@@ -30,7 +30,6 @@ DEFAULT_INDEX_SETTINGS = {
 }
 
 DEFAULT_COMPARE_SETTINGS = {
-    "selectedYieldPopulationMode": "all",
     "selectedReferenceCrosshairs": ["avg"],
     "compareShowGridlines": True,
     "compareUseCdf": False,
@@ -202,11 +201,6 @@ def sanitize_compare_report_settings(value: Any) -> dict[str, Any]:
         fallback["compareUseCdf"],
     )
     return {
-        "selectedYieldPopulationMode": _coerce_choice(
-            source.get("selectedYieldPopulationMode"),
-            ALLOWED_YIELD_MODES,
-            fallback["selectedYieldPopulationMode"],
-        ),
         "selectedReferenceCrosshairs": _coerce_reference_crosshairs(
             source.get("selectedReferenceCrosshairs"),
             list(fallback["selectedReferenceCrosshairs"]),

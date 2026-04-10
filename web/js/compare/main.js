@@ -19,7 +19,6 @@ import {
 import { renderRingChart as renderRingChartModule } from "./charts/ring_chart.js";
 import {
   renderReferenceCrosshairControls,
-  renderYieldPopulationControls,
   renderCompareModeControls,
   renderCompareTargetControl,
   renderGridlineControls,
@@ -35,7 +34,6 @@ import { createCompareStateController } from "./state/controller.js";
       const compareTitle = document.getElementById("compare-title");
       const compareCommoditySelect = document.getElementById("compare-commodity-select");
       const compareSortSelect = document.getElementById("compare-sort-select");
-      const comparePopulationOptions = document.getElementById("compare-population-options");
       const compareReferenceOptions = document.getElementById("compare-reference-options");
       const compareModeOptions = document.getElementById("compare-mode-options");
       const compareTargetOptions = document.getElementById("compare-target-options");
@@ -49,10 +47,6 @@ import { createCompareStateController } from "./state/controller.js";
         { key: "p50", label: "P50", metricKey: "p50", quantile: 0.5 },
         { key: "avg", label: "Avg", metricKey: "averageYield", quantile: null },
         { key: "p25", label: "P25", metricKey: "p25", quantile: 0.25 }
-      ];
-      const YIELD_POPULATION_MODES = [
-        { key: "all", label: "All asteroids" },
-        { key: "present", label: "Only w/ Commodity" }
       ];
       const COMPARE_SORT_MODES = new Set([
         "avg_desc",
@@ -71,7 +65,6 @@ import { createCompareStateController } from "./state/controller.js";
       let compareData = null;
       let selectedCommodityKey = "";
       let requestedCommodityKey = "";
-      let selectedYieldPopulationMode = "all";
       let selectedReferenceCrosshairs = new Set(["avg"]);
       let compareShowGridlines = true;
       let compareUseCdf = false;
@@ -87,7 +80,6 @@ import { createCompareStateController } from "./state/controller.js";
         compareData,
         selectedCommodityKey,
         requestedCommodityKey,
-        selectedYieldPopulationMode,
         selectedReferenceCrosshairs,
         compareShowGridlines,
         compareUseCdf,
@@ -109,9 +101,6 @@ import { createCompareStateController } from "./state/controller.js";
         requestedCommodityKey = typeof state.requestedCommodityKey === "string"
           ? state.requestedCommodityKey
           : "";
-        selectedYieldPopulationMode = typeof state.selectedYieldPopulationMode === "string" && state.selectedYieldPopulationMode
-          ? state.selectedYieldPopulationMode
-          : "all";
         selectedReferenceCrosshairs = state.selectedReferenceCrosshairs instanceof Set
           ? new Set(state.selectedReferenceCrosshairs)
           : new Set(["avg"]);
@@ -138,9 +127,6 @@ import { createCompareStateController } from "./state/controller.js";
           compareData: state && typeof state.compareData === "object" ? state.compareData : null,
           selectedCommodityKey: typeof state.selectedCommodityKey === "string" ? state.selectedCommodityKey : "",
           requestedCommodityKey: typeof state.requestedCommodityKey === "string" ? state.requestedCommodityKey : "",
-          selectedYieldPopulationMode: typeof state.selectedYieldPopulationMode === "string" && state.selectedYieldPopulationMode
-            ? state.selectedYieldPopulationMode
-            : "all",
           selectedReferenceCrosshairs: state && state.selectedReferenceCrosshairs instanceof Set
             ? new Set(state.selectedReferenceCrosshairs)
             : new Set(["avg"]),
@@ -222,14 +208,6 @@ import { createCompareStateController } from "./state/controller.js";
         return !!fallback;
       }
 
-      function normalizeYieldPopulationModeSetting(value, fallback) {
-        const text = String(value || "").trim().toLowerCase();
-        if (text === "all" || text === "present") {
-          return text;
-        }
-        return fallback === "present" ? "present" : "all";
-      }
-
       function normalizeReferenceCrosshairsSetting(value, fallback) {
         const source = Array.isArray(value) ? value : [];
         const allowedKeys = new Set(REFERENCE_CROSSHAIRS.map((entry) => entry.key));
@@ -280,7 +258,6 @@ import { createCompareStateController } from "./state/controller.js";
       function buildPersistedCompareReportSettings(stateSnapshot) {
         const renderState = stateSnapshot || getCompareRenderState();
         return {
-          selectedYieldPopulationMode: renderState.selectedYieldPopulationMode === "present" ? "present" : "all",
           selectedReferenceCrosshairs: Array.from(renderState.selectedReferenceCrosshairs || new Set(["avg"])),
           compareShowGridlines: renderState.compareShowGridlines !== false,
           compareUseCdf: !!renderState.compareUseCdf,
@@ -297,9 +274,6 @@ import { createCompareStateController } from "./state/controller.js";
         const defaults = buildPersistedCompareReportSettings(getCompareRenderState());
         const source = rawSettings && typeof rawSettings === "object" ? rawSettings : {};
         const nextCompareUseCdf = normalizeBooleanSetting(source.compareUseCdf, defaults.compareUseCdf);
-        compareStateController.setSelectedYieldPopulationMode(
-          normalizeYieldPopulationModeSetting(source.selectedYieldPopulationMode, defaults.selectedYieldPopulationMode)
-        );
         compareStateController.setSelectedReferenceCrosshairs(
           new Set(
             normalizeReferenceCrosshairsSetting(
@@ -441,13 +415,12 @@ import { createCompareStateController } from "./state/controller.js";
         });
       }
 
-      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, populationMode, targetTons) {
+      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, targetTons) {
         return buildRingCommodityModelModel({
           ring,
           commodityKey,
           interval,
           forcedXMax,
-          populationMode,
           targetTons,
         });
       }
@@ -541,23 +514,6 @@ import { createCompareStateController } from "./state/controller.js";
           selectedReferenceCrosshairs: renderState.selectedReferenceCrosshairs,
           onToggle: (entryKey, checked) => {
             compareStateController.setReferenceCrosshairEnabled(entryKey, checked);
-            schedulePersistCompareReportSettings();
-            renderComparePanels(getCompareRenderState());
-          }
-        });
-      }
-
-      function syncYieldPopulationControls() {
-        if (!comparePopulationOptions) {
-          return;
-        }
-        const renderState = getCompareRenderState();
-        renderYieldPopulationControls({
-          container: comparePopulationOptions,
-          modes: YIELD_POPULATION_MODES,
-          selectedYieldPopulationMode: renderState.selectedYieldPopulationMode,
-          onSelect: (modeKey) => {
-            compareStateController.setSelectedYieldPopulationMode(modeKey);
             schedulePersistCompareReportSettings();
             renderComparePanels(getCompareRenderState());
           }
@@ -664,7 +620,7 @@ import { createCompareStateController } from "./state/controller.js";
         const sharedXMax = Math.max(interval, Math.ceil(globalCommodityPeak / interval) * interval);
         const rows = data.rings.map((ring) => {
           const targetTons = renderState.compareTargetTons;
-          return { ring, metric: buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, renderState.selectedYieldPopulationMode, targetTons) };
+          return { ring, metric: buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, targetTons) };
         }).filter((row) => Number(row && row.metric && row.metric.presentAsteroidsCount) > 0);
         rows.sort((left, right) => {
           if (sortMode === "name_asc") {
@@ -820,26 +776,19 @@ import { createCompareStateController } from "./state/controller.js";
 
           const infoGrid = document.createElement("div");
           infoGrid.className = "info-grid";
-          const usingAllAsteroidsForDisplay = renderState.selectedYieldPopulationMode === "all";
-          const percentileScopeText = usingAllAsteroidsForDisplay
-            ? "inclusive percentile across all prospected asteroids in sessions where this commodity appears at least once; asteroids without this commodity are treated as 0%."
-            : "inclusive percentile across prospected asteroids where this commodity is present.";
-          const averageScopeText = usingAllAsteroidsForDisplay
-            ? "Mean yield across all prospected asteroids in sessions where this commodity appears at least once; asteroids without this commodity are treated as 0%."
-            : "Mean yield across prospected asteroids where this commodity is present.";
+          const percentileScopeText = "inclusive percentile across all prospected asteroids in sessions where this commodity appears at least once; asteroids without this commodity are treated as 0%.";
+          const averageScopeText = "Mean yield across all prospected asteroids in sessions where this commodity appears at least once; asteroids without this commodity are treated as 0%.";
           const buildZeroPercentileTooltip = (baseTooltip, percentileValue) => {
             const value = Number(percentileValue);
             if (!Number.isFinite(value) || value !== 0) {
               return baseTooltip;
             }
-            if (usingAllAsteroidsForDisplay) {
-              const totalAsteroids = Math.max(0, Number(metric.asteroidsCount));
-              const presentAsteroids = Math.max(0, Number(metric.presentAsteroidsCount));
-              const missingAsteroids = Math.max(0, totalAsteroids - presentAsteroids);
-              if (totalAsteroids > 0 && missingAsteroids > 0) {
-                const missingShare = (missingAsteroids / totalAsteroids) * 100;
-                return `${baseTooltip}\n0% summary: ${formatNumber(missingAsteroids, 0)} of ${formatNumber(totalAsteroids, 0)} asteroids (${formatNumber(missingShare, 1)}%) have no ${commodityLabel}.`;
-              }
+            const totalAsteroids = Math.max(0, Number(metric.asteroidsCount));
+            const presentAsteroids = Math.max(0, Number(metric.presentAsteroidsCount));
+            const missingAsteroids = Math.max(0, totalAsteroids - presentAsteroids);
+            if (totalAsteroids > 0 && missingAsteroids > 0) {
+              const missingShare = (missingAsteroids / totalAsteroids) * 100;
+              return `${baseTooltip}\n0% summary: ${formatNumber(missingAsteroids, 0)} of ${formatNumber(totalAsteroids, 0)} asteroids (${formatNumber(missingShare, 1)}%) have no ${commodityLabel}.`;
             }
             return `${baseTooltip}\n0% summary: This percentile lands at 0% yield for ${commodityLabel}.`;
           };
@@ -1035,7 +984,6 @@ import { createCompareStateController } from "./state/controller.js";
         compareStateController.setRequestedCommodityKey(resolveRequestedCommodityKey());
         await loadPersistedCompareReportSettings();
         compareThemePersistenceReady = true;
-        syncYieldPopulationControls();
         syncReferenceCrosshairControls();
         syncCompareModeControls();
         syncCompareTargetControl();
