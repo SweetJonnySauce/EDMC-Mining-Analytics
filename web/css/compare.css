@@ -210,7 +210,7 @@
       grid-template-columns: minmax(220px, 250px) minmax(260px, 320px) 1fr 240px max-content;
       grid-template-areas:
         "commodity sort . mode display"
-        ". . . crosshairs display";
+        "highlights highlights . crosshairs display";
       gap: 12px;
       align-items: stretch;
       justify-content: stretch;
@@ -238,6 +238,10 @@
       grid-area: crosshairs;
     }
 
+    .compare-control--highlights {
+      grid-area: highlights;
+    }
+
     .compare-control--mode {
       grid-area: mode;
     }
@@ -249,6 +253,12 @@
     .compare-control--commodity,
     .compare-control--sort,
     .compare-control--crosshairs {
+      align-content: start;
+    }
+
+    .compare-control--highlights {
+      justify-self: stretch;
+      width: auto;
       align-content: start;
     }
 
@@ -350,6 +360,45 @@
 
     .compare-display-section--target #compare-target-options {
       justify-self: start;
+    }
+
+    .compare-highlights {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .compare-highlight-card {
+      display: grid;
+      gap: 3px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      min-width: 0;
+    }
+
+    .compare-highlight-label {
+      color: var(--muted);
+      font-size: 0.73rem;
+      font-weight: 600;
+      letter-spacing: 0.015em;
+    }
+
+    .compare-highlight-ring {
+      color: var(--fg);
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.25;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .compare-highlight-detail {
+      color: var(--muted);
+      font-size: 0.77rem;
+      line-height: 1.25;
     }
 
     .compare-control--crosshairs .compare-reference-options {
@@ -1226,6 +1275,7 @@
         grid-template-areas:
           "commodity"
           "sort"
+          "highlights"
           "mode"
           "crosshairs"
           "display";
@@ -1242,6 +1292,10 @@
 
       .compare-population-options {
         grid-template-columns: minmax(0, max-content);
+      }
+
+      .compare-highlights {
+        grid-template-columns: 1fr;
       }
 
       .compare-control--display .compare-population-options {

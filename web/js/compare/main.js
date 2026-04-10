@@ -34,6 +34,7 @@ import { createCompareStateController } from "./state/controller.js";
       const compareTitle = document.getElementById("compare-title");
       const compareCommoditySelect = document.getElementById("compare-commodity-select");
       const compareSortSelect = document.getElementById("compare-sort-select");
+      const compareHighlights = document.getElementById("compare-highlights");
       const compareReferenceOptions = document.getElementById("compare-reference-options");
       const compareModeOptions = document.getElementById("compare-mode-options");
       const compareTargetOptions = document.getElementById("compare-target-options");
@@ -503,6 +504,102 @@ import { createCompareStateController } from "./state/controller.js";
         return winner || "--";
       }
 
+      function renderCompareHighlights(rows, commodityLabel) {
+        if (!compareHighlights) {
+          return;
+        }
+        compareHighlights.innerHTML = "";
+        const safeRows = Array.isArray(rows) ? rows : [];
+        if (!safeRows.length) {
+          const empty = document.createElement("div");
+          empty.className = "compare-highlight-card";
+          const label = document.createElement("div");
+          label.className = "compare-highlight-label";
+          label.textContent = "Highlights";
+          const detail = document.createElement("div");
+          detail.className = "compare-highlight-detail";
+          detail.textContent = `No ring highlights available for ${commodityLabel || "this commodity"}.`;
+          empty.appendChild(label);
+          empty.appendChild(detail);
+          compareHighlights.appendChild(empty);
+          return;
+        }
+        const preferredByAverage = [...safeRows].sort((left, right) => {
+          const leftAvg = Number(left && left.metric && left.metric.averageYield);
+          const rightAvg = Number(right && right.metric && right.metric.averageYield);
+          const leftValid = Number.isFinite(leftAvg);
+          const rightValid = Number.isFinite(rightAvg);
+          if (leftValid && rightValid && leftAvg !== rightAvg) {
+            return rightAvg - leftAvg;
+          }
+          if (leftValid !== rightValid) {
+            return leftValid ? -1 : 1;
+          }
+          return String(left && left.ring && left.ring.ringName || "").localeCompare(String(right && right.ring && right.ring.ringName || ""));
+        });
+        const preferredByAsteroids = [...safeRows].sort((left, right) => {
+          const leftCount = Number(left && left.metric && left.metric.asteroidsCount);
+          const rightCount = Number(right && right.metric && right.metric.asteroidsCount);
+          const leftValid = Number.isFinite(leftCount);
+          const rightValid = Number.isFinite(rightCount);
+          if (leftValid && rightValid && leftCount !== rightCount) {
+            return rightCount - leftCount;
+          }
+          if (leftValid !== rightValid) {
+            return leftValid ? -1 : 1;
+          }
+          return String(left && left.ring && left.ring.ringName || "").localeCompare(String(right && right.ring && right.ring.ringName || ""));
+        });
+        const highlightEntries = [
+          {
+            label: "Best Yield Ring",
+            row: preferredByAverage[0],
+            detail: (row) => {
+              const averageYield = Number(row && row.metric && row.metric.averageYield);
+              return Number.isFinite(averageYield)
+                ? `${formatNumber(averageYield, 2)}% avg ${commodityLabel} yield`
+                : `No average ${commodityLabel} yield available`;
+            },
+          },
+          {
+            label: "Most Mined Ring",
+            row: preferredByAsteroids[0],
+            detail: (row) => {
+              const asteroidCount = Number(row && row.metric && row.metric.asteroidsCount);
+              const sessionCount = Number(row && row.metric && row.metric.sessionsCount);
+              const asteroidText = Number.isFinite(asteroidCount)
+                ? `${formatNumber(asteroidCount, 0)} asteroids`
+                : "No asteroid count";
+              const sessionText = Number.isFinite(sessionCount)
+                ? `${formatNumber(sessionCount, 0)} sessions`
+                : "session count unavailable";
+              return `${asteroidText} across ${sessionText}`;
+            },
+          },
+        ];
+        highlightEntries.forEach((entry) => {
+          const card = document.createElement("div");
+          card.className = "compare-highlight-card";
+          const label = document.createElement("div");
+          label.className = "compare-highlight-label";
+          label.textContent = entry.label;
+          const ring = document.createElement("div");
+          ring.className = "compare-highlight-ring";
+          ring.textContent = entry.row && entry.row.ring && entry.row.ring.ringName
+            ? entry.row.ring.ringName
+            : "--";
+          const detail = document.createElement("div");
+          detail.className = "compare-highlight-detail";
+          detail.textContent = typeof entry.detail === "function"
+            ? entry.detail(entry.row)
+            : "";
+          card.appendChild(label);
+          card.appendChild(ring);
+          card.appendChild(detail);
+          compareHighlights.appendChild(card);
+        });
+      }
+
       function syncReferenceCrosshairControls() {
         if (!compareReferenceOptions) {
           return;
@@ -599,6 +696,7 @@ import { createCompareStateController } from "./state/controller.js";
         const data = renderState.compareData;
         if (!compareList || !data) {
           setCompareTitle("");
+          renderCompareHighlights([], "");
           return;
         }
         const commodityKey = renderState.selectedCommodityKey;
@@ -673,6 +771,7 @@ import { createCompareStateController } from "./state/controller.js";
 
         compareList.innerHTML = "";
         if (!rows.length) {
+          renderCompareHighlights([], commodityLabel);
           const note = document.createElement("p");
           note.className = "compare-empty";
           note.textContent = `No rings have ${commodityLabel} data.`;
@@ -680,6 +779,7 @@ import { createCompareStateController } from "./state/controller.js";
           setStatus(`Showing 0 rings for ${commodityLabel}.`, false);
           return;
         }
+        renderCompareHighlights(rows, commodityLabel);
         const pendingChartRenders = [];
         rows.forEach(({ ring, metric }) => {
           const row = document.createElement("article");
