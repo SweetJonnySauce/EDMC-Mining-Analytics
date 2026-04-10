@@ -1,6 +1,14 @@
 import { interpolateMissingValuesBetweenRealBins } from "../models/compare_model.js";
+import { getResInfoDialogModel } from "../ui/res_info.js";
 
-function buildCompareBinLabelsRow(points, reverseCumulative, applyAdaptiveBinLabels, useThresholdLabels) {
+function buildCompareBinLabelsRow(
+  points,
+  reverseCumulative,
+  applyAdaptiveBinLabels,
+  useThresholdLabels,
+  showCursorTooltip,
+  hideCursorTooltip,
+) {
   const labels = document.createElement("div");
   labels.className = "compare-bin-labels";
   const labelPoints = reverseCumulative ? [...points].reverse() : points;
@@ -14,6 +22,20 @@ function buildCompareBinLabelsRow(points, reverseCumulative, applyAdaptiveBinLab
     labelTexts[index] = useThresholdLabels
       ? `${formatThresholdLabel(point, reverseCumulative)}%`
       : `${labelRangeStart}-${labelRangeEnd}%`;
+    if (useThresholdLabels) {
+      label.setAttribute("aria-label", "% content");
+      if (typeof showCursorTooltip === "function" && typeof hideCursorTooltip === "function") {
+        label.addEventListener("mouseenter", (event) => {
+          showCursorTooltip("% content", event);
+        });
+        label.addEventListener("mousemove", (event) => {
+          showCursorTooltip("% content", event);
+        });
+        label.addEventListener("mouseleave", () => {
+          hideCursorTooltip();
+        });
+      }
+    }
     labels.appendChild(label);
   });
   applyAdaptiveBinLabels(labels, labelTexts, 4);
@@ -32,6 +54,179 @@ function formatThresholdLabel(point, reverseCumulative) {
   }
   const value = reverseCumulative ? Number(point.intervalEnd) : Number(point.intervalStart);
   return Number.isFinite(value) ? String(value) : "0";
+}
+
+function buildResInfoDialog(showCursorTooltip, hideCursorTooltip) {
+  const model = getResInfoDialogModel();
+  const dialog = document.createElement("dialog");
+  dialog.className = "compare-info-dialog";
+
+  const content = document.createElement("div");
+  content.className = "compare-info-dialog-content";
+
+  const title = document.createElement("h3");
+  title.className = "compare-info-dialog-title";
+  title.textContent = model.title;
+  content.appendChild(title);
+
+  const summaryItems = Array.isArray(model.summaryPoints) ? model.summaryPoints : [];
+  if (summaryItems.length) {
+    const summaryList = document.createElement("ul");
+    summaryList.className = "compare-info-dialog-list";
+    summaryItems.forEach((item) => {
+      const text = String(item || "").trim();
+      if (!text) {
+        return;
+      }
+      const entry = document.createElement("li");
+      entry.textContent = text;
+      summaryList.appendChild(entry);
+    });
+    if (summaryList.childElementCount) {
+      content.appendChild(summaryList);
+    }
+  }
+
+  const tableSections = Array.isArray(model.tables) ? model.tables : [];
+  tableSections.forEach((sectionModel) => {
+    const rows = Array.isArray(sectionModel && sectionModel.rows) ? sectionModel.rows : [];
+    const columns = Array.isArray(sectionModel && sectionModel.columns) ? sectionModel.columns : [];
+    if (!rows.length || columns.length < 2) {
+      return;
+    }
+
+    const section = document.createElement("section");
+    section.className = "compare-info-dialog-section";
+
+    const heading = document.createElement("h4");
+    heading.className = "compare-info-dialog-section-title";
+    heading.textContent = String(sectionModel.title || "").trim() || "Details";
+    section.appendChild(heading);
+
+    const description = String(sectionModel.description || "").trim();
+    if (description) {
+      const body = document.createElement("p");
+      body.className = "compare-info-dialog-description";
+      body.textContent = description;
+      section.appendChild(body);
+    }
+
+    const table = document.createElement("table");
+    table.className = "compare-info-dialog-table";
+
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    columns.forEach((columnLabel) => {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = String(columnLabel || "").trim();
+      headRow.appendChild(cell);
+    });
+    head.appendChild(headRow);
+    table.appendChild(head);
+
+    const body = document.createElement("tbody");
+    rows.forEach((rowValues) => {
+      if (!Array.isArray(rowValues) || rowValues.length < 2) {
+        return;
+      }
+      const row = document.createElement("tr");
+      rowValues.forEach((value, index) => {
+        const cell = document.createElement(index === 0 ? "th" : "td");
+        if (index === 0) {
+          cell.scope = "row";
+        }
+        cell.textContent = String(value || "").trim();
+        row.appendChild(cell);
+      });
+      body.appendChild(row);
+    });
+    if (!body.childElementCount) {
+      return;
+    }
+    table.appendChild(body);
+    section.appendChild(table);
+    content.appendChild(section);
+  });
+
+  const closingNote = String(model.closingNote || "").trim();
+  if (closingNote) {
+    const note = document.createElement("p");
+    note.className = "compare-info-dialog-note";
+    note.textContent = closingNote;
+    content.appendChild(note);
+  }
+
+  const source = document.createElement("p");
+  source.className = "compare-info-dialog-source";
+  source.append("Source: ");
+  const link = document.createElement("a");
+  link.href = model.sourceUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = model.sourceUrl;
+  source.appendChild(link);
+  content.appendChild(source);
+
+  const actions = document.createElement("div");
+  actions.className = "compare-info-dialog-actions";
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.className = "compare-info-dialog-close";
+  closeButton.textContent = "Close";
+  closeButton.addEventListener("click", () => {
+    if (dialog.open) {
+      dialog.close();
+    }
+  });
+  actions.appendChild(closeButton);
+  content.appendChild(actions);
+
+  dialog.appendChild(content);
+  dialog.addEventListener("click", (event) => {
+    const rect = dialog.getBoundingClientRect();
+    const withinBounds = (
+      event.clientX >= rect.left
+      && event.clientX <= rect.right
+      && event.clientY >= rect.top
+      && event.clientY <= rect.bottom
+    );
+    if (!withinBounds && dialog.open) {
+      dialog.close();
+    }
+  });
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "compare-info-button";
+  button.textContent = "i";
+  button.setAttribute("aria-label", "Explain the outside-RES yield assumption");
+  if (typeof showCursorTooltip === "function" && typeof hideCursorTooltip === "function") {
+    button.addEventListener("mouseenter", (event) => {
+      showCursorTooltip("Explain the outside-RES yield assumption", event);
+    });
+    button.addEventListener("mousemove", (event) => {
+      showCursorTooltip("Explain the outside-RES yield assumption", event);
+    });
+    button.addEventListener("mouseleave", () => {
+      hideCursorTooltip();
+    });
+  }
+  button.addEventListener("click", () => {
+    if (typeof hideCursorTooltip === "function") {
+      hideCursorTooltip();
+    }
+    if (dialog.open) {
+      return;
+    }
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal();
+      return;
+    }
+    dialog.setAttribute("open", "open");
+  });
+
+  return { button, dialog };
 }
 
 function renderHistogramSection(options) {
@@ -210,7 +405,16 @@ function renderHistogramSection(options) {
     }
     hideCursorTooltip();
   });
-  section.appendChild(buildCompareBinLabelsRow(model.points, reverseCumulative, applyAdaptiveBinLabels));
+  section.appendChild(
+    buildCompareBinLabelsRow(
+      model.points,
+      reverseCumulative,
+      applyAdaptiveBinLabels,
+      false,
+      showCursorTooltip,
+      hideCursorTooltip,
+    )
+  );
   chartPanel.appendChild(section);
 }
 
@@ -220,6 +424,8 @@ function renderAboveThresholdGridSection(options) {
     commodityLabel,
     model,
     formatNumber,
+    showCursorTooltip,
+    hideCursorTooltip,
   } = options || {};
   const section = document.createElement("div");
   section.className = "compare-chart-section compare-chart-section--data-grid";
@@ -233,8 +439,17 @@ function renderAboveThresholdGridSection(options) {
   note.className = "compare-grid-note";
   const targetTons = Number(model && model.targetTons);
   const tonsPerPercentagePoint = Number(model && model.tonsPerPercentagePoint);
-  note.textContent = `Projected to fill ${formatNumber(targetTons, 0)}t using ${formatNumber(tonsPerPercentagePoint, 2)}t per percentage point outside RES. Prospect estimates use all prospected asteroids.`;
+  const { button: resInfoButton, dialog: resInfoDialog } = buildResInfoDialog(
+    showCursorTooltip,
+    hideCursorTooltip,
+  );
+  note.append(
+    `Projected to fill ${formatNumber(targetTons, 0)}t using ${formatNumber(tonsPerPercentagePoint, 2)}t per percentage point outside RES`
+  );
+  note.appendChild(resInfoButton);
+  note.append(". Prospect estimates use all prospected asteroids.");
   section.appendChild(note);
+  section.appendChild(resInfoDialog);
 
   const rawRows = Array.isArray(model && model.aboveThresholdPlanRows)
     ? model.aboveThresholdPlanRows
@@ -423,6 +638,8 @@ export function renderRingChart(options) {
       commodityLabel,
       model,
       formatNumber,
+      showCursorTooltip,
+      hideCursorTooltip,
     });
   } else if (showHistogram) {
     renderHistogramSection({
@@ -501,7 +718,19 @@ export function renderRingChart(options) {
   yTicks.forEach((value) => {
     const tick = document.createElement("span");
     tick.className = "compare-y-axis-tick";
-    tick.textContent = useCdf ? formatNumber(value, 2) : String(value);
+    tick.textContent = useCdf ? `${formatNumber(value * 100, 0)}%` : String(value);
+    if (useCdf) {
+      tick.setAttribute("aria-label", "% of asteroids above % content");
+      tick.addEventListener("mouseenter", (event) => {
+        showCursorTooltip("% of asteroids above % content", event);
+      });
+      tick.addEventListener("mousemove", (event) => {
+        showCursorTooltip("% of asteroids above % content", event);
+      });
+      tick.addEventListener("mouseleave", () => {
+        hideCursorTooltip();
+      });
+    }
     yAxisTicks.appendChild(tick);
   });
   yAxis.appendChild(yAxisTicks);
@@ -938,13 +1167,28 @@ export function renderRingChart(options) {
     const tooltipRangeStart = displayReverseAxis ? point.intervalEnd : point.intervalStart;
     const tooltipRangeEnd = displayReverseAxis ? point.intervalStart : point.intervalEnd;
     const detail = useCdf
-      ? [
-        `${ringName} | ${commodityLabel}`,
-        `Cutoff Yield: ${formatThresholdLabel(point, displayReverseAxis)}%`,
-        `${point.inferredDisplayTotal ? "Above-Threshold % (inferred)" : "Above-Threshold %"}: ${formatNumber(point.displayTotal * 100, 1)}%`,
-        `Raw cumulative asteroids: ${formatNumber(point.rawDisplayTotal, 0)}`,
-        `Bin Frequency: ${formatNumber(point.binCount, 0)}`
-      ].join("\n")
+      ? (() => {
+        const cutoffLabel = formatThresholdLabel(point, displayReverseAxis);
+        const cutoffValue = Number(point && point.intervalStart);
+        const planRows = Array.isArray(model && model.aboveThresholdPlanRows)
+          ? model.aboveThresholdPlanRows
+          : [];
+        const matchedPlanRow = planRows.find((row) => Number(row && row.cutoffYieldPercent) === cutoffValue);
+        const asteroidsToProspect = Number(matchedPlanRow && matchedPlanRow.asteroidsToProspect);
+        const asteroidsToMine = Number(matchedPlanRow && matchedPlanRow.asteroidsToMine);
+        const targetTons = Number(model && model.targetTons);
+        const lead = point.inferredDisplayTotal ? "Estimated: " : "";
+        const planMessage = (
+          asteroidsToProspect === 0 && asteroidsToMine === 0
+            ? "Good luck CMDR! At this rate, you'll never fill your cargo hold."
+            : `You will need to prospect ${Number.isFinite(asteroidsToProspect) ? formatNumber(asteroidsToProspect, 0) : "--"} asteroids and mine ${Number.isFinite(asteroidsToMine) ? formatNumber(asteroidsToMine, 0) : "--"} asteroids to get ${Number.isFinite(targetTons) ? formatNumber(targetTons, 0) : "--"} tons of cargo.`
+        );
+        return [
+          `${ringName} | ${commodityLabel}`,
+          `${lead}${formatNumber(point.displayTotal * 100, 1)}% of asteroids have more than ${cutoffLabel}% ${commodityLabel} content.`,
+          planMessage
+        ].join("\n");
+      })()
       : effectiveNormalizeBySessions
       ? [
         `${ringName} | ${commodityLabel}`,
@@ -1045,6 +1289,15 @@ export function renderRingChart(options) {
   surface.appendChild(svg);
   plot.addEventListener("mouseleave", hideCrosshair);
 
-  section.appendChild(buildCompareBinLabelsRow(sourcePoints, displayReverseAxis, applyAdaptiveBinLabels, useCdf));
+  section.appendChild(
+    buildCompareBinLabelsRow(
+      sourcePoints,
+      displayReverseAxis,
+      applyAdaptiveBinLabels,
+      useCdf,
+      showCursorTooltip,
+      hideCursorTooltip,
+    )
+  );
   chartPanel.appendChild(section);
 }

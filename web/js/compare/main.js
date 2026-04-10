@@ -849,7 +849,16 @@ import { createCompareStateController } from "./state/controller.js";
             label.className = "label";
             label.textContent = `${labelText}:`;
             if (typeof tooltipText === "string" && tooltipText.trim()) {
-              label.title = tooltipText;
+              label.setAttribute("aria-label", tooltipText);
+              label.addEventListener("mouseenter", (event) => {
+                showCursorTooltip(tooltipText, event);
+              });
+              label.addEventListener("mousemove", (event) => {
+                showCursorTooltip(tooltipText, event);
+              });
+              label.addEventListener("mouseleave", () => {
+                hideCursorTooltip();
+              });
             }
             const value = document.createElement("span");
             value.className = "value";

@@ -558,6 +558,164 @@
       line-height: 1.45;
     }
 
+    .compare-info-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.2rem;
+      height: 1.2rem;
+      margin-left: 0.22rem;
+      border: 1px solid color-mix(in srgb, var(--accent) 52%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    .compare-info-button:hover {
+      border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+      background: color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+
+    .compare-info-button:focus-visible,
+    .compare-info-dialog-close:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 82%, #fff);
+      outline-offset: 2px;
+    }
+
+    .compare-info-dialog {
+      width: min(620px, calc(100vw - 32px));
+      max-width: 620px;
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+      border-radius: 12px;
+      padding: 0;
+      background: color-mix(in srgb, var(--card) 96%, #000);
+      color: var(--fg);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+    }
+
+    .compare-info-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.56);
+    }
+
+    .compare-info-dialog-content {
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+    }
+
+    .compare-info-dialog-title {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--fg);
+    }
+
+    .compare-info-dialog-list {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .compare-info-dialog-list li + li {
+      margin-top: 0.3rem;
+    }
+
+    .compare-info-dialog-section {
+      display: grid;
+      gap: 6px;
+    }
+
+    .compare-info-dialog-section-title {
+      margin: 0;
+      font-size: 0.92rem;
+      color: var(--fg);
+    }
+
+    .compare-info-dialog-description,
+    .compare-info-dialog-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .compare-info-dialog-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .compare-info-dialog-table thead {
+      background: color-mix(in srgb, var(--fg) 5%, transparent);
+    }
+
+    .compare-info-dialog-table th,
+    .compare-info-dialog-table td {
+      padding: 7px 9px;
+      border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+      text-align: left;
+    }
+
+    .compare-info-dialog-table tbody tr:last-child th,
+    .compare-info-dialog-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .compare-info-dialog-table thead th {
+      color: var(--fg);
+      font-weight: 700;
+    }
+
+    .compare-info-dialog-table tbody th {
+      color: var(--fg);
+      font-weight: 600;
+      width: 38%;
+    }
+
+    .compare-info-dialog-table tbody td {
+      color: var(--muted);
+    }
+
+    .compare-info-dialog-source {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .compare-info-dialog-source a {
+      color: var(--fg);
+    }
+
+    .compare-info-dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .compare-info-dialog-close {
+      border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      cursor: pointer;
+    }
+
     .compare-plan-grid {
       display: grid;
       gap: 4px;
@@ -661,7 +819,7 @@
       position: absolute;
       right: 0;
       white-space: nowrap;
-      pointer-events: none;
+      pointer-events: auto;
       transform: translateY(-50%);
     }
 
