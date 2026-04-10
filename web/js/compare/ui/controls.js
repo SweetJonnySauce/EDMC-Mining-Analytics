@@ -135,6 +135,10 @@ export function renderCompareTargetControl(options) {
     wrapper.classList.add("compare-text-control--disabled");
   }
 
+  const label = document.createElement("span");
+  label.className = "compare-text-control-label";
+  label.textContent = "Cargo Target";
+
   const input = document.createElement("input");
   input.type = "text";
   input.inputMode = "numeric";
@@ -164,6 +168,7 @@ export function renderCompareTargetControl(options) {
     input.blur();
   });
 
+  wrapper.appendChild(label);
   wrapper.appendChild(input);
   wrapper.appendChild(suffix);
   container.appendChild(wrapper);

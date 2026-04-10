@@ -5,7 +5,6 @@ from __future__ import annotations
 import queue
 import threading
 import time
-import json
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
@@ -18,6 +17,11 @@ except ImportError as exc:  # pragma: no cover - EDMC always provides tkinter
     raise RuntimeError("Tkinter must be available for EDMC plugins") from exc
 
 from ..logging_utils import get_logger
+from ..favorite_rings import (
+    FAVORITES_FILENAME,
+    load_favorite_rings,
+    save_favorite_rings,
+)
 from ..state import MiningState
 from ..integrations.spansh_hotspots import (
     DEFAULT_RESULT_SIZE,
@@ -422,7 +426,7 @@ class HotspotSearchWindow:
     )
     FAVORITE_STAR_EMPTY = "✩"
     FAVORITE_STAR_FILLED = "✭"
-    FAVORITES_FILENAME = "hotspot_favorite_rings.json"
+    FAVORITES_FILENAME = FAVORITES_FILENAME
     FAVORITE_COLUMN_WIDTH = 40
     RESULTS_PER_PAGE = DEFAULT_RESULT_SIZE
     SIGNALS_COLUMN_HEADING = "Signals (qty) (known avg yield: all asteroids)"
@@ -2165,14 +2169,14 @@ class HotspotSearchWindow:
         if path is None:
             self._favorite_rings = set()
             return
-        self._favorite_rings = self._load_favorite_rings_file(path)
+        self._favorite_rings = load_favorite_rings(path)
 
     def _save_favorite_rings_to_disk(self) -> bool:
         path = self._resolve_favorites_path()
         if path is None:
             return False
         try:
-            self._save_favorite_rings_file(path, self._favorite_rings)
+            save_favorite_rings(path, self._favorite_rings)
         except Exception:
             _log.exception("Failed saving favorite rings file: %s", path)
             return False
@@ -2180,37 +2184,11 @@ class HotspotSearchWindow:
 
     @staticmethod
     def _load_favorite_rings_file(path: Path) -> set[str]:
-        if not path.exists():
-            return set()
-        try:
-            with path.open("r", encoding="utf-8") as handle:
-                payload = json.load(handle)
-        except Exception:
-            _log.exception("Failed reading favorite rings file: %s", path)
-            return set()
-
-        values: Sequence[object]
-        if isinstance(payload, dict):
-            candidate = payload.get("favorite_rings")
-            values = candidate if isinstance(candidate, list) else []
-        elif isinstance(payload, list):
-            values = payload
-        else:
-            values = []
-
-        rings: set[str] = set()
-        for value in values:
-            text = str(value or "").strip()
-            if text:
-                rings.add(text)
-        return rings
+        return load_favorite_rings(path)
 
     @staticmethod
     def _save_favorite_rings_file(path: Path, rings: Sequence[str]) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {"favorite_rings": sorted({str(ring).strip() for ring in rings if str(ring).strip()})}
-        with path.open("w", encoding="utf-8") as handle:
-            json.dump(payload, handle, indent=2)
+        save_favorite_rings(path, rings)
 
     def _schedule_result_poll(self) -> None:
         if not self._toplevel or not self._toplevel.winfo_exists():

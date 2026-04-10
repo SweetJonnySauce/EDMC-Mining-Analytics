@@ -8,6 +8,7 @@ import {
   fetchAnalysisSettings,
   saveAnalysisReportSettings,
   fetchFavoriteRings,
+  saveFavoriteRings,
   fetchProspectedAsteroidSummary
 } from "../data/session_api.js";
 import {
@@ -501,6 +502,19 @@ import { createCompareStateController } from "./state/controller.js";
         }
       }
 
+      async function persistFavoriteRingNames(nextFavoriteRingNames) {
+        const values = Array.from(nextFavoriteRingNames || new Set())
+          .map((value) => String(value || "").trim())
+          .filter((value) => !!value);
+        const result = await saveFavoriteRings(values);
+        if (!result.ok) {
+          throw new Error(`HTTP ${result.status}`);
+        }
+        const payload = result.data;
+        const rows = Array.isArray(payload && payload.favorite_rings) ? payload.favorite_rings : values;
+        return new Set(rows.map((value) => String(value || "").trim()).filter((value) => !!value));
+      }
+
       function dominantLabel(countMap) {
         if (!(countMap instanceof Map) || countMap.size === 0) {
           return "--";
@@ -720,15 +734,66 @@ import { createCompareStateController } from "./state/controller.js";
 
           const ringTitle = document.createElement("h2");
           ringTitle.className = "ring-title";
-          ringTitle.textContent = ring.ringName;
-          if (renderState.favoriteRingNames.has(String(ring.ringName || "").trim())) {
-            const favoriteStar = document.createElement("span");
-            favoriteStar.className = "ring-title-favorite";
-            favoriteStar.textContent = "★";
-            favoriteStar.title = "Favorite rings in the hotspot finder.";
-            favoriteStar.setAttribute("aria-label", "Favorite rings in the hotspot finder.");
-            ringTitle.appendChild(favoriteStar);
-          }
+          const ringNameText = document.createElement("span");
+          ringNameText.textContent = ring.ringName;
+          ringTitle.appendChild(ringNameText);
+          const ringName = String(ring.ringName || "").trim();
+          const favoriteStar = document.createElement("button");
+          favoriteStar.type = "button";
+          favoriteStar.className = "ring-title-favorite-button";
+          const syncFavoriteButton = (isFavorited) => {
+            favoriteStar.classList.toggle("ring-title-favorite-button--active", !!isFavorited);
+            favoriteStar.textContent = isFavorited ? "★" : "☆";
+            favoriteStar.setAttribute(
+              "aria-label",
+              isFavorited
+                ? "Remove ring from favorites"
+                : "Add ring to favorites"
+            );
+          };
+          syncFavoriteButton(renderState.favoriteRingNames.has(ringName));
+          favoriteStar.addEventListener("mouseenter", (event) => {
+            showCursorTooltip("Toggle favorite ring", event);
+          });
+          favoriteStar.addEventListener("mousemove", (event) => {
+            showCursorTooltip("Toggle favorite ring", event);
+          });
+          favoriteStar.addEventListener("mouseleave", () => {
+            hideCursorTooltip();
+          });
+          favoriteStar.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!ringName) {
+              return;
+            }
+            const currentFavorites = getCompareRenderState().favoriteRingNames;
+            const nextFavoriteRingNames = new Set(currentFavorites);
+            const wasFavorited = nextFavoriteRingNames.has(ringName);
+            if (wasFavorited) {
+              nextFavoriteRingNames.delete(ringName);
+            } else {
+              nextFavoriteRingNames.add(ringName);
+            }
+            compareStateController.setFavoriteRingNames(nextFavoriteRingNames);
+            renderComparePanels(getCompareRenderState());
+            try {
+              const persistedFavoriteRingNames = await persistFavoriteRingNames(nextFavoriteRingNames);
+              compareStateController.setFavoriteRingNames(persistedFavoriteRingNames);
+              renderComparePanels(getCompareRenderState());
+              setStatus(
+                wasFavorited
+                  ? `Removed favorite: ${ringName}`
+                  : `Favorited ring: ${ringName}`,
+                false
+              );
+            } catch (_error) {
+              compareStateController.setFavoriteRingNames(currentFavorites);
+              renderComparePanels(getCompareRenderState());
+              setStatus("Failed to save favorite ring selection.", true);
+            }
+          });
+          ringTitle.appendChild(favoriteStar);
           infoPanel.appendChild(ringTitle);
 
           const chartPanel = document.createElement("section");
