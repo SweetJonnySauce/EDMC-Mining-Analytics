@@ -1,6 +1,7 @@
-import { fetchProspectedAsteroidSummary } from "../data/session_api.js";
+import { fetchProspectedAsteroidSummary, saveAnalysisReportSettings } from "../data/session_api.js";
 import { buildCompareData } from "../compare/models/compare_model.js";
 import { buildSessionViolinModel, clusterSessionValueMarkers } from "../compare/models/session_violin_model.js";
+import { buildPersistedCompareThemeUpdate } from "./theme_persistence.js";
 import { normalizeTextKey, normalizeCommodityKey } from "../shared/normalize.js";
 import { formatNumber } from "../shared/number.js";
 import { buildSessionAnalysisUrl } from "../shared/session_navigation.js";
@@ -18,6 +19,8 @@ import { createTooltipController } from "../shared/tooltip.js";
   const summaryElement = document.getElementById("session-violin-summary");
   const chartElement = document.getElementById("session-violin-chart");
   const THEME_STORAGE_KEY = "edmcma.analysis.theme";
+  let sessionThemeSaveTimer = null;
+  let sessionThemePersistenceReady = false;
 
   const tooltipController = createTooltipController();
   const themeController = createThemeController({
@@ -27,7 +30,27 @@ import { createTooltipController } from "../shared/tooltip.js";
     storageKey: THEME_STORAGE_KEY,
     defaultThemeId: DEFAULT_THEME_ID,
     themeOptions: THEME_OPTIONS,
+    onThemeChange: (themeId) => {
+      if (!sessionThemePersistenceReady) {
+        return;
+      }
+      schedulePersistCompareTheme(themeId);
+    },
   });
+
+  function schedulePersistCompareTheme(themeId) {
+    if (sessionThemeSaveTimer !== null) {
+      window.clearTimeout(sessionThemeSaveTimer);
+    }
+    sessionThemeSaveTimer = window.setTimeout(async () => {
+      sessionThemeSaveTimer = null;
+      try {
+        await saveAnalysisReportSettings(buildPersistedCompareThemeUpdate(themeId));
+      } catch (_error) {
+        // Keep the session report responsive if theme persistence is unavailable.
+      }
+    }, 350);
+  }
 
   function setStatus(text, isError) {
     if (!statusElement) {
@@ -528,6 +551,7 @@ import { createTooltipController } from "../shared/tooltip.js";
 
   async function initializePage() {
     themeController.initialize();
+    sessionThemePersistenceReady = true;
     if (titleInfoAnchor) {
       const { button, dialog } = buildViolinInfoDialog();
       titleInfoAnchor.replaceChildren(button);
