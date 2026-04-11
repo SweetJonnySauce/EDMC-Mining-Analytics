@@ -196,6 +196,26 @@ import { createCompareStateController } from "./state/controller.js";
         compareTitle.textContent = `Compare ${label} Yield Across Rings`;
       }
 
+      function openSessionViolinWindow(ringName, commodityKey, commodityLabel, themeId) {
+        const safeRingName = String(ringName || "").trim();
+        const safeCommodityKey = normalizeCommodityKey(commodityKey);
+        if (!safeRingName || !safeCommodityKey) {
+          return;
+        }
+        const params = new URLSearchParams();
+        params.set("ring", safeRingName);
+        params.set("commodity", safeCommodityKey);
+        if (commodityLabel) {
+          params.set("commodity_label", String(commodityLabel).trim());
+        }
+        const safeThemeId = String(themeId || "").trim();
+        if (safeThemeId) {
+          params.set("theme", safeThemeId);
+        }
+        const url = `/web/compare_sessions.html?${params.toString()}`;
+        window.open(url, "_blank", "noopener");
+      }
+
       function normalizeBooleanSetting(value, fallback) {
         if (value === true || value === false) {
           return value;
@@ -788,12 +808,39 @@ import { createCompareStateController } from "./state/controller.js";
           const infoPanel = document.createElement("section");
           infoPanel.className = "ring-info-panel";
 
+          const ringTitleRow = document.createElement("div");
+          ringTitleRow.className = "ring-title-row";
           const ringTitle = document.createElement("h2");
           ringTitle.className = "ring-title";
           const ringNameText = document.createElement("span");
           ringNameText.textContent = ring.ringName;
           ringTitle.appendChild(ringNameText);
           const ringName = String(ring.ringName || "").trim();
+          const ringTitleActions = document.createElement("div");
+          ringTitleActions.className = "ring-title-actions";
+          const sessionsButton = document.createElement("button");
+          sessionsButton.type = "button";
+          sessionsButton.className = "ring-title-action-button";
+          sessionsButton.textContent = "Sessions";
+          sessionsButton.addEventListener("mouseenter", (event) => {
+            showCursorTooltip("Open session violin chart", event);
+          });
+          sessionsButton.addEventListener("mousemove", (event) => {
+            showCursorTooltip("Open session violin chart", event);
+          });
+          sessionsButton.addEventListener("mouseleave", () => {
+            hideCursorTooltip();
+          });
+          sessionsButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openSessionViolinWindow(
+              ringName,
+              commodityKey,
+              commodityLabel,
+              renderState.activeThemeId
+            );
+          });
           const favoriteStar = document.createElement("button");
           favoriteStar.type = "button";
           favoriteStar.className = "ring-title-favorite-button";
@@ -849,8 +896,10 @@ import { createCompareStateController } from "./state/controller.js";
               setStatus("Failed to save favorite ring selection.", true);
             }
           });
-          ringTitle.appendChild(favoriteStar);
-          infoPanel.appendChild(ringTitle);
+          ringTitleActions.appendChild(favoriteStar);
+          ringTitleRow.appendChild(ringTitle);
+          ringTitleRow.appendChild(ringTitleActions);
+          infoPanel.appendChild(ringTitleRow);
 
           const chartPanel = document.createElement("section");
           chartPanel.className = "ring-chart-panel";
@@ -1003,6 +1052,11 @@ import { createCompareStateController } from "./state/controller.js";
             infoGrid.appendChild(infoRow);
           });
           infoPanel.appendChild(infoGrid);
+
+          const infoPanelFooter = document.createElement("div");
+          infoPanelFooter.className = "ring-info-panel-footer";
+          infoPanelFooter.appendChild(sessionsButton);
+          infoPanel.appendChild(infoPanelFooter);
 
           row.appendChild(infoPanel);
           row.appendChild(chartPanel);

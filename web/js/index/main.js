@@ -4,11 +4,13 @@ import { asNumber as asNumberShared } from "../shared/number.js";
 import { buildSmoothLinePath as buildSmoothLinePathShared } from "../shared/svg.js";
 import { DEFAULT_THEME_ID, THEME_OPTIONS, createThemeController } from "../shared/theme.js";
 import { createTooltipController } from "../shared/tooltip.js";
+import { parseRequestedSessionGuid, chooseInitialSessionFilename } from "../shared/session_navigation.js";
 import {
   buildProspectHistogramModel as buildProspectHistogramModelExtracted,
   buildProspectCumulativeFrequencyModel as buildProspectCumulativeFrequencyModelExtracted,
   parseProspectedAsteroidSummaryText,
   resolveSessionRingLabel,
+  resolveSessionGuid,
 } from "./models/prospect_model.js";
 import { buildMaterialPercentAmountModel as buildMaterialPercentAmountModelExtracted } from "./models/material_percent_model.js";
 import { buildCumulativeCommoditySeries as buildCumulativeCommoditySeriesExtracted } from "./models/cumulative_commodity_model.js";
@@ -84,6 +86,7 @@ import {
       let commodityLinkMap = new Map();
       let commodityAbbreviationMap = new Map();
       let commodityLinkLoadPromise = null;
+      const sessionOptionDetailsPromiseCache = new Map();
       let prospectSummaryRecords = null;
       let prospectSummaryLoadPromise = null;
       let prospectFrequencyBinSize = 5;
@@ -1006,23 +1009,38 @@ import {
 
       async function fetchSessionOptionDetails(filename) {
         if (!filename) {
-          return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
+          return { ringLabel: "", asteroidCount: null, commodityLabel: "", sessionGuid: "" };
         }
         try {
           const result = await fetchSessionFile(filename);
           if (!result.ok) {
-            return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
+            return { ringLabel: "", asteroidCount: null, commodityLabel: "", sessionGuid: "" };
           }
           const payload = result.data;
+          const meta = payload && typeof payload === "object" && payload.meta && typeof payload.meta === "object"
+            ? payload.meta
+            : {};
           const ring = String(resolveSessionRingLabel(payload) || "").trim();
           return {
             ringLabel: ring && ring !== "Unknown" ? ring : "",
             asteroidCount: resolveSessionAsteroidCount(payload),
-            commodityLabel: resolveSessionMostCollectedCommodity(payload)
+            commodityLabel: resolveSessionMostCollectedCommodity(payload),
+            sessionGuid: resolveSessionGuid(meta, filename),
           };
         } catch (_error) {
-          return { ringLabel: "", asteroidCount: null, commodityLabel: "" };
+          return { ringLabel: "", asteroidCount: null, commodityLabel: "", sessionGuid: "" };
         }
+      }
+
+      function getSessionOptionDetails(filename) {
+        const key = String(filename || "").trim();
+        if (!key) {
+          return Promise.resolve({ ringLabel: "", asteroidCount: null, commodityLabel: "", sessionGuid: "" });
+        }
+        if (!sessionOptionDetailsPromiseCache.has(key)) {
+          sessionOptionDetailsPromiseCache.set(key, fetchSessionOptionDetails(key));
+        }
+        return sessionOptionDetailsPromiseCache.get(key);
       }
 
       function pickFilename(href) {
@@ -2770,6 +2788,7 @@ import {
 
       async function loadSessionList() {
         const listToken = ++sessionListRenderToken;
+        const requestedSessionGuid = parseRequestedSessionGuid(window.location.search || "");
         setStatus(sessionStatus, "Loading available sessions...");
         try {
           const result = await fetchSessionDirectoryListing();
@@ -2803,15 +2822,16 @@ import {
             return;
           }
 
+          const detailTasks = [];
           for (const file of unique) {
             const option = document.createElement("option");
             option.value = file;
             option.textContent = formatSessionOptionLabel(file, "", null);
             sessionSelect.appendChild(option);
-            void (async () => {
-              const details = await fetchSessionOptionDetails(file);
+            detailTasks.push((async () => {
+              const details = await getSessionOptionDetails(file);
               if (listToken !== sessionListRenderToken) {
-                return;
+                return { file, details };
               }
               option.textContent = formatSessionOptionLabel(
                 file,
@@ -2819,12 +2839,27 @@ import {
                 details.asteroidCount,
                 details.commodityLabel
               );
-            })();
+              return { file, details };
+            })());
           }
 
           sessionSelect.disabled = false;
           setStatus(sessionStatus, `Found ${unique.length} saved sessions.`, "ok");
-          await loadSession(unique[0]);
+          let initialFilename = unique[0];
+          if (requestedSessionGuid) {
+            const detailEntries = await Promise.all(detailTasks);
+            if (listToken !== sessionListRenderToken) {
+              return;
+            }
+            const detailsByFilename = new Map(
+              detailEntries
+                .filter((entry) => !!entry && !!entry.file)
+                .map((entry) => [entry.file, entry.details])
+            );
+            initialFilename = chooseInitialSessionFilename(unique, detailsByFilename, requestedSessionGuid);
+          }
+          sessionSelect.value = initialFilename;
+          await loadSession(initialFilename);
         } catch (error) {
           sessionSelect.innerHTML = "";
           const option = document.createElement("option");

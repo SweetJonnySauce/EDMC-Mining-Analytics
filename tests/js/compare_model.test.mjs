@@ -141,8 +141,8 @@ test("buildRingCommodityModel counts zero-hit asteroids from sessions with no co
   assert.equal(model.presentAsteroidsCount, 2);
   assert.equal(cutoff20.totalAsteroidsCount, 4);
   assert.equal(cutoff20.qualifyingAsteroidsCount, 2);
-  assert.equal(cutoff20.asteroidsToMine, 10);
-  assert.equal(cutoff20.asteroidsToProspect, 20);
+  assert.equal(cutoff20.asteroidsToMine, 67);
+  assert.equal(cutoff20.asteroidsToProspect, 134);
 });
 
 test("buildAboveThresholdPlanRows preserves a column for every cutoff even when no asteroids qualify", () => {

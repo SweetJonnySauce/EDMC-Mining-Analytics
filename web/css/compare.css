@@ -626,8 +626,9 @@
       padding: 10px;
       background: color-mix(in srgb, var(--fg) 2%, transparent);
       display: grid;
+      grid-template-rows: auto 1fr auto;
       gap: 8px;
-      align-content: start;
+      align-content: stretch;
     }
 
     .ring-title {
@@ -636,6 +637,42 @@
       font-size: 0.95rem;
       line-height: 1.25;
       overflow-wrap: anywhere;
+    }
+
+    .ring-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .ring-title-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .ring-title-action-button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.73rem;
+      font-weight: 600;
+      line-height: 1;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .ring-title-action-button:hover {
+      border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
     }
 
     .ring-title-favorite {
@@ -671,6 +708,13 @@
     .info-grid {
       display: grid;
       gap: 4px;
+    }
+
+    .ring-info-panel-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-end;
+      min-height: 24px;
     }
 
     .info-row {
@@ -1312,5 +1356,14 @@
 
       .compare-text-control {
         max-width: 100%;
+      }
+
+      .ring-title-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .ring-title-actions {
+        justify-content: flex-start;
       }
     }
