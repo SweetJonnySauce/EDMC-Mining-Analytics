@@ -34,14 +34,28 @@
 {"ring_name": "Col 285 Sector QB-E b12-3 AB 1 B Ring", "commodity_name": "Methanolmonohydratecrystals", "asteroids_prospected": 10, "asteroids_with_commodity_present": 2, "sum_percentage": 23.639409}
 {"ring_name": "Col 285 Sector QB-E b12-3 AB 1 B Ring", "commodity_name": "Tritium", "asteroids_prospected": 10, "asteroids_with_commodity_present": 6, "sum_percentage": 103.943496}
 {"ring_name": "Col 285 Sector QB-E b12-3 AB 1 B Ring", "commodity_name": "Water", "asteroids_prospected": 10, "asteroids_with_commodity_present": 2, "sum_percentage": 20.340935}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Bertrandite", "asteroids_prospected": 38, "asteroids_with_commodity_present": 20, "sum_percentage": 365.34579800000006}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Gallite", "asteroids_prospected": 38, "asteroids_with_commodity_present": 10, "sum_percentage": 169.562913}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Gold", "asteroids_prospected": 38, "asteroids_with_commodity_present": 5, "sum_percentage": 89.6624}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Indite", "asteroids_prospected": 38, "asteroids_with_commodity_present": 15, "sum_percentage": 281.391075}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Osmium", "asteroids_prospected": 38, "asteroids_with_commodity_present": 5, "sum_percentage": 79.75621399999999}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Painite", "asteroids_prospected": 38, "asteroids_with_commodity_present": 1, "sum_percentage": 6.935261}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Palladium", "asteroids_prospected": 38, "asteroids_with_commodity_present": 7, "sum_percentage": 150.504651}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Platinum", "asteroids_prospected": 38, "asteroids_with_commodity_present": 17, "sum_percentage": 504.99745599999994}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Praseodymium", "asteroids_prospected": 38, "asteroids_with_commodity_present": 8, "sum_percentage": 171.482069}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Samarium", "asteroids_prospected": 38, "asteroids_with_commodity_present": 8, "sum_percentage": 158.254185}
-{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Silver", "asteroids_prospected": 38, "asteroids_with_commodity_present": 4, "sum_percentage": 44.222072999999995}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Bertrandite", "asteroids_prospected": 98, "asteroids_with_commodity_present": 39, "sum_percentage": 631.6489700000001}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Gallite", "asteroids_prospected": 98, "asteroids_with_commodity_present": 30, "sum_percentage": 675.754121}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Gold", "asteroids_prospected": 98, "asteroids_with_commodity_present": 19, "sum_percentage": 319.87762499999997}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Indite", "asteroids_prospected": 98, "asteroids_with_commodity_present": 34, "sum_percentage": 664.2905250000001}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Osmium", "asteroids_prospected": 98, "asteroids_with_commodity_present": 17, "sum_percentage": 298.20820299999997}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Painite", "asteroids_prospected": 98, "asteroids_with_commodity_present": 3, "sum_percentage": 36.11078}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Palladium", "asteroids_prospected": 98, "asteroids_with_commodity_present": 15, "sum_percentage": 334.70461}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Platinum", "asteroids_prospected": 98, "asteroids_with_commodity_present": 44, "sum_percentage": 1303.284618}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Praseodymium", "asteroids_prospected": 98, "asteroids_with_commodity_present": 17, "sum_percentage": 335.25177499999995}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Samarium", "asteroids_prospected": 98, "asteroids_with_commodity_present": 20, "sum_percentage": 399.70152300000007}
+{"ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring", "commodity_name": "Silver", "asteroids_prospected": 98, "asteroids_with_commodity_present": 12, "sum_percentage": 139.019448}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 B Ring", "commodity_name": "Indite", "asteroids_prospected": 1, "asteroids_with_commodity_present": 1, "sum_percentage": 38.6674}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 B Ring", "commodity_name": "Lepidolite", "asteroids_prospected": 1, "asteroids_with_commodity_present": 1, "sum_percentage": 4.773936}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 B Ring", "commodity_name": "Uraninite", "asteroids_prospected": 1, "asteroids_with_commodity_present": 1, "sum_percentage": 2.366013}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Bertrandite", "asteroids_prospected": 47, "asteroids_with_commodity_present": 17, "sum_percentage": 412.196026}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Gallite", "asteroids_prospected": 47, "asteroids_with_commodity_present": 9, "sum_percentage": 121.26778999999999}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Gold", "asteroids_prospected": 47, "asteroids_with_commodity_present": 8, "sum_percentage": 212.171953}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Indite", "asteroids_prospected": 47, "asteroids_with_commodity_present": 5, "sum_percentage": 87.708267}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Osmium", "asteroids_prospected": 47, "asteroids_with_commodity_present": 12, "sum_percentage": 160.01004599999996}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Painite", "asteroids_prospected": 47, "asteroids_with_commodity_present": 1, "sum_percentage": 42.7822}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Palladium", "asteroids_prospected": 47, "asteroids_with_commodity_present": 7, "sum_percentage": 162.895065}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Platinum", "asteroids_prospected": 47, "asteroids_with_commodity_present": 23, "sum_percentage": 697.8728550000002}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Praseodymium", "asteroids_prospected": 47, "asteroids_with_commodity_present": 11, "sum_percentage": 243.189463}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Samarium", "asteroids_prospected": 47, "asteroids_with_commodity_present": 13, "sum_percentage": 224.01932500000004}
+{"ring_name": "Col 285 Sector KM-V d2-106 5 A Ring", "commodity_name": "Silver", "asteroids_prospected": 47, "asteroids_with_commodity_present": 10, "sum_percentage": 102.19458300000001}

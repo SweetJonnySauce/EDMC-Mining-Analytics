@@ -16,29 +16,33 @@
       </div>
     </div>
     <section class="compare-controls">
-      <div class="compare-control compare-control--commodity">
-        <label for="compare-commodity-select">Commodity</label>
-        <select id="compare-commodity-select" aria-label="Commodity filter"></select>
-      </div>
-      <div class="compare-control compare-control--sort">
-        <label for="compare-sort-select">Sort</label>
-        <select id="compare-sort-select" aria-label="Sort rings">
-          <option value="avg_desc">Avg Yield (mean, High to Low)</option>
-          <option value="avg_asc">Avg Yield (mean, Low to High)</option>
-          <option value="p50_desc">Median (P50 High to Low)</option>
-          <option value="p50_asc">Median (P50 Low to High)</option>
-          <option value="p90_desc">P90 (High to Low)</option>
-          <option value="p90_asc">P90 (Low to High)</option>
-          <option value="p75_desc">P75 (High to Low)</option>
-          <option value="p75_asc">P75 (Low to High)</option>
-          <option value="p25_desc">P25 (High to Low)</option>
-          <option value="p25_asc">P25 (Low to High)</option>
-          <option value="name_asc">Ring Name (A to Z)</option>
-        </select>
-      </div>
-      <div class="compare-control compare-control-pill compare-control--highlights">
-        <label>Highlights</label>
-        <div id="compare-highlights" class="compare-highlights" aria-label="Commodity highlights"></div>
+      <div class="compare-controls-primary">
+        <div class="compare-controls-primary-row">
+          <div class="compare-control compare-control--commodity">
+            <label for="compare-commodity-select">Commodity</label>
+            <select id="compare-commodity-select" aria-label="Commodity filter"></select>
+          </div>
+          <div class="compare-control compare-control--sort">
+            <label for="compare-sort-select">Sort</label>
+            <select id="compare-sort-select" aria-label="Sort rings">
+              <option value="avg_desc">Avg Yield (mean, High to Low)</option>
+              <option value="avg_asc">Avg Yield (mean, Low to High)</option>
+              <option value="p50_desc">Median (P50 High to Low)</option>
+              <option value="p50_asc">Median (P50 Low to High)</option>
+              <option value="p90_desc">P90 (High to Low)</option>
+              <option value="p90_asc">P90 (Low to High)</option>
+              <option value="p75_desc">P75 (High to Low)</option>
+              <option value="p75_asc">P75 (Low to High)</option>
+              <option value="p25_desc">P25 (High to Low)</option>
+              <option value="p25_asc">P25 (Low to High)</option>
+              <option value="name_asc">Ring Name (A to Z)</option>
+            </select>
+          </div>
+        </div>
+        <div class="compare-control compare-control-pill compare-control--highlights">
+          <label>Highlights</label>
+          <div id="compare-highlights" class="compare-highlights" aria-label="Commodity highlights"></div>
+        </div>
       </div>
       <div class="compare-control compare-control-pill compare-control--crosshairs">
         <label>Crosshairs</label>

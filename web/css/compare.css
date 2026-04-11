@@ -207,10 +207,10 @@
 
     .compare-controls {
       display: grid;
-      grid-template-columns: minmax(220px, 250px) minmax(260px, 320px) 1fr 240px max-content;
+      grid-template-columns: minmax(0, 1fr) 240px max-content;
       grid-template-areas:
-        "commodity sort . mode display"
-        "highlights highlights . crosshairs display";
+        "primary mode display"
+        "primary crosshairs display";
       gap: 12px;
       align-items: stretch;
       justify-content: stretch;
@@ -220,6 +220,20 @@
       background: color-mix(in srgb, var(--card) 92%, #000);
     }
 
+    .compare-controls-primary {
+      grid-area: primary;
+      display: grid;
+      grid-template-columns: minmax(220px, 250px) minmax(260px, 320px);
+      gap: 12px;
+      min-width: 0;
+      align-content: start;
+      align-items: start;
+    }
+
+    .compare-controls-primary-row {
+      display: contents;
+    }
+
     .compare-control {
       display: grid;
       gap: 6px;
@@ -227,11 +241,11 @@
     }
 
     .compare-control--commodity {
-      grid-area: commodity;
+      align-content: start;
     }
 
     .compare-control--sort {
-      grid-area: sort;
+      align-content: start;
     }
 
     .compare-control--crosshairs {
@@ -250,13 +264,8 @@
       grid-area: display;
     }
 
-    .compare-control--commodity,
-    .compare-control--sort,
-    .compare-control--crosshairs {
-      align-content: start;
-    }
-
     .compare-control--highlights {
+      grid-column: 1 / -1;
       justify-self: stretch;
       width: auto;
       align-content: start;
@@ -612,7 +621,7 @@
 
     .ring-row {
       display: grid;
-      grid-template-columns: minmax(240px, 310px) minmax(0, 1fr);
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
       gap: 10px;
       border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
       border-radius: 10px;
@@ -637,6 +646,9 @@
       font-size: 0.95rem;
       line-height: 1.25;
       overflow-wrap: anywhere;
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 6px;
     }
 
     .ring-title-row {
@@ -673,6 +685,23 @@
     .ring-title-action-button:hover {
       border-color: color-mix(in srgb, var(--accent) 72%, transparent);
       background: color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
+    .ring-title-copy-button {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: color-mix(in srgb, var(--fg) 56%, transparent);
+      font: inherit;
+      font-size: 0.9em;
+      line-height: 1;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .ring-title-copy-button:hover {
+      color: var(--accent);
     }
 
     .ring-title-favorite {
@@ -1317,12 +1346,19 @@
       .compare-controls {
         grid-template-columns: 1fr;
         grid-template-areas:
-          "commodity"
-          "sort"
-          "highlights"
+          "primary"
           "mode"
           "crosshairs"
           "display";
+      }
+
+      .compare-controls-primary-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .compare-controls-primary {
+        grid-template-columns: 1fr;
       }
 
       .compare-control-pill {

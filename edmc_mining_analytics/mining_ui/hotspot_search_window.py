@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import queue
 import threading
 import time
@@ -1355,13 +1356,19 @@ class HotspotSearchWindow:
         rows: List[object] = []
         try:
             with path.open("r", encoding="utf-8") as handle:
-                for raw_line in handle:
+                for line_number, raw_line in enumerate(handle, start=1):
                     text = str(raw_line or "").strip()
                     if not text:
                         continue
                     try:
                         row = json.loads(text)
-                    except Exception:
+                    except Exception as exc:
+                        _log.debug(
+                            "Skipping invalid ring summary row at %s:%s",
+                            path,
+                            line_number,
+                            exc_info=exc,
+                        )
                         continue
                     rows.append(row)
         except Exception:

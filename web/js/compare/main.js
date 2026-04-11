@@ -1,6 +1,7 @@
 import { applyAdaptiveBinLabels } from "../shared/labels.js";
 import { normalizeTextKey as normalizeTextKeyShared, normalizeCommodityKey as normalizeCommodityKeyShared } from "../shared/normalize.js";
 import { asNumber as asNumberShared, formatNumber as formatNumberShared } from "../shared/number.js";
+import { extractSystemNameFromRingName as extractSystemNameFromRingNameShared } from "../shared/system_name.js";
 import { buildSmoothLinePath as buildSmoothLinePathShared, inferStep as inferStepShared } from "../shared/svg.js";
 import { DEFAULT_THEME_ID, THEME_OPTIONS, createThemeController } from "../shared/theme.js";
 import { createTooltipController } from "../shared/tooltip.js";
@@ -406,6 +407,42 @@ import { createCompareStateController } from "./state/controller.js";
         return formatNumberShared(value, digits);
       }
 
+      function extractSystemNameFromRingName(value) {
+        return extractSystemNameFromRingNameShared(value);
+      }
+
+      async function copyTextToClipboard(text) {
+        const value = String(text ?? "");
+        if (!value.trim()) {
+          return false;
+        }
+        try {
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            await navigator.clipboard.writeText(value);
+            return true;
+          }
+        } catch (_error) {
+          // Fall back to execCommand path.
+        }
+
+        try {
+          const textarea = document.createElement("textarea");
+          textarea.value = value;
+          textarea.setAttribute("readonly", "readonly");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          const copied = document.execCommand("copy");
+          document.body.removeChild(textarea);
+          return !!copied;
+        } catch (_error) {
+          return false;
+        }
+      }
+
       function ensureCursorTooltip() {
         return tooltipController.ensure();
       }
@@ -570,6 +607,19 @@ import { createCompareStateController } from "./state/controller.js";
           }
           return String(left && left.ring && left.ring.ringName || "").localeCompare(String(right && right.ring && right.ring.ringName || ""));
         });
+        const preferredBySessions = [...safeRows].sort((left, right) => {
+          const leftCount = Number(left && left.metric && left.metric.sessionsCount);
+          const rightCount = Number(right && right.metric && right.metric.sessionsCount);
+          const leftValid = Number.isFinite(leftCount);
+          const rightValid = Number.isFinite(rightCount);
+          if (leftValid && rightValid && leftCount !== rightCount) {
+            return rightCount - leftCount;
+          }
+          if (leftValid !== rightValid) {
+            return leftValid ? -1 : 1;
+          }
+          return String(left && left.ring && left.ring.ringName || "").localeCompare(String(right && right.ring && right.ring.ringName || ""));
+        });
         const highlightEntries = [
           {
             label: "Best Yield Ring",
@@ -594,6 +644,21 @@ import { createCompareStateController } from "./state/controller.js";
                 ? `${formatNumber(sessionCount, 0)} sessions`
                 : "session count unavailable";
               return `${asteroidText} across ${sessionText}`;
+            },
+          },
+          {
+            label: "Most Visited Ring",
+            row: preferredBySessions[0],
+            detail: (row) => {
+              const sessionCount = Number(row && row.metric && row.metric.sessionsCount);
+              const asteroidCount = Number(row && row.metric && row.metric.asteroidsCount);
+              const sessionText = Number.isFinite(sessionCount)
+                ? `${formatNumber(sessionCount, 0)} sessions`
+                : "No session count";
+              const asteroidText = Number.isFinite(asteroidCount)
+                ? `${formatNumber(asteroidCount, 0)} asteroids`
+                : "asteroid count unavailable";
+              return `${sessionText} for ${commodityLabel} across ${asteroidText}`;
             },
           },
         ];
@@ -812,10 +877,37 @@ import { createCompareStateController } from "./state/controller.js";
           ringTitleRow.className = "ring-title-row";
           const ringTitle = document.createElement("h2");
           ringTitle.className = "ring-title";
+          const ringName = String(ring.ringName || "").trim();
+          const systemName = extractSystemNameFromRingName(ringName);
+          const copySystemButton = document.createElement("button");
+          copySystemButton.type = "button";
+          copySystemButton.className = "ring-title-copy-button";
+          copySystemButton.textContent = "📋";
+          copySystemButton.setAttribute("aria-label", "Copy system name");
+          copySystemButton.addEventListener("mouseenter", (event) => {
+            showCursorTooltip("Copy system name", event);
+          });
+          copySystemButton.addEventListener("mousemove", (event) => {
+            showCursorTooltip("Copy system name", event);
+          });
+          copySystemButton.addEventListener("mouseleave", () => {
+            hideCursorTooltip();
+          });
+          copySystemButton.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const copied = await copyTextToClipboard(systemName);
+            setStatus(
+              copied
+                ? `Copied system name: ${systemName}`
+                : "Failed to copy system name.",
+              !copied
+            );
+          });
+          ringTitle.appendChild(copySystemButton);
           const ringNameText = document.createElement("span");
           ringNameText.textContent = ring.ringName;
           ringTitle.appendChild(ringNameText);
-          const ringName = String(ring.ringName || "").trim();
           const ringTitleActions = document.createElement("div");
           ringTitleActions.className = "ring-title-actions";
           const sessionsButton = document.createElement("button");
