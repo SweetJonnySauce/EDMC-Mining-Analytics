@@ -5,6 +5,7 @@ from pathlib import Path
 
 from edmc_mining_analytics.journal import JournalProcessor
 from edmc_mining_analytics.state import MiningState
+from tests.harness_test_utils import load_test_journal_events, resolve_test_location_names
 
 
 class JournalSimulationTest(unittest.TestCase):
@@ -204,25 +205,32 @@ class JournalSimulationTest(unittest.TestCase):
         journal_path = Path(__file__).resolve().parent / "config" / "journal_events.json"
         self.assertTrue(journal_path.exists(), "Sample journal file missing")
 
-        with journal_path.open("r", encoding="utf-8") as handle:
-            payload = json.load(handle)
-
+        payload = load_test_journal_events(rebase_to_now=True)
         sequence = payload.get("sample_mining_session", [])
         self.assertIsInstance(sequence, list, "sample_mining_session must be a list")
         for entry in sequence:
             self.processor.handle_entry(entry, shared_state=None)
 
         # Expectations after replaying the sample:
+        location_names = resolve_test_location_names()
         self.assertTrue(self._session_started)
-        self.assertTrue(self.state.is_mining)
-        self.assertEqual(self.state.prospector_launched_count, 1)
-        self.assertEqual(self.state.prospected_count, 1)
-        self.assertEqual(self.state.prospect_content_counts.get("High"), 1)
-        self.assertEqual(self.state.cargo_additions.get("platinum"), 5)
-        self.assertEqual(self.state.cargo_additions.get("gold"), 3)
-        self.assertEqual(self.state.materials_collected.get("iron"), 3)
-        self.assertEqual(self.state.materials_collected.get("carbon"), 6)
-        self.assertEqual(self.state.materials_collected.get("nickel"), 9)
+        self.assertTrue(self._session_ended)
+        self.assertFalse(self.state.is_mining)
+        self.assertIsNotNone(self.state.mining_end)
+        self.assertEqual(self.state.current_ship, "Type-11 Prospector")
+        self.assertEqual(self.state.cargo_capacity, 256)
+        self.assertEqual(self.state.prospector_launched_count, 21)
+        self.assertEqual(self.state.collection_drones_launched, 27)
+        self.assertEqual(self.state.prospected_count, 20)
+        self.assertEqual(self.state.prospect_content_counts.get("High", 0), 0)
+        self.assertEqual(self.state.prospect_content_counts.get("Medium"), 6)
+        self.assertEqual(self.state.prospect_content_counts.get("Low"), 14)
+        self.assertEqual(self.state.cargo_additions.get("platinum"), 246)
+        self.assertEqual(self.state.cargo_additions.get("gold"), 18)
+        self.assertEqual(self.state.cargo_additions.get("osmium"), 16)
+        self.assertEqual(self.state.cargo_additions.get("silver"), 1)
+        self.assertEqual(self.state.materials_collected.get("tin"), 3)
+        self.assertEqual(self.state.mining_ring, location_names["ring"])
 
 
 if __name__ == "__main__":

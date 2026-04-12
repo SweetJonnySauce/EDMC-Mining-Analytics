@@ -73,6 +73,30 @@ python -m pytest
 Adjust only non-vendored files (for example):
 - `tests/harness_test_utils.py`
 - `tests/test_harness_integration.py`
+- `tests/session_data/` for non-vendored runtime export fixtures
 
 Do not hand-edit `tests/harness.py` or `tests/edmc/**` after syncing.
 Do not hand-edit `tests/journal_config/**` after syncing.
+
+## Runtime Test Artifacts
+
+Harness tests that export mining sessions write under:
+- `tests/session_data/`
+
+This keeps test-created `session_data_*.json` files separate from the real plugin `session_data/` directory.
+
+## Generate A Test Session
+
+Use the helper script to run just the harness export test:
+
+```bash
+./scripts/generate_test_session.sh
+```
+
+Optional flags:
+
+```bash
+./scripts/generate_test_session.sh --system-name "My Test System"
+./scripts/generate_test_session.sh --real-output
+./scripts/generate_test_session.sh --real-output --system-name "My Test System"
+```

@@ -24,3 +24,5 @@ tests/journal_folder/
 tests/journal_folder/**
 tests/logs/
 tests/logs/**
+tests/session_data/*
+!tests/session_data/.gitkeep

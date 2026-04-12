@@ -405,17 +405,14 @@ import { createTooltipController } from "../shared/tooltip.js";
     note.textContent = buildChartNoteText();
     chartElement.appendChild(note);
 
-    const scroll = document.createElement("div");
-    scroll.className = "session-violin-scroll";
-    chartElement.appendChild(scroll);
-
     const widthPerSession = 88;
-    const leftPad = 64;
+    const axisPaneWidth = 72;
     const rightPad = 28;
     const topPad = 20;
     const bottomPad = 78;
     const plotHeight = 320;
-    const width = leftPad + rightPad + (model.sessions.length * widthPerSession);
+    const plotWidth = model.sessions.length * widthPerSession;
+    const plotSvgWidth = plotWidth + rightPad;
     const height = topPad + plotHeight + bottomPad;
     const yAxisMax = Math.max(5, Number(model.yMax) || 5);
     const overallAverageYield = Number.isFinite(Number(model && model.averageYield))
@@ -426,32 +423,54 @@ import { createTooltipController } from "../shared/tooltip.js";
     const yTickStep = yAxisMax <= 25 ? 5 : 10;
     const maxHalfWidth = Math.min(28, Math.max(14, widthPerSession * 0.32));
     const plotBottom = topPad + plotHeight;
+    const axisLineX = axisPaneWidth - 8;
+    const axisLabelX = axisLineX - 10;
+    const axisTitleX = 20;
     const toY = (value) => {
       const safeValue = Math.max(0, Math.min(yAxisMax, Number(value) || 0));
       return topPad + (plotHeight * (1 - (safeValue / yAxisMax)));
     };
     const averageLineY = Number.isFinite(overallAverageYield) ? toY(overallAverageYield) : null;
-    const toX = (index) => leftPad + ((index + 0.5) * widthPerSession);
+    const toX = (index) => ((index + 0.5) * widthPerSession);
     const ns = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(ns, "svg");
-    svg.classList.add("session-violin-svg");
-    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
-    svg.style.width = `${width}px`;
+    const layout = document.createElement("div");
+    layout.className = "session-violin-layout";
+    chartElement.appendChild(layout);
+
+    const axisPane = document.createElement("div");
+    axisPane.className = "session-violin-axis-pane";
+    layout.appendChild(axisPane);
+
+    const scroll = document.createElement("div");
+    scroll.className = "session-violin-scroll";
+    layout.appendChild(scroll);
+
+    const axisSvg = document.createElementNS(ns, "svg");
+    axisSvg.classList.add("session-violin-axis-svg");
+    axisSvg.setAttribute("viewBox", `0 0 ${axisPaneWidth} ${height}`);
+    axisSvg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+    axisSvg.style.width = `${axisPaneWidth}px`;
+    axisPane.appendChild(axisSvg);
+
+    const plotSvg = document.createElementNS(ns, "svg");
+    plotSvg.classList.add("session-violin-svg");
+    plotSvg.setAttribute("viewBox", `0 0 ${plotSvgWidth} ${height}`);
+    plotSvg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+    plotSvg.style.width = `${plotSvgWidth}px`;
 
     for (let value = 0; value <= yAxisMax + 0.0001; value += yTickStep) {
       const y = toY(value);
       const line = document.createElementNS(ns, "line");
       line.setAttribute("class", "session-violin-grid-line");
-      line.setAttribute("x1", leftPad.toFixed(2));
-      line.setAttribute("x2", (width - rightPad).toFixed(2));
+      line.setAttribute("x1", "0");
+      line.setAttribute("x2", plotWidth.toFixed(2));
       line.setAttribute("y1", y.toFixed(2));
       line.setAttribute("y2", y.toFixed(2));
-      svg.appendChild(line);
+      plotSvg.appendChild(line);
 
       const label = document.createElementNS(ns, "text");
       label.setAttribute("class", "session-violin-axis-label");
-      label.setAttribute("x", (leftPad - 10).toFixed(2));
+      label.setAttribute("x", axisLabelX.toFixed(2));
       label.setAttribute("y", (y + 4).toFixed(2));
       label.setAttribute("text-anchor", "end");
       const averageOverlapsTick = showOverallAverageMarker
@@ -461,62 +480,62 @@ import { createTooltipController } from "../shared/tooltip.js";
         label.setAttribute("visibility", "hidden");
       }
       label.textContent = `${formatNumber(value, 0)}%`;
-      svg.appendChild(label);
+      axisSvg.appendChild(label);
     }
 
     const yAxis = document.createElementNS(ns, "line");
     yAxis.setAttribute("class", "session-violin-axis-line");
-    yAxis.setAttribute("x1", leftPad.toFixed(2));
-    yAxis.setAttribute("x2", leftPad.toFixed(2));
+    yAxis.setAttribute("x1", axisLineX.toFixed(2));
+    yAxis.setAttribute("x2", axisLineX.toFixed(2));
     yAxis.setAttribute("y1", topPad.toFixed(2));
     yAxis.setAttribute("y2", plotBottom.toFixed(2));
-    svg.appendChild(yAxis);
+    axisSvg.appendChild(yAxis);
 
     const xAxis = document.createElementNS(ns, "line");
     xAxis.setAttribute("class", "session-violin-axis-line");
-    xAxis.setAttribute("x1", leftPad.toFixed(2));
-    xAxis.setAttribute("x2", (width - rightPad).toFixed(2));
+    xAxis.setAttribute("x1", "0");
+    xAxis.setAttribute("x2", plotWidth.toFixed(2));
     xAxis.setAttribute("y1", plotBottom.toFixed(2));
     xAxis.setAttribute("y2", plotBottom.toFixed(2));
-    svg.appendChild(xAxis);
+    plotSvg.appendChild(xAxis);
 
     const axisTitle = document.createElementNS(ns, "text");
     axisTitle.setAttribute("class", "session-violin-axis-title");
-    axisTitle.setAttribute("x", "20");
+    axisTitle.setAttribute("x", axisTitleX.toFixed(2));
     axisTitle.setAttribute("y", (topPad + (plotHeight / 2)).toFixed(2));
     axisTitle.setAttribute("text-anchor", "middle");
-    axisTitle.setAttribute("transform", `rotate(-90 20 ${(topPad + (plotHeight / 2)).toFixed(2)})`);
+    axisTitle.setAttribute("transform", `rotate(-90 ${axisTitleX.toFixed(2)} ${(topPad + (plotHeight / 2)).toFixed(2)})`);
     axisTitle.textContent = "% Content";
-    svg.appendChild(axisTitle);
+    axisSvg.appendChild(axisTitle);
 
     if (showOverallAverageMarker && Number.isFinite(averageLineY) && Number.isFinite(overallAverageYield)) {
       const averageTooltipText = `Overall Avg Yield: ${formatNumber(overallAverageYield, 2)}%`;
       const averageHitArea = document.createElementNS(ns, "line");
       averageHitArea.setAttribute("class", "session-violin-overall-average-hitarea");
-      averageHitArea.setAttribute("x1", leftPad.toFixed(2));
-      averageHitArea.setAttribute("x2", (width - rightPad).toFixed(2));
+      averageHitArea.setAttribute("x1", "0");
+      averageHitArea.setAttribute("x2", plotWidth.toFixed(2));
       averageHitArea.setAttribute("y1", averageLineY.toFixed(2));
       averageHitArea.setAttribute("y2", averageLineY.toFixed(2));
       bindTooltip(averageHitArea, averageTooltipText);
-      svg.appendChild(averageHitArea);
+      plotSvg.appendChild(averageHitArea);
 
       const averageLine = document.createElementNS(ns, "line");
       averageLine.setAttribute("class", "session-violin-overall-average");
-      averageLine.setAttribute("x1", leftPad.toFixed(2));
-      averageLine.setAttribute("x2", (width - rightPad).toFixed(2));
+      averageLine.setAttribute("x1", "0");
+      averageLine.setAttribute("x2", plotWidth.toFixed(2));
       averageLine.setAttribute("y1", averageLineY.toFixed(2));
       averageLine.setAttribute("y2", averageLineY.toFixed(2));
       bindTooltip(averageLine, averageTooltipText);
-      svg.appendChild(averageLine);
+      plotSvg.appendChild(averageLine);
 
       const averageLabel = document.createElementNS(ns, "text");
       averageLabel.setAttribute("class", "session-violin-overall-average-label");
-      averageLabel.setAttribute("x", (leftPad - 10).toFixed(2));
+      averageLabel.setAttribute("x", axisLabelX.toFixed(2));
       averageLabel.setAttribute("y", (averageLineY + 4).toFixed(2));
       averageLabel.setAttribute("text-anchor", "end");
       averageLabel.textContent = "Avg";
       bindTooltip(averageLabel, averageTooltipText);
-      svg.appendChild(averageLabel);
+      axisSvg.appendChild(averageLabel);
     }
 
     model.sessions.forEach((session, index) => {
@@ -532,7 +551,7 @@ import { createTooltipController } from "../shared/tooltip.js";
       path.setAttribute("class", "session-violin-path");
       path.setAttribute("d", violinPath);
       bindTooltip(path, sessionTooltipText);
-      svg.appendChild(path);
+      plotSvg.appendChild(path);
 
       if (showSessionMeanMarker) {
         const meanLine = document.createElementNS(ns, "line");
@@ -542,7 +561,7 @@ import { createTooltipController } from "../shared/tooltip.js";
         meanLine.setAttribute("x2", (centerX + meanHalfSpan).toFixed(2));
         meanLine.setAttribute("y1", toY(session.averageYield).toFixed(2));
         meanLine.setAttribute("y2", toY(session.averageYield).toFixed(2));
-        svg.appendChild(meanLine);
+        plotSvg.appendChild(meanLine);
       }
 
       const dotMarkers = buildSessionDotMarkers(session.asteroidSamples, yAxisMax, plotHeight);
@@ -559,7 +578,7 @@ import { createTooltipController } from "../shared/tooltip.js";
           session,
           marker,
         }));
-        svg.appendChild(dot);
+        plotSvg.appendChild(dot);
       });
 
       const label = document.createElementNS(ns, "text");
@@ -585,14 +604,14 @@ import { createTooltipController } from "../shared/tooltip.js";
         bindTooltip(link, `Open ${session.sessionLabel} in session analysis`);
         label.setAttribute("class", "session-violin-label session-violin-label--link");
         link.appendChild(label);
-        svg.appendChild(link);
+        plotSvg.appendChild(link);
       } else {
         bindTooltip(label, sessionTooltipText);
-        svg.appendChild(label);
+        plotSvg.appendChild(label);
       }
     });
 
-    scroll.appendChild(svg);
+    scroll.appendChild(plotSvg);
   }
 
   async function initializePage() {

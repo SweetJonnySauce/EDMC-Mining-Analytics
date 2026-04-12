@@ -4,96 +4,864 @@
       "timestamp": "3300-01-01T12:00:00Z",
       "event": "LoadGame",
       "Commander": "TestCMDR",
-      "Credits": 1000000,
+      "Credits": 42000000,
       "Horizons": true,
       "Loan": 0,
-      "Ship": "Krait_MkII",
-      "Ship_Localised": "Krait Mk II",
+      "Ship": "type9_military",
+      "Ship_Localised": "Type-10 Defender",
       "GameMode": "Open"
+    },
+    {
+      "timestamp": "3300-01-01T12:00:02Z",
+      "event": "Loadout",
+      "ShipID": 77,
+      "Ship": "type9_military",
+      "ShipName": "Type-11 Prospector",
+      "ShipIdent": "TEST-01",
+      "ShipType": "type9_military",
+      "ShipType_Localised": "Type-10 Defender",
+      "CargoCapacity": 256,
+      "UnladenMass": 1190.5,
+      "MaxJumpRange": 14.8,
+      "Rebuy": 23000000,
+      "Modules": []
     },
     {
       "timestamp": "3300-01-01T12:00:05Z",
       "event": "Location",
       "Docked": false,
-      "StarSystem": "Test System",
+      "StarSystem": "Test Ring",
       "StarPos": [
-        1.0,
-        2.0,
-        3.0
+        18.5,
+        -12.25,
+        41.75
       ],
       "SystemAddress": 1234567890,
-      "Body": "Test Body",
+      "Body": "Test Ring A 8",
+      "BodyID": 7,
       "BodyType": "Planet",
-      "Population": 1000
+      "Population": 0
+    },
+    {
+      "timestamp": "3300-01-01T12:00:20Z",
+      "event": "SupercruiseExit",
+      "StarSystem": "Test Ring",
+      "StarPos": [
+        18.5,
+        -12.25,
+        41.75
+      ],
+      "SystemAddress": 1234567890,
+      "Body": "Test Ring A 8 A Ring",
+      "BodyID": 11,
+      "BodyType": "Planet"
+    },
+    {
+      "timestamp": "3300-01-01T12:00:25Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Test Ring A 8 A Ring",
+      "BodyID": 11
+    },
+    {
+      "timestamp": "3300-01-01T12:00:30Z",
+      "event": "BuyDrones",
+      "Type": "Collection",
+      "Count": 138
+    },
+    {
+      "timestamp": "3300-01-01T12:00:50Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 140
+        }
+      ],
+      "Count": 140
     },
     {
       "timestamp": "3300-01-01T12:01:00Z",
       "event": "LaunchDrone",
-      "Type": "Prospector"
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
     },
     {
-      "timestamp": "3300-01-01T12:01:05Z",
+      "timestamp": "3300-01-01T12:01:02Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Proportion": 31.43298
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Proportion": 11.74011
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 6.002068
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:01:03Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:04Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:12Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:14Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 40.614964
+        },
+        {
+          "Name": "Palladium",
+          "Name_Localised": "Palladium",
+          "Proportion": 17.5611
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Proportion": 4.032961
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:01:15Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:24Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:26Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 66.666664
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:01:27Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:28Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:36Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:38Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Medium",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 23.308935
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Proportion": 9.597939
+        },
+        {
+          "Name": "Gallite",
+          "Name_Localised": "Gallite",
+          "Proportion": 17.448055
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:01:39Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:48Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:01:50Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 58.867
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Proportion": 5.79
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:01:51Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:00Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:02Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 50.279
+        },
+        {
+          "Name": "Bertrandite",
+          "Name_Localised": "Bertrandite",
+          "Proportion": 5.437
+        },
+        {
+          "Name": "Samarium",
+          "Name_Localised": "Samarium",
+          "Proportion": 8.515
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:02:03Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:12Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:14Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Medium",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Proportion": 29.725
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 20.149
+        },
+        {
+          "Name": "Samarium",
+          "Name_Localised": "Samarium",
+          "Proportion": 5.162
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:02:15Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:16Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:24Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:26Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 63.234
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:02:27Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:36Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:38Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Praseodymium",
+          "Name_Localised": "Praseodymium",
+          "Proportion": 35.843
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 18.856
+        },
+        {
+          "Name": "Gallite",
+          "Name_Localised": "Gallite",
+          "Proportion": 4.801
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:02:39Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:48Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:50Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 37.758
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 19.778
+        },
+        {
+          "Name": "Praseodymium",
+          "Name_Localised": "Praseodymium",
+          "Proportion": 7.136
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:02:51Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:02:52Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:00Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:02Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Praseodymium",
+          "Name_Localised": "Praseodymium",
+          "Proportion": 31.905
+        },
+        {
+          "Name": "Gallite",
+          "Name_Localised": "Gallite",
+          "Proportion": 14.513
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 4.459
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:03:03Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:12Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:14Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Medium",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 44.185
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Proportion": 17.862
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:03:15Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:16Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:24Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:26Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Medium",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 42.563
+        },
+        {
+          "Name": "Praseodymium",
+          "Name_Localised": "Praseodymium",
+          "Proportion": 10.061
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 6.49
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:03:27Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:36Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:38Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Proportion": 28.597
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 17.057
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 11.24
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:03:39Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:48Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:03:50Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Proportion": 29.09
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 16.596
+        },
+        {
+          "Name": "Praseodymium",
+          "Name_Localised": "Praseodymium",
+          "Proportion": 9.431
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:03:51Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:00Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:02Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Gallite",
+          "Name_Localised": "Gallite",
+          "Proportion": 34.152
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:04:03Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:12Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:14Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 58.114
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:04:15Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:16Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:24Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:26Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Medium",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Gallite",
+          "Name_Localised": "Gallite",
+          "Proportion": 25.039
+        },
+        {
+          "Name": "Praseodymium",
+          "Name_Localised": "Praseodymium",
+          "Proportion": 7.832
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 4.434
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:04:27Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:36Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:38Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Low",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 40.321
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 20.733
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:04:39Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:48Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:50Z",
+      "event": "ProspectedAsteroid",
+      "Body": "Test Ring A 8 A Ring",
+      "Content": "Medium",
+      "Remaining": 100.0,
+      "Materials": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Proportion": 51.698
+        },
+        {
+          "Name": "Indite",
+          "Name_Localised": "Indite",
+          "Proportion": 6.437
+        },
+        {
+          "Name": "Praseodymium",
+          "Name_Localised": "Praseodymium",
+          "Proportion": 5.506
+        }
+      ]
+    },
+    {
+      "timestamp": "3300-01-01T12:04:51Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:04:52Z",
+      "event": "LaunchDrone",
+      "Type": "Collection"
+    },
+    {
+      "timestamp": "3300-01-01T12:05:30Z",
+      "event": "LaunchDrone",
+      "Type": "Prospector",
+      "StarSystem": "Test Ring"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 140
+        }
+      ],
+      "Count": 140
+    },
+    {
+      "timestamp": "3300-01-01T12:06:01Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 140
+        }
+      ],
+      "Count": 140
+    },
+    {
+      "timestamp": "3300-01-01T12:06:01Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:02Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:03Z",
       "event": "Cargo",
       "Inventory": [
         {
           "Name": "Platinum",
           "Name_Localised": "Platinum",
-          "Count": 0
-        },
-        {
-          "Name": "Gold",
-          "Name_Localised": "Gold",
-          "Count": 0
+          "Count": 2
         },
         {
           "Name": "Drones",
           "Name_Localised": "Limpet",
-          "Count": 50
+          "Count": 139
         }
       ],
-      "Count": 50
+      "Count": 141
     },
     {
-      "timestamp": "3300-01-01T12:01:20Z",
-      "event": "ProspectedAsteroid",
-      "Body": "Test Body A Ring",
-      "Content": "High",
-      "Materials": [
+      "timestamp": "3300-01-01T12:06:04Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:05Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:06Z",
+      "event": "Cargo",
+      "Inventory": [
         {
           "Name": "Platinum",
           "Name_Localised": "Platinum",
-          "Proportion": 28.5
+          "Count": 3
         },
         {
-          "Name": "Gold",
-          "Name_Localised": "Gold",
-          "Proportion": 14.2
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 138
         }
-      ]
+      ],
+      "Count": 141
     },
     {
-      "timestamp": "3300-01-01T12:01:30Z",
-      "event": "MaterialCollected",
-      "Name": "iron",
-      "Category": "Raw",
-      "Count": 3
+      "timestamp": "3300-01-01T12:06:07Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
     },
     {
-      "timestamp": "3300-01-01T12:01:35Z",
-      "event": "MaterialCollected",
-      "Name": "carbon",
-      "Category": "Raw",
-      "Count": 6
+      "timestamp": "3300-01-01T12:06:08Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
     },
     {
-      "timestamp": "3300-01-01T12:01:40Z",
-      "event": "MaterialCollected",
-      "Name": "nickel",
-      "Category": "Raw",
-      "Count": 9
-    },
-    {
-      "timestamp": "3300-01-01T12:02:00Z",
+      "timestamp": "3300-01-01T12:06:09Z",
       "event": "Cargo",
       "Inventory": [
         {
@@ -102,9 +870,4452 @@
           "Count": 5
         },
         {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 137
+        }
+      ],
+      "Count": 142
+    },
+    {
+      "timestamp": "3300-01-01T12:06:10Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:11Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 6
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 137
+        }
+      ],
+      "Count": 143
+    },
+    {
+      "timestamp": "3300-01-01T12:06:13Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:14Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 1
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 8
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 136
+        }
+      ],
+      "Count": 146
+    },
+    {
+      "timestamp": "3300-01-01T12:06:16Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:17Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:18Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 1
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 9
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 135
+        }
+      ],
+      "Count": 146
+    },
+    {
+      "timestamp": "3300-01-01T12:06:19Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:20Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:21Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 1
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 11
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 134
+        }
+      ],
+      "Count": 147
+    },
+    {
+      "timestamp": "3300-01-01T12:06:22Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:23Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:24Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 1
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 13
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 133
+        }
+      ],
+      "Count": 148
+    },
+    {
+      "timestamp": "3300-01-01T12:06:25Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:26Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:27Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 1
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 14
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 132
+        }
+      ],
+      "Count": 148
+    },
+    {
+      "timestamp": "3300-01-01T12:06:28Z",
+      "event": "MiningRefined",
+      "Type": "$gold_name;",
+      "Type_Localised": "Gold"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:29Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:30Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 1
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 16
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 131
+        }
+      ],
+      "Count": 150
+    },
+    {
+      "timestamp": "3300-01-01T12:06:31Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:32Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:33Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 1
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 17
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 130
+        }
+      ],
+      "Count": 150
+    },
+    {
+      "timestamp": "3300-01-01T12:06:34Z",
+      "event": "MiningRefined",
+      "Type": "$silver_name;",
+      "Type_Localised": "Silver"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:35Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:36Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 1
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 19
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 130
+        }
+      ],
+      "Count": 152
+    },
+    {
+      "timestamp": "3300-01-01T12:06:37Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:38Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:39Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 20
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 129
+        }
+      ],
+      "Count": 153
+    },
+    {
+      "timestamp": "3300-01-01T12:06:40Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:41Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:42Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 1
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 22
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 128
+        }
+      ],
+      "Count": 154
+    },
+    {
+      "timestamp": "3300-01-01T12:06:43Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:44Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:45Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 24
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 127
+        }
+      ],
+      "Count": 156
+    },
+    {
+      "timestamp": "3300-01-01T12:06:46Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:47Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:48Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 25
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 126
+        }
+      ],
+      "Count": 156
+    },
+    {
+      "timestamp": "3300-01-01T12:06:49Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:50Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:51Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 27
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 125
+        }
+      ],
+      "Count": 157
+    },
+    {
+      "timestamp": "3300-01-01T12:06:52Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:53Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:54Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 28
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 124
+        }
+      ],
+      "Count": 157
+    },
+    {
+      "timestamp": "3300-01-01T12:06:55Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:56Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:57Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 30
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 123
+        }
+      ],
+      "Count": 158
+    },
+    {
+      "timestamp": "3300-01-01T12:06:58Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:06:59Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 32
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 123
+        }
+      ],
+      "Count": 160
+    },
+    {
+      "timestamp": "3300-01-01T12:07:01Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:02Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:03Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 33
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 122
+        }
+      ],
+      "Count": 160
+    },
+    {
+      "timestamp": "3300-01-01T12:07:04Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:05Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:06Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
           "Name": "Gold",
           "Name_Localised": "Gold",
           "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 35
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 121
+        }
+      ],
+      "Count": 162
+    },
+    {
+      "timestamp": "3300-01-01T12:07:07Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:08Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:09Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 36
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 120
+        }
+      ],
+      "Count": 162
+    },
+    {
+      "timestamp": "3300-01-01T12:07:10Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:11Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 2
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 38
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 119
+        }
+      ],
+      "Count": 163
+    },
+    {
+      "timestamp": "3300-01-01T12:07:13Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:14Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 39
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 118
+        }
+      ],
+      "Count": 164
+    },
+    {
+      "timestamp": "3300-01-01T12:07:16Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:17Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:18Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 41
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 117
+        }
+      ],
+      "Count": 165
+    },
+    {
+      "timestamp": "3300-01-01T12:07:19Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:20Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:21Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 43
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 116
+        }
+      ],
+      "Count": 166
+    },
+    {
+      "timestamp": "3300-01-01T12:07:22Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:23Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:24Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 44
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 116
+        }
+      ],
+      "Count": 167
+    },
+    {
+      "timestamp": "3300-01-01T12:07:25Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:26Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:27Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 46
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 115
+        }
+      ],
+      "Count": 168
+    },
+    {
+      "timestamp": "3300-01-01T12:07:28Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:29Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:30Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 3
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 47
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 114
+        }
+      ],
+      "Count": 168
+    },
+    {
+      "timestamp": "3300-01-01T12:07:31Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:32Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:33Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 49
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 113
+        }
+      ],
+      "Count": 170
+    },
+    {
+      "timestamp": "3300-01-01T12:07:34Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:35Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:36Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 50
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 112
+        }
+      ],
+      "Count": 170
+    },
+    {
+      "timestamp": "3300-01-01T12:07:37Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:38Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:39Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 52
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 111
+        }
+      ],
+      "Count": 171
+    },
+    {
+      "timestamp": "3300-01-01T12:07:40Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:41Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:42Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 3
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 54
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 110
+        }
+      ],
+      "Count": 172
+    },
+    {
+      "timestamp": "3300-01-01T12:07:43Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:44Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:45Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 55
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 109
+        }
+      ],
+      "Count": 173
+    },
+    {
+      "timestamp": "3300-01-01T12:07:46Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:47Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:48Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 57
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 109
+        }
+      ],
+      "Count": 175
+    },
+    {
+      "timestamp": "3300-01-01T12:07:49Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:50Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:51Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 58
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 108
+        }
+      ],
+      "Count": 175
+    },
+    {
+      "timestamp": "3300-01-01T12:07:52Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:53Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:54Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 60
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 107
+        }
+      ],
+      "Count": 176
+    },
+    {
+      "timestamp": "3300-01-01T12:07:55Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:56Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:57Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 4
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 62
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 106
+        }
+      ],
+      "Count": 177
+    },
+    {
+      "timestamp": "3300-01-01T12:07:58Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:07:59Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 5
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 63
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 105
+        }
+      ],
+      "Count": 178
+    },
+    {
+      "timestamp": "3300-01-01T12:08:01Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:02Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:03Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 5
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 65
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 104
+        }
+      ],
+      "Count": 179
+    },
+    {
+      "timestamp": "3300-01-01T12:08:04Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:05Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:06Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 5
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 66
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 103
+        }
+      ],
+      "Count": 179
+    },
+    {
+      "timestamp": "3300-01-01T12:08:07Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:08Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:09Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 5
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 4
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 68
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 103
+        }
+      ],
+      "Count": 181
+    },
+    {
+      "timestamp": "3300-01-01T12:08:10Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:11Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 5
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 69
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 102
+        }
+      ],
+      "Count": 182
+    },
+    {
+      "timestamp": "3300-01-01T12:08:13Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:14Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 5
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 71
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 101
+        }
+      ],
+      "Count": 183
+    },
+    {
+      "timestamp": "3300-01-01T12:08:16Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:17Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:18Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 5
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 73
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 100
+        }
+      ],
+      "Count": 184
+    },
+    {
+      "timestamp": "3300-01-01T12:08:19Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:20Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:21Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 5
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 74
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 99
+        }
+      ],
+      "Count": 184
+    },
+    {
+      "timestamp": "3300-01-01T12:08:22Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:23Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:24Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 76
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 98
+        }
+      ],
+      "Count": 186
+    },
+    {
+      "timestamp": "3300-01-01T12:08:25Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:26Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:27Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 77
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 97
+        }
+      ],
+      "Count": 186
+    },
+    {
+      "timestamp": "3300-01-01T12:08:28Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:29Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:30Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 79
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 96
+        }
+      ],
+      "Count": 187
+    },
+    {
+      "timestamp": "3300-01-01T12:08:31Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:32Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:33Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 80
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 96
+        }
+      ],
+      "Count": 188
+    },
+    {
+      "timestamp": "3300-01-01T12:08:34Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:35Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:36Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 82
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 95
+        }
+      ],
+      "Count": 189
+    },
+    {
+      "timestamp": "3300-01-01T12:08:37Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:38Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:39Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 5
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 84
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 94
+        }
+      ],
+      "Count": 190
+    },
+    {
+      "timestamp": "3300-01-01T12:08:40Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:41Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:42Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 85
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 93
+        }
+      ],
+      "Count": 191
+    },
+    {
+      "timestamp": "3300-01-01T12:08:43Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:44Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:45Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 87
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 92
+        }
+      ],
+      "Count": 192
+    },
+    {
+      "timestamp": "3300-01-01T12:08:46Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:47Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:48Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 88
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 91
+        }
+      ],
+      "Count": 192
+    },
+    {
+      "timestamp": "3300-01-01T12:08:49Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:50Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:51Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 7
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 90
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 90
+        }
+      ],
+      "Count": 194
+    },
+    {
+      "timestamp": "3300-01-01T12:08:52Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:53Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:54Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 7
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 91
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 89
+        }
+      ],
+      "Count": 194
+    },
+    {
+      "timestamp": "3300-01-01T12:08:55Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:56Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:57Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 7
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 93
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 89
+        }
+      ],
+      "Count": 196
+    },
+    {
+      "timestamp": "3300-01-01T12:08:58Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:08:59Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 7
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 95
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 88
+        }
+      ],
+      "Count": 197
+    },
+    {
+      "timestamp": "3300-01-01T12:09:01Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:02Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:03Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 7
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 96
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 87
+        }
+      ],
+      "Count": 197
+    },
+    {
+      "timestamp": "3300-01-01T12:09:04Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:05Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:06Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 7
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 98
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 86
+        }
+      ],
+      "Count": 198
+    },
+    {
+      "timestamp": "3300-01-01T12:09:07Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:08Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:09Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 7
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 6
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 99
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 85
+        }
+      ],
+      "Count": 198
+    },
+    {
+      "timestamp": "3300-01-01T12:09:10Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:11Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 7
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 101
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 84
+        }
+      ],
+      "Count": 200
+    },
+    {
+      "timestamp": "3300-01-01T12:09:13Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:14Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 102
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 83
+        }
+      ],
+      "Count": 201
+    },
+    {
+      "timestamp": "3300-01-01T12:09:16Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:17Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:18Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 104
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 82
+        }
+      ],
+      "Count": 202
+    },
+    {
+      "timestamp": "3300-01-01T12:09:19Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:20Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:21Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 106
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 82
+        }
+      ],
+      "Count": 204
+    },
+    {
+      "timestamp": "3300-01-01T12:09:22Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:23Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:24Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 107
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 81
+        }
+      ],
+      "Count": 204
+    },
+    {
+      "timestamp": "3300-01-01T12:09:25Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:26Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:27Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 109
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 80
+        }
+      ],
+      "Count": 205
+    },
+    {
+      "timestamp": "3300-01-01T12:09:28Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:29Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:30Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 110
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 79
+        }
+      ],
+      "Count": 205
+    },
+    {
+      "timestamp": "3300-01-01T12:09:31Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:32Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:33Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 112
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 78
+        }
+      ],
+      "Count": 206
+    },
+    {
+      "timestamp": "3300-01-01T12:09:34Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:35Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:36Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 114
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 77
+        }
+      ],
+      "Count": 207
+    },
+    {
+      "timestamp": "3300-01-01T12:09:37Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:38Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:39Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 8
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 7
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 115
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 76
+        }
+      ],
+      "Count": 207
+    },
+    {
+      "timestamp": "3300-01-01T12:09:40Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:41Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:42Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 117
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 75
+        }
+      ],
+      "Count": 210
+    },
+    {
+      "timestamp": "3300-01-01T12:09:43Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:44Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:45Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 118
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 75
+        }
+      ],
+      "Count": 211
+    },
+    {
+      "timestamp": "3300-01-01T12:09:46Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:47Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:48Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 120
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 74
+        }
+      ],
+      "Count": 212
+    },
+    {
+      "timestamp": "3300-01-01T12:09:49Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:50Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:51Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 121
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 73
+        }
+      ],
+      "Count": 212
+    },
+    {
+      "timestamp": "3300-01-01T12:09:52Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:53Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:54Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 123
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 72
+        }
+      ],
+      "Count": 213
+    },
+    {
+      "timestamp": "3300-01-01T12:09:55Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:56Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:57Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 125
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 71
+        }
+      ],
+      "Count": 214
+    },
+    {
+      "timestamp": "3300-01-01T12:09:58Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:09:59Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 126
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 70
+        }
+      ],
+      "Count": 214
+    },
+    {
+      "timestamp": "3300-01-01T12:10:01Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:02Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:03Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 128
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 69
+        }
+      ],
+      "Count": 215
+    },
+    {
+      "timestamp": "3300-01-01T12:10:04Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:05Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:06Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 9
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 8
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 129
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 69
+        }
+      ],
+      "Count": 216
+    },
+    {
+      "timestamp": "3300-01-01T12:10:07Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:08Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:09Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 131
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 68
+        }
+      ],
+      "Count": 219
+    },
+    {
+      "timestamp": "3300-01-01T12:10:10Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:11Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 132
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 67
+        }
+      ],
+      "Count": 219
+    },
+    {
+      "timestamp": "3300-01-01T12:10:13Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:14Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 134
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 66
+        }
+      ],
+      "Count": 220
+    },
+    {
+      "timestamp": "3300-01-01T12:10:16Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:17Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:18Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 136
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 65
+        }
+      ],
+      "Count": 221
+    },
+    {
+      "timestamp": "3300-01-01T12:10:19Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:20Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:21Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 137
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 64
+        }
+      ],
+      "Count": 221
+    },
+    {
+      "timestamp": "3300-01-01T12:10:22Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:23Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:24Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 139
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 63
+        }
+      ],
+      "Count": 222
+    },
+    {
+      "timestamp": "3300-01-01T12:10:25Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:26Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:27Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 140
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 62
+        }
+      ],
+      "Count": 222
+    },
+    {
+      "timestamp": "3300-01-01T12:10:28Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:29Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:30Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 142
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 62
+        }
+      ],
+      "Count": 224
+    },
+    {
+      "timestamp": "3300-01-01T12:10:31Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:32Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:33Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 144
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 61
+        }
+      ],
+      "Count": 225
+    },
+    {
+      "timestamp": "3300-01-01T12:10:34Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:35Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:36Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 11
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 9
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 145
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 60
+        }
+      ],
+      "Count": 226
+    },
+    {
+      "timestamp": "3300-01-01T12:10:37Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:38Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:39Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 11
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 147
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 59
+        }
+      ],
+      "Count": 228
+    },
+    {
+      "timestamp": "3300-01-01T12:10:40Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:41Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:42Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 11
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 148
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 58
+        }
+      ],
+      "Count": 228
+    },
+    {
+      "timestamp": "3300-01-01T12:10:43Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:44Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:45Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 11
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 150
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 57
+        }
+      ],
+      "Count": 229
+    },
+    {
+      "timestamp": "3300-01-01T12:10:46Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:47Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:48Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 11
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 151
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 56
+        }
+      ],
+      "Count": 229
+    },
+    {
+      "timestamp": "3300-01-01T12:10:49Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:50Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:51Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 11
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 153
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 55
+        }
+      ],
+      "Count": 230
+    },
+    {
+      "timestamp": "3300-01-01T12:10:52Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:53Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:54Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 11
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 155
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 55
+        }
+      ],
+      "Count": 232
+    },
+    {
+      "timestamp": "3300-01-01T12:10:55Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:56Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:57Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 11
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 156
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 54
+        }
+      ],
+      "Count": 232
+    },
+    {
+      "timestamp": "3300-01-01T12:10:58Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:10:59Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 158
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 53
+        }
+      ],
+      "Count": 234
+    },
+    {
+      "timestamp": "3300-01-01T12:11:01Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:02Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:03Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 159
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 52
+        }
+      ],
+      "Count": 234
+    },
+    {
+      "timestamp": "3300-01-01T12:11:04Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:05Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:06Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 161
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 51
+        }
+      ],
+      "Count": 235
+    },
+    {
+      "timestamp": "3300-01-01T12:11:07Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:08Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:09Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 162
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 50
+        }
+      ],
+      "Count": 236
+    },
+    {
+      "timestamp": "3300-01-01T12:11:10Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:11Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 164
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 49
+        }
+      ],
+      "Count": 237
+    },
+    {
+      "timestamp": "3300-01-01T12:11:13Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:14Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 166
         },
         {
           "Name": "Drones",
@@ -112,7 +5323,2620 @@
           "Count": 48
         }
       ],
-      "Count": 56
+      "Count": 238
+    },
+    {
+      "timestamp": "3300-01-01T12:11:16Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:17Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:18Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 167
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 48
+        }
+      ],
+      "Count": 239
+    },
+    {
+      "timestamp": "3300-01-01T12:11:19Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:20Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:21Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 169
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 47
+        }
+      ],
+      "Count": 240
+    },
+    {
+      "timestamp": "3300-01-01T12:11:22Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:23Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:24Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 12
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 170
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 46
+        }
+      ],
+      "Count": 240
+    },
+    {
+      "timestamp": "3300-01-01T12:11:25Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:26Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:27Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 13
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 172
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 45
+        }
+      ],
+      "Count": 242
+    },
+    {
+      "timestamp": "3300-01-01T12:11:28Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:29Z",
+      "event": "MiningRefined",
+      "Type": "$osmium_name;",
+      "Type_Localised": "Osmium"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:30Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 13
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 173
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 44
+        }
+      ],
+      "Count": 242
+    },
+    {
+      "timestamp": "3300-01-01T12:11:31Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:32Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:33Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 13
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 175
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 43
+        }
+      ],
+      "Count": 243
+    },
+    {
+      "timestamp": "3300-01-01T12:11:34Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:35Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:36Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 13
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 11
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 177
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 42
+        }
+      ],
+      "Count": 244
+    },
+    {
+      "timestamp": "3300-01-01T12:11:37Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:38Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:39Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 13
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 178
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 41
+        }
+      ],
+      "Count": 245
+    },
+    {
+      "timestamp": "3300-01-01T12:11:40Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:41Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:42Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 13
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 180
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 41
+        }
+      ],
+      "Count": 247
+    },
+    {
+      "timestamp": "3300-01-01T12:11:43Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:44Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:45Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 13
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 181
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 40
+        }
+      ],
+      "Count": 247
+    },
+    {
+      "timestamp": "3300-01-01T12:11:46Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:47Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:48Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 13
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 183
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 39
+        }
+      ],
+      "Count": 248
+    },
+    {
+      "timestamp": "3300-01-01T12:11:49Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:50Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:51Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 184
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 38
+        }
+      ],
+      "Count": 249
+    },
+    {
+      "timestamp": "3300-01-01T12:11:52Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:53Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:54Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 186
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 37
+        }
+      ],
+      "Count": 250
+    },
+    {
+      "timestamp": "3300-01-01T12:11:55Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:56Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:57Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 188
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 36
+        }
+      ],
+      "Count": 251
+    },
+    {
+      "timestamp": "3300-01-01T12:11:58Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:11:59Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 189
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 35
+        }
+      ],
+      "Count": 251
+    },
+    {
+      "timestamp": "3300-01-01T12:12:01Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:02Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:03Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 191
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 35
+        }
+      ],
+      "Count": 253
+    },
+    {
+      "timestamp": "3300-01-01T12:12:04Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:05Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:06Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 192
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 34
+        }
+      ],
+      "Count": 254
+    },
+    {
+      "timestamp": "3300-01-01T12:12:07Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:08Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:09Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 194
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 33
+        }
+      ],
+      "Count": 255
+    },
+    {
+      "timestamp": "3300-01-01T12:12:10Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:11Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 196
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 32
+        }
+      ],
+      "Count": 256
+    },
+    {
+      "timestamp": "3300-01-01T12:12:13Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:14Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 197
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 31
+        }
+      ],
+      "Count": 256
+    },
+    {
+      "timestamp": "3300-01-01T12:12:16Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:17Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:18Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 199
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 30
+        }
+      ],
+      "Count": 258
+    },
+    {
+      "timestamp": "3300-01-01T12:12:19Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:20Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:21Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 200
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 29
+        }
+      ],
+      "Count": 258
+    },
+    {
+      "timestamp": "3300-01-01T12:12:22Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:23Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:24Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 202
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 28
+        }
+      ],
+      "Count": 259
+    },
+    {
+      "timestamp": "3300-01-01T12:12:25Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:26Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:27Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 203
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 28
+        }
+      ],
+      "Count": 260
+    },
+    {
+      "timestamp": "3300-01-01T12:12:28Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:29Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:30Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 205
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 27
+        }
+      ],
+      "Count": 261
+    },
+    {
+      "timestamp": "3300-01-01T12:12:31Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:32Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:33Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 13
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 207
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 26
+        }
+      ],
+      "Count": 262
+    },
+    {
+      "timestamp": "3300-01-01T12:12:34Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:35Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:36Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 208
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 25
+        }
+      ],
+      "Count": 263
+    },
+    {
+      "timestamp": "3300-01-01T12:12:37Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:38Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:39Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 210
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 24
+        }
+      ],
+      "Count": 264
+    },
+    {
+      "timestamp": "3300-01-01T12:12:40Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:41Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:42Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 15
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 211
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 23
+        }
+      ],
+      "Count": 264
+    },
+    {
+      "timestamp": "3300-01-01T12:12:43Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:44Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:45Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 213
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 22
+        }
+      ],
+      "Count": 266
+    },
+    {
+      "timestamp": "3300-01-01T12:12:46Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:47Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:48Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 214
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 21
+        }
+      ],
+      "Count": 266
+    },
+    {
+      "timestamp": "3300-01-01T12:12:49Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:50Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:51Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 216
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 21
+        }
+      ],
+      "Count": 268
+    },
+    {
+      "timestamp": "3300-01-01T12:12:52Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:53Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:54Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 218
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 20
+        }
+      ],
+      "Count": 269
+    },
+    {
+      "timestamp": "3300-01-01T12:12:55Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:56Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:57Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 219
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 19
+        }
+      ],
+      "Count": 269
+    },
+    {
+      "timestamp": "3300-01-01T12:12:58Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:12:59Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 221
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 18
+        }
+      ],
+      "Count": 270
+    },
+    {
+      "timestamp": "3300-01-01T12:13:01Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:02Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:03Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 222
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 17
+        }
+      ],
+      "Count": 270
+    },
+    {
+      "timestamp": "3300-01-01T12:13:04Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:05Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:06Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 224
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 16
+        }
+      ],
+      "Count": 272
+    },
+    {
+      "timestamp": "3300-01-01T12:13:07Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:08Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:09Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 16
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 226
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 15
+        }
+      ],
+      "Count": 273
+    },
+    {
+      "timestamp": "3300-01-01T12:13:10Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:11Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 17
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 227
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 14
+        }
+      ],
+      "Count": 274
+    },
+    {
+      "timestamp": "3300-01-01T12:13:13Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:14Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 17
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 229
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 14
+        }
+      ],
+      "Count": 276
+    },
+    {
+      "timestamp": "3300-01-01T12:13:16Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:17Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:18Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 17
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 230
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 13
+        }
+      ],
+      "Count": 276
+    },
+    {
+      "timestamp": "3300-01-01T12:13:19Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:20Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:21Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 17
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 232
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 12
+        }
+      ],
+      "Count": 277
+    },
+    {
+      "timestamp": "3300-01-01T12:13:22Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:23Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:24Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 17
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 233
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 11
+        }
+      ],
+      "Count": 277
+    },
+    {
+      "timestamp": "3300-01-01T12:13:25Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:26Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:27Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 17
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 235
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 10
+        }
+      ],
+      "Count": 278
+    },
+    {
+      "timestamp": "3300-01-01T12:13:28Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:29Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:30Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 17
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 237
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 9
+        }
+      ],
+      "Count": 279
+    },
+    {
+      "timestamp": "3300-01-01T12:13:31Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:32Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:33Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 17
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 15
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 238
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 8
+        }
+      ],
+      "Count": 279
+    },
+    {
+      "timestamp": "3300-01-01T12:13:34Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:35Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:36Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 18
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 240
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 7
+        }
+      ],
+      "Count": 282
+    },
+    {
+      "timestamp": "3300-01-01T12:13:37Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:38Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:39Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 18
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 241
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 7
+        }
+      ],
+      "Count": 283
+    },
+    {
+      "timestamp": "3300-01-01T12:13:40Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:41Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:42Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 18
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 243
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 6
+        }
+      ],
+      "Count": 284
+    },
+    {
+      "timestamp": "3300-01-01T12:13:43Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:44Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:45Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 18
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 244
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 5
+        }
+      ],
+      "Count": 284
+    },
+    {
+      "timestamp": "3300-01-01T12:13:46Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:47Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:48Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 18
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 4
+        }
+      ],
+      "Count": 285
+    },
+    {
+      "timestamp": "3300-01-01T12:13:49Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:50Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:51Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 18
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 4
+        }
+      ],
+      "Count": 285
+    },
+    {
+      "timestamp": "3300-01-01T12:13:52Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:53Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:54Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 14
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 4
+        }
+      ],
+      "Count": 281
+    },
+    {
+      "timestamp": "3300-01-01T12:13:55Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:56Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:57Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 10
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 4
+        }
+      ],
+      "Count": 277
+    },
+    {
+      "timestamp": "3300-01-01T12:13:58Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:13:59Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:00Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 6
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 4
+        }
+      ],
+      "Count": 273
+    },
+    {
+      "timestamp": "3300-01-01T12:14:01Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:02Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:03Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Gold",
+          "Name_Localised": "Gold",
+          "Count": 2
+        },
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 4
+        }
+      ],
+      "Count": 269
+    },
+    {
+      "timestamp": "3300-01-01T12:14:04Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:05Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:06Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 16
+        },
+        {
+          "Name": "Silver",
+          "Name_Localised": "Silver",
+          "Count": 1
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 4
+        }
+      ],
+      "Count": 267
+    },
+    {
+      "timestamp": "3300-01-01T12:14:07Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:08Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:09Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 14
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        },
+        {
+          "Name": "Drones",
+          "Name_Localised": "Limpet",
+          "Count": 4
+        }
+      ],
+      "Count": 264
+    },
+    {
+      "timestamp": "3300-01-01T12:14:10Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:11Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:12Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 12
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        }
+      ],
+      "Count": 258
+    },
+    {
+      "timestamp": "3300-01-01T12:14:13Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:14Z",
+      "event": "MiningRefined",
+      "Type": "$platinum_name;",
+      "Type_Localised": "Platinum"
+    },
+    {
+      "timestamp": "3300-01-01T12:14:15Z",
+      "event": "Cargo",
+      "Inventory": [
+        {
+          "Name": "Osmium",
+          "Name_Localised": "Osmium",
+          "Count": 10
+        },
+        {
+          "Name": "Platinum",
+          "Name_Localised": "Platinum",
+          "Count": 246
+        }
+      ],
+      "Count": 256
+    },
+    {
+      "timestamp": "3300-01-01T12:15:30Z",
+      "event": "MaterialCollected",
+      "Name": "tin",
+      "Category": "Raw",
+      "Count": 3
+    },
+    {
+      "timestamp": "3300-01-01T12:20:35Z",
+      "event": "FSDJump",
+      "StarSystem": "Test Ring Exit",
+      "StarPos": [
+        24.0,
+        -8.5,
+        39.0
+      ],
+      "SystemAddress": 9876543210
     }
   ]
 }

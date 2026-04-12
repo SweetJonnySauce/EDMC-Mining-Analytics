@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import json
 import logging
+import shutil
 from datetime import timedelta
 
-from tests.harness_test_utils import REPO_ROOT, harness_context
+from tests.harness_test_utils import (
+    REPO_ROOT,
+    TESTS_ROOT,
+    harness_context,
+    load_test_journal_events,
+    resolve_test_location_names,
+    resolve_test_output_root,
+)
 
 logger = logging.getLogger("EDMC.harness_tests")
 
@@ -65,6 +74,51 @@ def test_harness_lifecycle_start_stop_is_repeatable() -> None:
         assert load._plugin.state.is_mining is False
 
 
+def test_harness_option_defaults(monkeypatch) -> None:
+    monkeypatch.delenv("EDMCMA_HARNESS_USE_REAL_OUTPUT", raising=False)
+    monkeypatch.delenv("EDMCMA_HARNESS_SYSTEM_NAME", raising=False)
+
+    assert resolve_test_output_root() == TESTS_ROOT
+    assert resolve_test_location_names() == {
+        "system": "Test Ring",
+        "body": "Test Ring A 8",
+        "ring": "Test Ring A 8 A Ring",
+        "exit_system": "Test Ring Exit",
+    }
+
+
+def test_harness_option_overrides(monkeypatch) -> None:
+    monkeypatch.setenv("EDMCMA_HARNESS_USE_REAL_OUTPUT", "1")
+    monkeypatch.setenv("EDMCMA_HARNESS_SYSTEM_NAME", "Option Ring")
+
+    assert resolve_test_output_root() == REPO_ROOT
+    assert resolve_test_location_names() == {
+        "system": "Option Ring",
+        "body": "Option Ring A 8",
+        "ring": "Option Ring A 8 A Ring",
+        "exit_system": "Option Ring Exit",
+    }
+
+    payload = load_test_journal_events(rebase_to_now=False)
+    sequence = payload["sample_mining_session"]
+    assert any(
+        entry.get("event") == "Location"
+        and entry.get("StarSystem") == "Option Ring"
+        and entry.get("Body") == "Option Ring A 8"
+        for entry in sequence
+    )
+    assert any(
+        entry.get("event") == "SupercruiseExit"
+        and entry.get("Body") == "Option Ring A 8 A Ring"
+        for entry in sequence
+    )
+    assert any(
+        entry.get("event") == "FSDJump"
+        and entry.get("StarSystem") == "Option Ring Exit"
+        for entry in sequence
+    )
+
+
 def test_harness_can_replay_named_journal_sequence() -> None:
     with harness_context() as (harness, load, _cfg):
         _register_handler(harness, load)
@@ -72,22 +126,103 @@ def test_harness_can_replay_named_journal_sequence() -> None:
         harness.play_sequence("sample_mining_session")
 
         state = load._plugin.state
-        assert state.is_mining is True
-        assert state.prospector_launched_count == 1
-        assert state.prospected_count == 1
-        assert state.prospect_content_counts.get("High") == 1
-        assert state.cargo_totals.get("platinum") == 5
-        assert state.cargo_totals.get("gold") == 3
-        assert state.materials_collected.get("iron") == 3
-        assert state.materials_collected.get("carbon") == 6
-        assert state.materials_collected.get("nickel") == 9
+        location_names = resolve_test_location_names()
+        assert state.is_mining is False
+        assert state.mining_end is not None
+        assert state.current_ship == "Type-11 Prospector"
+        assert state.cargo_capacity == 256
+        assert state.prospector_launched_count == 21
+        assert state.collection_drones_launched == 27
+        assert state.prospected_count == 20
+        assert state.prospect_content_counts.get("High", 0) == 0
+        assert state.prospect_content_counts.get("Medium") == 6
+        assert state.prospect_content_counts.get("Low") == 14
+        assert state.cargo_totals.get("platinum") == 246
+        assert state.cargo_totals.get("gold") == 18
+        assert state.cargo_totals.get("osmium") == 16
+        assert state.cargo_totals.get("silver") == 1
+        assert state.materials_collected.get("tin") == 3
+        assert state.mining_ring == location_names["ring"]
         logger.info(
-            "Sample mining session replayed: mining=%s prospected=%s platinum=%s gold=%s materials=%s",
+            "Sample mining session replayed: mining=%s prospected=%s collectors=%s platinum=%s osmium=%s gold=%s silver=%s materials=%s",
             state.is_mining,
             state.prospected_count,
+            state.collection_drones_launched,
             state.cargo_totals.get("platinum"),
+            state.cargo_totals.get("osmium"),
             state.cargo_totals.get("gold"),
+            state.cargo_totals.get("silver"),
             dict(state.materials_collected),
+        )
+
+
+def test_harness_full_mining_run_writes_session_data_file() -> None:
+    with harness_context() as (harness, load, _cfg):
+        _register_handler(harness, load)
+
+        output_root = resolve_test_output_root()
+        location_names = resolve_test_location_names()
+        tests_session_dir = output_root / "session_data"
+        real_session_dir = REPO_ROOT / "session_data"
+        real_session_files_before = sorted(path.name for path in real_session_dir.glob("session_data_*.json"))
+        tests_session_dir.mkdir(parents=True, exist_ok=True)
+        if output_root != REPO_ROOT:
+            for path in tests_session_dir.iterdir():
+                if path.name in {".gitkeep", "ring_summary.jsonl", "prospected_asteroid_summary.jsonl"}:
+                    continue
+                if path.is_dir():
+                    shutil.rmtree(path, ignore_errors=True)
+                else:
+                    path.unlink(missing_ok=True)
+
+        state = load._plugin.state
+        state.session_logging_enabled = True
+        state.plugin_dir = output_root
+        load._plugin.session_recorder._enforce_retention = lambda _directory: None
+
+        harness.load_events("journal_events.json")
+        harness.play_sequence("sample_mining_session")
+
+        session_dir = output_root / "session_data"
+        assert session_dir == tests_session_dir
+        session_files = sorted(session_dir.glob("session_data_*.json"))
+        if output_root == REPO_ROOT:
+            assert session_files
+            session_file = max(session_files, key=lambda path: path.stat().st_mtime_ns)
+        else:
+            assert len(session_files) == 1
+            session_file = session_files[0]
+
+        payload = json.loads(session_file.read_text(encoding="utf-8"))
+        meta = payload["meta"]
+        commodities = payload["commodities"]
+        materials = {row["name"].lower(): row["count"] for row in meta["materials"]}
+
+        assert meta["location"]["ring"] == location_names["ring"]
+        assert meta["ship"] == "Type-11 Prospector"
+        assert meta["cargo_capacity"] == 256
+        assert meta["prospected"]["total"] == 20
+        assert meta["prospectors_launched"] == 21
+        assert meta["collectors_launched"] == 27
+        assert meta["collectors_abandoned"] == 89
+        assert meta["limpets_remaining"] == 4
+        assert meta["content_summary"] == {"High": 0, "Medium": 6, "Low": 14}
+        assert materials == {"tin": 3}
+        assert commodities["Platinum"]["gathered"]["tons"] == 246
+        assert commodities["Gold"]["gathered"]["tons"] == 18
+        assert commodities["Osmium"]["gathered"]["tons"] == 16
+        assert commodities["Silver"]["gathered"]["tons"] == 1
+        assert len(payload["events"]) == 566
+        assert payload["events"][-1]["type"] == "mining_session_stopped"
+        assert payload["events"][-1]["details"]["reason"] == "FSD Jump"
+        if output_root != REPO_ROOT:
+            assert sorted(path.name for path in real_session_dir.glob("session_data_*.json")) == real_session_files_before
+
+        logger.info(
+            "Mining run exported session data to %s with %s events and commodities=%s",
+            session_file.name,
+            len(payload["events"]),
+            sorted(commodities),
         )
 
 
