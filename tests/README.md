@@ -6,6 +6,7 @@ This project vendors harness sources from:
 Vendored paths in this repo:
 - `tests/harness.py`
 - `tests/edmc/`
+- `tests/journal_config/`
 
 ## Important Rule
 
@@ -74,3 +75,4 @@ Adjust only non-vendored files (for example):
 - `tests/test_harness_integration.py`
 
 Do not hand-edit `tests/harness.py` or `tests/edmc/**` after syncing.
+Do not hand-edit `tests/journal_config/**` after syncing.

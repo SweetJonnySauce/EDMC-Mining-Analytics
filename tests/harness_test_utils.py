@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import importlib
+import shutil
 import sys
 from contextlib import contextmanager
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Iterator, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -77,9 +79,11 @@ def _prepare_load_module():
 
     # Ensure mocks bootstrap a valid log level for the EDMC logging shim.
     from tests.edmc.mocks import MockConfig
+    import config as config_module
 
     cfg = MockConfig()
     cfg.data["loglevel"] = "INFO"
+    config_module.trace_on = []
 
     import edmc_mining_analytics.plugin as plugin_module
 
@@ -91,18 +95,48 @@ def _prepare_load_module():
     return harness_module, load, cfg
 
 
+def _build_harness_fixture_root(temp_root: Path) -> Path:
+    fixture_root = temp_root / "harness-fixtures"
+    config_dir = fixture_root / "config"
+    journal_config_dir = fixture_root / "journal_config"
+    journal_folder_dir = fixture_root / "journal_folder"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    journal_config_dir.mkdir(parents=True, exist_ok=True)
+    journal_folder_dir.mkdir(parents=True, exist_ok=True)
+
+    for source in (TESTS_ROOT / "config").glob("*"):
+        if source.is_file():
+            shutil.copy2(source, config_dir / source.name)
+
+    for source in (TESTS_ROOT / "journal_config").glob("*"):
+        if source.is_file():
+            shutil.copy2(source, journal_config_dir / source.name)
+
+    custom_journal_events = TESTS_ROOT / "config" / "journal_events.json"
+    if custom_journal_events.is_file():
+        shutil.copy2(custom_journal_events, journal_config_dir / "journal_events.json")
+
+    vendored_config = TESTS_ROOT / "edmc" / "EDMarketConnector" / "config.toml"
+    if vendored_config.is_file():
+        shutil.copy2(vendored_config, config_dir / "config.toml")
+
+    return fixture_root
+
+
 @contextmanager
 def harness_context(*, start_plugin: bool = True) -> Iterator[Tuple[object, object, object]]:
     """Yield (harness, load_module, mock_config) with deterministic cleanup."""
 
     harness_module, load, cfg = _prepare_load_module()
-    harness = harness_module.TestHarness(plugin_dir=str(TESTS_ROOT))
-    if start_plugin:
-        load.plugin_start3(str(REPO_ROOT))
-    try:
-        yield harness, load, cfg
-    finally:
+    with TemporaryDirectory(prefix="edmcma-harness-") as temp_dir:
+        fixture_root = _build_harness_fixture_root(Path(temp_dir))
+        harness = harness_module.TestHarness(plugin_dir=str(fixture_root))
+        if start_plugin:
+            load.plugin_start3(str(REPO_ROOT))
         try:
-            load.plugin_stop()
-        except Exception:
-            pass
+            yield harness, load, cfg
+        finally:
+            try:
+                load.plugin_stop()
+            except Exception:
+                pass

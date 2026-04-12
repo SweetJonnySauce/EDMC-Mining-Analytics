@@ -4,6 +4,9 @@
       "timestamp": "3300-01-01T12:00:00Z",
       "event": "LoadGame",
       "Commander": "TestCMDR",
+      "Credits": 1000000,
+      "Horizons": true,
+      "Loan": 0,
       "Ship": "Krait_MkII",
       "Ship_Localised": "Krait Mk II",
       "GameMode": "Open"
@@ -13,8 +16,15 @@
       "event": "Location",
       "Docked": false,
       "StarSystem": "Test System",
+      "StarPos": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "SystemAddress": 1234567890,
       "Body": "Test Body",
-      "BodyType": "Planet"
+      "BodyType": "Planet",
+      "Population": 1000
     },
     {
       "timestamp": "3300-01-01T12:01:00Z",
@@ -65,18 +75,21 @@
       "timestamp": "3300-01-01T12:01:30Z",
       "event": "MaterialCollected",
       "Name": "iron",
+      "Category": "Raw",
       "Count": 3
     },
     {
       "timestamp": "3300-01-01T12:01:35Z",
       "event": "MaterialCollected",
       "Name": "carbon",
+      "Category": "Raw",
       "Count": 6
     },
     {
       "timestamp": "3300-01-01T12:01:40Z",
       "event": "MaterialCollected",
       "Name": "nickel",
+      "Category": "Raw",
       "Count": 9
     },
     {

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from datetime import timedelta
 
 from tests.harness_test_utils import REPO_ROOT, harness_context
+
+logger = logging.getLogger("EDMC.harness_tests")
 
 
 def _register_handler(harness, load) -> None:
@@ -78,6 +81,14 @@ def test_harness_can_replay_named_journal_sequence() -> None:
         assert state.materials_collected.get("iron") == 3
         assert state.materials_collected.get("carbon") == 6
         assert state.materials_collected.get("nickel") == 9
+        logger.info(
+            "Sample mining session replayed: mining=%s prospected=%s platinum=%s gold=%s materials=%s",
+            state.is_mining,
+            state.prospected_count,
+            state.cargo_totals.get("platinum"),
+            state.cargo_totals.get("gold"),
+            dict(state.materials_collected),
+        )
 
 
 def test_journal_handler_writes_expected_shared_state_keys() -> None:
@@ -86,6 +97,7 @@ def test_journal_handler_writes_expected_shared_state_keys() -> None:
         shared_state: dict = {}
 
         harness.fire_event(_launch_prospector_event("3300-01-01T00:00:00Z"), state=shared_state)
+        effective_shared_state = harness.monitor.state
 
         expected = {
             "edmc_mining_active",
@@ -100,16 +112,21 @@ def test_journal_handler_writes_expected_shared_state_keys() -> None:
             "edmc_mining_prospectors_launched",
             "edmc_mining_prospectors_lost",
         }
-        assert expected.issubset(shared_state.keys())
-        assert shared_state["edmc_mining_active"] is True
-        assert shared_state["edmc_mining_start"] is not None
-        assert shared_state["edmc_mining_prospectors_launched"] == 1
+        assert expected.issubset(effective_shared_state.keys())
+        assert effective_shared_state["edmc_mining_active"] is True
+        assert effective_shared_state["edmc_mining_start"] is not None
+        assert effective_shared_state["edmc_mining_prospectors_launched"] == 1
 
         harness.fire_event(
             {"event": "SupercruiseEntry", "StarSystem": "Sol", "timestamp": "3300-01-01T00:03:00Z"},
             state=shared_state,
         )
-        assert shared_state["edmc_mining_active"] is False
+        assert harness.monitor.state["edmc_mining_active"] is False
+        logger.info(
+            "Shared mining state published and then cleared after supercruise entry; active=%s tracked_keys=%s",
+            harness.monitor.state["edmc_mining_active"],
+            sorted(expected),
+        )
 
 
 def test_prefs_hooks_update_cmdr_and_persist_settings(monkeypatch) -> None:
@@ -196,6 +213,8 @@ def test_session_stops_on_fsd_jump() -> None:
             {
                 "event": "FSDJump",
                 "StarSystem": "Achenar",
+                "StarPos": [67.5, -12.25, 3.0],
+                "SystemAddress": 4242424242,
                 "timestamp": "3300-01-01T00:02:00Z",
             },
             state={},
@@ -214,6 +233,7 @@ def test_launch_without_system_uses_last_supercruise_exit_starsystem() -> None:
                 "StarSystem": "Col 285 Sector VZ-W b15-0",
                 "Body": "Col 285 Sector VZ-W b15-0 1 A Ring",
                 "BodyID": 29,
+                "BodyType": "Planet",
                 "timestamp": "3300-01-01T00:00:00Z",
             },
             state={},
@@ -224,11 +244,13 @@ def test_launch_without_system_uses_last_supercruise_exit_starsystem() -> None:
             {
                 "event": "Music",
                 "StarSystem": "Col 285 Sector RT-Y b14-2",
+                "MusicTrack": "Exploration",
                 "timestamp": "3300-01-01T00:00:05Z",
             },
             state={},
         )
         assert load._plugin.state.current_system == "Col 285 Sector RT-Y b14-2"
+        harness.monitor.state["SystemName"] = None
 
         # Launch event often does not include a system field; mining should fall back
         # to the most recent SupercruiseExit StarSystem.
@@ -268,9 +290,16 @@ def test_shipyard_swap_pending_update_resolves_on_loadout() -> None:
             {
                 "event": "Loadout",
                 "ShipID": 77,
+                "Ship": "krait_mkii",
+                "ShipIdent": "",
+                "ShipName": "",
                 "ShipType": "krait_mkii",
                 "ShipType_Localised": "Krait Mk II",
                 "CargoCapacity": 192,
+                "UnladenMass": 320.0,
+                "MaxJumpRange": 22.5,
+                "Rebuy": 1500000,
+                "Modules": [],
                 "timestamp": "3300-01-01T01:00:05Z",
             },
             state={},

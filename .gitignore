@@ -19,3 +19,8 @@ updates/**
 .venv/**
 
 *.log
+
+tests/journal_folder/
+tests/journal_folder/**
+tests/logs/
+tests/logs/**

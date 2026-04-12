@@ -1,0 +1,7 @@
+{
+    "startup": [
+        { "event":"Startup", "System":"Sol", "Body":"Earth", "BodyID":3 },
+        { "event":"Fileheader", "part":1, "language":"English/UK", "Odyssey":true, "gameversion":"4.3.1.0", "build":"r324607/r0 " },
+        { "event":"Friends", "Status":"Online", "Name":"NoneLooser" }
+    ]
+}

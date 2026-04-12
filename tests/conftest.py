@@ -6,13 +6,21 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+TEST_LOG_PATH = REPO_ROOT / "tests" / "logs" / "EDMC-debug.log"
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+
+def pytest_sessionstart(session) -> None:
+    TEST_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    TEST_LOG_PATH.write_text("", encoding="utf-8")
+
 try:
+    import config as config_module
     from tests.edmc.mocks import MockConfig
 
     cfg = MockConfig()
+    config_module.trace_on = []
     config_path = REPO_ROOT / "tests" / "config" / "edmc_config.json"
     if config_path.is_file():
         try:

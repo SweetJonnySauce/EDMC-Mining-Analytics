@@ -9,8 +9,9 @@ Default upstream:
   https://github.com/dwomble/EDMC-PluginLib.git (ref: main)
 
 This script syncs:
-  - tests/harness.py
-  - tests/edmc/
+  - tests/harness.py                    (from EDMC-PluginLib)
+  - tests/edmc/                        (from EDMC-PluginLib)
+  - tests/journal_config/              (from EDMC-PluginLib)
 
 Usage:
   scripts/sync_harness.sh [options]
@@ -20,7 +21,7 @@ Options:
   --repo-url <url>      Upstream git URL
   --plugin-root <path>  Plugin repository root (default: auto-detected)
   --dry-run             Show what would change, do not write files
-  --no-delete           Do not delete local files missing upstream (tests/edmc)
+  --no-delete           Do not delete local files missing the sync source
   --no-record           Do not update tests/VENDORED_HARNESS_SOURCE.md
   --keep-tmp            Keep temporary clone directory for inspection
   -h, --help            Show this help
@@ -35,7 +36,8 @@ require_cmd() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SOURCE_REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PLUGIN_ROOT="$SOURCE_REPO_ROOT"
 REPO_URL="https://github.com/dwomble/EDMC-PluginLib.git"
 REF="main"
 DRY_RUN=0
@@ -94,6 +96,7 @@ require_cmd date
 PLUGIN_ROOT="$(cd "$PLUGIN_ROOT" && pwd)"
 TARGET_HARNESS="$PLUGIN_ROOT/tests/harness.py"
 TARGET_EDMC_DIR="$PLUGIN_ROOT/tests/edmc"
+TARGET_JOURNAL_CONFIG_DIR="$PLUGIN_ROOT/tests/journal_config"
 RECORD_PATH="$PLUGIN_ROOT/tests/VENDORED_HARNESS_SOURCE.md"
 
 if [[ ! -d "$PLUGIN_ROOT/tests" ]]; then
@@ -121,6 +124,7 @@ git clone --quiet "$REPO_URL" "$TMP_DIR/upstream"
 UPSTREAM_SHA="$(git -C "$TMP_DIR/upstream" rev-parse HEAD)"
 UPSTREAM_HARNESS="$TMP_DIR/upstream/tests/harness.py"
 UPSTREAM_EDMC_DIR="$TMP_DIR/upstream/tests/edmc"
+UPSTREAM_JOURNAL_CONFIG_DIR="$TMP_DIR/upstream/tests/journal_config"
 
 if [[ ! -f "$UPSTREAM_HARNESS" ]]; then
   echo "error: upstream file missing: tests/harness.py" >&2
@@ -128,6 +132,10 @@ if [[ ! -f "$UPSTREAM_HARNESS" ]]; then
 fi
 if [[ ! -d "$UPSTREAM_EDMC_DIR" ]]; then
   echo "error: upstream directory missing: tests/edmc/" >&2
+  exit 1
+fi
+if [[ ! -d "$UPSTREAM_JOURNAL_CONFIG_DIR" ]]; then
+  echo "error: upstream directory missing: tests/journal_config/" >&2
   exit 1
 fi
 
@@ -147,6 +155,10 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   echo "[dry-run] tests/edmc changes:"
   rsync "${RSYNC_FLAGS[@]}" "$UPSTREAM_EDMC_DIR/" "$TARGET_EDMC_DIR/"
 
+  echo
+  echo "[dry-run] tests/journal_config changes:"
+  rsync "${RSYNC_FLAGS[@]}" "$UPSTREAM_JOURNAL_CONFIG_DIR/" "$TARGET_JOURNAL_CONFIG_DIR/"
+
   if cmp -s "$UPSTREAM_HARNESS" "$TARGET_HARNESS"; then
     echo "[dry-run] tests/harness.py: no change"
   else
@@ -160,8 +172,10 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
 fi
 
 mkdir -p "$TARGET_EDMC_DIR"
+mkdir -p "$TARGET_JOURNAL_CONFIG_DIR"
 cp "$UPSTREAM_HARNESS" "$TARGET_HARNESS"
 rsync "${RSYNC_FLAGS[@]}" "$UPSTREAM_EDMC_DIR/" "$TARGET_EDMC_DIR/"
+rsync "${RSYNC_FLAGS[@]}" "$UPSTREAM_JOURNAL_CONFIG_DIR/" "$TARGET_JOURNAL_CONFIG_DIR/"
 
 if [[ "$WRITE_RECORD" -eq 1 ]]; then
   SYNCED_AT_UTC="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
@@ -176,6 +190,7 @@ if [[ "$WRITE_RECORD" -eq 1 ]]; then
 This file tracks provenance for vendored harness artifacts:
 - tests/harness.py
 - tests/edmc/
+- tests/journal_config/
 EOF
 fi
 
@@ -183,10 +198,10 @@ echo "Sync complete."
 echo "Updated:"
 echo "  - tests/harness.py"
 echo "  - tests/edmc/"
+echo "  - tests/journal_config/"
 if [[ "$WRITE_RECORD" -eq 1 ]]; then
   echo "  - tests/VENDORED_HARNESS_SOURCE.md"
 fi
 echo
 echo "Next suggested checks:"
 echo "  source .venv/bin/activate && python -m pytest tests/test_harness_smoke.py tests/test_harness_integration.py"
-
