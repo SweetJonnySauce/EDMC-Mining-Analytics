@@ -60,6 +60,37 @@
   background: color-mix(in srgb, var(--card) 94%, #000);
 }
 
+.session-violin-chart-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-violin-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+  background: color-mix(in srgb, var(--fg) 3%, transparent);
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  user-select: none;
+  width: max-content;
+  max-width: 100%;
+}
+
+.session-violin-toggle input {
+  margin: 0;
+  width: 13px;
+  height: 13px;
+  accent-color: var(--accent);
+}
+
 .session-violin-chart-title {
   margin: 0;
   color: var(--fg);

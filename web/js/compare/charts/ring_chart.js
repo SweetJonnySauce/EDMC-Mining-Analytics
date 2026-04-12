@@ -1,6 +1,70 @@
 import { interpolateMissingValuesBetweenRealBins } from "../models/compare_model.js";
 import { getResInfoDialogModel } from "../ui/res_info.js";
 
+export function isNoDataDot(point, useCdf) {
+  if (!point || typeof point !== "object") {
+    return true;
+  }
+  if (useCdf) {
+    if (point.isTerminalThresholdPoint) {
+      return false;
+    }
+    return !point.hasRealData;
+  }
+  return Number(point.displayBinCount) <= 0;
+}
+
+function inferProbabilityStep(maxValue) {
+  const targetTickCount = 5;
+  const safeMax = Math.max(0.01, Number(maxValue) || 0.01);
+  const minStep = Math.max(0.01, safeMax / (targetTickCount - 1));
+  let magnitude = Math.pow(10, Math.floor(Math.log10(minStep)));
+  if (!Number.isFinite(magnitude) || magnitude <= 0) {
+    magnitude = 0.01;
+  }
+  let step = 0;
+  for (let attempts = 0; attempts < 8 && step <= 0; attempts += 1) {
+    [1, 2, 2.5, 5].forEach((multiplier) => {
+      const candidate = multiplier * magnitude;
+      if (candidate >= minStep && (step <= 0 || candidate < step)) {
+        step = candidate;
+      }
+    });
+    magnitude *= 10;
+  }
+  return step > 0 ? step : 0.25;
+}
+
+export function buildCdfAxisScale(points, totalPopulation) {
+  const safePopulation = Math.max(1, Number(totalPopulation) || 0);
+  const values = (Array.isArray(points) ? points : [])
+    .map((point) => Number(point && point.totalReverse) / safePopulation)
+    .filter((value) => Number.isFinite(value) && value >= 0);
+  const observedMax = values.reduce((peak, value) => Math.max(peak, value), 0);
+  if (observedMax <= 0) {
+    return {
+      countAxisScaleMax: 1,
+      yTicks: [1, 0.75, 0.5, 0.25, 0],
+    };
+  }
+  const countAxisStep = inferProbabilityStep(observedMax);
+  const countAxisScaleMax = Math.max(
+    countAxisStep,
+    Math.ceil(observedMax / countAxisStep) * countAxisStep
+  );
+  const yTicks = [];
+  for (let value = countAxisScaleMax; value >= 0; value -= countAxisStep) {
+    yTicks.push(Number(Math.max(0, value).toFixed(6)));
+  }
+  if (yTicks[yTicks.length - 1] !== 0) {
+    yTicks.push(0);
+  }
+  return {
+    countAxisScaleMax,
+    yTicks,
+  };
+}
+
 function buildCompareBinLabelsRow(
   points,
   reverseCumulative,
@@ -58,10 +122,13 @@ function formatThresholdLabel(point, reverseCumulative) {
   return Number.isFinite(value) ? String(value) : "0";
 }
 
-function buildAboveThresholdDisplayPoints(model) {
+export function buildAboveThresholdDisplayPoints(model) {
+  const rawRows = Array.isArray(model && model.aboveThresholdPlanRows)
+    ? model.aboveThresholdPlanRows
+    : [];
   const sourcePoints = (Array.isArray(model && model.points)
     ? model.points
-    : []).filter((point) => Number(point && point.intervalStart) > 0);
+    : []);
   if (!sourcePoints.length) {
     return [];
   }
@@ -78,12 +145,13 @@ function buildAboveThresholdDisplayPoints(model) {
   }
 
   const lastPoint = sourcePoints[sourcePoints.length - 1];
-  if (lastPoint && lastPoint.hasRealData) {
+  if (lastPoint && lastPoint.hasRealData && Number(lastPoint.totalReverse) > 0) {
     const lastStart = Number(lastPoint.intervalStart);
     const lastEnd = Number(lastPoint.intervalEnd);
     const inferredStep = Number.isFinite(lastEnd - lastStart) && (lastEnd - lastStart) > 0
       ? (lastEnd - lastStart)
       : 5;
+    const terminalRow = rawRows.find((row) => Number(row && row.cutoffYieldPercent) === lastEnd);
     sourcePoints.push({
       ...lastPoint,
       index: Number.isFinite(Number(lastPoint.index)) ? (Number(lastPoint.index) + 1) : sourcePoints.length,
@@ -91,11 +159,10 @@ function buildAboveThresholdDisplayPoints(model) {
       intervalEnd: lastEnd + inferredStep,
       center: lastEnd + (inferredStep / 2),
       binCount: 0,
-      hasRealData: false,
+      hasRealData: !!(terminalRow && terminalRow.hasRealData),
       total: 0,
       totalForward: Number(lastPoint.totalForward),
       totalReverse: 0,
-      syntheticTrailingPoint: true,
     });
   }
 
@@ -126,18 +193,33 @@ function buildAboveThresholdPlanDisplayModel(model) {
       asteroidsToProspect: null,
     };
   });
+  const alignedPoints = points.map((point, index) => {
+    const matchedRow = rows[index];
+    if (!matchedRow) {
+      return point;
+    }
+    const qualifyingCount = Number(matchedRow.qualifyingAsteroidsCount);
+    if (!Number.isFinite(qualifyingCount)) {
+      return point;
+    }
+    return {
+      ...point,
+      totalReverse: qualifyingCount,
+      hasRealData: !!matchedRow.hasRealData,
+    };
+  });
   const prospectDisplayValues = interpolateMissingValuesBetweenRealBins({
     entries: rows,
     readValue: (row) => row && row.asteroidsToProspect,
-    isRealEntry: (_row, index) => !!(points[index] && points[index].hasRealData),
+    isRealEntry: (_row, index) => !!(alignedPoints[index] && alignedPoints[index].hasRealData),
   });
   const mineDisplayValues = interpolateMissingValuesBetweenRealBins({
     entries: rows,
     readValue: (row) => row && row.asteroidsToMine,
-    isRealEntry: (_row, index) => !!(points[index] && points[index].hasRealData),
+    isRealEntry: (_row, index) => !!(alignedPoints[index] && alignedPoints[index].hasRealData),
   });
   return {
-    points,
+    points: alignedPoints,
     rows,
     prospectDisplayValues,
     mineDisplayValues,
@@ -919,20 +1001,33 @@ export function renderRingChart(options) {
     ? Math.max(1, Number(model && model.sessionsCount) || 0)
     : 1;
   const totalPopulation = Math.max(1, asNumber(model && model.asteroidsCount));
+  const sourcePoints = useCdf
+    ? aboveThresholdPlanDisplayModel.points
+    : cumulativeDisplayPoints;
+  const labelPoints = sourcePoints;
+  if (!sourcePoints.length) {
+    const empty = document.createElement("p");
+    empty.className = "compare-empty";
+    empty.textContent = useCdf
+      ? "No above-threshold cutoffs available above 0%."
+      : "No asteroids for this commodity in this ring.";
+    section.appendChild(empty);
+    chartPanel.appendChild(section);
+    return;
+  }
+  const cdfAxisScale = useCdf
+    ? buildCdfAxisScale(sourcePoints, totalPopulation)
+    : null;
   const axisScaleMax = useCdf ? 1 : Math.max(
     1,
     Math.ceil((Number(model && model.yMax) / sessionDivisor) || 0)
   );
-  const countAxisStep = useCdf ? 0.25 : inferStep(axisScaleMax);
+  const countAxisStep = useCdf ? null : inferStep(axisScaleMax);
   const countAxisScaleMax = useCdf
-    ? 1
+    ? cdfAxisScale.countAxisScaleMax
     : Math.max(axisScaleMax, Math.ceil(axisScaleMax / countAxisStep) * countAxisStep);
-  const yTicks = [];
-  if (useCdf) {
-    [1, 0.75, 0.5, 0.25, 0].forEach((value) => {
-      yTicks.push(value);
-    });
-  } else {
+  const yTicks = useCdf ? [...cdfAxisScale.yTicks] : [];
+  if (!useCdf) {
     for (let value = countAxisScaleMax; value >= 0; value -= countAxisStep) {
       yTicks.push(value);
     }
@@ -995,20 +1090,6 @@ export function renderRingChart(options) {
   svg.classList.add("compare-svg");
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("preserveAspectRatio", "none");
-  const sourcePoints = useCdf
-    ? aboveThresholdPlanDisplayModel.points
-    : cumulativeDisplayPoints;
-  const labelPoints = sourcePoints;
-  if (!sourcePoints.length) {
-    const empty = document.createElement("p");
-    empty.className = "compare-empty";
-    empty.textContent = useCdf
-      ? "No above-threshold cutoffs available above 0%."
-      : "No asteroids for this commodity in this ring.";
-    section.appendChild(empty);
-    chartPanel.appendChild(section);
-    return;
-  }
   const totalBins = Math.max(1, sourcePoints.length);
   const toDisplayIndex = (index) => (
     displayReverseAxis
@@ -1058,6 +1139,9 @@ export function renderRingChart(options) {
       displayTotal: actualDisplayTotal,
       actualDisplayTotal,
       rawDisplayTotal,
+      isTerminalThresholdPoint: useCdf
+        && displayIndex === (sourcePoints.length - 1)
+        && rawDisplayTotal === 0,
       x: toXForBinIndex(displayIndex),
       y: toYForCount(actualDisplayTotal)
     };
@@ -1553,7 +1637,7 @@ export function renderRingChart(options) {
 
     const dot = document.createElementNS(ns, "circle");
     dot.setAttribute("class", "compare-dot");
-    if (Number(point.displayBinCount) <= 0) {
+    if (isNoDataDot(point, useCdf)) {
       dot.classList.add("compare-dot--no-data");
     }
     dot.setAttribute("cx", point.x.toFixed(2));

@@ -129,6 +129,7 @@ export function buildSessionViolinModel(options) {
   const {
     ring,
     commodityKey,
+    excludeZeroValueAsteroids = false,
     yStep = 1,
     yAxisStep = 5,
   } = options || {};
@@ -141,6 +142,11 @@ export function buildSessionViolinModel(options) {
     if (!sessionGuid) {
       return;
     }
+    const rawValue = Number(asteroid && asteroid.commodityPercentages && asteroid.commodityPercentages.get(commodityKey));
+    const value = Number.isFinite(rawValue) ? Math.max(0, rawValue) : 0;
+    if (excludeZeroValueAsteroids && value <= 0) {
+      return;
+    }
     let session = sessionMap.get(sessionGuid);
     if (!session) {
       session = {
@@ -151,8 +157,6 @@ export function buildSessionViolinModel(options) {
       };
       sessionMap.set(sessionGuid, session);
     }
-    const rawValue = Number(asteroid && asteroid.commodityPercentages && asteroid.commodityPercentages.get(commodityKey));
-    const value = Number.isFinite(rawValue) ? Math.max(0, rawValue) : 0;
     session.asteroidSamples.push({
       asteroidId: Number.isFinite(Number(asteroid && asteroid.asteroidId))
         ? Math.trunc(Number(asteroid.asteroidId))

@@ -1,7 +1,9 @@
-import { fetchProspectedAsteroidSummary, saveAnalysisReportSettings } from "../data/session_api.js";
+import { fetchAnalysisSettings, fetchProspectedAsteroidSummary, saveAnalysisReportSettings } from "../data/session_api.js";
 import { buildCompareData } from "../compare/models/compare_model.js";
 import { buildSessionViolinModel, clusterSessionValueMarkers } from "../compare/models/session_violin_model.js";
-import { buildPersistedCompareThemeUpdate } from "./theme_persistence.js";
+import { buildPersistedCompareThemeUpdate, readPersistedCompareThemeId } from "./theme_persistence.js";
+import { shouldShowOverallAverageMarker, shouldShowSessionMeanMarker } from "./average_visibility.js";
+import { buildSessionTooltipText } from "./session_tooltips.js";
 import { normalizeTextKey, normalizeCommodityKey } from "../shared/normalize.js";
 import { formatNumber } from "../shared/number.js";
 import { buildSessionAnalysisUrl } from "../shared/session_navigation.js";
@@ -19,8 +21,10 @@ import { createTooltipController } from "../shared/tooltip.js";
   const summaryElement = document.getElementById("session-violin-summary");
   const chartElement = document.getElementById("session-violin-chart");
   const THEME_STORAGE_KEY = "edmcma.analysis.theme";
+  const VALID_THEME_IDS = new Set(THEME_OPTIONS.map((option) => option.id));
   let sessionThemeSaveTimer = null;
   let sessionThemePersistenceReady = false;
+  let excludeZeroValueAsteroids = false;
 
   const tooltipController = createTooltipController();
   const themeController = createThemeController({
@@ -83,13 +87,36 @@ import { createTooltipController } from "../shared/tooltip.js";
         ringName: String(params.get("ring") || "").trim(),
         commodityKey: normalizeCommodityKey(params.get("commodity") || ""),
         commodityLabel: String(params.get("commodity_label") || "").trim(),
+        themeId: (() => {
+          const themeId = String(params.get("theme") || "").trim();
+          return VALID_THEME_IDS.has(themeId) ? themeId : "";
+        })(),
       };
     } catch (_error) {
       return {
         ringName: "",
         commodityKey: "",
         commodityLabel: "",
+        themeId: "",
       };
+    }
+  }
+
+  async function loadPersistedSessionTheme(explicitThemeId) {
+    if (explicitThemeId) {
+      return;
+    }
+    try {
+      const result = await fetchAnalysisSettings();
+      if (!result.ok) {
+        return;
+      }
+      const persistedThemeId = readPersistedCompareThemeId(result.data, themeController.getActiveThemeId());
+      if (persistedThemeId !== themeController.getActiveThemeId()) {
+        themeController.applyTheme(persistedThemeId, false);
+      }
+    } catch (_error) {
+      // Keep the session report responsive if settings are unavailable.
     }
   }
 
@@ -228,23 +255,6 @@ import { createTooltipController } from "../shared/tooltip.js";
     return lines.join("\n");
   }
 
-  function buildSessionTooltipText(options) {
-    const {
-      commodityLabel,
-      ringName,
-      session,
-    } = options || {};
-    return [
-      `${commodityLabel} | ${ringName}`,
-      session.sessionLabel,
-      `Asteroids: ${formatNumber(session.asteroidCount, 0)}`,
-      `Avg Yield: ${formatNumber(session.averageYield, 2)}%`,
-      `Median: ${formatNumber(session.median, 2)}%`,
-      `P25-P75: ${formatNumber(session.p25, 2)}% to ${formatNumber(session.p75, 2)}%`,
-      `Max Yield: ${formatNumber(session.maxValue, 2)}%`,
-    ].join("\n");
-  }
-
   function buildViolinInfoDialog() {
     const dialog = document.createElement("dialog");
     dialog.className = "compare-info-dialog";
@@ -341,15 +351,46 @@ import { createTooltipController } from "../shared/tooltip.js";
     return { button, dialog };
   }
 
-  function renderChart(model, commodityLabel, ringName) {
+  function buildChartNoteText() {
+    if (excludeZeroValueAsteroids) {
+      return "Asteroids with 0% of the selected commodity are excluded from this view.";
+    }
+    return "Each violin shows the distribution of prospected asteroid percentages in a session. Missing commodity values are treated as 0% for asteroids prospected in that session.";
+  }
+
+  function renderChart(model, commodityLabel, ringName, onToggleExcludeZeros) {
     if (!chartElement) {
       return;
     }
     chartElement.innerHTML = "";
+
+    const controls = document.createElement("div");
+    controls.className = "session-violin-chart-controls";
+
+    const toggleLabel = document.createElement("label");
+    toggleLabel.className = "session-violin-toggle";
+    const toggleInput = document.createElement("input");
+    toggleInput.type = "checkbox";
+    toggleInput.checked = excludeZeroValueAsteroids;
+    toggleInput.addEventListener("change", () => {
+      excludeZeroValueAsteroids = !!toggleInput.checked;
+      if (typeof onToggleExcludeZeros === "function") {
+        onToggleExcludeZeros();
+      }
+    });
+    const toggleText = document.createElement("span");
+    toggleText.textContent = "Hide 0% asteroids";
+    toggleLabel.appendChild(toggleInput);
+    toggleLabel.appendChild(toggleText);
+    controls.appendChild(toggleLabel);
+    chartElement.appendChild(controls);
+
     if (!model.sessions.length) {
       const empty = document.createElement("p");
       empty.className = "session-violin-empty";
-      empty.textContent = "No sessions available for this ring and commodity.";
+      empty.textContent = excludeZeroValueAsteroids
+        ? "No sessions remain after excluding 0% asteroids."
+        : "No sessions available for this ring and commodity.";
       chartElement.appendChild(empty);
       return;
     }
@@ -361,7 +402,7 @@ import { createTooltipController } from "../shared/tooltip.js";
 
     const note = document.createElement("p");
     note.className = "session-violin-chart-note";
-    note.textContent = "Each violin shows the distribution of prospected asteroid percentages in a session. Missing commodity values are treated as 0% for asteroids prospected in that session.";
+    note.textContent = buildChartNoteText();
     chartElement.appendChild(note);
 
     const scroll = document.createElement("div");
@@ -380,6 +421,8 @@ import { createTooltipController } from "../shared/tooltip.js";
     const overallAverageYield = Number.isFinite(Number(model && model.averageYield))
       ? Math.max(0, Number(model.averageYield))
       : null;
+    const showOverallAverageMarker = shouldShowOverallAverageMarker(excludeZeroValueAsteroids);
+    const showSessionMeanMarker = shouldShowSessionMeanMarker(excludeZeroValueAsteroids);
     const yTickStep = yAxisMax <= 25 ? 5 : 10;
     const maxHalfWidth = Math.min(28, Math.max(14, widthPerSession * 0.32));
     const plotBottom = topPad + plotHeight;
@@ -411,7 +454,8 @@ import { createTooltipController } from "../shared/tooltip.js";
       label.setAttribute("x", (leftPad - 10).toFixed(2));
       label.setAttribute("y", (y + 4).toFixed(2));
       label.setAttribute("text-anchor", "end");
-      const averageOverlapsTick = Number.isFinite(averageLineY)
+      const averageOverlapsTick = showOverallAverageMarker
+        && Number.isFinite(averageLineY)
         && Math.abs(averageLineY - y) < 10;
       if (averageOverlapsTick) {
         label.setAttribute("visibility", "hidden");
@@ -445,7 +489,7 @@ import { createTooltipController } from "../shared/tooltip.js";
     axisTitle.textContent = "% Content";
     svg.appendChild(axisTitle);
 
-    if (Number.isFinite(averageLineY) && Number.isFinite(overallAverageYield)) {
+    if (showOverallAverageMarker && Number.isFinite(averageLineY) && Number.isFinite(overallAverageYield)) {
       const averageTooltipText = `Overall Avg Yield: ${formatNumber(overallAverageYield, 2)}%`;
       const averageHitArea = document.createElementNS(ns, "line");
       averageHitArea.setAttribute("class", "session-violin-overall-average-hitarea");
@@ -490,14 +534,16 @@ import { createTooltipController } from "../shared/tooltip.js";
       bindTooltip(path, sessionTooltipText);
       svg.appendChild(path);
 
-      const meanLine = document.createElementNS(ns, "line");
-      const meanHalfSpan = Math.max(10, Math.min(18, maxHalfWidth * 0.7));
-      meanLine.setAttribute("class", "session-violin-mean");
-      meanLine.setAttribute("x1", (centerX - meanHalfSpan).toFixed(2));
-      meanLine.setAttribute("x2", (centerX + meanHalfSpan).toFixed(2));
-      meanLine.setAttribute("y1", toY(session.averageYield).toFixed(2));
-      meanLine.setAttribute("y2", toY(session.averageYield).toFixed(2));
-      svg.appendChild(meanLine);
+      if (showSessionMeanMarker) {
+        const meanLine = document.createElementNS(ns, "line");
+        const meanHalfSpan = Math.max(10, Math.min(18, maxHalfWidth * 0.7));
+        meanLine.setAttribute("class", "session-violin-mean");
+        meanLine.setAttribute("x1", (centerX - meanHalfSpan).toFixed(2));
+        meanLine.setAttribute("x2", (centerX + meanHalfSpan).toFixed(2));
+        meanLine.setAttribute("y1", toY(session.averageYield).toFixed(2));
+        meanLine.setAttribute("y2", toY(session.averageYield).toFixed(2));
+        svg.appendChild(meanLine);
+      }
 
       const dotMarkers = buildSessionDotMarkers(session.asteroidSamples, yAxisMax, plotHeight);
       dotMarkers.forEach((marker) => {
@@ -550,14 +596,15 @@ import { createTooltipController } from "../shared/tooltip.js";
   }
 
   async function initializePage() {
+    const query = parseQueryState();
     themeController.initialize();
+    await loadPersistedSessionTheme(query.themeId);
     sessionThemePersistenceReady = true;
     if (titleInfoAnchor) {
       const { button, dialog } = buildViolinInfoDialog();
       titleInfoAnchor.replaceChildren(button);
       document.body.appendChild(dialog);
     }
-    const query = parseQueryState();
     if (!query.ringName || !query.commodityKey) {
       setStatus("Missing ring or commodity in the session violin URL.", true);
       if (subtitleElement) {
@@ -601,19 +648,24 @@ import { createTooltipController } from "../shared/tooltip.js";
         throw new Error("Selected ring or commodity could not be found in the compare dataset.");
       }
       const commodityLabel = commodity.label || query.commodityLabel || query.commodityKey;
-      const model = buildSessionViolinModel({
-        ring,
-        commodityKey: query.commodityKey,
-      });
       if (titleElement) {
         titleElement.textContent = `${commodityLabel} Session Violins`;
       }
       if (subtitleElement) {
         subtitleElement.textContent = `${ring.ringName} • Each violin shows the per-session distribution of asteroid content percentages.`;
       }
-      renderSummaryCards(model);
-      renderChart(model, commodityLabel, ring.ringName);
-      setStatus(`Showing ${formatNumber(model.sessions.length, 0)} sessions for ${commodityLabel}.`, false);
+      const renderPage = () => {
+        const model = buildSessionViolinModel({
+          ring,
+          commodityKey: query.commodityKey,
+          excludeZeroValueAsteroids,
+        });
+        renderSummaryCards(model);
+        renderChart(model, commodityLabel, ring.ringName, renderPage);
+        const filterSuffix = excludeZeroValueAsteroids ? " (0% asteroids hidden)" : "";
+        setStatus(`Showing ${formatNumber(model.sessions.length, 0)} sessions for ${commodityLabel}.${filterSuffix}`, false);
+      };
+      renderPage();
     } catch (error) {
       if (summaryElement) {
         summaryElement.innerHTML = "";

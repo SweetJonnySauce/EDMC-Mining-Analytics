@@ -185,10 +185,14 @@ export function buildAboveThresholdPlanRows(options) {
   const bins = Math.max(1, Math.ceil(safeXMax / safeInterval));
   const targetPercentTotal = safeTargetTons / safeTonsPerPercent;
   const rows = [];
-  for (let index = 1; index < bins; index += 1) {
+  for (let index = 0; index <= bins; index += 1) {
     const cutoff = index * safeInterval;
-    const qualifying = asteroidRows.filter((item) => Number(item && item.value) >= cutoff);
+    const qualifying = asteroidRows.filter((item) => {
+      const value = Math.max(0, Number(item && item.value) || 0);
+      return value > cutoff;
+    });
     const qualifyingCount = qualifying.length;
+    const isTerminalCutoff = cutoff >= safeXMax;
     const averageYieldPercent = qualifyingCount
       ? (qualifying.reduce((total, item) => (
         total + Math.max(0, Number(item && item.value) || 0)
@@ -199,10 +203,10 @@ export function buildAboveThresholdPlanRows(options) {
       : 0;
     const asteroidsToMine = Number.isFinite(averageYieldPercent) && averageYieldPercent > 0
       ? Math.ceil(targetPercentTotal / averageYieldPercent)
-      : null;
+      : (isTerminalCutoff ? 0 : null);
     const asteroidsToProspect = Number.isFinite(asteroidsToMine) && aboveThresholdShare > 0
       ? Math.ceil(asteroidsToMine / aboveThresholdShare)
-      : null;
+      : (isTerminalCutoff ? 0 : null);
     rows.push({
       cutoffYieldPercent: cutoff,
       averageYieldPercent,
@@ -211,7 +215,7 @@ export function buildAboveThresholdPlanRows(options) {
       totalAsteroidsCount: totalAsteroids,
       asteroidsToMine,
       asteroidsToProspect,
-      hasRealData: qualifyingCount > 0,
+      hasRealData: qualifyingCount > 0 || isTerminalCutoff,
     });
   }
   return rows;

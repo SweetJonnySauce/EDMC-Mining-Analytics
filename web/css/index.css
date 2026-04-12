@@ -256,10 +256,18 @@
 
     .session-toolbar-input-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
       flex-wrap: nowrap;
       width: 100%;
+    }
+
+    .session-toolbar-actions {
+      display: grid;
+      gap: 8px;
+      flex: 0 0 auto;
+      margin-left: auto;
+      align-items: start;
     }
 
     .session-toolbar-select {
@@ -298,13 +306,35 @@
       padding: 9px 12px;
       cursor: pointer;
       white-space: nowrap;
-      margin-left: auto;
-      flex: 0 0 auto;
     }
 
     .session-toolbar-compare-button:hover {
       border-color: color-mix(in srgb, var(--accent) 78%, transparent);
       background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    .session-toolbar-delete-button {
+      border: 1px solid color-mix(in srgb, #ff6b6b 50%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--fg) 3%, transparent);
+      color: var(--fg);
+      font: inherit;
+      font-size: 0.84rem;
+      line-height: 1.2;
+      font-weight: 600;
+      padding: 9px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .session-toolbar-delete-button:hover:not(:disabled) {
+      border-color: color-mix(in srgb, #ff6b6b 78%, transparent);
+      background: color-mix(in srgb, #ff6b6b 10%, transparent);
+    }
+
+    .session-toolbar-delete-button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
     .status {
@@ -1700,6 +1730,10 @@
 
       .session-toolbar-select {
         flex: 1 1 100%;
+      }
+
+      .session-toolbar-actions {
+        margin-left: 0;
       }
 
       .session-toolbar-compare-button {

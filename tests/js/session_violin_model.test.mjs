@@ -116,6 +116,75 @@ test("buildSessionViolinModel groups asteroid percentages by session and preserv
   );
 });
 
+test("buildSessionViolinModel can exclude zero-value asteroids from session distributions", () => {
+  const ring = {
+    asteroidList: [
+      {
+        sessionGuid: "session-a",
+        asteroidId: 3,
+        duplicate: false,
+        commodityPercentages: new Map([["platinum", 20]]),
+      },
+      {
+        sessionGuid: "session-a",
+        asteroidId: 4,
+        duplicate: true,
+        commodityPercentages: new Map([["gold", 15]]),
+      },
+      {
+        sessionGuid: "session-b",
+        asteroidId: 8,
+        duplicate: false,
+        commodityPercentages: new Map([["silver", 10]]),
+      },
+      {
+        sessionGuid: "session-c",
+        asteroidId: 11,
+        duplicate: false,
+        commodityPercentages: new Map([["platinum", 40]]),
+      },
+      {
+        sessionGuid: "session-c",
+        asteroidId: 12,
+        duplicate: false,
+        commodityPercentages: new Map([["platinum", 60]]),
+      },
+    ],
+  };
+
+  const model = buildSessionViolinModel({
+    ring,
+    commodityKey: "platinum",
+    excludeZeroValueAsteroids: true,
+  });
+
+  assert.equal(model.sessions.length, 2);
+  assert.equal(model.totalAsteroids, 3);
+  assert.equal(model.averageYield, 40);
+  assert.deepEqual(
+    model.sessions.map((session) => ({
+      guid: session.sessionGuid,
+      values: session.values,
+      count: session.asteroidCount,
+      nonZeroCount: session.nonZeroCount,
+    })),
+    [
+      {
+        guid: "session-a",
+        values: [20],
+        count: 1,
+        nonZeroCount: 1,
+      },
+      {
+        guid: "session-c",
+        values: [40, 60],
+        count: 2,
+        nonZeroCount: 2,
+      },
+    ]
+  );
+});
+
 test("buildSessionViolinModel produces density points and rounded y-axis limits", () => {
   const ring = {
     asteroidList: [

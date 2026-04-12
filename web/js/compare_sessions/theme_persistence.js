@@ -17,3 +17,13 @@ export function buildPersistedCompareThemeUpdate(themeId) {
     },
   };
 }
+
+export function readPersistedCompareThemeId(payload, fallback = DEFAULT_THEME_ID) {
+  const reportSettings = payload && typeof payload === "object" && payload.report_settings && typeof payload.report_settings === "object"
+    ? payload.report_settings
+    : null;
+  const compareSettings = reportSettings && reportSettings.compare && typeof reportSettings.compare === "object"
+    ? reportSettings.compare
+    : null;
+  return normalizePersistedCompareThemeId(compareSettings && compareSettings.compareThemeId, fallback);
+}

@@ -29,6 +29,19 @@ export async function fetchSessionFile(filename) {
   return fetchJson(`/session_data/${safeName}`, NO_STORE);
 }
 
+export async function deleteSessionReport(filename) {
+  return fetchJson("/delete_session_report.json", {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      filename: String(filename || "")
+    })
+  });
+}
+
 export async function fetchSessionDirectoryListing() {
   return fetchText("/session_data/", NO_STORE);
 }
