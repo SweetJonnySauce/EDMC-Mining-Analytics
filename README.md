@@ -2,7 +2,7 @@
 
 [![Github All Releases](https://img.shields.io/github/downloads/SweetJonnySauce/EDMC-Mining-Analytics/total.svg)](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest)
 [![GitHub Latest Version](https://img.shields.io/github/v/release/SweetJonnySauce/EDMC-Mining-Analytics)](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest)
-[![VirusTotal](https://img.shields.io/badge/VirusTotal-clean-brightgreen.svg)](https://www.virustotal.com/gui/url/21bd25387dbaef4459c1e63c43f7f2aefff8c4a75d3322cba750ea236e784c12?nocache=1)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-clean-brightgreen.svg)](https://www.virustotal.com/gui/url/883913debe789d3a942cf0d204899236b9cb74e59bdd825834a4e045c64cbfd5?nocache=1)
 
 [build-badge]: https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/actions/workflows/ci.yml/badge.svg?branch=main
 [build-url]: https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/actions/workflows/ci.yml
