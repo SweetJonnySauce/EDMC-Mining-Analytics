@@ -1,6 +1,7 @@
 import { applyAdaptiveBinLabels } from "../shared/labels.js";
 import { normalizeTextKey as normalizeTextKeyShared, normalizeCommodityKey as normalizeCommodityKeyShared } from "../shared/normalize.js";
 import { asNumber as asNumberShared, formatNumber as formatNumberShared } from "../shared/number.js";
+import { extractSystemNameFromRingName as extractSystemNameFromRingNameShared } from "../shared/system_name.js";
 import { buildSmoothLinePath as buildSmoothLinePathShared, inferStep as inferStepShared } from "../shared/svg.js";
 import { DEFAULT_THEME_ID, THEME_OPTIONS, createThemeController } from "../shared/theme.js";
 import { createTooltipController } from "../shared/tooltip.js";
@@ -8,16 +9,19 @@ import {
   fetchAnalysisSettings,
   saveAnalysisReportSettings,
   fetchFavoriteRings,
+  saveFavoriteRings,
   fetchProspectedAsteroidSummary
 } from "../data/session_api.js";
 import {
   buildCompareData as buildCompareDataModel,
-  buildRingCommodityModel as buildRingCommodityModelModel
+  buildRingCommodityModel as buildRingCommodityModelModel,
+  DEFAULT_COMPARE_TARGET_TONS,
 } from "./models/compare_model.js";
 import { renderRingChart as renderRingChartModule } from "./charts/ring_chart.js";
 import {
   renderReferenceCrosshairControls,
-  renderYieldPopulationControls,
+  renderCompareModeControls,
+  renderCompareTargetControl,
   renderGridlineControls,
   syncCommoditySelect as syncCommoditySelectControl,
 } from "./ui/controls.js";
@@ -31,8 +35,10 @@ import { createCompareStateController } from "./state/controller.js";
       const compareTitle = document.getElementById("compare-title");
       const compareCommoditySelect = document.getElementById("compare-commodity-select");
       const compareSortSelect = document.getElementById("compare-sort-select");
-      const comparePopulationOptions = document.getElementById("compare-population-options");
+      const compareHighlights = document.getElementById("compare-highlights");
       const compareReferenceOptions = document.getElementById("compare-reference-options");
+      const compareModeOptions = document.getElementById("compare-mode-options");
+      const compareTargetOptions = document.getElementById("compare-target-options");
       const compareGridlineOptions = document.getElementById("compare-gridline-options");
       const compareStatus = document.getElementById("compare-status");
       const compareList = document.getElementById("compare-list");
@@ -43,10 +49,6 @@ import { createCompareStateController } from "./state/controller.js";
         { key: "p50", label: "P50", metricKey: "p50", quantile: 0.5 },
         { key: "avg", label: "Avg", metricKey: "averageYield", quantile: null },
         { key: "p25", label: "P25", metricKey: "p25", quantile: 0.25 }
-      ];
-      const YIELD_POPULATION_MODES = [
-        { key: "all", label: "All asteroids" },
-        { key: "present", label: "Only w/ Commodity" }
       ];
       const COMPARE_SORT_MODES = new Set([
         "avg_desc",
@@ -65,9 +67,10 @@ import { createCompareStateController } from "./state/controller.js";
       let compareData = null;
       let selectedCommodityKey = "";
       let requestedCommodityKey = "";
-      let selectedYieldPopulationMode = "all";
       let selectedReferenceCrosshairs = new Set(["avg"]);
       let compareShowGridlines = true;
+      let compareUseCdf = false;
+      let compareTargetTons = DEFAULT_COMPARE_TARGET_TONS;
       let compareNormalizeMetrics = false;
       let compareReverseCumulative = false;
       let compareShowHistogram = false;
@@ -79,9 +82,10 @@ import { createCompareStateController } from "./state/controller.js";
         compareData,
         selectedCommodityKey,
         requestedCommodityKey,
-        selectedYieldPopulationMode,
         selectedReferenceCrosshairs,
         compareShowGridlines,
+        compareUseCdf,
+        compareTargetTons,
         compareNormalizeMetrics,
         compareReverseCumulative,
         compareShowHistogram,
@@ -99,13 +103,14 @@ import { createCompareStateController } from "./state/controller.js";
         requestedCommodityKey = typeof state.requestedCommodityKey === "string"
           ? state.requestedCommodityKey
           : "";
-        selectedYieldPopulationMode = typeof state.selectedYieldPopulationMode === "string" && state.selectedYieldPopulationMode
-          ? state.selectedYieldPopulationMode
-          : "all";
         selectedReferenceCrosshairs = state.selectedReferenceCrosshairs instanceof Set
           ? new Set(state.selectedReferenceCrosshairs)
           : new Set(["avg"]);
         compareShowGridlines = state.compareShowGridlines !== false;
+        compareUseCdf = !!state.compareUseCdf;
+        compareTargetTons = Number.isFinite(Number(state.compareTargetTons)) && Number(state.compareTargetTons) > 0
+          ? Math.round(Number(state.compareTargetTons))
+          : DEFAULT_COMPARE_TARGET_TONS;
         compareNormalizeMetrics = !!state.compareNormalizeMetrics;
         compareReverseCumulative = !!state.compareReverseCumulative;
         compareShowHistogram = !!state.compareShowHistogram;
@@ -124,13 +129,14 @@ import { createCompareStateController } from "./state/controller.js";
           compareData: state && typeof state.compareData === "object" ? state.compareData : null,
           selectedCommodityKey: typeof state.selectedCommodityKey === "string" ? state.selectedCommodityKey : "",
           requestedCommodityKey: typeof state.requestedCommodityKey === "string" ? state.requestedCommodityKey : "",
-          selectedYieldPopulationMode: typeof state.selectedYieldPopulationMode === "string" && state.selectedYieldPopulationMode
-            ? state.selectedYieldPopulationMode
-            : "all",
           selectedReferenceCrosshairs: state && state.selectedReferenceCrosshairs instanceof Set
             ? new Set(state.selectedReferenceCrosshairs)
             : new Set(["avg"]),
           compareShowGridlines: !(state && state.compareShowGridlines === false),
+          compareUseCdf: !!(state && state.compareUseCdf),
+          compareTargetTons: Number.isFinite(Number(state && state.compareTargetTons)) && Number(state && state.compareTargetTons) > 0
+            ? Math.round(Number(state.compareTargetTons))
+            : DEFAULT_COMPARE_TARGET_TONS,
           compareNormalizeMetrics: !!(state && state.compareNormalizeMetrics),
           compareReverseCumulative: !!(state && state.compareReverseCumulative),
           compareShowHistogram: !!(state && state.compareShowHistogram),
@@ -191,6 +197,26 @@ import { createCompareStateController } from "./state/controller.js";
         compareTitle.textContent = `Compare ${label} Yield Across Rings`;
       }
 
+      function openSessionViolinWindow(ringName, commodityKey, commodityLabel, themeId) {
+        const safeRingName = String(ringName || "").trim();
+        const safeCommodityKey = normalizeCommodityKey(commodityKey);
+        if (!safeRingName || !safeCommodityKey) {
+          return;
+        }
+        const params = new URLSearchParams();
+        params.set("ring", safeRingName);
+        params.set("commodity", safeCommodityKey);
+        if (commodityLabel) {
+          params.set("commodity_label", String(commodityLabel).trim());
+        }
+        const safeThemeId = String(themeId || "").trim();
+        if (safeThemeId) {
+          params.set("theme", safeThemeId);
+        }
+        const url = `/web/compare_sessions.html?${params.toString()}`;
+        window.open(url, "_blank", "noopener");
+      }
+
       function normalizeBooleanSetting(value, fallback) {
         if (value === true || value === false) {
           return value;
@@ -202,14 +228,6 @@ import { createCompareStateController } from "./state/controller.js";
           return false;
         }
         return !!fallback;
-      }
-
-      function normalizeYieldPopulationModeSetting(value, fallback) {
-        const text = String(value || "").trim().toLowerCase();
-        if (text === "all" || text === "present") {
-          return text;
-        }
-        return fallback === "present" ? "present" : "all";
       }
 
       function normalizeReferenceCrosshairsSetting(value, fallback) {
@@ -239,6 +257,14 @@ import { createCompareStateController } from "./state/controller.js";
           : "avg_desc";
       }
 
+      function normalizePositiveIntegerSetting(value, fallback) {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric) || numeric <= 0) {
+          return fallback;
+        }
+        return Math.max(1, Math.round(numeric));
+      }
+
       function normalizeThemeIdSetting(value, fallback) {
         const themeId = String(value || "").trim();
         if (COMPARE_THEME_IDS.has(themeId)) {
@@ -254,10 +280,11 @@ import { createCompareStateController } from "./state/controller.js";
       function buildPersistedCompareReportSettings(stateSnapshot) {
         const renderState = stateSnapshot || getCompareRenderState();
         return {
-          selectedYieldPopulationMode: renderState.selectedYieldPopulationMode === "present" ? "present" : "all",
           selectedReferenceCrosshairs: Array.from(renderState.selectedReferenceCrosshairs || new Set(["avg"])),
           compareShowGridlines: renderState.compareShowGridlines !== false,
-          compareNormalizeMetrics: !!renderState.compareNormalizeMetrics,
+          compareUseCdf: !!renderState.compareUseCdf,
+          compareTargetTons: normalizePositiveIntegerSetting(renderState.compareTargetTons, DEFAULT_COMPARE_TARGET_TONS),
+          compareNormalizeMetrics: renderState.compareUseCdf ? false : !!renderState.compareNormalizeMetrics,
           compareReverseCumulative: !!renderState.compareReverseCumulative,
           compareShowHistogram: !!renderState.compareShowHistogram,
           compareSortMode: normalizeCompareSortModeSetting(compareSortSelect ? compareSortSelect.value : "avg_desc", "avg_desc"),
@@ -268,9 +295,7 @@ import { createCompareStateController } from "./state/controller.js";
       function applyPersistedCompareReportSettings(rawSettings) {
         const defaults = buildPersistedCompareReportSettings(getCompareRenderState());
         const source = rawSettings && typeof rawSettings === "object" ? rawSettings : {};
-        compareStateController.setSelectedYieldPopulationMode(
-          normalizeYieldPopulationModeSetting(source.selectedYieldPopulationMode, defaults.selectedYieldPopulationMode)
-        );
+        const nextCompareUseCdf = normalizeBooleanSetting(source.compareUseCdf, defaults.compareUseCdf);
         compareStateController.setSelectedReferenceCrosshairs(
           new Set(
             normalizeReferenceCrosshairsSetting(
@@ -282,8 +307,14 @@ import { createCompareStateController } from "./state/controller.js";
         compareStateController.setCompareShowGridlines(
           normalizeBooleanSetting(source.compareShowGridlines, defaults.compareShowGridlines)
         );
+        compareStateController.setCompareUseCdf(nextCompareUseCdf);
+        compareStateController.setCompareTargetTons(
+          normalizePositiveIntegerSetting(source.compareTargetTons, defaults.compareTargetTons)
+        );
         compareStateController.setCompareNormalizeMetrics(
-          normalizeBooleanSetting(source.compareNormalizeMetrics, defaults.compareNormalizeMetrics)
+          nextCompareUseCdf
+            ? false
+            : normalizeBooleanSetting(source.compareNormalizeMetrics, defaults.compareNormalizeMetrics)
         );
         compareStateController.setCompareReverseCumulative(
           normalizeBooleanSetting(source.compareReverseCumulative, defaults.compareReverseCumulative)
@@ -376,6 +407,42 @@ import { createCompareStateController } from "./state/controller.js";
         return formatNumberShared(value, digits);
       }
 
+      function extractSystemNameFromRingName(value) {
+        return extractSystemNameFromRingNameShared(value);
+      }
+
+      async function copyTextToClipboard(text) {
+        const value = String(text ?? "");
+        if (!value.trim()) {
+          return false;
+        }
+        try {
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            await navigator.clipboard.writeText(value);
+            return true;
+          }
+        } catch (_error) {
+          // Fall back to execCommand path.
+        }
+
+        try {
+          const textarea = document.createElement("textarea");
+          textarea.value = value;
+          textarea.setAttribute("readonly", "readonly");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          const copied = document.execCommand("copy");
+          document.body.removeChild(textarea);
+          return !!copied;
+        } catch (_error) {
+          return false;
+        }
+      }
+
       function ensureCursorTooltip() {
         return tooltipController.ensure();
       }
@@ -406,17 +473,17 @@ import { createCompareStateController } from "./state/controller.js";
         });
       }
 
-      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, populationMode) {
+      function buildRingCommodityModel(ring, commodityKey, interval, forcedXMax, targetTons) {
         return buildRingCommodityModelModel({
           ring,
           commodityKey,
           interval,
           forcedXMax,
-          populationMode
+          targetTons,
         });
       }
 
-      function renderRingChart(chartPanel, ringName, commodityLabel, model, selectedCrosshairKeys, normalizeBySessions, reverseCumulative, showHistogram, stateSnapshot) {
+      function renderRingChart(chartPanel, ringName, commodityLabel, model, selectedCrosshairKeys, normalizeBySessions, useCdf, reverseCumulative, showHistogram, stateSnapshot) {
         const renderState = stateSnapshot || getCompareRenderState();
         renderRingChartModule({
           chartPanel,
@@ -425,6 +492,7 @@ import { createCompareStateController } from "./state/controller.js";
           model,
           selectedCrosshairKeys,
           normalizeBySessions,
+          useCdf,
           reverseCumulative,
           showHistogram,
           showGridlines: renderState.compareShowGridlines,
@@ -465,6 +533,19 @@ import { createCompareStateController } from "./state/controller.js";
         }
       }
 
+      async function persistFavoriteRingNames(nextFavoriteRingNames) {
+        const values = Array.from(nextFavoriteRingNames || new Set())
+          .map((value) => String(value || "").trim())
+          .filter((value) => !!value);
+        const result = await saveFavoriteRings(values);
+        if (!result.ok) {
+          throw new Error(`HTTP ${result.status}`);
+        }
+        const payload = result.data;
+        const rows = Array.isArray(payload && payload.favorite_rings) ? payload.favorite_rings : values;
+        return new Set(rows.map((value) => String(value || "").trim()).filter((value) => !!value));
+      }
+
       function dominantLabel(countMap) {
         if (!(countMap instanceof Map) || countMap.size === 0) {
           return "--";
@@ -478,6 +559,130 @@ import { createCompareStateController } from "./state/controller.js";
           }
         });
         return winner || "--";
+      }
+
+      function renderCompareHighlights(rows, commodityLabel) {
+        if (!compareHighlights) {
+          return;
+        }
+        compareHighlights.innerHTML = "";
+        const safeRows = Array.isArray(rows) ? rows : [];
+        if (!safeRows.length) {
+          const empty = document.createElement("div");
+          empty.className = "compare-highlight-card";
+          const label = document.createElement("div");
+          label.className = "compare-highlight-label";
+          label.textContent = "Highlights";
+          const detail = document.createElement("div");
+          detail.className = "compare-highlight-detail";
+          detail.textContent = `No ring highlights available for ${commodityLabel || "this commodity"}.`;
+          empty.appendChild(label);
+          empty.appendChild(detail);
+          compareHighlights.appendChild(empty);
+          return;
+        }
+        const preferredByAverage = [...safeRows].sort((left, right) => {
+          const leftAvg = Number(left && left.metric && left.metric.averageYield);
+          const rightAvg = Number(right && right.metric && right.metric.averageYield);
+          const leftValid = Number.isFinite(leftAvg);
+          const rightValid = Number.isFinite(rightAvg);
+          if (leftValid && rightValid && leftAvg !== rightAvg) {
+            return rightAvg - leftAvg;
+          }
+          if (leftValid !== rightValid) {
+            return leftValid ? -1 : 1;
+          }
+          return String(left && left.ring && left.ring.ringName || "").localeCompare(String(right && right.ring && right.ring.ringName || ""));
+        });
+        const preferredByAsteroids = [...safeRows].sort((left, right) => {
+          const leftCount = Number(left && left.metric && left.metric.asteroidsCount);
+          const rightCount = Number(right && right.metric && right.metric.asteroidsCount);
+          const leftValid = Number.isFinite(leftCount);
+          const rightValid = Number.isFinite(rightCount);
+          if (leftValid && rightValid && leftCount !== rightCount) {
+            return rightCount - leftCount;
+          }
+          if (leftValid !== rightValid) {
+            return leftValid ? -1 : 1;
+          }
+          return String(left && left.ring && left.ring.ringName || "").localeCompare(String(right && right.ring && right.ring.ringName || ""));
+        });
+        const preferredBySessions = [...safeRows].sort((left, right) => {
+          const leftCount = Number(left && left.metric && left.metric.sessionsCount);
+          const rightCount = Number(right && right.metric && right.metric.sessionsCount);
+          const leftValid = Number.isFinite(leftCount);
+          const rightValid = Number.isFinite(rightCount);
+          if (leftValid && rightValid && leftCount !== rightCount) {
+            return rightCount - leftCount;
+          }
+          if (leftValid !== rightValid) {
+            return leftValid ? -1 : 1;
+          }
+          return String(left && left.ring && left.ring.ringName || "").localeCompare(String(right && right.ring && right.ring.ringName || ""));
+        });
+        const highlightEntries = [
+          {
+            label: "Best Yield Ring",
+            row: preferredByAverage[0],
+            detail: (row) => {
+              const averageYield = Number(row && row.metric && row.metric.averageYield);
+              return Number.isFinite(averageYield)
+                ? `${formatNumber(averageYield, 2)}% avg ${commodityLabel} yield`
+                : `No average ${commodityLabel} yield available`;
+            },
+          },
+          {
+            label: "Most Mined Ring",
+            row: preferredByAsteroids[0],
+            detail: (row) => {
+              const asteroidCount = Number(row && row.metric && row.metric.asteroidsCount);
+              const sessionCount = Number(row && row.metric && row.metric.sessionsCount);
+              const asteroidText = Number.isFinite(asteroidCount)
+                ? `${formatNumber(asteroidCount, 0)} asteroids`
+                : "No asteroid count";
+              const sessionText = Number.isFinite(sessionCount)
+                ? `${formatNumber(sessionCount, 0)} sessions`
+                : "session count unavailable";
+              return `${asteroidText} across ${sessionText}`;
+            },
+          },
+          {
+            label: "Most Visited Ring",
+            row: preferredBySessions[0],
+            detail: (row) => {
+              const sessionCount = Number(row && row.metric && row.metric.sessionsCount);
+              const asteroidCount = Number(row && row.metric && row.metric.asteroidsCount);
+              const sessionText = Number.isFinite(sessionCount)
+                ? `${formatNumber(sessionCount, 0)} sessions`
+                : "No session count";
+              const asteroidText = Number.isFinite(asteroidCount)
+                ? `${formatNumber(asteroidCount, 0)} asteroids`
+                : "asteroid count unavailable";
+              return `${sessionText} for ${commodityLabel} across ${asteroidText}`;
+            },
+          },
+        ];
+        highlightEntries.forEach((entry) => {
+          const card = document.createElement("div");
+          card.className = "compare-highlight-card";
+          const label = document.createElement("div");
+          label.className = "compare-highlight-label";
+          label.textContent = entry.label;
+          const ring = document.createElement("div");
+          ring.className = "compare-highlight-ring";
+          ring.textContent = entry.row && entry.row.ring && entry.row.ring.ringName
+            ? entry.row.ring.ringName
+            : "--";
+          const detail = document.createElement("div");
+          detail.className = "compare-highlight-detail";
+          detail.textContent = typeof entry.detail === "function"
+            ? entry.detail(entry.row)
+            : "";
+          card.appendChild(label);
+          card.appendChild(ring);
+          card.appendChild(detail);
+          compareHighlights.appendChild(card);
+        });
       }
 
       function syncReferenceCrosshairControls() {
@@ -497,18 +702,40 @@ import { createCompareStateController } from "./state/controller.js";
         });
       }
 
-      function syncYieldPopulationControls() {
-        if (!comparePopulationOptions) {
+      function syncCompareModeControls() {
+        if (!compareModeOptions) {
           return;
         }
         const renderState = getCompareRenderState();
-        renderYieldPopulationControls({
-          container: comparePopulationOptions,
-          modes: YIELD_POPULATION_MODES,
-          selectedYieldPopulationMode: renderState.selectedYieldPopulationMode,
-          onSelect: (modeKey) => {
-            compareStateController.setSelectedYieldPopulationMode(modeKey);
+        renderCompareModeControls({
+          container: compareModeOptions,
+          compareUseCdf: renderState.compareUseCdf,
+          onModeChange: (modeKey) => {
+            compareStateController.setCompareUseCdf(modeKey === "above-threshold");
             schedulePersistCompareReportSettings();
+            syncCompareModeControls();
+            syncCompareTargetControl();
+            syncGridlineControls();
+            renderComparePanels(getCompareRenderState());
+          }
+        });
+      }
+
+      function syncCompareTargetControl() {
+        if (!compareTargetOptions) {
+          return;
+        }
+        const renderState = getCompareRenderState();
+        renderCompareTargetControl({
+          container: compareTargetOptions,
+          compareUseCdf: renderState.compareUseCdf,
+          compareTargetTons: renderState.compareTargetTons,
+          onTargetTonsChange: (value) => {
+            compareStateController.setCompareTargetTons(
+              normalizePositiveIntegerSetting(value, renderState.compareTargetTons)
+            );
+            schedulePersistCompareReportSettings();
+            syncCompareTargetControl();
             renderComparePanels(getCompareRenderState());
           }
         });
@@ -522,6 +749,7 @@ import { createCompareStateController } from "./state/controller.js";
         renderGridlineControls({
           container: compareGridlineOptions,
           compareShowGridlines: renderState.compareShowGridlines,
+          compareUseCdf: renderState.compareUseCdf,
           compareNormalizeMetrics: renderState.compareNormalizeMetrics,
           compareReverseCumulative: renderState.compareReverseCumulative,
           compareShowHistogram: renderState.compareShowHistogram,
@@ -553,6 +781,7 @@ import { createCompareStateController } from "./state/controller.js";
         const data = renderState.compareData;
         if (!compareList || !data) {
           setCompareTitle("");
+          renderCompareHighlights([], "");
           return;
         }
         const commodityKey = renderState.selectedCommodityKey;
@@ -573,8 +802,8 @@ import { createCompareStateController } from "./state/controller.js";
         }, 0);
         const sharedXMax = Math.max(interval, Math.ceil(globalCommodityPeak / interval) * interval);
         const rows = data.rings.map((ring) => {
-          const metric = buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, renderState.selectedYieldPopulationMode);
-          return { ring, metric };
+          const targetTons = renderState.compareTargetTons;
+          return { ring, metric: buildRingCommodityModel(ring, commodityKey, interval, sharedXMax, targetTons) };
         }).filter((row) => Number(row && row.metric && row.metric.presentAsteroidsCount) > 0);
         rows.sort((left, right) => {
           if (sortMode === "name_asc") {
@@ -627,6 +856,7 @@ import { createCompareStateController } from "./state/controller.js";
 
         compareList.innerHTML = "";
         if (!rows.length) {
+          renderCompareHighlights([], commodityLabel);
           const note = document.createElement("p");
           note.className = "compare-empty";
           note.textContent = `No rings have ${commodityLabel} data.`;
@@ -634,6 +864,7 @@ import { createCompareStateController } from "./state/controller.js";
           setStatus(`Showing 0 rings for ${commodityLabel}.`, false);
           return;
         }
+        renderCompareHighlights(rows, commodityLabel);
         const pendingChartRenders = [];
         rows.forEach(({ ring, metric }) => {
           const row = document.createElement("article");
@@ -642,18 +873,125 @@ import { createCompareStateController } from "./state/controller.js";
           const infoPanel = document.createElement("section");
           infoPanel.className = "ring-info-panel";
 
+          const ringTitleRow = document.createElement("div");
+          ringTitleRow.className = "ring-title-row";
           const ringTitle = document.createElement("h2");
           ringTitle.className = "ring-title";
-          ringTitle.textContent = ring.ringName;
-          if (renderState.favoriteRingNames.has(String(ring.ringName || "").trim())) {
-            const favoriteStar = document.createElement("span");
-            favoriteStar.className = "ring-title-favorite";
-            favoriteStar.textContent = "★";
-            favoriteStar.title = "Favorite rings in the hotspot finder.";
-            favoriteStar.setAttribute("aria-label", "Favorite rings in the hotspot finder.");
-            ringTitle.appendChild(favoriteStar);
-          }
-          infoPanel.appendChild(ringTitle);
+          const ringName = String(ring.ringName || "").trim();
+          const systemName = extractSystemNameFromRingName(ringName);
+          const copySystemButton = document.createElement("button");
+          copySystemButton.type = "button";
+          copySystemButton.className = "ring-title-copy-button";
+          copySystemButton.textContent = "📋";
+          copySystemButton.setAttribute("aria-label", "Copy system name");
+          copySystemButton.addEventListener("mouseenter", (event) => {
+            showCursorTooltip("Copy system name", event);
+          });
+          copySystemButton.addEventListener("mousemove", (event) => {
+            showCursorTooltip("Copy system name", event);
+          });
+          copySystemButton.addEventListener("mouseleave", () => {
+            hideCursorTooltip();
+          });
+          copySystemButton.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const copied = await copyTextToClipboard(systemName);
+            setStatus(
+              copied
+                ? `Copied system name: ${systemName}`
+                : "Failed to copy system name.",
+              !copied
+            );
+          });
+          ringTitle.appendChild(copySystemButton);
+          const ringNameText = document.createElement("span");
+          ringNameText.textContent = ring.ringName;
+          ringTitle.appendChild(ringNameText);
+          const ringTitleActions = document.createElement("div");
+          ringTitleActions.className = "ring-title-actions";
+          const sessionsButton = document.createElement("button");
+          sessionsButton.type = "button";
+          sessionsButton.className = "ring-title-action-button";
+          sessionsButton.textContent = "Sessions";
+          sessionsButton.addEventListener("mouseenter", (event) => {
+            showCursorTooltip("Open session violin chart", event);
+          });
+          sessionsButton.addEventListener("mousemove", (event) => {
+            showCursorTooltip("Open session violin chart", event);
+          });
+          sessionsButton.addEventListener("mouseleave", () => {
+            hideCursorTooltip();
+          });
+          sessionsButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openSessionViolinWindow(
+              ringName,
+              commodityKey,
+              commodityLabel,
+              renderState.activeThemeId
+            );
+          });
+          const favoriteStar = document.createElement("button");
+          favoriteStar.type = "button";
+          favoriteStar.className = "ring-title-favorite-button";
+          const syncFavoriteButton = (isFavorited) => {
+            favoriteStar.classList.toggle("ring-title-favorite-button--active", !!isFavorited);
+            favoriteStar.textContent = isFavorited ? "★" : "☆";
+            favoriteStar.setAttribute(
+              "aria-label",
+              isFavorited
+                ? "Remove ring from favorites"
+                : "Add ring to favorites"
+            );
+          };
+          syncFavoriteButton(renderState.favoriteRingNames.has(ringName));
+          favoriteStar.addEventListener("mouseenter", (event) => {
+            showCursorTooltip("Toggle favorite ring", event);
+          });
+          favoriteStar.addEventListener("mousemove", (event) => {
+            showCursorTooltip("Toggle favorite ring", event);
+          });
+          favoriteStar.addEventListener("mouseleave", () => {
+            hideCursorTooltip();
+          });
+          favoriteStar.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!ringName) {
+              return;
+            }
+            const currentFavorites = getCompareRenderState().favoriteRingNames;
+            const nextFavoriteRingNames = new Set(currentFavorites);
+            const wasFavorited = nextFavoriteRingNames.has(ringName);
+            if (wasFavorited) {
+              nextFavoriteRingNames.delete(ringName);
+            } else {
+              nextFavoriteRingNames.add(ringName);
+            }
+            compareStateController.setFavoriteRingNames(nextFavoriteRingNames);
+            renderComparePanels(getCompareRenderState());
+            try {
+              const persistedFavoriteRingNames = await persistFavoriteRingNames(nextFavoriteRingNames);
+              compareStateController.setFavoriteRingNames(persistedFavoriteRingNames);
+              renderComparePanels(getCompareRenderState());
+              setStatus(
+                wasFavorited
+                  ? `Removed favorite: ${ringName}`
+                  : `Favorited ring: ${ringName}`,
+                false
+              );
+            } catch (_error) {
+              compareStateController.setFavoriteRingNames(currentFavorites);
+              renderComparePanels(getCompareRenderState());
+              setStatus("Failed to save favorite ring selection.", true);
+            }
+          });
+          ringTitleActions.appendChild(favoriteStar);
+          ringTitleRow.appendChild(ringTitle);
+          ringTitleRow.appendChild(ringTitleActions);
+          infoPanel.appendChild(ringTitleRow);
 
           const chartPanel = document.createElement("section");
           chartPanel.className = "ring-chart-panel";
@@ -670,6 +1008,7 @@ import { createCompareStateController } from "./state/controller.js";
               metric,
               rowCrosshairs,
               renderState.compareNormalizeMetrics,
+              renderState.compareUseCdf,
               renderState.compareReverseCumulative,
               renderState.compareShowHistogram,
               renderState
@@ -678,26 +1017,19 @@ import { createCompareStateController } from "./state/controller.js";
 
           const infoGrid = document.createElement("div");
           infoGrid.className = "info-grid";
-          const usingAllAsteroidsForDisplay = renderState.selectedYieldPopulationMode === "all";
-          const percentileScopeText = usingAllAsteroidsForDisplay
-            ? "inclusive percentile across all prospected asteroids in sessions where this commodity appears at least once; asteroids without this commodity are treated as 0%."
-            : "inclusive percentile across prospected asteroids where this commodity is present.";
-          const averageScopeText = usingAllAsteroidsForDisplay
-            ? "Mean yield across all prospected asteroids in sessions where this commodity appears at least once; asteroids without this commodity are treated as 0%."
-            : "Mean yield across prospected asteroids where this commodity is present.";
+          const percentileScopeText = "inclusive percentile across all prospected asteroids in sessions where this commodity appears at least once; asteroids without this commodity are treated as 0%.";
+          const averageScopeText = "Mean yield across all prospected asteroids in sessions where this commodity appears at least once; asteroids without this commodity are treated as 0%.";
           const buildZeroPercentileTooltip = (baseTooltip, percentileValue) => {
             const value = Number(percentileValue);
             if (!Number.isFinite(value) || value !== 0) {
               return baseTooltip;
             }
-            if (usingAllAsteroidsForDisplay) {
-              const totalAsteroids = Math.max(0, Number(metric.asteroidsCount));
-              const presentAsteroids = Math.max(0, Number(metric.presentAsteroidsCount));
-              const missingAsteroids = Math.max(0, totalAsteroids - presentAsteroids);
-              if (totalAsteroids > 0 && missingAsteroids > 0) {
-                const missingShare = (missingAsteroids / totalAsteroids) * 100;
-                return `${baseTooltip}\n0% summary: ${formatNumber(missingAsteroids, 0)} of ${formatNumber(totalAsteroids, 0)} asteroids (${formatNumber(missingShare, 1)}%) have no ${commodityLabel}.`;
-              }
+            const totalAsteroids = Math.max(0, Number(metric.asteroidsCount));
+            const presentAsteroids = Math.max(0, Number(metric.presentAsteroidsCount));
+            const missingAsteroids = Math.max(0, totalAsteroids - presentAsteroids);
+            if (totalAsteroids > 0 && missingAsteroids > 0) {
+              const missingShare = (missingAsteroids / totalAsteroids) * 100;
+              return `${baseTooltip}\n0% summary: ${formatNumber(missingAsteroids, 0)} of ${formatNumber(totalAsteroids, 0)} asteroids (${formatNumber(missingShare, 1)}%) have no ${commodityLabel}.`;
             }
             return `${baseTooltip}\n0% summary: This percentile lands at 0% yield for ${commodityLabel}.`;
           };
@@ -772,7 +1104,16 @@ import { createCompareStateController } from "./state/controller.js";
             label.className = "label";
             label.textContent = `${labelText}:`;
             if (typeof tooltipText === "string" && tooltipText.trim()) {
-              label.title = tooltipText;
+              label.setAttribute("aria-label", tooltipText);
+              label.addEventListener("mouseenter", (event) => {
+                showCursorTooltip(tooltipText, event);
+              });
+              label.addEventListener("mousemove", (event) => {
+                showCursorTooltip(tooltipText, event);
+              });
+              label.addEventListener("mouseleave", () => {
+                hideCursorTooltip();
+              });
             }
             const value = document.createElement("span");
             value.className = "value";
@@ -803,6 +1144,11 @@ import { createCompareStateController } from "./state/controller.js";
             infoGrid.appendChild(infoRow);
           });
           infoPanel.appendChild(infoGrid);
+
+          const infoPanelFooter = document.createElement("div");
+          infoPanelFooter.className = "ring-info-panel-footer";
+          infoPanelFooter.appendChild(sessionsButton);
+          infoPanel.appendChild(infoPanelFooter);
 
           row.appendChild(infoPanel);
           row.appendChild(chartPanel);
@@ -884,8 +1230,9 @@ import { createCompareStateController } from "./state/controller.js";
         compareStateController.setRequestedCommodityKey(resolveRequestedCommodityKey());
         await loadPersistedCompareReportSettings();
         compareThemePersistenceReady = true;
-        syncYieldPopulationControls();
         syncReferenceCrosshairControls();
+        syncCompareModeControls();
+        syncCompareTargetControl();
         syncGridlineControls();
         if (compareCommoditySelect) {
           compareCommoditySelect.addEventListener("change", (event) => {

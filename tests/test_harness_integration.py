@@ -1,8 +1,25 @@
 from __future__ import annotations
 
+import json
+import logging
+import os
+import shutil
 from datetime import timedelta
 
-from tests.harness_test_utils import REPO_ROOT, harness_context
+import pytest
+
+from tests.harness_test_utils import (
+    REPO_ROOT,
+    TESTS_ROOT,
+    harness_context,
+    load_generated_platinum_session_profile,
+    load_test_journal_events,
+    resolve_test_location_names,
+    resolve_test_output_root,
+)
+
+logger = logging.getLogger("EDMC.harness_tests")
+SESSION_EXPORT_ENV = "EDMCMA_HARNESS_GENERATE_SESSION_FILE"
 
 
 def _register_handler(harness, load) -> None:
@@ -36,6 +53,32 @@ def _cargo_event(timestamp: str, *, platinum: int, gold: int, limpets: int) -> d
     }
 
 
+def _generated_platinum_expectations() -> dict:
+    profile = load_generated_platinum_session_profile()
+    sequence = load_test_journal_events(rebase_to_now=False)["sample_mining_session"]
+    collection_launches = sum(
+        1
+        for entry in sequence
+        if entry.get("event") == "LaunchDrone" and entry.get("Type") == "Collection"
+    )
+    prospector_launches = sum(
+        1
+        for entry in sequence
+        if entry.get("event") == "LaunchDrone" and entry.get("Type") == "Prospector"
+    )
+    return {
+        "asteroid_count": profile["asteroid_count"],
+        "content_summary": profile["content_summary"],
+        "collection_launches": collection_launches,
+        "prospector_launches": prospector_launches,
+        "platinum_yields": profile["platinum_yields"],
+        "platinum_percentages": profile["platinum_percentages"],
+        "platinum_absent_count": profile["platinum_absent_count"],
+        "platinum_present_count": profile["platinum_present_count"],
+        "platinum_present_average": profile["platinum_present_average"],
+    }
+
+
 def test_harness_lifecycle_start_stop_is_repeatable() -> None:
     with harness_context(start_plugin=False) as (harness, load, _cfg):
         _register_handler(harness, load)
@@ -62,6 +105,51 @@ def test_harness_lifecycle_start_stop_is_repeatable() -> None:
         assert load._plugin.state.is_mining is False
 
 
+def test_harness_option_defaults(monkeypatch) -> None:
+    monkeypatch.delenv("EDMCMA_HARNESS_USE_REAL_OUTPUT", raising=False)
+    monkeypatch.delenv("EDMCMA_HARNESS_SYSTEM_NAME", raising=False)
+
+    assert resolve_test_output_root() == TESTS_ROOT
+    assert resolve_test_location_names() == {
+        "system": "Test Ring",
+        "body": "Test Ring A 8",
+        "ring": "Test Ring A 8 A Ring",
+        "exit_system": "Test Ring Exit",
+    }
+
+
+def test_harness_option_overrides(monkeypatch) -> None:
+    monkeypatch.setenv("EDMCMA_HARNESS_USE_REAL_OUTPUT", "1")
+    monkeypatch.setenv("EDMCMA_HARNESS_SYSTEM_NAME", "Option Ring")
+
+    assert resolve_test_output_root() == REPO_ROOT
+    assert resolve_test_location_names() == {
+        "system": "Option Ring",
+        "body": "Option Ring A 8",
+        "ring": "Option Ring A 8 A Ring",
+        "exit_system": "Option Ring Exit",
+    }
+
+    payload = load_test_journal_events(rebase_to_now=False)
+    sequence = payload["sample_mining_session"]
+    assert any(
+        entry.get("event") == "Location"
+        and entry.get("StarSystem") == "Option Ring"
+        and entry.get("Body") == "Option Ring A 8"
+        for entry in sequence
+    )
+    assert any(
+        entry.get("event") == "SupercruiseExit"
+        and entry.get("Body") == "Option Ring A 8 A Ring"
+        for entry in sequence
+    )
+    assert any(
+        entry.get("event") == "FSDJump"
+        and entry.get("StarSystem") == "Option Ring Exit"
+        for entry in sequence
+    )
+
+
 def test_harness_can_replay_named_journal_sequence() -> None:
     with harness_context() as (harness, load, _cfg):
         _register_handler(harness, load)
@@ -69,15 +157,129 @@ def test_harness_can_replay_named_journal_sequence() -> None:
         harness.play_sequence("sample_mining_session")
 
         state = load._plugin.state
-        assert state.is_mining is True
-        assert state.prospector_launched_count == 1
-        assert state.prospected_count == 1
-        assert state.prospect_content_counts.get("High") == 1
-        assert state.cargo_totals.get("platinum") == 5
-        assert state.cargo_totals.get("gold") == 3
-        assert state.materials_collected.get("iron") == 3
-        assert state.materials_collected.get("carbon") == 6
-        assert state.materials_collected.get("nickel") == 9
+        location_names = resolve_test_location_names()
+        expectations = _generated_platinum_expectations()
+        assert state.is_mining is False
+        assert state.mining_end is not None
+        assert state.current_ship == "Type-11 Prospector"
+        assert state.cargo_capacity == 256
+        assert state.prospector_launched_count == expectations["prospector_launches"]
+        assert state.collection_drones_launched == expectations["collection_launches"]
+        assert state.prospected_count == expectations["asteroid_count"]
+        assert state.prospect_content_counts.get("High", 0) == expectations["content_summary"]["High"]
+        assert state.prospect_content_counts.get("Medium", 0) == expectations["content_summary"]["Medium"]
+        assert state.prospect_content_counts.get("Low", 0) == expectations["content_summary"]["Low"]
+        assert state.cargo_totals.get("platinum") == 246
+        assert state.cargo_totals.get("gold") == 18
+        assert state.cargo_totals.get("osmium") == 16
+        assert state.cargo_totals.get("silver") == 1
+        assert state.materials_collected.get("tin") == 3
+        assert state.mining_ring == location_names["ring"]
+        logger.info(
+            "Sample mining session replayed: mining=%s prospected=%s collectors=%s platinum=%s osmium=%s gold=%s silver=%s materials=%s",
+            state.is_mining,
+            state.prospected_count,
+            state.collection_drones_launched,
+            state.cargo_totals.get("platinum"),
+            state.cargo_totals.get("osmium"),
+            state.cargo_totals.get("gold"),
+            state.cargo_totals.get("silver"),
+            dict(state.materials_collected),
+        )
+
+
+def test_harness_full_mining_run_writes_session_data_file() -> None:
+    if os.getenv(SESSION_EXPORT_ENV, "").strip().lower() not in {"1", "true", "yes", "on"}:
+        pytest.skip(f"set {SESSION_EXPORT_ENV}=1 to run the explicit session export harness")
+
+    with harness_context() as (harness, load, _cfg):
+        _register_handler(harness, load)
+
+        output_root = resolve_test_output_root()
+        location_names = resolve_test_location_names()
+        expectations = _generated_platinum_expectations()
+        tests_session_dir = output_root / "session_data"
+        real_session_dir = REPO_ROOT / "session_data"
+        real_session_files_before = sorted(path.name for path in real_session_dir.glob("session_data_*.json"))
+        tests_session_dir.mkdir(parents=True, exist_ok=True)
+        if output_root != REPO_ROOT:
+            for path in tests_session_dir.iterdir():
+                if path.name in {".gitkeep", "ring_summary.jsonl", "prospected_asteroid_summary.jsonl"}:
+                    continue
+                if path.is_dir():
+                    shutil.rmtree(path, ignore_errors=True)
+                else:
+                    path.unlink(missing_ok=True)
+
+        state = load._plugin.state
+        state.session_logging_enabled = True
+        state.plugin_dir = output_root
+        load._plugin.session_recorder._enforce_retention = lambda _directory: None
+
+        harness.load_events("journal_events.json")
+        harness.play_sequence("sample_mining_session")
+
+        session_dir = output_root / "session_data"
+        assert session_dir == tests_session_dir
+        session_files = sorted(session_dir.glob("session_data_*.json"))
+        if output_root == REPO_ROOT:
+            assert session_files
+            session_file = max(session_files, key=lambda path: path.stat().st_mtime_ns)
+        else:
+            assert len(session_files) == 1
+            session_file = session_files[0]
+
+        payload = json.loads(session_file.read_text(encoding="utf-8"))
+        meta = payload["meta"]
+        commodities = payload["commodities"]
+        materials = {row["name"].lower(): row["count"] for row in meta["materials"]}
+
+        assert meta["location"]["ring"] == location_names["ring"]
+        assert meta["ship"] == "Type-11 Prospector"
+        assert meta["cargo_capacity"] == 256
+        assert meta["prospected"]["total"] == expectations["asteroid_count"]
+        assert meta["prospectors_launched"] == expectations["prospector_launches"]
+        assert meta["collectors_launched"] == expectations["collection_launches"]
+        assert meta["collectors_abandoned"] >= 0
+        assert meta["limpets_remaining"] >= 0
+        assert meta["content_summary"] == expectations["content_summary"]
+        assert materials == {"tin": 3}
+        assert commodities["Platinum"]["gathered"]["tons"] == 246
+        assert commodities["Gold"]["gathered"]["tons"] == 18
+        assert commodities["Osmium"]["gathered"]["tons"] == 16
+        assert commodities["Silver"]["gathered"]["tons"] == 1
+        platinum_yields = []
+        for event in payload["events"]:
+            if event.get("type") != "prospected_asteroid":
+                continue
+            details = event.get("details") or {}
+            platinum_value = None
+            for commodity in details.get("materials") or []:
+                if str(commodity.get("name") or "").lower() != "platinum":
+                    continue
+                platinum_value = round(float(commodity["percentage"]), 6)
+                break
+            platinum_yields.append(platinum_value)
+        assert platinum_yields == [
+            None if value is None else round(float(value), 6)
+            for value in expectations["platinum_yields"]
+        ]
+        platinum_percentages = [value for value in platinum_yields if value is not None]
+        assert len(platinum_percentages) == expectations["platinum_present_count"]
+        assert expectations["platinum_absent_count"] == sum(1 for value in platinum_yields if value is None)
+        assert abs((sum(platinum_percentages) / len(platinum_percentages)) - expectations["platinum_present_average"]) < 1e-6
+        assert len(payload["events"]) >= expectations["asteroid_count"]
+        assert payload["events"][-1]["type"] == "mining_session_stopped"
+        assert payload["events"][-1]["details"]["reason"] == "FSD Jump"
+        if output_root != REPO_ROOT:
+            assert sorted(path.name for path in real_session_dir.glob("session_data_*.json")) == real_session_files_before
+
+        logger.info(
+            "Mining run exported session data to %s with %s events and commodities=%s",
+            session_file.name,
+            len(payload["events"]),
+            sorted(commodities),
+        )
 
 
 def test_journal_handler_writes_expected_shared_state_keys() -> None:
@@ -86,6 +288,7 @@ def test_journal_handler_writes_expected_shared_state_keys() -> None:
         shared_state: dict = {}
 
         harness.fire_event(_launch_prospector_event("3300-01-01T00:00:00Z"), state=shared_state)
+        effective_shared_state = harness.monitor.state
 
         expected = {
             "edmc_mining_active",
@@ -100,16 +303,21 @@ def test_journal_handler_writes_expected_shared_state_keys() -> None:
             "edmc_mining_prospectors_launched",
             "edmc_mining_prospectors_lost",
         }
-        assert expected.issubset(shared_state.keys())
-        assert shared_state["edmc_mining_active"] is True
-        assert shared_state["edmc_mining_start"] is not None
-        assert shared_state["edmc_mining_prospectors_launched"] == 1
+        assert expected.issubset(effective_shared_state.keys())
+        assert effective_shared_state["edmc_mining_active"] is True
+        assert effective_shared_state["edmc_mining_start"] is not None
+        assert effective_shared_state["edmc_mining_prospectors_launched"] == 1
 
         harness.fire_event(
             {"event": "SupercruiseEntry", "StarSystem": "Sol", "timestamp": "3300-01-01T00:03:00Z"},
             state=shared_state,
         )
-        assert shared_state["edmc_mining_active"] is False
+        assert harness.monitor.state["edmc_mining_active"] is False
+        logger.info(
+            "Shared mining state published and then cleared after supercruise entry; active=%s tracked_keys=%s",
+            harness.monitor.state["edmc_mining_active"],
+            sorted(expected),
+        )
 
 
 def test_prefs_hooks_update_cmdr_and_persist_settings(monkeypatch) -> None:
@@ -196,6 +404,8 @@ def test_session_stops_on_fsd_jump() -> None:
             {
                 "event": "FSDJump",
                 "StarSystem": "Achenar",
+                "StarPos": [67.5, -12.25, 3.0],
+                "SystemAddress": 4242424242,
                 "timestamp": "3300-01-01T00:02:00Z",
             },
             state={},
@@ -214,6 +424,7 @@ def test_launch_without_system_uses_last_supercruise_exit_starsystem() -> None:
                 "StarSystem": "Col 285 Sector VZ-W b15-0",
                 "Body": "Col 285 Sector VZ-W b15-0 1 A Ring",
                 "BodyID": 29,
+                "BodyType": "Planet",
                 "timestamp": "3300-01-01T00:00:00Z",
             },
             state={},
@@ -224,11 +435,13 @@ def test_launch_without_system_uses_last_supercruise_exit_starsystem() -> None:
             {
                 "event": "Music",
                 "StarSystem": "Col 285 Sector RT-Y b14-2",
+                "MusicTrack": "Exploration",
                 "timestamp": "3300-01-01T00:00:05Z",
             },
             state={},
         )
         assert load._plugin.state.current_system == "Col 285 Sector RT-Y b14-2"
+        harness.monitor.state["SystemName"] = None
 
         # Launch event often does not include a system field; mining should fall back
         # to the most recent SupercruiseExit StarSystem.
@@ -268,9 +481,16 @@ def test_shipyard_swap_pending_update_resolves_on_loadout() -> None:
             {
                 "event": "Loadout",
                 "ShipID": 77,
+                "Ship": "krait_mkii",
+                "ShipIdent": "",
+                "ShipName": "",
                 "ShipType": "krait_mkii",
                 "ShipType_Localised": "Krait Mk II",
                 "CargoCapacity": 192,
+                "UnladenMass": 320.0,
+                "MaxJumpRange": 22.5,
+                "Rebuy": 1500000,
+                "Modules": [],
                 "timestamp": "3300-01-01T01:00:05Z",
             },
             state={},

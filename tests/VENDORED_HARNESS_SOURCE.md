@@ -2,9 +2,10 @@
 
 - Upstream repository: https://github.com/dwomble/EDMC-PluginLib.git
 - Upstream ref requested: main
-- Upstream commit: cd9a3d2746473c3840b46fe13246da792c835012
-- Synced at (UTC): 2026-04-02T19:57:08Z
+- Upstream commit: 24281f21c8b75d0cbe3d3c7b5df2aa03f846fd19
+- Synced at (UTC): 2026-04-12T14:16:39Z
 
 This file tracks provenance for vendored harness artifacts:
 - tests/harness.py
 - tests/edmc/
+- tests/journal_config/

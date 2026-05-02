@@ -30,9 +30,10 @@ DEFAULT_INDEX_SETTINGS = {
 }
 
 DEFAULT_COMPARE_SETTINGS = {
-    "selectedYieldPopulationMode": "all",
     "selectedReferenceCrosshairs": ["avg"],
     "compareShowGridlines": True,
+    "compareUseCdf": False,
+    "compareTargetTons": 522,
     "compareNormalizeMetrics": False,
     "compareReverseCumulative": False,
     "compareShowHistogram": False,
@@ -89,6 +90,14 @@ def _coerce_choice(value: Any, allowed: set[str], fallback: str) -> str:
     if text in allowed:
         return text
     return fallback
+
+
+def _coerce_positive_int(value: Any, fallback: int) -> int:
+    try:
+        numeric = int(value)
+    except (TypeError, ValueError):
+        numeric = fallback
+    return numeric if numeric > 0 else fallback
 
 
 def _coerce_reference_crosshairs(value: Any, fallback: list[str]) -> list[str]:
@@ -187,12 +196,11 @@ def sanitize_index_report_settings(value: Any) -> dict[str, Any]:
 def sanitize_compare_report_settings(value: Any) -> dict[str, Any]:
     source = value if isinstance(value, Mapping) else {}
     fallback = DEFAULT_COMPARE_SETTINGS
+    compare_use_cdf = _coerce_bool(
+        source.get("compareUseCdf"),
+        fallback["compareUseCdf"],
+    )
     return {
-        "selectedYieldPopulationMode": _coerce_choice(
-            source.get("selectedYieldPopulationMode"),
-            ALLOWED_YIELD_MODES,
-            fallback["selectedYieldPopulationMode"],
-        ),
         "selectedReferenceCrosshairs": _coerce_reference_crosshairs(
             source.get("selectedReferenceCrosshairs"),
             list(fallback["selectedReferenceCrosshairs"]),
@@ -201,7 +209,12 @@ def sanitize_compare_report_settings(value: Any) -> dict[str, Any]:
             source.get("compareShowGridlines"),
             fallback["compareShowGridlines"],
         ),
-        "compareNormalizeMetrics": _coerce_bool(
+        "compareUseCdf": compare_use_cdf,
+        "compareTargetTons": _coerce_positive_int(
+            source.get("compareTargetTons"),
+            fallback["compareTargetTons"],
+        ),
+        "compareNormalizeMetrics": False if compare_use_cdf else _coerce_bool(
             source.get("compareNormalizeMetrics"),
             fallback["compareNormalizeMetrics"],
         ),

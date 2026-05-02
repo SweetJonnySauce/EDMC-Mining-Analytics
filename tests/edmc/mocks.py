@@ -1,10 +1,16 @@
 import json
+import importlib
 import sys
 import types as _types
 import semantic_version
 import logging
 from pathlib import Path
 from unittest.mock import patch
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 fallback
+    tomllib = importlib.import_module('tomli')
 
 # We keep a copy of edmc_data here.
 this_dir:Path = Path(__file__).parent
@@ -21,71 +27,79 @@ parent:Path = Path(__file__).parent.parent
 
 #config.get_appdirpath = _mock_app_dir # type: ignore
 
-if 'config' not in sys.modules:
-    class MockConfig:
-        _instance = None
+class MockConfig:
+    _instance = None
 
-        # Singleton pattern
-        def __new__(cls, *args, **kwargs):
-            if cls._instance is None:
-                cls._instance = super().__new__(cls)
-            return cls._instance
+    # Singleton pattern
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
-        def __init__(self):
-            if hasattr(self, '_initialized'): return
+    def __init__(self):
+        if hasattr(self, '_initialized'): return
 
-            self.data = {} # Any variables that need setting
-            self.shutting_down = False
-            self.app_dir_path = parent
-            self._initialized = True
+        self.data = {} # Any variables that need setting
+        self.shutting_down = False
+        self.app_dir_path = parent
+        self.default_journal_dir = parent / "journal_folder"
+        self.internal_plugin_dir_path = self.default_journal_dir
+        self.plugin_dir_path = parent
+        self._initialized = True
 
-        def __setitem__(self, key, value):
-            self.data[key] = value
+    def __setitem__(self, key, value):
+        self.data[key.lower()] = value
 
-        def __getitem__(self, key):
-            return self.data.get(key)
+    def __getitem__(self, key):
+        a = self.data.get(key)
+        b = self.data.get(key.lower())
+        return self.data.get(key, self.data.get(key.lower(), None))
 
-        def get(self, key, default=None):
-            return self.data.get(key, default)
+    def get(self, key, default=None):
+        value = self.__getitem__(key)
+        return default if value is None else value
 
-        def set(self, key, value):
-            self.data[key] = value
+    def set(self, key, value):
+        self.__setitem__(key, value)
 
-        def get_int(self, key, default=None):
-            value = self.data.get(key, default)
-            return int(value) if value is not None else default #type: ignore
+    def get_int(self, key, default=None):
+        value = self.__getitem__(key)
+        if value is None: return default
+        return int(value)
 
-        def get_str(self, key, default=None):
-            value = self.data.get(key, default)
-            return value if value is not None else default
+    def get_str(self, key, default=None):
+        if key == "journaldir": return self.default_journal_dir
+        value = self.__getitem__(key)
+        if value is None: return default
+        return str(value)
 
-        def delete(self, key: str, *, suppress=False) -> None:
-            if key in self.data:
-                del self.data[key]
+    def delete(self, key: str, *, suppress=False) -> None:
+        if key in self.data:
+            del self.data[key]
 
-    def appversion() -> semantic_version.Version:
-        return semantic_version.Version('10.0.0')
+def appversion() -> semantic_version.Version:
+    return semantic_version.Version('10.0.0')
 
-    _cfg_attrs = {'appname': 'EDMC',
-                  'appversion': appversion,
-                  'appcmdname': 'EDMC',
-                  'app_dir_path': parent,
-                  'config_logger': logging.getLogger('TestHarness'),
-                  'shutting_down': False,
-                  'logger': logging.getLogger('TestHarness')
-                }
+_cfg_attrs = {'appname': 'EDMC',
+                'appversion': appversion,
+                'appcmdname': 'EDMC',
+                'app_dir_path': parent,
+                'config_logger': logging.getLogger('TestHarness'),
+                'shutting_down': False,
+                'logger': logging.getLogger('TestHarness')
+            }
 
-    _cfg = _types.ModuleType('config')
-    _cfg.config = MockConfig() # type:ignore
+_cfg = _types.ModuleType('config')
+_cfg.config = MockConfig() # type:ignore
 
-    for name, val in MockConfig.__dict__.items():
-        if not name.startswith('__'):
-            setattr(_cfg, name, val)
-
-    for name, val in _cfg_attrs.items():
+for name, val in MockConfig.__dict__.items():
+    if not name.startswith('__'):
         setattr(_cfg, name, val)
 
-    sys.modules['config'] = _cfg
+for name, val in _cfg_attrs.items():
+    setattr(_cfg, name, val)
+
+sys.modules['config'] = _cfg
 
 # Minimal EDMC `theme` module emulator for direct runs (examples.py / __main__)
 theme_mod = _types.ModuleType("theme")
@@ -283,10 +297,8 @@ from edmc_data import ship_name_map
 ship_map = ship_name_map.copy()
 
 # Ship masses
-
 with open(parent / "config" / "ships.json", encoding="utf-8") as ships_file_handle:
     ships = json.load(ships_file_handle)
-
 
 _edshipyard = _types.ModuleType('edshipyard')
 setattr(_edshipyard, 'ship_name_map', ship_map)

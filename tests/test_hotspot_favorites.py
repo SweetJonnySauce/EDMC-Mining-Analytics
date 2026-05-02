@@ -1,5 +1,10 @@
 from pathlib import Path
 
+from edmc_mining_analytics.favorite_rings import (
+    load_favorite_rings,
+    resolve_favorite_rings_path,
+    save_favorite_rings,
+)
 from edmc_mining_analytics.mining_ui.hotspot_search_window import HotspotSearchWindow
 
 
@@ -26,3 +31,14 @@ def test_load_favorite_rings_supports_legacy_list_payload(tmp_path: Path) -> Non
     target.write_text('["Ring X", "Ring Y", "Ring X"]', encoding="utf-8")
     loaded = HotspotSearchWindow._load_favorite_rings_file(target)
     assert loaded == {"Ring X", "Ring Y"}
+
+
+def test_resolve_favorite_rings_path_uses_plugin_config_directory(tmp_path: Path) -> None:
+    resolved = resolve_favorite_rings_path(tmp_path)
+    assert resolved == tmp_path / "config" / "hotspot_favorite_rings.json"
+
+
+def test_save_favorite_rings_accepts_plugin_dir_and_returns_normalized_set(tmp_path: Path) -> None:
+    saved = save_favorite_rings(tmp_path, [" Ring A ", "Ring B", "", "Ring A"])
+    assert saved == {"Ring A", "Ring B"}
+    assert load_favorite_rings(tmp_path) == {"Ring A", "Ring B"}

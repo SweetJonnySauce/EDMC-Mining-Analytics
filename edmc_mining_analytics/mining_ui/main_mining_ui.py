@@ -57,7 +57,9 @@ from ..edmc_mining_analytics_version import (
     is_newer_version,
 )
 from ..browser_utils import did_open, open_analysis_url
+from ..favorite_rings import save_favorite_rings
 from ..report_settings import load_report_settings, save_report_settings
+from ..session_reports import delete_session_report
 from .components.button_factory import (
     ButtonType,
     CheckboxType,
@@ -2168,6 +2170,84 @@ class edmcmaMiningUI:
                         separators=(",", ":"),
                     ).encode("utf-8")
                     self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("Content-Length", str(len(response_body)))
+                    self.end_headers()
+                    self.wfile.write(response_body)
+                    return
+                if path == "/favorite_rings.json":
+                    try:
+                        length = int(self.headers.get("Content-Length", "0") or "0")
+                    except (TypeError, ValueError):
+                        length = 0
+                    try:
+                        raw_body = self.rfile.read(max(0, length))
+                    except Exception:
+                        raw_body = b""
+                    if not raw_body.strip():
+                        payload = {}
+                    else:
+                        try:
+                            parsed = json.loads(raw_body.decode("utf-8"))
+                        except Exception:
+                            parsed = None
+                        payload = parsed if isinstance(parsed, dict) else {}
+                    rings_payload = payload.get("favorite_rings") if isinstance(payload, dict) else []
+                    rings = rings_payload if isinstance(rings_payload, list) else []
+                    try:
+                        persisted = save_favorite_rings(plugin_dir, rings)
+                    except Exception:
+                        _log.exception("Failed to persist favorite rings for compare report")
+                        response_body = json.dumps(
+                            {"ok": False, "favorite_rings": []},
+                            separators=(",", ":"),
+                        ).encode("utf-8")
+                        self.send_response(500)
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Cache-Control", "no-store")
+                        self.send_header("Content-Length", str(len(response_body)))
+                        self.end_headers()
+                        self.wfile.write(response_body)
+                        return
+                    response_body = json.dumps(
+                        {"ok": True, "favorite_rings": sorted(persisted)},
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("Content-Length", str(len(response_body)))
+                    self.end_headers()
+                    self.wfile.write(response_body)
+                    return
+                if path == "/delete_session_report.json":
+                    try:
+                        length = int(self.headers.get("Content-Length", "0") or "0")
+                    except (TypeError, ValueError):
+                        length = 0
+                    try:
+                        raw_body = self.rfile.read(max(0, length))
+                    except Exception:
+                        raw_body = b""
+                    if not raw_body.strip():
+                        payload = {}
+                    else:
+                        try:
+                            parsed = json.loads(raw_body.decode("utf-8"))
+                        except Exception:
+                            parsed = None
+                        payload = parsed if isinstance(parsed, dict) else {}
+                    filename = str((payload.get("filename") if isinstance(payload, dict) else "") or "").strip()
+                    result = delete_session_report(plugin_dir, filename)
+                    response_body = json.dumps(
+                        {"ok": result.ok, "reason": result.reason, "filename": filename},
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                    status_code = 200 if result.ok else 400
+                    if result.reason == "not_found":
+                        status_code = 404
+                    self.send_response(status_code)
                     self.send_header("Content-Type", "application/json; charset=utf-8")
                     self.send_header("Cache-Control", "no-store")
                     self.send_header("Content-Length", str(len(response_body)))

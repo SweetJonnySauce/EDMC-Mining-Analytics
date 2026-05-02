@@ -58,17 +58,18 @@ def _import_live_requests():
 
 _live_requests, _live_requests_adapters = _import_live_requests()
 _use_live:bool = False
+_live_exceptions = getattr(_live_requests, 'exceptions', None) if _live_requests is not None else None
 
-if _live_requests is not None:
-    class _LiveMockRequestException(_live_requests.exceptions.RequestException):
+if _live_exceptions is not None and hasattr(_live_exceptions, 'RequestException') and hasattr(_live_exceptions, 'HTTPError'):
+    class _LiveMockRequestException(_live_exceptions.RequestException):
         pass
 
-    class _LiveMockHTTPError(_live_requests.exceptions.HTTPError):
+    class _LiveMockHTTPError(_live_exceptions.HTTPError):
         pass
 
     MockRequestException = _LiveMockRequestException
     MockHTTPError = _LiveMockHTTPError
-    TimeoutBase = _live_requests.exceptions.Timeout
+    TimeoutBase = getattr(_live_exceptions, 'Timeout', _LiveMockRequestException)
 else:
     class MockRequestException(Exception):
         pass
@@ -246,15 +247,15 @@ def live_requests(set:bool|None = None) -> bool:
 _request_attrs = {
     'Response': MockResponse,
     'Session': RequestsSession,
-    'RequestException': (_live_requests.exceptions.RequestException if _live_requests is not None else MockRequestException),
-    'HTTPError': (_live_requests.exceptions.HTTPError if _live_requests is not None else MockHTTPError),
+    'RequestException': (_live_exceptions.RequestException if _live_exceptions is not None and hasattr(_live_exceptions, 'RequestException') else MockRequestException),
+    'HTTPError': (_live_exceptions.HTTPError if _live_exceptions is not None and hasattr(_live_exceptions, 'HTTPError') else MockHTTPError),
     'Timeout': TimeoutBase,
     'queue_response': queue_response,
     'calls': _mock_requests.calls,
     'queued_responses': _mock_requests.queued_responses,
     'codes': (_live_requests.codes if _live_requests is not None else _types.SimpleNamespace(ok=200)),
     'utils': (_live_requests.utils if _live_requests is not None else _types.SimpleNamespace(requote_uri=lambda value: value)),
-    'exceptions': (_live_requests.exceptions if _live_requests is not None else _types.SimpleNamespace(
+    'exceptions': (_live_exceptions if _live_exceptions is not None else _types.SimpleNamespace(
         RequestException=MockRequestException,
         HTTPError=MockHTTPError,
         Timeout=MockRequestException,

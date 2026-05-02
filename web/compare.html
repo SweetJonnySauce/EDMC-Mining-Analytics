@@ -16,37 +16,52 @@
       </div>
     </div>
     <section class="compare-controls">
-      <div class="compare-control">
-        <label for="compare-commodity-select">Commodity</label>
-        <select id="compare-commodity-select" aria-label="Commodity filter"></select>
+      <div class="compare-controls-primary">
+        <div class="compare-controls-primary-row">
+          <div class="compare-control compare-control--commodity">
+            <label for="compare-commodity-select">Commodity</label>
+            <select id="compare-commodity-select" aria-label="Commodity filter"></select>
+          </div>
+          <div class="compare-control compare-control--sort">
+            <label for="compare-sort-select">Sort</label>
+            <select id="compare-sort-select" aria-label="Sort rings">
+              <option value="avg_desc">Avg Yield (mean, High to Low)</option>
+              <option value="avg_asc">Avg Yield (mean, Low to High)</option>
+              <option value="p50_desc">Median (P50 High to Low)</option>
+              <option value="p50_asc">Median (P50 Low to High)</option>
+              <option value="p90_desc">P90 (High to Low)</option>
+              <option value="p90_asc">P90 (Low to High)</option>
+              <option value="p75_desc">P75 (High to Low)</option>
+              <option value="p75_asc">P75 (Low to High)</option>
+              <option value="p25_desc">P25 (High to Low)</option>
+              <option value="p25_asc">P25 (Low to High)</option>
+              <option value="name_asc">Ring Name (A to Z)</option>
+            </select>
+          </div>
+        </div>
+        <div class="compare-control compare-control-pill compare-control--highlights">
+          <label>Highlights</label>
+          <div id="compare-highlights" class="compare-highlights" aria-label="Commodity highlights"></div>
+        </div>
       </div>
-      <div class="compare-control">
-        <label for="compare-sort-select">Sort</label>
-        <select id="compare-sort-select" aria-label="Sort rings">
-          <option value="avg_desc">Avg Yield (mean, High to Low)</option>
-          <option value="avg_asc">Avg Yield (mean, Low to High)</option>
-          <option value="p50_desc">Median (P50 High to Low)</option>
-          <option value="p50_asc">Median (P50 Low to High)</option>
-          <option value="p90_desc">P90 (High to Low)</option>
-          <option value="p90_asc">P90 (Low to High)</option>
-          <option value="p75_desc">P75 (High to Low)</option>
-          <option value="p75_asc">P75 (Low to High)</option>
-          <option value="p25_desc">P25 (High to Low)</option>
-          <option value="p25_asc">P25 (Low to High)</option>
-          <option value="name_asc">Ring Name (A to Z)</option>
-        </select>
-      </div>
-      <div class="compare-control compare-control-pill">
-        <label>Yield Basis</label>
-        <div id="compare-population-options" class="compare-population-options" aria-label="Yield calculation basis"></div>
-      </div>
-      <div class="compare-control compare-control-pill">
+      <div class="compare-control compare-control-pill compare-control--crosshairs">
         <label>Crosshairs</label>
         <div id="compare-reference-options" class="compare-reference-options" aria-label="Crosshair overlays"></div>
       </div>
-      <div class="compare-control compare-control-pill">
+      <div class="compare-control compare-control-pill compare-control--mode">
+        <label>Chart Mode</label>
+        <div id="compare-mode-options" class="compare-population-options" aria-label="Chart mode"></div>
+      </div>
+      <div class="compare-control compare-control-pill compare-control--display">
         <label>Display</label>
-        <div id="compare-gridline-options" class="compare-population-options" aria-label="Chart display options"></div>
+        <div class="compare-display-sections">
+          <div class="compare-display-section compare-display-section--options">
+            <div id="compare-gridline-options" class="compare-population-options" aria-label="Chart display options"></div>
+          </div>
+          <div class="compare-display-section compare-display-section--target">
+            <div id="compare-target-options" aria-label="Cargo target"></div>
+          </div>
+        </div>
       </div>
     </section>
     <p id="compare-status" class="compare-status"></p>

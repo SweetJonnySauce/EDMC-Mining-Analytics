@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EDMC Mining Analytics Session Violins</title>
+  <link rel="stylesheet" href="/web/css/compare.css">
+  <link rel="stylesheet" href="/web/css/compare_sessions.css">
+</head>
+<body>
+  <main class="app session-violin-app">
+    <div class="title-row">
+      <div class="session-violin-heading">
+        <div class="session-violin-title-row">
+          <h1 id="session-violin-title">Session Violin Chart</h1>
+          <span id="session-violin-info-anchor"></span>
+        </div>
+        <p id="session-violin-subtitle" class="sub">Loading session distributions...</p>
+      </div>
+      <div class="theme-control">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-haspopup="true" aria-expanded="false">Theme</button>
+        <div id="theme-menu" class="theme-menu" aria-hidden="true"></div>
+      </div>
+    </div>
+    <p id="session-violin-status" class="compare-status"></p>
+    <section id="session-violin-summary" class="session-violin-summary" aria-label="Session violin summary"></section>
+    <section id="session-violin-chart" class="session-violin-chart-card"></section>
+  </main>
+
+  <script type="module" src="/web/js/compare_sessions/main.js"></script>
+</body>
+</html>

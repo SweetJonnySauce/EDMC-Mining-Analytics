@@ -1,3 +1,7 @@
+import json
+import logging
+from types import SimpleNamespace
+
 from edmc_mining_analytics.mining_ui.hotspot_search_window import HotspotSearchWindow
 from edmc_mining_analytics.integrations.spansh_hotspots import RingHotspot
 
@@ -102,3 +106,62 @@ def test_format_avg_yield_percentage_prefers_integer_when_possible() -> None:
     assert HotspotSearchWindow._format_avg_yield_percentage(14.0) == "14%"
     assert HotspotSearchWindow._format_avg_yield_percentage(36.24) == "36.2%"
     assert HotspotSearchWindow._format_avg_yield_percentage(None) is None
+
+
+def test_load_known_avg_yield_index_reads_ring_summary_file(tmp_path) -> None:
+    session_dir = tmp_path / "session_data"
+    session_dir.mkdir()
+    ring_summary_path = session_dir / "ring_summary.jsonl"
+    rows = [
+        {
+            "ring_name": "Col 285 Sector LB-O c6-3 A 8 A Ring",
+            "commodity_name": "Platinum",
+            "asteroids_prospected": 98,
+            "asteroids_with_commodity_present": 44,
+            "sum_percentage": 1303.284618,
+        }
+    ]
+    ring_summary_path.write_text(
+        "".join(json.dumps(row) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+    window = HotspotSearchWindow.__new__(HotspotSearchWindow)
+    window._controller = SimpleNamespace(state=SimpleNamespace(plugin_dir=tmp_path))
+    window._ring_summary_avg_cache = {}
+    window._ring_summary_avg_mtime_ns = None
+
+    index = window._load_known_avg_yield_index(HotspotSearchWindow.YIELD_BASIS_ALL)
+
+    assert round(index[("col 285 sector lb-o c6-3 a 8 a ring", "platinum")], 3) == 13.299
+
+
+def test_load_known_avg_yield_index_logs_debug_for_invalid_row(tmp_path, caplog) -> None:
+    session_dir = tmp_path / "session_data"
+    session_dir.mkdir()
+    ring_summary_path = session_dir / "ring_summary.jsonl"
+    ring_summary_path.write_text(
+        "{not valid json}\n"
+        + json.dumps(
+            {
+                "ring_name": "Ring A",
+                "commodity_name": "Platinum",
+                "asteroids_prospected": 4,
+                "asteroids_with_commodity_present": 2,
+                "sum_percentage": 40.0,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    window = HotspotSearchWindow.__new__(HotspotSearchWindow)
+    window._controller = SimpleNamespace(state=SimpleNamespace(plugin_dir=tmp_path))
+    window._ring_summary_avg_cache = {}
+    window._ring_summary_avg_mtime_ns = None
+
+    with caplog.at_level(logging.DEBUG, logger="edmc_mining_analytics.ui"):
+        index = window._load_known_avg_yield_index(HotspotSearchWindow.YIELD_BASIS_ALL)
+
+    assert index[("ring a", "platinum")] == 10.0
+    assert "Skipping invalid ring summary row" in caplog.text

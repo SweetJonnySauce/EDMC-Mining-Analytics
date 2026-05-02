@@ -25,6 +25,9 @@ export function percentileInclusive(values, percentile) {
   return sorted[lowIndex] + ((sorted[highIndex] - sorted[lowIndex]) * weight);
 }
 
+export const DEFAULT_COMPARE_TARGET_TONS = 522;
+export const DEFAULT_COMPARE_TONS_PER_PERCENT = 0.26;
+
 export function buildCompareData(options) {
   const {
     records,
@@ -134,7 +137,6 @@ export function buildScopedAsteroidRows(options) {
   const {
     ring,
     commodityKey,
-    populationMode,
   } = options || {};
   const asteroids = Array.isArray(ring && ring.asteroidList) ? ring.asteroidList : [];
   const allAsteroids = asteroids
@@ -149,18 +151,139 @@ export function buildScopedAsteroidRows(options) {
       };
     })
     .filter((row) => !!row);
-  const sessionGuidsWithCommodityPresent = new Set(
-    allAsteroids
-      .filter((item) => item.present)
-      .map((item) => item.sessionGuid)
-      .filter((value) => !!value)
-  );
-  const eligibleAllAsteroids = allAsteroids.filter((item) => (
-    !!item.sessionGuid && sessionGuidsWithCommodityPresent.has(item.sessionGuid)
-  ));
-  const presentAsteroids = eligibleAllAsteroids.filter((item) => item.present);
-  const scopedAsteroids = populationMode === "all" ? eligibleAllAsteroids : presentAsteroids;
-  return { allAsteroids: eligibleAllAsteroids, presentAsteroids, scopedAsteroids };
+  const presentAsteroids = allAsteroids.filter((item) => item.present);
+  const scopedAsteroids = allAsteroids;
+  return { allAsteroids, presentAsteroids, scopedAsteroids };
+}
+
+export function buildAboveThresholdPlanRows(options) {
+  const {
+    allAsteroids,
+    interval,
+    xMax,
+    targetTons,
+    tonsPerPercentagePoint,
+  } = options || {};
+  const asteroidRows = Array.isArray(allAsteroids) ? allAsteroids : [];
+  const safeInterval = Math.max(1, Number(interval) || 1);
+  const safeTonsPerPercent = Number(tonsPerPercentagePoint) > 0
+    ? Number(tonsPerPercentagePoint)
+    : DEFAULT_COMPARE_TONS_PER_PERCENT;
+  const safeTargetTons = Number(targetTons) > 0
+    ? Number(targetTons)
+    : DEFAULT_COMPARE_TARGET_TONS;
+  const totalAsteroids = asteroidRows.length;
+  if (!totalAsteroids) {
+    return [];
+  }
+  const maxObserved = asteroidRows.reduce((peak, item) => (
+    Math.max(peak, Math.max(0, Number(item && item.value) || 0))
+  ), 0);
+  const safeXMax = Number.isFinite(xMax) && xMax > 0
+    ? Math.max(safeInterval, Number(xMax))
+    : Math.max(safeInterval, Math.ceil(maxObserved / safeInterval) * safeInterval);
+  const bins = Math.max(1, Math.ceil(safeXMax / safeInterval));
+  const targetPercentTotal = safeTargetTons / safeTonsPerPercent;
+  const rows = [];
+  for (let index = 0; index <= bins; index += 1) {
+    const cutoff = index * safeInterval;
+    const qualifying = asteroidRows.filter((item) => {
+      const value = Math.max(0, Number(item && item.value) || 0);
+      return value > cutoff;
+    });
+    const qualifyingCount = qualifying.length;
+    const isTerminalCutoff = cutoff >= safeXMax;
+    const averageYieldPercent = qualifyingCount
+      ? (qualifying.reduce((total, item) => (
+        total + Math.max(0, Number(item && item.value) || 0)
+      ), 0) / qualifyingCount)
+      : null;
+    const aboveThresholdShare = totalAsteroids > 0
+      ? (qualifyingCount / totalAsteroids)
+      : 0;
+    const asteroidsToMine = Number.isFinite(averageYieldPercent) && averageYieldPercent > 0
+      ? Math.ceil(targetPercentTotal / averageYieldPercent)
+      : (isTerminalCutoff ? 0 : null);
+    const asteroidsToProspect = Number.isFinite(asteroidsToMine) && aboveThresholdShare > 0
+      ? Math.ceil(asteroidsToMine / aboveThresholdShare)
+      : (isTerminalCutoff ? 0 : null);
+    rows.push({
+      cutoffYieldPercent: cutoff,
+      averageYieldPercent,
+      aboveThresholdShare,
+      qualifyingAsteroidsCount: qualifyingCount,
+      totalAsteroidsCount: totalAsteroids,
+      asteroidsToMine,
+      asteroidsToProspect,
+      hasRealData: qualifyingCount > 0 || isTerminalCutoff,
+    });
+  }
+  return rows;
+}
+
+export function interpolateMissingValuesBetweenRealBins(options) {
+  const {
+    entries,
+    readValue,
+    isRealEntry,
+    strategy,
+  } = options || {};
+  const items = Array.isArray(entries) ? entries : [];
+  const getValue = typeof readValue === "function"
+    ? readValue
+    : ((entry) => entry);
+  const getIsReal = typeof isRealEntry === "function"
+    ? isRealEntry
+    : ((entry) => !!(entry && entry.hasRealData));
+  const interpolationStrategy = strategy === "previous" || strategy === "next"
+    ? strategy
+    : "linear";
+  const rawValues = items.map((entry, index) => {
+    const value = Number(getValue(entry, index));
+    return Number.isFinite(value) ? value : null;
+  });
+  const realFlags = items.map((entry, index) => !!getIsReal(entry, index));
+  return items.map((entry, index) => {
+    const rawValue = rawValues[index];
+    if (realFlags[index]) {
+      return { value: rawValue, inferred: false };
+    }
+    let previousRealIndex = index - 1;
+    while (previousRealIndex >= 0 && !realFlags[previousRealIndex]) {
+      previousRealIndex -= 1;
+    }
+    let nextRealIndex = index + 1;
+    while (nextRealIndex < items.length && !realFlags[nextRealIndex]) {
+      nextRealIndex += 1;
+    }
+    if (
+      interpolationStrategy === "previous"
+      && previousRealIndex >= 0
+      && Number.isFinite(rawValues[previousRealIndex])
+    ) {
+      return { value: rawValues[previousRealIndex], inferred: true };
+    }
+    if (
+      interpolationStrategy === "next"
+      && nextRealIndex < items.length
+      && Number.isFinite(rawValues[nextRealIndex])
+    ) {
+      return { value: rawValues[nextRealIndex], inferred: true };
+    }
+    if (
+      previousRealIndex >= 0
+      && nextRealIndex < items.length
+      && Number.isFinite(rawValues[previousRealIndex])
+      && Number.isFinite(rawValues[nextRealIndex])
+    ) {
+      const span = nextRealIndex - previousRealIndex;
+      const ratio = span > 0 ? ((index - previousRealIndex) / span) : 0;
+      const interpolatedValue = rawValues[previousRealIndex]
+        + ((rawValues[nextRealIndex] - rawValues[previousRealIndex]) * ratio);
+      return { value: interpolatedValue, inferred: true };
+    }
+    return { value: rawValue, inferred: false };
+  });
 }
 
 export function buildRingCommodityModel(options) {
@@ -169,10 +292,16 @@ export function buildRingCommodityModel(options) {
     commodityKey,
     interval,
     forcedXMax,
-    populationMode,
+    targetTons,
   } = options || {};
   const safeInterval = Math.max(1, Number(interval) || 1);
-  const scopedRows = buildScopedAsteroidRows({ ring, commodityKey, populationMode });
+  const safeTargetTons = Number(targetTons) > 0
+    ? Number(targetTons)
+    : DEFAULT_COMPARE_TARGET_TONS;
+  const scopedRows = buildScopedAsteroidRows({ ring, commodityKey });
+  const allAsteroids = Array.isArray(scopedRows && scopedRows.allAsteroids)
+    ? scopedRows.allAsteroids
+    : [];
   const presentAsteroids = Array.isArray(scopedRows && scopedRows.presentAsteroids)
     ? scopedRows.presentAsteroids
     : [];
@@ -198,6 +327,9 @@ export function buildRingCommodityModel(options) {
       presentAsteroidsCount: presentAsteroids.length,
       sessionsCount: 0,
       points: [],
+      aboveThresholdPlanRows: [],
+      targetTons: safeTargetTons,
+      tonsPerPercentagePoint: DEFAULT_COMPARE_TONS_PER_PERCENT,
       yMax: 1,
       xMax: normalizedForcedXMax || safeInterval
     };
@@ -243,11 +375,19 @@ export function buildRingCommodityModel(options) {
       intervalEnd,
       center,
       binCount: counts[index],
+      hasRealData: counts[index] > 0,
       total: cumulativeForwardCounts[index],
       totalForward: cumulativeForwardCounts[index],
       totalReverse: cumulativeReverseCounts[index]
     });
   }
+  const aboveThresholdPlanRows = buildAboveThresholdPlanRows({
+    allAsteroids,
+    interval: safeInterval,
+    xMax,
+    targetTons: safeTargetTons,
+    tonsPerPercentagePoint: DEFAULT_COMPARE_TONS_PER_PERCENT,
+  });
   return {
     averageYield: percentSum / scopedAsteroids.length,
     p90,
@@ -258,6 +398,9 @@ export function buildRingCommodityModel(options) {
     presentAsteroidsCount: presentAsteroids.length,
     sessionsCount: sessionGuids.size,
     points,
+    aboveThresholdPlanRows,
+    targetTons: safeTargetTons,
+    tonsPerPercentagePoint: DEFAULT_COMPARE_TONS_PER_PERCENT,
     yMax: Math.max(1, running),
     xMax
   };

@@ -6,6 +6,7 @@ This project vendors harness sources from:
 Vendored paths in this repo:
 - `tests/harness.py`
 - `tests/edmc/`
+- `tests/journal_config/`
 
 ## Important Rule
 
@@ -72,5 +73,33 @@ python -m pytest
 Adjust only non-vendored files (for example):
 - `tests/harness_test_utils.py`
 - `tests/test_harness_integration.py`
+- `tests/session_data/` for non-vendored runtime export fixtures
 
 Do not hand-edit `tests/harness.py` or `tests/edmc/**` after syncing.
+Do not hand-edit `tests/journal_config/**` after syncing.
+
+## Runtime Test Artifacts
+
+Normal `pytest`, `make test`, and `make check` runs do not execute the harness session-export path.
+
+When you explicitly run the export helper, harness-generated mining sessions write under:
+- `tests/session_data/`
+
+This keeps test-created `session_data_*.json` files separate from the real plugin `session_data/` directory.
+
+## Generate A Test Session
+
+Use the helper script or Makefile target to run the explicit harness export path:
+
+```bash
+./scripts/generate_test_session.sh
+make generate-test-session
+```
+
+Optional flags:
+
+```bash
+./scripts/generate_test_session.sh --system-name "My Test System"
+./scripts/generate_test_session.sh --real-output
+./scripts/generate_test_session.sh --real-output --system-name "My Test System"
+```

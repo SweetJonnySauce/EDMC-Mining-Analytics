@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import logging
 from pathlib import Path
 import sys
 
@@ -8,14 +9,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+logger = logging.getLogger("EDMC.harness_tests")
+
 
 def _import_load_with_dummy_ui():
     """Import load.py with a no-op UI to avoid needing an X/Tk display."""
 
+    import config as config_module
     from tests.edmc.mocks import MockConfig
 
     cfg = MockConfig()
     cfg.data["loglevel"] = "INFO"
+    config_module.trace_on = []
 
     import edmc_mining_analytics.plugin as plugin_module
 
@@ -92,5 +97,10 @@ def test_harness_smoke_launch_drone_starts_mining() -> None:
 
         assert load._plugin.state.is_mining is True
         assert load._plugin.state.prospector_launched_count == 1
+        logger.info(
+            "Prospector launch started a mining session in %s with %s prospector active",
+            "Sol",
+            load._plugin.state.prospector_launched_count,
+        )
     finally:
         load.plugin_stop()

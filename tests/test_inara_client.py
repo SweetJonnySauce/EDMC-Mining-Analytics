@@ -11,6 +11,8 @@ from edmc_mining_analytics.state import MiningState
 def test_open_link_routes_through_capability_browser_helper(monkeypatch) -> None:
     state = MiningState()
     state.current_system = "Sol"
+    state.market_search_include_carriers = True
+    state.market_search_include_surface = False
     capability_service = object()
     client = InaraClient(state, capability_service=capability_service)
     client.commodity_map["platinum"] = 81
@@ -33,6 +35,8 @@ def test_open_link_routes_through_capability_browser_helper(monkeypatch) -> None
     params = parse_qs(parsed.query)
     assert parsed.netloc == "inara.cz"
     assert params["ps1"] == ["Sol"]
+    assert params["pi8"] == ["0"]
+    assert params["pi4"] == ["0"]
     kwargs = captured["kwargs"]
     assert kwargs["append_focus_token"] is False
     assert kwargs["title_hints"] == ("inara.cz", "Inara", "platinum")
