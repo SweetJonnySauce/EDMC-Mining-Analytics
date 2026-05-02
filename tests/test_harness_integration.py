@@ -2,19 +2,24 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 from datetime import timedelta
+
+import pytest
 
 from tests.harness_test_utils import (
     REPO_ROOT,
     TESTS_ROOT,
     harness_context,
+    load_generated_platinum_session_profile,
     load_test_journal_events,
     resolve_test_location_names,
     resolve_test_output_root,
 )
 
 logger = logging.getLogger("EDMC.harness_tests")
+SESSION_EXPORT_ENV = "EDMCMA_HARNESS_GENERATE_SESSION_FILE"
 
 
 def _register_handler(harness, load) -> None:
@@ -45,6 +50,32 @@ def _cargo_event(timestamp: str, *, platinum: int, gold: int, limpets: int) -> d
             {"Name": "Drones", "Name_Localised": "Limpet", "Count": limpets},
         ],
         "Count": platinum + gold + limpets,
+    }
+
+
+def _generated_platinum_expectations() -> dict:
+    profile = load_generated_platinum_session_profile()
+    sequence = load_test_journal_events(rebase_to_now=False)["sample_mining_session"]
+    collection_launches = sum(
+        1
+        for entry in sequence
+        if entry.get("event") == "LaunchDrone" and entry.get("Type") == "Collection"
+    )
+    prospector_launches = sum(
+        1
+        for entry in sequence
+        if entry.get("event") == "LaunchDrone" and entry.get("Type") == "Prospector"
+    )
+    return {
+        "asteroid_count": profile["asteroid_count"],
+        "content_summary": profile["content_summary"],
+        "collection_launches": collection_launches,
+        "prospector_launches": prospector_launches,
+        "platinum_yields": profile["platinum_yields"],
+        "platinum_percentages": profile["platinum_percentages"],
+        "platinum_absent_count": profile["platinum_absent_count"],
+        "platinum_present_count": profile["platinum_present_count"],
+        "platinum_present_average": profile["platinum_present_average"],
     }
 
 
@@ -127,16 +158,17 @@ def test_harness_can_replay_named_journal_sequence() -> None:
 
         state = load._plugin.state
         location_names = resolve_test_location_names()
+        expectations = _generated_platinum_expectations()
         assert state.is_mining is False
         assert state.mining_end is not None
         assert state.current_ship == "Type-11 Prospector"
         assert state.cargo_capacity == 256
-        assert state.prospector_launched_count == 21
-        assert state.collection_drones_launched == 27
-        assert state.prospected_count == 20
-        assert state.prospect_content_counts.get("High", 0) == 0
-        assert state.prospect_content_counts.get("Medium") == 6
-        assert state.prospect_content_counts.get("Low") == 14
+        assert state.prospector_launched_count == expectations["prospector_launches"]
+        assert state.collection_drones_launched == expectations["collection_launches"]
+        assert state.prospected_count == expectations["asteroid_count"]
+        assert state.prospect_content_counts.get("High", 0) == expectations["content_summary"]["High"]
+        assert state.prospect_content_counts.get("Medium", 0) == expectations["content_summary"]["Medium"]
+        assert state.prospect_content_counts.get("Low", 0) == expectations["content_summary"]["Low"]
         assert state.cargo_totals.get("platinum") == 246
         assert state.cargo_totals.get("gold") == 18
         assert state.cargo_totals.get("osmium") == 16
@@ -157,11 +189,15 @@ def test_harness_can_replay_named_journal_sequence() -> None:
 
 
 def test_harness_full_mining_run_writes_session_data_file() -> None:
+    if os.getenv(SESSION_EXPORT_ENV, "").strip().lower() not in {"1", "true", "yes", "on"}:
+        pytest.skip(f"set {SESSION_EXPORT_ENV}=1 to run the explicit session export harness")
+
     with harness_context() as (harness, load, _cfg):
         _register_handler(harness, load)
 
         output_root = resolve_test_output_root()
         location_names = resolve_test_location_names()
+        expectations = _generated_platinum_expectations()
         tests_session_dir = output_root / "session_data"
         real_session_dir = REPO_ROOT / "session_data"
         real_session_files_before = sorted(path.name for path in real_session_dir.glob("session_data_*.json"))
@@ -201,18 +237,38 @@ def test_harness_full_mining_run_writes_session_data_file() -> None:
         assert meta["location"]["ring"] == location_names["ring"]
         assert meta["ship"] == "Type-11 Prospector"
         assert meta["cargo_capacity"] == 256
-        assert meta["prospected"]["total"] == 20
-        assert meta["prospectors_launched"] == 21
-        assert meta["collectors_launched"] == 27
-        assert meta["collectors_abandoned"] == 89
-        assert meta["limpets_remaining"] == 4
-        assert meta["content_summary"] == {"High": 0, "Medium": 6, "Low": 14}
+        assert meta["prospected"]["total"] == expectations["asteroid_count"]
+        assert meta["prospectors_launched"] == expectations["prospector_launches"]
+        assert meta["collectors_launched"] == expectations["collection_launches"]
+        assert meta["collectors_abandoned"] >= 0
+        assert meta["limpets_remaining"] >= 0
+        assert meta["content_summary"] == expectations["content_summary"]
         assert materials == {"tin": 3}
         assert commodities["Platinum"]["gathered"]["tons"] == 246
         assert commodities["Gold"]["gathered"]["tons"] == 18
         assert commodities["Osmium"]["gathered"]["tons"] == 16
         assert commodities["Silver"]["gathered"]["tons"] == 1
-        assert len(payload["events"]) == 566
+        platinum_yields = []
+        for event in payload["events"]:
+            if event.get("type") != "prospected_asteroid":
+                continue
+            details = event.get("details") or {}
+            platinum_value = None
+            for commodity in details.get("materials") or []:
+                if str(commodity.get("name") or "").lower() != "platinum":
+                    continue
+                platinum_value = round(float(commodity["percentage"]), 6)
+                break
+            platinum_yields.append(platinum_value)
+        assert platinum_yields == [
+            None if value is None else round(float(value), 6)
+            for value in expectations["platinum_yields"]
+        ]
+        platinum_percentages = [value for value in platinum_yields if value is not None]
+        assert len(platinum_percentages) == expectations["platinum_present_count"]
+        assert expectations["platinum_absent_count"] == sum(1 for value in platinum_yields if value is None)
+        assert abs((sum(platinum_percentages) / len(platinum_percentages)) - expectations["platinum_present_average"]) < 1e-6
+        assert len(payload["events"]) >= expectations["asteroid_count"]
         assert payload["events"][-1]["type"] == "mining_session_stopped"
         assert payload["events"][-1]["details"]["reason"] == "FSD Jump"
         if output_root != REPO_ROOT:

@@ -69,6 +69,8 @@ if [[ -n "${system_name}" ]]; then
   export EDMCMA_HARNESS_SYSTEM_NAME="${system_name}"
 fi
 
+export EDMCMA_HARNESS_GENERATE_SESSION_FILE=1
+
 "${VENV_PYTHON}" -m pytest "${PYTEST_TARGET}" -k "${PYTEST_FILTER}"
 
 output_root="${ROOT_DIR}/tests/session_data"

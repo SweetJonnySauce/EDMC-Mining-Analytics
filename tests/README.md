@@ -80,17 +80,20 @@ Do not hand-edit `tests/journal_config/**` after syncing.
 
 ## Runtime Test Artifacts
 
-Harness tests that export mining sessions write under:
+Normal `pytest`, `make test`, and `make check` runs do not execute the harness session-export path.
+
+When you explicitly run the export helper, harness-generated mining sessions write under:
 - `tests/session_data/`
 
 This keeps test-created `session_data_*.json` files separate from the real plugin `session_data/` directory.
 
 ## Generate A Test Session
 
-Use the helper script to run just the harness export test:
+Use the helper script or Makefile target to run the explicit harness export path:
 
 ```bash
 ./scripts/generate_test_session.sh
+make generate-test-session
 ```
 
 Optional flags:
