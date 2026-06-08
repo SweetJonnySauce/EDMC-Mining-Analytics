@@ -24,8 +24,10 @@ from ..favorite_rings import (
     save_favorite_rings,
 )
 from ..state import MiningState
+from ..preferences import PreferencesManager
 from ..integrations.spansh_hotspots import (
     DEFAULT_RESULT_SIZE,
+    POPULATION_FILTER_ANY,
     HotspotSearchResult,
     RingHotspot,
     SpanshHotspotClient,
@@ -43,6 +45,7 @@ class HotspotSearchParams:
     reserve_levels: Tuple[str, ...]
     ring_types: Tuple[str, ...]
     min_hotspots: int
+    population_filter: str
     yield_basis: str
     reference_text: str
     page: int
@@ -57,6 +60,7 @@ class HotspotSavedFilters:
     ring_types: Optional[Sequence[str]]
     ring_signals: Optional[Sequence[str]]
     min_hotspots: Optional[int]
+    population_filter: Optional[str]
     yield_basis: Optional[str]
 
 
@@ -155,6 +159,7 @@ class HotspotSearchController:
             ring_types=self._state.spansh_last_ring_types,
             ring_signals=self._state.spansh_last_ring_signals,
             min_hotspots=self._state.spansh_last_min_hotspots,
+            population_filter=self._normalise_population_filter(self._state.spansh_last_population_filter),
             yield_basis=self._normalise_yield_basis(self._state.spansh_last_yield_basis),
         )
 
@@ -169,6 +174,7 @@ class HotspotSearchController:
         ring_types: Sequence[str],
         ring_signals: Sequence[str],
         min_hotspots: int,
+        population_filter: str,
         yield_basis: str,
     ) -> None:
         self._state.spansh_last_distance_min = self._parse_optional_float(distance_min_text, None)
@@ -177,6 +183,7 @@ class HotspotSearchController:
         self._state.spansh_last_ring_types = list(ring_types)
         self._state.spansh_last_ring_signals = list(ring_signals)
         self._state.spansh_last_min_hotspots = min_hotspots
+        self._state.spansh_last_population_filter = self._normalise_population_filter(population_filter)
         self._state.spansh_last_yield_basis = self._normalise_yield_basis(yield_basis)
 
     def begin_search(self, params: HotspotSearchParams, display_reference: str) -> SearchStartResult:
@@ -186,6 +193,7 @@ class HotspotSearchController:
         self._state.spansh_last_reserve_levels = list(params.reserve_levels)
         self._state.spansh_last_ring_types = list(params.ring_types)
         self._state.spansh_last_min_hotspots = max(1, int(params.min_hotspots))
+        self._state.spansh_last_population_filter = self._normalise_population_filter(params.population_filter)
         self._state.spansh_last_yield_basis = self._normalise_yield_basis(params.yield_basis)
 
         if self._search_thread and self._search_thread.is_alive():
@@ -305,6 +313,14 @@ class HotspotSearchController:
 
     def _search_worker(self, token: int, params: HotspotSearchParams) -> None:
         reference_text_input = (params.reference_text or "").strip()
+
+        def population_progress(current: int, total: int) -> None:
+            message = f"Searching {current}/{total} systems for population information."
+            try:
+                self._search_result_queue.put_nowait((token, ("status", message)))
+            except Exception:  # pragma: no cover - defensive
+                pass
+
         try:
             resolved_reference = self._client.resolve_reference_system(reference_text_input)
             result = self._client.search_hotspots(
@@ -316,7 +332,9 @@ class HotspotSearchController:
                 limit=params.limit,
                 page=params.page,
                 min_hotspots=max(1, int(params.min_hotspots)),
+                population_filter=params.population_filter,
                 reference_system=resolved_reference,
+                population_progress_callback=population_progress,
             )
             result = self._filter_results_by_min_hotspots(result, params)
             outcome: tuple[str, object] = ("success", (result, resolved_reference))
@@ -408,6 +426,10 @@ class HotspotSearchController:
             return token
         return cls.YIELD_BASIS_ALL
 
+    @staticmethod
+    def _normalise_population_filter(value: Optional[str]) -> str:
+        return SpanshHotspotClient.get_population_filter_option(value).key
+
 
 class HotspotSearchWindow:
     """Toplevel window that performs and displays Spansh hotspot searches."""
@@ -425,6 +447,8 @@ class HotspotSearchWindow:
         (YIELD_BASIS_ALL, "All asteroids"),
         (YIELD_BASIS_PRESENT, "Only w/ Commodity"),
     )
+    DEFAULT_POPULATION_FILTER = POPULATION_FILTER_ANY
+    POPULATION_FILTER_LABELS = SpanshHotspotClient.population_filter_labels()
     FAVORITE_STAR_EMPTY = "✩"
     FAVORITE_STAR_FILLED = "✭"
     FAVORITES_FILENAME = FAVORITES_FILENAME
@@ -477,6 +501,9 @@ class HotspotSearchWindow:
         self._ring_type_listbox: Optional[tk.Listbox] = None
         self._reserve_combobox: Optional[ttk.Combobox] = None
         self._min_hotspots_var: Optional[tk.StringVar] = None
+        self._population_filter_var: Optional[tk.StringVar] = None
+        self._population_filter_combobox: Optional[ttk.Combobox] = None
+        self._last_population_filter_key = self.DEFAULT_POPULATION_FILTER
         self._yield_basis_var: Optional[tk.StringVar] = None
         self._reference_entry: Optional[ttk.Entry] = None
         self._reference_frame: Optional[tk.Frame] = None
@@ -588,6 +615,9 @@ class HotspotSearchWindow:
         self._reference_frame = None
         self._reference_system_var = None
         self._min_hotspots_var = None
+        self._population_filter_var = None
+        self._population_filter_combobox = None
+        self._last_population_filter_key = self.DEFAULT_POPULATION_FILTER
         self._yield_basis_var = None
         self._hide_reference_suggestions()
         self._reference_suggestions_listbox = None
@@ -788,6 +818,26 @@ class HotspotSearchWindow:
         self._theme.register(min_hotspots_spin)
         self._min_hotspots_var.trace_add("write", self._on_filters_changed)
 
+        population_frame = tk.LabelFrame(secondary_controls_frame, text="Population")
+        population_frame.grid(row=2, column=0, sticky="ew", pady=(8, 0))
+        self._theme.register(population_frame)
+        population_initial_key = self._normalise_population_filter(filters.population_filter)
+        self._last_population_filter_key = population_initial_key
+        population_initial_label = SpanshHotspotClient.population_filter_label_for_key(population_initial_key)
+        self._population_filter_var = tk.StringVar(master=self._toplevel, value=population_initial_label)
+        population_combo = ttk.Combobox(
+            population_frame,
+            textvariable=self._population_filter_var,
+            values=self.POPULATION_FILTER_LABELS,
+            width=18,
+            state="readonly",
+        )
+        population_combo.grid(row=0, column=0, padx=6, pady=6, sticky="ew")
+        population_combo.set(population_initial_label)
+        population_combo.bind("<<ComboboxSelected>>", self._on_population_filter_selected, add="+")
+        self._theme.register(population_combo)
+        self._population_filter_combobox = population_combo
+
         signal_frame = tk.LabelFrame(layout_frame, text="Ring Signals")
         signal_frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
         self._theme.register(signal_frame)
@@ -833,11 +883,23 @@ class HotspotSearchWindow:
         self._theme.register(results_frame)
         self._results_frame = results_frame
 
-        columns = ("favorite", "copy", "system", "body", "ring", "type", "distance_ly", "distance_ls", "signals")
+        columns = (
+            "favorite",
+            "copy",
+            "system",
+            "population",
+            "body",
+            "ring",
+            "type",
+            "distance_ly",
+            "distance_ls",
+            "signals",
+        )
         tree = ttk.Treeview(results_frame, columns=columns, show="headings")
         tree.heading("favorite", text="★")
         tree.heading("copy", text="")
         tree.heading("system", text="System")
+        tree.heading("population", text="Population")
         tree.heading("body", text="Body")
         tree.heading("ring", text="Ring")
         tree.heading("type", text="Type")
@@ -854,6 +916,7 @@ class HotspotSearchWindow:
         )
         tree.column("copy", width=28, minwidth=28, anchor="center", stretch=False)
         tree.column("system", width=140, minwidth=140, anchor="w", stretch=False)
+        tree.column("population", width=90, minwidth=90, anchor="e", stretch=False)
         tree.column("body", width=140, anchor="w")
         tree.column("ring", width=160, anchor="w")
         tree.column("type", width=120, anchor="w")
@@ -867,6 +930,7 @@ class HotspotSearchWindow:
             heading_font = tkfont.nametofont("TkDefaultFont")
         label_widths = {
             "body": "Body",
+            "population": "Population",
             "ring": "Ring",
             "type": "Type",
             "distance_ly": "Distance (LY)",
@@ -1174,6 +1238,35 @@ class HotspotSearchWindow:
         if token in valid:
             return token
         return cls.DEFAULT_YIELD_BASIS
+
+    @staticmethod
+    def _normalise_population_filter(value: Optional[str]) -> str:
+        return SpanshHotspotClient.get_population_filter_option(value).key
+
+    @staticmethod
+    def _should_show_population_warning(
+        previous_filter: Optional[str],
+        current_filter: Optional[str],
+        suppressed: bool,
+    ) -> bool:
+        if suppressed:
+            return False
+        previous_key = SpanshHotspotClient.get_population_filter_option(previous_filter).key
+        current_key = SpanshHotspotClient.get_population_filter_option(current_filter).key
+        return previous_key == POPULATION_FILTER_ANY and current_key != POPULATION_FILTER_ANY
+
+    def _selected_population_filter_key(self) -> str:
+        value = self._population_filter_var.get() if self._population_filter_var else None
+        return self._normalise_population_filter(value)
+
+    @staticmethod
+    def _format_population(value: Optional[int]) -> str:
+        if value is None:
+            return ""
+        try:
+            return f"{int(value):,}"
+        except (TypeError, ValueError):
+            return ""
 
     @staticmethod
     def _get_listbox_selection(listbox: Optional[tk.Listbox]) -> List[str]:
@@ -1590,7 +1683,7 @@ class HotspotSearchWindow:
         self._reference_suggestions_listbox.activate(index)
         return "break"
 
-    def _collect_selections(self) -> Tuple[float, float, List[str], List[str], List[str], int, str]:
+    def _collect_selections(self) -> Tuple[float, float, List[str], List[str], List[str], int, str, str]:
         min_distance = self._parse_float(self._distance_min_var.get(), float(self.DEFAULT_DISTANCE_MIN))
         max_distance = self._parse_float(self._distance_max_var.get(), float(self.DEFAULT_DISTANCE_MAX))
 
@@ -1611,9 +1704,10 @@ class HotspotSearchWindow:
             self._min_hotspots_var.get() if self._min_hotspots_var else None,
             self.DEFAULT_MIN_HOTSPOTS,
         )
+        population_filter = self._selected_population_filter_key()
         yield_basis = self.YIELD_BASIS_ALL
 
-        return min_distance, max_distance, signals, reserves, ring_types, min_hotspots, yield_basis
+        return min_distance, max_distance, signals, reserves, ring_types, min_hotspots, population_filter, yield_basis
 
     def _set_search_status(self, message: str, *, include_duration: bool = True) -> None:
         if not self._status_var:
@@ -1764,6 +1858,7 @@ class HotspotSearchWindow:
             self._min_hotspots_var.get() if self._min_hotspots_var else None,
             self.DEFAULT_MIN_HOTSPOTS,
         )
+        population_filter = self._selected_population_filter_key()
         yield_basis = self.YIELD_BASIS_ALL
 
         self._controller.persist_filters_from_ui(
@@ -1773,10 +1868,82 @@ class HotspotSearchWindow:
             ring_types,
             ring_signals,
             min_hotspots,
+            population_filter,
             yield_basis,
         )
 
         self._queue_reference_suggestion_fetch()
+
+    def _on_population_filter_selected(self, *_: object) -> None:
+        current_filter = self._selected_population_filter_key()
+        if self._should_show_population_warning(
+            self._last_population_filter_key,
+            current_filter,
+            self._controller.state.spansh_population_warning_suppressed,
+        ):
+            self._show_population_filter_warning()
+        self._last_population_filter_key = current_filter
+        self._on_filters_changed()
+
+    def _show_population_filter_warning(self) -> None:
+        if not self.is_open:
+            return
+
+        dialog = tk.Toplevel(self._toplevel)
+        dialog.title("Population Filter Warning")
+        dialog.transient(self._toplevel)
+        dialog.resizable(False, False)
+        self._theme.register(dialog)
+
+        container = tk.Frame(dialog, padx=16, pady=14)
+        container.pack(fill="both", expand=True)
+        self._theme.register(container)
+
+        message = tk.Label(
+            container,
+            text="Warning: Filtering by population increases search time",
+            anchor="w",
+            justify="left",
+        )
+        message.grid(row=0, column=0, sticky="w")
+        self._theme.register(message)
+
+        dont_show_var = tk.BooleanVar(master=dialog, value=False)
+        dont_show = ttk.Checkbutton(
+            container,
+            text="Don't show this again",
+            variable=dont_show_var,
+        )
+        dont_show.grid(row=1, column=0, sticky="w", pady=(10, 0))
+        self._theme.register(dont_show)
+
+        def close_dialog() -> None:
+            if bool(dont_show_var.get()):
+                self._controller.state.spansh_population_warning_suppressed = True
+                PreferencesManager().save_spansh_population_warning_suppressed(self._controller.state)
+            try:
+                dialog.grab_release()
+            except Exception:
+                pass
+            dialog.destroy()
+
+        button_frame = tk.Frame(container)
+        button_frame.grid(row=2, column=0, sticky="e", pady=(14, 0))
+        self._theme.register(button_frame)
+
+        ok_button = ttk.Button(button_frame, text="OK", command=close_dialog)
+        ok_button.pack(side="right")
+        self._theme.register(ok_button)
+
+        dialog.protocol("WM_DELETE_WINDOW", close_dialog)
+        dialog.bind("<Return>", lambda _event: close_dialog())
+        dialog.bind("<Escape>", lambda _event: close_dialog())
+        try:
+            dialog.grab_set()
+            ok_button.focus_set()
+            dialog.wait_window()
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Search + render
@@ -1787,7 +1954,16 @@ class HotspotSearchWindow:
             return
 
         try:
-            min_distance, max_distance, signals, reserves, ring_types, min_hotspots, yield_basis = self._collect_selections()
+            (
+                min_distance,
+                max_distance,
+                signals,
+                reserves,
+                ring_types,
+                min_hotspots,
+                population_filter,
+                yield_basis,
+            ) = self._collect_selections()
         except ValueError as exc:
             self._set_search_status(f"Invalid input: {exc}", include_duration=False)
             return
@@ -1800,6 +1976,7 @@ class HotspotSearchWindow:
             ring_types,
             signals,
             min_hotspots,
+            population_filter,
             yield_basis,
         )
         fallback_system = reference_input or self._controller.get_current_system() or ""
@@ -1817,6 +1994,7 @@ class HotspotSearchWindow:
             reserve_levels=tuple(reserves),
             ring_types=tuple(ring_types),
             min_hotspots=int(min_hotspots),
+            population_filter=population_filter,
             yield_basis=yield_basis,
             reference_text=reference_input,
             page=0,
@@ -1877,6 +2055,7 @@ class HotspotSearchWindow:
         known_avg_index = self._load_known_avg_yield_index(self.YIELD_BASIS_ALL)
         entries = list(result.entries)
         system_labels: List[str] = []
+        population_labels: List[str] = []
         signals_labels: List[str] = []
         ring_labels: List[str] = []
         type_labels: List[str] = []
@@ -1903,6 +2082,8 @@ class HotspotSearchWindow:
             signals_labels.append(signals_text)
             system_display = entry.system_name or "—"
             system_labels.append(system_display)
+            population_display = self._format_population(entry.population)
+            population_labels.append(population_display)
             body_display = entry.body_name or "—"
             if entry.system_name and entry.body_name:
                 system = entry.system_name.strip()
@@ -1934,6 +2115,7 @@ class HotspotSearchWindow:
                     favorite_symbol,
                     "📋",
                     system_display,
+                    population_display,
                     body_display,
                     ring_display,
                     entry.ring_type or "—",
@@ -1970,11 +2152,13 @@ class HotspotSearchWindow:
                 system_width = max(140, max_width + 16)
                 tree.column("system", width=system_width, minwidth=system_width, stretch=False)
                 signals_width = max(item_font.measure(label) for label in (*signals_labels, self.SIGNALS_COLUMN_HEADING))
+                population_width = max(item_font.measure(label) for label in (*population_labels, "Population"))
                 ring_width = max(item_font.measure(label) for label in (*ring_labels, "Ring"))
                 type_width = max(item_font.measure(label) for label in (*type_labels, "Type"))
             else:
                 system_width = 0
                 signals_width = 0
+                population_width = 0
                 ring_width = 0
                 type_width = 0
 
@@ -1999,6 +2183,8 @@ class HotspotSearchWindow:
 
             if ring_width:
                 _resize_column("ring", ring_width, "Ring")
+            if population_width:
+                _resize_column("population", population_width, "Population")
             if type_width:
                 _resize_column("type", type_width, "Type")
 
@@ -2024,6 +2210,9 @@ class HotspotSearchWindow:
             return
 
         kind, payload = outcome
+        if kind == "status":
+            self._set_search_status(str(payload), include_duration=False)
+            return
         if kind == "success":
             resolved_reference: Optional[str] = None
             result_obj: Optional[HotspotSearchResult] = None

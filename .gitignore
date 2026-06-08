@@ -7,7 +7,8 @@ integrations/__pycache__/
 session_data/
 session_data_*.json
 
-.codex/
+cache/
+cache/**
 
 backups/
 backups/**

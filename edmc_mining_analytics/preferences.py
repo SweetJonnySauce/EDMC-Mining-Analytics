@@ -21,6 +21,7 @@ OVERLAY_SHOW_BARS_KEY = "edmc_mining_overlay_show_bars"
 OVERLAY_BARS_MAX_ROWS_KEY = "edmc_mining_overlay_bars_max_rows"
 LEGACY_OVERLAY_SHOW_BARS_KEY = "overlay_show_bars"
 LEGACY_OVERLAY_BARS_MAX_ROWS_KEY = "overlay_bars_max_rows"
+SPANSH_POPULATION_WARNING_SUPPRESSED_KEY = "edmc_mining_spansh_population_warning_suppressed"
 
 
 def clamp_bin_size(value: int) -> int:
@@ -192,6 +193,13 @@ class PreferencesManager:
         state.spansh_last_min_hotspots = self._get_optional_int("edmc_mining_spansh_min_hotspots")
         raw_yield_basis = self._get_str("edmc_mining_spansh_yield_basis", "").strip().lower()
         state.spansh_last_yield_basis = raw_yield_basis if raw_yield_basis in {"all", "present"} else None
+        state.spansh_last_population_filter = self._get_str("edmc_mining_spansh_population_filter", "").strip()
+        state.spansh_population_warning_suppressed = bool(
+            self._get_int(
+                SPANSH_POPULATION_WARNING_SUPPRESSED_KEY,
+                int(state.spansh_population_warning_suppressed),
+            )
+        )
 
         market_large_pad_raw = self._get_optional_str("edmc_mining_market_large_pad")
         if market_large_pad_raw is not None and market_large_pad_raw.strip().lower() in ("1", "true", "yes"):
@@ -439,6 +447,14 @@ class PreferencesManager:
             _log.exception("Failed to persist Spansh yield basis")
 
         try:
+            value = str(state.spansh_last_population_filter or "").strip()
+            config.set("edmc_mining_spansh_population_filter", value)
+        except Exception:
+            _log.exception("Failed to persist Spansh population filter")
+
+        self.save_spansh_population_warning_suppressed(state)
+
+        try:
             value = "1" if state.market_search_has_large_pad else ""
             config.set("edmc_mining_market_large_pad", value)
         except Exception:
@@ -579,6 +595,20 @@ class PreferencesManager:
             config.set("edmc_mining_inferred_cargo_map", payload)
         except Exception:
             _log.exception("Failed to persist inferred cargo capacities")
+
+    def save_spansh_population_warning_suppressed(self, state: MiningState) -> None:
+        """Persist the Hotspot Finder population warning suppression flag."""
+
+        if config is None:
+            return
+
+        try:
+            config.set(
+                SPANSH_POPULATION_WARNING_SUPPRESSED_KEY,
+                int(state.spansh_population_warning_suppressed),
+            )
+        except Exception:
+            _log.exception("Failed to persist Spansh population warning preference")
 
     @staticmethod
     def _normalise_string_list(values: Optional[Sequence[str]]) -> List[str]:

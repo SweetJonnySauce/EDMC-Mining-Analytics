@@ -8,6 +8,7 @@ from edmc_mining_analytics.preferences import (
     LEGACY_OVERLAY_SHOW_BARS_KEY,
     OVERLAY_BARS_MAX_ROWS_KEY,
     OVERLAY_SHOW_BARS_KEY,
+    SPANSH_POPULATION_WARNING_SUPPRESSED_KEY,
     PreferencesManager,
 )
 from edmc_mining_analytics.state import MiningState
@@ -79,3 +80,45 @@ def test_preferences_save_writes_prefixed_overlay_keys(monkeypatch) -> None:
     assert cfg.data[OVERLAY_BARS_MAX_ROWS_KEY] == 12
     assert LEGACY_OVERLAY_SHOW_BARS_KEY not in cfg.data
     assert LEGACY_OVERLAY_BARS_MAX_ROWS_KEY not in cfg.data
+
+
+def test_preferences_loads_spansh_population_filter(monkeypatch) -> None:
+    cfg = _DummyConfig({"edmc_mining_spansh_population_filter": "below_10000"})
+    monkeypatch.setattr(preferences_module, "config", cfg)
+    state = MiningState()
+
+    PreferencesManager().load(state)
+
+    assert state.spansh_last_population_filter == "below_10000"
+
+
+def test_preferences_saves_spansh_population_filter(monkeypatch) -> None:
+    cfg = _DummyConfig()
+    monkeypatch.setattr(preferences_module, "config", cfg)
+    state = MiningState()
+    state.spansh_last_population_filter = "none"
+
+    PreferencesManager().save(state)
+
+    assert cfg.data["edmc_mining_spansh_population_filter"] == "none"
+
+
+def test_preferences_loads_spansh_population_warning_suppression(monkeypatch) -> None:
+    cfg = _DummyConfig({SPANSH_POPULATION_WARNING_SUPPRESSED_KEY: 1})
+    monkeypatch.setattr(preferences_module, "config", cfg)
+    state = MiningState()
+
+    PreferencesManager().load(state)
+
+    assert state.spansh_population_warning_suppressed is True
+
+
+def test_preferences_saves_spansh_population_warning_suppression(monkeypatch) -> None:
+    cfg = _DummyConfig()
+    monkeypatch.setattr(preferences_module, "config", cfg)
+    state = MiningState()
+    state.spansh_population_warning_suppressed = True
+
+    PreferencesManager().save_spansh_population_warning_suppressed(state)
+
+    assert cfg.data[SPANSH_POPULATION_WARNING_SUPPRESSED_KEY] == 1
