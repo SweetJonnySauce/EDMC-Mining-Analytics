@@ -3,6 +3,8 @@
 [![Github All Releases](https://img.shields.io/github/downloads/SweetJonnySauce/EDMC-Mining-Analytics/total.svg)](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest)
 [![GitHub Latest Version](https://img.shields.io/github/v/release/SweetJonnySauce/EDMC-Mining-Analytics)](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/releases/latest)
 [![VirusTotal](https://img.shields.io/badge/VirusTotal-clean-brightgreen.svg)](https://www.virustotal.com/gui/url/883913debe789d3a942cf0d204899236b9cb74e59bdd825834a4e045c64cbfd5?nocache=1)
+[![AILevel](https://img.shields.io/badge/Level-4.%20Local%20Autonomous%20Agent-purple?logo=openaigym&logoColor=white&link=https%3A%2F%2Feclipsesource.com%2Fblogs%2F2025%2F06%2F26%2Fai-coding-spectrum-levels-of-assistance%2F)]([![AILevel](https://img.shields.io/badge/Level-4.%20Local%20Autonomous%20Agent-purple?logo=openaigym&logoColor=white&link=https%3A%2F%2Feclipsesource.com%2Fblogs%2F2025%2F06%2F26%2Fai-coding-spectrum-levels-of-assistance%2F
+)
 
 [build-badge]: https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/actions/workflows/ci.yml/badge.svg?branch=main
 [build-url]: https://github.com/SweetJonnySauce/EDMC-Mining-Analytics/actions/workflows/ci.yml

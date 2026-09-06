@@ -13,6 +13,7 @@ Requirements
 - The overall length of all the bars (if they would all be 100%) are the same
 - bar color is Elite dangerous orange
   - Chosen color: #FF6F00 (derived from EDHM_UI wiki "official Elite orange" RGB(1, 0.4352, 0))
+- after each filled bar, show the quantity in tons as `(Nt)` using the same orange
 - Provide a setting option on the overlay pref pane to show/hide the bars
 
 ## Questions to Answer
@@ -47,7 +48,8 @@ alphabetized
 - Overlay bars render via EDMCModernOverlay `send_shape` rects under the Est. CR row.
 - Bar labels use normal text size; bars are half-height rows.
 - Bars show mined commodities from `cargo_totals` filtered by `harvested_commodities`, plus a Limpets row.
-- Percentages are based on total cargo capacity; if capacity is missing/0, bars are hidden.
+- Each bar has an orange quantity label, such as `(30t)`, immediately after its filled segment.
+- Percentages are based on total cargo capacity; Rhino surface sessions use the Rhino's 72t capacity, while asteroid sessions use ship capacity. If capacity is missing/0, bars are hidden.
 - Sorting: percent desc, then alphabetized label; capped to `overlay_bars_max_rows`.
 - Settings live in Overlay prefs: `overlay_show_bars` and `overlay_bars_max_rows` (default 10).
 - Optional abbreviations loaded from `commodity_links.json` are used automatically when available.

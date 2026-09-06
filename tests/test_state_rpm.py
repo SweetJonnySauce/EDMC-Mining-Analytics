@@ -3,7 +3,9 @@ from datetime import datetime, timedelta, timezone
 
 from edmc_mining_analytics.state import (
     MiningState,
+    MiningSessionKind,
     RPM_LOOKBACK_SECONDS,
+    active_session_cargo_capacity,
     register_refinement,
     update_rpm,
 )
@@ -44,3 +46,13 @@ def test_register_refinement_tracks_max_with_fixed_window() -> None:
     assert rpm == expected_rpm
     assert state.current_rpm == expected_rpm
     assert state.max_rpm >= expected_rpm
+
+
+def test_active_session_cargo_capacity_uses_rhino_capacity_only_for_surface_mining() -> None:
+    state = MiningState(cargo_capacity=168)
+
+    state.mining_session_kind = MiningSessionKind.SURFACE
+    assert active_session_cargo_capacity(state) == 72
+
+    state.mining_session_kind = MiningSessionKind.ASTEROID
+    assert active_session_cargo_capacity(state) == 168

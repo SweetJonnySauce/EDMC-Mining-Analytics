@@ -40,6 +40,14 @@ def _launch_prospector_event(timestamp: str) -> dict:
     }
 
 
+def _launch_rhino_event(timestamp: str) -> dict:
+    return {
+        "event": "LaunchSRV",
+        "SRVType": "mev_rhino",
+        "timestamp": timestamp,
+    }
+
+
 def _cargo_event(timestamp: str, *, platinum: int, gold: int, limpets: int) -> dict:
     return {
         "event": "Cargo",
@@ -318,6 +326,29 @@ def test_journal_handler_writes_expected_shared_state_keys() -> None:
             harness.monitor.state["edmc_mining_active"],
             sorted(expected),
         )
+
+
+def test_rhino_dock_and_prospector_supercruise_publish_session_boundaries() -> None:
+    with harness_context() as (harness, load, _cfg):
+        _register_handler(harness, load)
+
+        harness.fire_event(_launch_rhino_event("3300-01-01T00:00:00Z"), state={})
+        assert harness.monitor.state["edmc_mining_active"] is True
+
+        harness.fire_event(
+            {"event": "DockSRV", "SRVType": "MEV_RHINO", "timestamp": "3300-01-01T00:02:00Z"},
+            state={},
+        )
+        assert harness.monitor.state["edmc_mining_active"] is False
+
+        harness.fire_event(_launch_prospector_event("3300-01-01T00:03:00Z"), state={})
+        assert harness.monitor.state["edmc_mining_active"] is True
+
+        harness.fire_event(
+            {"event": "SupercruiseEntry", "StarSystem": "Sol", "timestamp": "3300-01-01T00:04:00Z"},
+            state={},
+        )
+        assert harness.monitor.state["edmc_mining_active"] is False
 
 
 def test_prefs_hooks_update_cmdr_and_persist_settings(monkeypatch) -> None:

@@ -6,7 +6,7 @@ import re
 from typing import Iterable, Tuple
 
 
-PLUGIN_VERSION = "1.3.0"
+PLUGIN_VERSION = "1.4.0"
 VERSION: str = PLUGIN_VERSION
 __version__: str = PLUGIN_VERSION
 PLUGIN_REPO_URL = "https://github.com/SweetJonnySauce/EDMC-Mining-Analytics"

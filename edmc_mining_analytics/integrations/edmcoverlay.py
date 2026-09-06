@@ -9,7 +9,12 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Sequence, Tuple
 
 from ..logging_utils import get_logger
-from ..state import MiningState, resolve_commodity_display_name, update_rpm
+from ..state import (
+    MiningState,
+    active_session_cargo_capacity,
+    resolve_commodity_display_name,
+    update_rpm,
+)
 from ..formatting import format_compact_number
 
 try:  # pragma: no cover - runtime environment provides this module
@@ -34,6 +39,7 @@ OVERLAY_BAR_ROW_HEIGHT = 16
 OVERLAY_BAR_START_OFFSET = 140
 OVERLAY_BAR_MAX_WIDTH = 160
 OVERLAY_BAR_HEIGHT = 8
+OVERLAY_BAR_QUANTITY_GAP = 6
 OVERLAY_TEXT_SIZE = "large"
 OVERLAY_BAR_TEXT_SIZE = "normal"
 OVERLAY_BAR_TOP_PADDING = 0
@@ -374,7 +380,7 @@ class EdmcOverlayHelper:
     def _build_overlay_bars(self) -> list[_OverlayBar]:
         if not self._state.overlay_show_bars:
             return []
-        capacity = self._state.cargo_capacity
+        capacity = active_session_cargo_capacity(self._state)
         if capacity is None or capacity <= 0:
             return []
         max_rows = max(1, int(self._state.overlay_bars_max_rows or 0))
@@ -422,7 +428,7 @@ class EdmcOverlayHelper:
         return total_amount / (elapsed_seconds / 3600.0)
 
     def _compute_percent_full(self) -> Optional[float]:
-        capacity = self._state.cargo_capacity
+        capacity = active_session_cargo_capacity(self._state)
         if capacity is None or capacity <= 0:
             return None
         mined = max(0, self._state.current_cargo_tonnage)
@@ -525,6 +531,7 @@ class EdmcOverlayHelper:
             y = base_y + (index * OVERLAY_BAR_ROW_HEIGHT)
             label_id = f"edmcma.bar.{index}.label"
             bar_id = f"edmcma.bar.{index}.bar"
+            quantity_id = f"edmcma.bar.{index}.quantity"
             try:
                 self._dispatch_overlay_message(
                     client,
@@ -552,22 +559,32 @@ class EdmcOverlayHelper:
                     fill=ED_ORANGE,
                     ttl=ttl,
                 )
+                self._dispatch_overlay_message(
+                    client,
+                    quantity_id,
+                    f"({int(bar.amount)}t)",
+                    ED_ORANGE,
+                    bar_x + width + OVERLAY_BAR_QUANTITY_GAP,
+                    y,
+                    ttl=ttl,
+                    size=OVERLAY_BAR_TEXT_SIZE,
+                )
             except Exception:  # pragma: no cover - runtime specific failures
                 self._logger.exception("Failed to send overlay bar payload for %s", bar.label)
                 break
         if len(bars) < self._last_bar_count:
             for index in range(len(bars), self._last_bar_count):
                 y = base_y + (index * OVERLAY_BAR_ROW_HEIGHT)
-                for suffix in ("label", "bar"):
+                for suffix in ("label", "bar", "quantity"):
                     message_id = f"edmcma.bar.{index}.{suffix}"
                     x = anchor_x if suffix == "label" else anchor_x + OVERLAY_BAR_START_OFFSET
                     try:
-                        if suffix == "label":
+                        if suffix in {"label", "quantity"}:
                             self._dispatch_overlay_message(
                                 client,
                                 message_id,
                                 "",
-                                DEFAULT_LABEL_COLOR,
+                                DEFAULT_LABEL_COLOR if suffix == "label" else ED_ORANGE,
                                 x,
                                 y,
                                 ttl=1,
@@ -602,16 +619,16 @@ class EdmcOverlayHelper:
         base_y = anchor_y + (len(_METRIC_ORDER) * OVERLAY_ROW_HEIGHT) + OVERLAY_BAR_TOP_PADDING
         for index in range(max_rows):
             y = base_y + (index * OVERLAY_BAR_ROW_HEIGHT)
-            for suffix in ("label", "bar"):
+            for suffix in ("label", "bar", "quantity"):
                 message_id = f"edmcma.bar.{index}.{suffix}"
                 x = anchor_x if suffix == "label" else anchor_x + OVERLAY_BAR_START_OFFSET
                 try:
-                    if suffix == "label":
+                    if suffix in {"label", "quantity"}:
                         self._dispatch_overlay_message(
                             client,
                             message_id,
                             "",
-                            DEFAULT_LABEL_COLOR,
+                            DEFAULT_LABEL_COLOR if suffix == "label" else ED_ORANGE,
                             x,
                             y,
                             ttl=1,

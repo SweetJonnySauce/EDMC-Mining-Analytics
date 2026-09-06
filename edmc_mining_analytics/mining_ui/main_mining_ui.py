@@ -32,7 +32,13 @@ from edmc_mining_analytics.tooltip import WidgetTooltip
 from edmc_mining_analytics.debugging import apply_frame_debugging, collect_frames
 from ..formatting import format_compact_number
 from ..estimated_sell import build_estimated_sell_breakdown
-from ..state import MiningState, compute_percentage_stats, update_rpm, resolve_commodity_display_name
+from ..state import (
+    MiningState,
+    active_session_cargo_capacity,
+    compute_percentage_stats,
+    update_rpm,
+    resolve_commodity_display_name,
+)
 from ..integrations.mining_inara import InaraClient
 from ..integrations.spansh_hotspots import (
     HotspotSearchResult,
@@ -1425,10 +1431,10 @@ class edmcmaMiningUI:
         mined_cargo = max(0, self._state.current_cargo_tonnage)
         limpets_onboard = self._state.limpets_remaining if self._state.limpets_remaining is not None else 0
         total_cargo = mined_cargo + max(0, limpets_onboard)
-        capacity = self._state.cargo_capacity
+        capacity = active_session_cargo_capacity(self._state)
         if capacity is not None and capacity > 0:
             capacity_text = f"{capacity}t"
-            if self._state.cargo_capacity_is_inferred:
+            if capacity == self._state.cargo_capacity and self._state.cargo_capacity_is_inferred:
                 capacity_text = f"{capacity_text} (Inferred)"
             remaining = max(0, capacity - total_cargo)
             percent_full = ((capacity - remaining) / capacity) * 100.0

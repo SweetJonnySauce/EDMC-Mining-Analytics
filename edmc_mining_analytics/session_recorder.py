@@ -284,6 +284,10 @@ class SessionRecorder:
             location_meta["reserve_level"] = state.edsm_reserve_level
         if state.edsm_ring_type:
             location_meta["ring_type"] = state.edsm_ring_type
+        if state.planetary_mining_location_index is not None:
+            location_meta["planetary_mining_location"] = (
+                f"Planetary Mining Location Signal ({state.planetary_mining_location_index})"
+            )
 
         meta: dict[str, Any] = {
             "start_time": self._isoformat(start),

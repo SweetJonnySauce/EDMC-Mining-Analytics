@@ -23,6 +23,19 @@ def test_build_payload_includes_session_guid(tmp_path) -> None:
     assert len(session_guid) >= 16
 
 
+def test_build_payload_includes_planetary_mining_location(tmp_path) -> None:
+    state = _build_state(tmp_path)
+    state.mining_location = "Colonia 3 d"
+    state.planetary_mining_location_index = 13
+    recorder = SessionRecorder(state)
+
+    payload = recorder._build_payload()
+
+    location = payload["meta"]["location"]
+    assert location["body"] == "Colonia 3 d"
+    assert location["planetary_mining_location"] == "Planetary Mining Location Signal (13)"
+
+
 def test_append_prospected_summary_writes_requested_fields(tmp_path) -> None:
     state = _build_state(tmp_path)
     recorder = SessionRecorder(state)

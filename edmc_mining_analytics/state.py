@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field
+from enum import Enum
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Deque, Dict, Iterable, List, Optional, Set, Tuple
@@ -11,6 +12,12 @@ from typing import Deque, Dict, Iterable, List, Optional, Set, Tuple
 
 ProspectKey = Tuple[str, Tuple[Tuple[str, float], ...]]
 RPM_LOOKBACK_SECONDS = 10
+RHINO_CARGO_CAPACITY = 72
+
+
+class MiningSessionKind(str, Enum):
+    ASTEROID = "asteroid"
+    SURFACE = "surface"
 
 
 @dataclass
@@ -19,10 +26,12 @@ class MiningState:
 
     plugin_dir: Optional[Path] = None
     is_mining: bool = False
+    mining_session_kind: Optional[MiningSessionKind] = None
     mining_start: Optional[datetime] = None
     mining_end: Optional[datetime] = None
     mining_location: Optional[str] = None
     mining_ring: Optional[str] = None
+    planetary_mining_location_index: Optional[int] = None
     current_system: Optional[str] = None
     current_ship: Optional[str] = None
     current_ship_key: Optional[str] = None
@@ -123,6 +132,14 @@ class MiningState:
     market_search_inflight: Set[str] = field(default_factory=set)
 
 
+def active_session_cargo_capacity(state: MiningState) -> Optional[int]:
+    """Return the capacity that applies to the active mining session."""
+
+    if state.mining_session_kind == MiningSessionKind.SURFACE:
+        return RHINO_CARGO_CAPACITY
+    return state.cargo_capacity
+
+
 def compute_percentage_stats(samples: Iterable[float]) -> Optional[Tuple[float, float, float]]:
     """Return min/avg/max percentages from an iterable of sample values."""
 
@@ -144,10 +161,12 @@ def reset_mining_state(state: MiningState) -> None:
     """Reset mutable mining metrics for a fresh session."""
 
     state.is_mining = False
+    state.mining_session_kind = None
     state.mining_start = None
     state.mining_end = None
     state.mining_location = None
     state.mining_ring = None
+    state.planetary_mining_location_index = None
 
     state.prospected_count = 0
     state.already_mined_count = 0

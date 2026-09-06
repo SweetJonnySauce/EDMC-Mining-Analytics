@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from collections import Counter
+import re
+from collections import Counter, deque
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
@@ -11,6 +12,7 @@ import threading
 
 from .state import (
     MiningState,
+    MiningSessionKind,
     register_refinement,
     recompute_histograms,
     recompute_market_sell_totals,
@@ -50,6 +52,9 @@ class PendingShipUpdate:
 
 
 _PENDING_SHIP_UPDATE_TIMEOUT = timedelta(seconds=10)
+_PLANETARY_MINING_LOCATION_PATTERN = re.compile(
+    r"^\$SAA_Unknown_Signal:#type=\$PlanetaryMiningLocation_Name;:#index=(\d+);$"
+)
 
 
 class JournalProcessor:
@@ -82,6 +87,13 @@ class JournalProcessor:
         self._ring_anchor_name: Optional[str] = None
         self._ring_anchor_body_id: Optional[int] = None
         self._ring_anchor_system: Optional[str] = None
+        self._approach_body_name: Optional[str] = None
+        self._pending_planetary_mining_location_index: Optional[int] = None
+        self._pending_planetary_mining_location_body: Optional[str] = None
+        self._pending_srv_refinements: deque[tuple[str, str, bool]] = deque()
+        self._pending_srv_cargo_increase = 0
+        self._last_srv_refinement_commodity: Optional[str] = None
+        self._last_srv_cargo_count: Optional[int] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -117,6 +129,12 @@ class JournalProcessor:
         event = entry.get("event")
         if event == "LaunchDrone":
             self._process_launch_drone(entry, edmc_state, event_time)
+        elif event == "LaunchSRV":
+            self._process_launch_srv(entry, edmc_state)
+        elif event == "DockSRV":
+            self._process_dock_srv(entry, edmc_state)
+        elif event == "ApproachBody":
+            self._begin_body_approach(entry)
         elif event == "SupercruiseExit":
             supercruise_system = self._detect_current_system(entry)
             if supercruise_system:
@@ -126,11 +144,14 @@ class JournalProcessor:
         elif event == "SAASignalsFound":
             if self._capture_ring_from_saa(entry):
                 self._refresh_edsm()
-        elif event == "ProspectedAsteroid" and self._state.is_mining:
+        elif event == "Touchdown":
+            self._capture_planetary_mining_touchdown(entry)
+        elif event == "ProspectedAsteroid" and self._state.mining_session_kind == MiningSessionKind.ASTEROID:
             self._register_prospected_asteroid(entry, event_time)
         elif event == "Cargo":
             self._process_cargo(entry, edmc_state, is_mining=self._state.is_mining, event_time=event_time)
         elif event == "MiningRefined":
+            self._queue_srv_refinement(entry)
             if self._session_recorder:
                 type_localised_raw = entry.get("Type_Localised")
                 localized = None
@@ -169,10 +190,12 @@ class JournalProcessor:
                 entry=entry,
             )
             self._clear_ring_anchor()
+            self._clear_planetary_mining_location_context()
         elif event == "MaterialCollected" and self._state.is_mining:
             self._register_material_collected(entry)
         elif event in {"SupercruiseEntry", "FSDJump"}:
             self._clear_ring_anchor()
+            self._clear_planetary_mining_location_context()
         elif event == "LoadGame":
             self._handle_ship_update(
                 entry,
@@ -240,6 +263,86 @@ class JournalProcessor:
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
+    @staticmethod
+    def _is_rhino_srv(entry: dict) -> bool:
+        srv_type = entry.get("SRVType")
+        return isinstance(srv_type, str) and srv_type.strip().lower() == "mev_rhino"
+
+    def _process_launch_srv(self, entry: dict, edmc_state: Optional[dict]) -> None:
+        if not self._is_rhino_srv(entry) or self._state.is_mining:
+            return
+
+        self._reset_surface_cargo_reconciliation()
+        self._update_mining_state(
+            True,
+            "Rhino SRV launched",
+            entry.get("timestamp"),
+            state=edmc_state,
+            entry=entry,
+            use_surface_location=True,
+            session_kind=MiningSessionKind.SURFACE,
+        )
+
+    def _process_dock_srv(self, entry: dict, edmc_state: Optional[dict]) -> None:
+        if not self._is_rhino_srv(entry) or not self._state.is_mining:
+            return
+
+        self._update_mining_state(
+            False,
+            "Rhino SRV docked",
+            entry.get("timestamp"),
+            state=edmc_state,
+            entry=entry,
+        )
+        self._reset_surface_cargo_reconciliation()
+
+    def _begin_body_approach(self, entry: dict) -> None:
+        self._approach_body_name = self._body_name(entry)
+        self._pending_planetary_mining_location_index = None
+        self._pending_planetary_mining_location_body = None
+
+    def _capture_planetary_mining_touchdown(self, entry: dict) -> None:
+        approach_body = self._approach_body_name
+        touchdown_body = self._body_name(entry)
+        location_index = self._extract_planetary_mining_location_index(entry)
+        if (
+            not approach_body
+            or not touchdown_body
+            or touchdown_body.lower() != approach_body.lower()
+            or location_index is None
+        ):
+            return
+
+        self._pending_planetary_mining_location_body = touchdown_body
+        self._pending_planetary_mining_location_index = location_index
+        if self._state.is_mining:
+            if not self._state.mining_location:
+                self._state.mining_location = touchdown_body
+            self._state.planetary_mining_location_index = location_index
+
+    @staticmethod
+    def _body_name(entry: Optional[dict]) -> Optional[str]:
+        if not isinstance(entry, dict):
+            return None
+        for key in ("Body", "BodyName"):
+            value = entry.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return None
+
+    @staticmethod
+    def _extract_planetary_mining_location_index(entry: Optional[dict]) -> Optional[int]:
+        if not isinstance(entry, dict):
+            return None
+        destination = entry.get("NearestDestination")
+        if not isinstance(destination, str):
+            return None
+        match = _PLANETARY_MINING_LOCATION_PATTERN.fullmatch(destination)
+        if not match:
+            return None
+        index = int(match.group(1))
+        return index if index > 0 else None
+
     def _process_launch_drone(
         self,
         entry: dict,
@@ -260,9 +363,11 @@ class JournalProcessor:
                     entry.get("timestamp"),
                     state=edmc_state,
                     entry=entry,
+                    session_kind=MiningSessionKind.ASTEROID,
                 )
-            self._state.prospector_launched_count += 1
-        elif dtype == "collection" and self._state.is_mining:
+            if self._state.mining_session_kind == MiningSessionKind.ASTEROID:
+                self._state.prospector_launched_count += 1
+        elif dtype == "collection" and self._state.mining_session_kind == MiningSessionKind.ASTEROID:
             self._state.collection_drones_launched += 1
 
         self._state.last_event_was_drone_launch = True
@@ -746,6 +851,7 @@ class JournalProcessor:
     ) -> None:
         inventory = entry.get("Inventory")
         if not isinstance(inventory, list):
+            self._process_short_srv_cargo(entry, is_mining=is_mining)
             return
 
         entry_count_raw = entry.get("Count")
@@ -756,6 +862,7 @@ class JournalProcessor:
 
         cargo_counts: dict[str, int] = {}
         limpets = None
+        is_asteroid_session = self._state.mining_session_kind == MiningSessionKind.ASTEROID
         for item in inventory:
             if not isinstance(item, dict):
                 continue
@@ -775,7 +882,7 @@ class JournalProcessor:
                 limpets = count
 
         previous_limpets = self._state.limpets_remaining
-        if limpets is not None:
+        if limpets is not None and is_asteroid_session:
             if not self._state.limpets_start_initialized:
                 self._state.limpets_start = limpets
                 self._state.limpets_start_initialized = True
@@ -889,7 +996,11 @@ class JournalProcessor:
         if additions_made:
             recompute_market_sell_totals(self._state)
 
-        if self._state.limpets_start is not None and self._state.limpets_remaining is not None:
+        if (
+            is_asteroid_session
+            and self._state.limpets_start is not None
+            and self._state.limpets_remaining is not None
+        ):
             launched = self._state.prospector_launched_count + self._state.collection_drones_launched - 1
             abandoned = self._state.limpets_start - self._state.limpets_remaining - launched
             self._state.abandoned_limpets = max(0, abandoned)
@@ -909,6 +1020,98 @@ class JournalProcessor:
                     event_count=cargo_event_count,
                 )
         self._emit_mining_activity("Cargo")
+
+    def _process_short_srv_cargo(self, entry: dict, *, is_mining: bool) -> None:
+        if entry.get("Vessel") != "SRV":
+            return
+        try:
+            count = int(entry.get("Count"))
+        except (TypeError, ValueError):
+            return
+        if count < 0:
+            return
+
+        previous_count = self._last_srv_cargo_count
+        self._last_srv_cargo_count = count
+        if (
+            not is_mining
+            or self._state.mining_session_kind != MiningSessionKind.SURFACE
+        ):
+            return
+
+        self._state.current_cargo_tonnage = count
+
+        # A Cargo entry is a snapshot of the SRV hold. Any refinement still
+        # pending after it predates that snapshot and can become stale if the
+        # player moves on to a different commodity.
+        self._pending_srv_refinements = deque(
+            (commodity, display_name, True)
+            for commodity, display_name, _cargo_snapshot_seen in self._pending_srv_refinements
+        )
+        if previous_count is None:
+            return
+
+        increase = count - previous_count
+        if increase <= 0:
+            return
+
+        self._pending_srv_cargo_increase += increase
+        self._reconcile_pending_srv_cargo()
+
+    def _queue_srv_refinement(self, entry: dict) -> None:
+        if (
+            not self._state.is_mining
+            or self._state.mining_session_kind != MiningSessionKind.SURFACE
+        ):
+            return
+        raw_type = entry.get("Type")
+        if not isinstance(raw_type, str):
+            return
+        commodity = raw_type.strip().lower().removeprefix("$")
+        if commodity.endswith("_name;"):
+            commodity = commodity[:-len("_name;")]
+        if not commodity:
+            return
+        localized = entry.get("Type_Localised")
+        display_name = localized.strip() if isinstance(localized, str) and localized.strip() else commodity.title()
+
+        if self._last_srv_refinement_commodity != commodity:
+            self._discard_stale_srv_refinements()
+        self._last_srv_refinement_commodity = commodity
+        self._pending_srv_refinements.append((commodity, display_name, False))
+        self._reconcile_pending_srv_cargo()
+
+    def _discard_stale_srv_refinements(self) -> None:
+        while (
+            self._pending_srv_refinements
+            and self._pending_srv_refinements[-1][0] == self._last_srv_refinement_commodity
+            and self._pending_srv_refinements[-1][2]
+        ):
+            self._pending_srv_refinements.pop()
+
+    def _reconcile_pending_srv_cargo(self) -> None:
+        additions_made = False
+        while self._pending_srv_cargo_increase and self._pending_srv_refinements:
+            commodity, display_name, _cargo_snapshot_seen = self._pending_srv_refinements.popleft()
+            self._state.cargo_additions[commodity] = self._state.cargo_additions.get(commodity, 0) + 1
+            self._state.cargo_totals[commodity] = self._state.cargo_additions[commodity]
+            self._state.commodity_display_names[commodity] = display_name
+            self._state.commodity_canonical_names[commodity] = commodity
+            self._state.harvested_commodities.add(commodity)
+            if self._market_search is not None:
+                self._market_search.request_price(commodity)
+            self._pending_srv_cargo_increase -= 1
+            additions_made = True
+
+        if additions_made:
+            recompute_market_sell_totals(self._state)
+            self._refresh_ui()
+
+    def _reset_surface_cargo_reconciliation(self) -> None:
+        self._pending_srv_refinements.clear()
+        self._pending_srv_cargo_increase = 0
+        self._last_srv_refinement_commodity = None
+        self._last_srv_cargo_count = None
 
     # ------------------------------------------------------------------
     # Inferred capacity helpers
@@ -1055,6 +1258,8 @@ class JournalProcessor:
         timestamp: Optional[str],
         state: Optional[dict] = None,
         entry: Optional[dict] = None,
+        use_surface_location: bool = False,
+        session_kind: Optional[MiningSessionKind] = None,
     ) -> None:
         if self._state.is_mining == active:
             return
@@ -1095,9 +1300,12 @@ class JournalProcessor:
             start_time = self._parse_timestamp(timestamp) or datetime.now(timezone.utc)
             reset_mining_state(self._state)
             self._state.is_mining = True
+            self._state.mining_session_kind = session_kind
             self._state.mining_start = start_time
             self._state.mining_end = None
             self._state.mining_location = self._detect_current_location(state or entry)
+            if use_surface_location:
+                self._apply_pending_planetary_mining_location()
             if not self._state.mining_ring and anchored_ring:
                 self._state.mining_ring = anchored_ring
             system_name = self._detect_current_system(state or entry)
@@ -1226,6 +1434,22 @@ class JournalProcessor:
         except Exception:
             pass
         return None
+
+    def _apply_pending_planetary_mining_location(self) -> None:
+        body = self._pending_planetary_mining_location_body
+        index = self._pending_planetary_mining_location_index
+        if not body or index is None:
+            return
+        if not self._state.mining_location:
+            self._state.mining_location = body
+        self._state.planetary_mining_location_index = index
+        self._pending_planetary_mining_location_body = None
+        self._pending_planetary_mining_location_index = None
+
+    def _clear_planetary_mining_location_context(self) -> None:
+        self._approach_body_name = None
+        self._pending_planetary_mining_location_body = None
+        self._pending_planetary_mining_location_index = None
 
     def _capture_ring_from_entry(self, entry: Optional[dict]) -> bool:
         ring_name, _ = self._extract_ring_candidate(entry)
