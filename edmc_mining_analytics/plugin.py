@@ -6,7 +6,7 @@ import logging
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import requests
 
@@ -51,6 +51,7 @@ from .edmc_mining_analytics_version import (
 )
 from .mining_analytics_ui import edmcmaMiningUI
 from .update_manager import UpdateManager
+from .version_notifications import LatestVersion, UpdateReady, VersionMailbox, VersionNotification
 
 
 PLUGIN_NAME = "EDMC Mining Analytics"
@@ -141,6 +142,9 @@ class MiningAnalyticsPlugin:
         self._overlay_rpm_refresh_job: Optional[str] = None
         self._overlay_enabled_last: bool = False
         self._version_thread: Optional[threading.Thread] = None
+        self._version_mailbox: Optional[VersionMailbox] = None
+        self._version_poll_job: Optional[str] = None
+        self._version_poll_root: Optional[tk.Misc] = None
         self.ui = edmcmaMiningUI(
             self.state,
             self.inara,
@@ -174,6 +178,11 @@ class MiningAnalyticsPlugin:
     # EDMC lifecycle hooks
     # ------------------------------------------------------------------
     def plugin_start(self, plugin_dir: str) -> str:
+        self._stop_version_notifications()
+        mailbox = VersionMailbox()
+        self._version_mailbox = mailbox
+        self._version_check_started = False
+        self._version_thread = None
         self._is_stopping = False
         install_exception_logging()
         _log.info("Plugin start requested")
@@ -209,7 +218,7 @@ class MiningAnalyticsPlugin:
         try:
             self.update_manager = UpdateManager(
                 self.plugin_dir,
-                on_update_ready=self._handle_update_ready,
+                on_update_ready=lambda version: mailbox.publish(UpdateReady(version)),
             )
             self.update_manager.start()
         except Exception:
@@ -225,6 +234,10 @@ class MiningAnalyticsPlugin:
             self._latest_version,
             self._update_ready_version is not None,
         )
+        mailbox = self._version_mailbox
+        if mailbox is not None and not self._is_stopping:
+            self._drain_version_notifications(mailbox)
+            self._schedule_version_poll(mailbox)
         self.ui.schedule_rate_update()
         return frame
 
@@ -248,6 +261,7 @@ class MiningAnalyticsPlugin:
 
     def plugin_stop(self) -> None:
         self._is_stopping = True
+        self._stop_version_notifications()
         _log.info("Plugin stop requested; shutting down %s", PLUGIN_NAME)
         if self.update_manager:
             try:
@@ -523,12 +537,20 @@ class MiningAnalyticsPlugin:
     # Version checking
     # ------------------------------------------------------------------
     def _ensure_version_check(self) -> None:
+        mailbox = self._version_mailbox
+        if mailbox is None or self._is_stopping:
+            return
         if self._version_check_started:
             thread = self._version_thread
             if thread and thread.is_alive():
                 return
         self._version_check_started = True
-        thread = threading.Thread(target=self._check_for_updates, name="EDMCMiningVersion", daemon=False)
+        thread = threading.Thread(
+            target=self._check_for_updates,
+            args=(mailbox.publish,),
+            name="EDMCMiningVersion",
+            daemon=False,
+        )
         self._version_thread = thread
         thread.start()
 
@@ -567,7 +589,9 @@ class MiningAnalyticsPlugin:
             tag = tag.split("/", 2)[-1]
         return tag if isinstance(tag, str) else None
 
-    def _check_for_updates(self) -> None:
+    def _check_for_updates(
+        self, publish: Callable[[VersionNotification], bool]
+    ) -> None:
         session = get_shared_session()
         try:
             response = session.get(GITHUB_RELEASES_API, timeout=5)
@@ -578,7 +602,7 @@ class MiningAnalyticsPlugin:
                 _log.debug("GitHub releases endpoint returned 404; falling back to tags")
                 latest = self._fetch_latest_tag()
                 if latest:
-                    self._handle_latest_version(latest)
+                    publish(LatestVersion(latest))
                 else:
                     _log.debug("Version check fallback to tags did not return any versions")
                 return
@@ -599,9 +623,7 @@ class MiningAnalyticsPlugin:
                 _log.debug("Version check succeeded but no tag information was found")
                 return
 
-            self._handle_latest_version(latest)
-        finally:
-            self._version_thread = None
+            publish(LatestVersion(latest))
 
     def _log_version_status(self) -> None:
         if not self._latest_version:
@@ -622,21 +644,73 @@ class MiningAnalyticsPlugin:
             )
         else:
             _log.debug("%s is up to date (version %s)", PLUGIN_NAME, PLUGIN_VERSION)
-        self._schedule_version_label_update()
+        self._render_version_label()
 
-    def _schedule_version_label_update(self) -> None:
-        if self._is_stopping:
+    def _stop_version_notifications(self) -> None:
+        """Close delivery and cancel its owned Tk timer before joining workers."""
+        mailbox = self._version_mailbox
+        self._version_mailbox = None
+        if mailbox is not None:
+            mailbox.close()
+        root, job = self._version_poll_root, self._version_poll_job
+        self._version_poll_root = None
+        self._version_poll_job = None
+        if root is not None and job is not None:
+            try:
+                root.after_cancel(job)
+            except tk.TclError:
+                _log.debug("Version polling timer already destroyed", exc_info=True)
+
+    def _drain_version_notifications(self, mailbox: VersionMailbox) -> None:
+        """Apply ordered worker data on the main thread without mailbox locks."""
+        for notification in mailbox.drain():
+            if self._is_stopping or self._version_mailbox is not mailbox:
+                return
+            try:
+                if isinstance(notification, LatestVersion):
+                    self._handle_latest_version(notification.version)
+                else:
+                    self._handle_update_ready(notification.version)
+            except tk.TclError:
+                _log.debug("Version label destroyed before delivery", exc_info=True)
+            except Exception:
+                _log.exception("Failed to deliver version notification")
+
+    def _schedule_version_poll(self, mailbox: VersionMailbox) -> None:
+        if (
+            self._is_stopping
+            or self._version_mailbox is not mailbox
+            or self._version_poll_job is not None
+        ):
             return
         root = self.ui.get_root()
-        if root and getattr(root, "after", None):
-            root.after(
-                0,
-                lambda: self.ui.update_version_label(
-                    PLUGIN_VERSION,
-                    self._latest_version,
-                    self._update_ready_version is not None,
-                ),
-            )
+        if root is None:
+            return
+        try:
+            job = root.after(100, lambda: self._poll_version_notifications(mailbox))
+        except tk.TclError:
+            _log.debug("Version polling root already destroyed", exc_info=True)
+            return
+        self._version_poll_root = root
+        self._version_poll_job = job
+
+    def _poll_version_notifications(self, mailbox: VersionMailbox) -> None:
+        if self._is_stopping or self._version_mailbox is not mailbox:
+            return
+        self._version_poll_root = None
+        self._version_poll_job = None
+        self._drain_version_notifications(mailbox)
+        self._schedule_version_poll(mailbox)
+
+    def _render_version_label(self) -> None:
+        """Render only from the main-thread notification consumer/hooks."""
+        if self._is_stopping:
+            return
+        self.ui.update_version_label(
+            PLUGIN_VERSION,
+            self._latest_version,
+            self._update_ready_version is not None,
+        )
 
     def _handle_latest_version(self, latest: str) -> None:
         latest_value = normalize_version(latest) or latest.strip()
@@ -662,4 +736,4 @@ class MiningAnalyticsPlugin:
         ):
             self._latest_version = ready_version
 
-        self._schedule_version_label_update()
+        self._render_version_label()

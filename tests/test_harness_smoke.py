@@ -61,9 +61,15 @@ def _import_load_with_dummy_ui():
         def set_paused(self, paused, *, source="manual") -> None:
             return
 
+    from tests.harness_test_utils import DummyUpdateManager
+
     plugin_module.edmcmaMiningUI = DummyUI
+    plugin_module.UpdateManager = DummyUpdateManager
     sys.modules.pop("load", None)
-    return importlib.import_module("load")
+    load = importlib.import_module("load")
+    # Version producers have dedicated fake-adapter coverage; smoke stays offline.
+    load._plugin._ensure_version_check = lambda: None
+    return load
 
 
 def test_harness_smoke_launch_drone_starts_mining() -> None:
